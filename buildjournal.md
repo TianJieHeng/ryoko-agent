@@ -46,3 +46,19 @@ Append one dated entry per meaningful checkpoint under its BE/FE phase ID:
 - Remaining blocker/decision and next dependency
 
 Do not mark a phase complete because a module exists or a plan was written. Record failed/flaky/skipped/mocked/live-unverified results honestly, and preserve user edits when updating this journal.
+
+## 2026-10-02 BE00 — Reproducible evidence baseline
+
+**Status:** complete as an evidence-baseline phase; this is not a green runtime or release certification. Source IDs: U33/U31/U35, T01. No runtime behavior, dependencies, production configuration or deployment changed.
+
+**Base:** `4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd` (planning), preserving runtime baseline `b78931e3b0959c42dca7400c78a4dffd1bb48575`. Checkpoint branch: [`build/be00-baseline`](https://github.com/TianJieHeng/ryoko-agent/tree/build/be00-baseline). The checkpoint is the commit containing this entry; remote commit/CI verification is reported with the phase receipt, not assumed here.
+
+**Delivered:** `docs/build/baseline.md`, the decision/ticket register in `docs/build/decisions/`, measured `docs/build/baseline-manifest.json`, the standard-library `scripts/ryoko_baseline.py` reproducer, and two behavior tests in `tests/scripts/test_ryoko_baseline.py`. Baseline manifest/fixture versions are 1. The helper reads checked-in dependencies plus synthetic configuration, never operator secrets/config. It delegates execution to the required runner; by default every fixture is explicitly unmeasured.
+
+**Environment:** isolated PM build, Python 3.14.7, pytest 9.1.1, Linux x86_64. `python -m pm.build_env --source . --out .venv --group dev --group test` completed with separate disposable HERMES_HOME/HERMES_RUNTIME_DIR. PM offline lock verification passed. `HERMES_PYTHON="$PWD/.venv/bin/python" scripts/run_tests.sh tests/test_hermes_yaml.py` passed 9 smoke tests. No lock or dependency file changed.
+
+**Focused campaign:** with disposable home/runtime and the same explicit interpreter, `scripts/run_tests.sh tests/scripts/test_ryoko_baseline.py tests/agent/test_secret_scope.py tests/tui_gateway/test_projects_rpc.py tests/agent/test_terminal_approval_batch.py tests/agent/test_fallback_429_after_timeout.py tests/hermes_state/test_session_turn_lease.py tests/cron/test_delivery_queue.py tests/hermes_state/test_compression_watermark_commit.py tests/agent/test_memory_provider.py -j 3` finished 9 files in 19.3 seconds: **174 passed, 2 failed**. The existing `test_projects_reads_are_scoped_to_the_requested_profile` and `test_projects_tree_is_scoped_to_the_requested_profile` assertions see an additional `tmp` project-tree node. Both fail on the unmodified runtime; retain this inherited evidence for BE07 diagnosis. They are not described as passing, fixed or harmless. Manifest records counts and the campaign-log digest; raw host/provider traces are not published. `git diff --check` passed. The two new baseline-helper tests passed.
+
+**Boundaries and rollback:** no migration or new runtime feature flag enabled. Primary personal MCP, per-agent enforcement and LAYA remain unconfigured/disabled targets. Existing profile fixtures do not prove same-profile agent isolation. Provider behavior is mocked; real external effects, credentials, service delivery, hostile-code executor boundaries, hardware performance and full regression suite are not tested. Revert this evidence tooling/documentation independently; retain measured failures. No cost/latency/success benefit is claimed from fixture execution time.
+
+**Next:** BE01 trusted identity, immutable effective configuration and construction-scope equivalence. Runtime implementation remains pending; actual identity IDs and personal harness contract must come from explicit configuration, never display names or invented credentials.

@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "fixture_version": 1,
+  "source_sha": "4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+  "dirty_worktree": true,
+  "dependencies": {
+    "pyproject.toml": "d09cd0a47109e5abb9abeb326224208b857faa0d1e921c515d7f0bc6031d2d73",
+    "uv.lock": "de17d70bc999fb0f8fe50dbf8590ac979f43b5a84cd8320caeac1c695ce63c01",
+    "package.json": "07122ef9f0c719603efb4ed473310d5c350c86dfa3f3496943df125a7c9d3f9b",
+    "package-lock.json": "9934677654ce672900b0946898cc28c73671f75896862b5768c24cca84776ccd"
+  },
+  "dependencies_digest": "4ebf2292dcae6d8d363053cfbf194f7594fc353c5f400851d73f148a2559f3b3",
+  "config_source": "checked-in synthetic fixture specification; not operator config",
+  "config_redacted_digest": "fda39627838bd8c5fcf8cbfb1573f8c92d961123d23eca69beeb30c4488962c7",
+  "runtime_versions": {
+    "python": "3.14.7",
+    "python_target": "3.14",
+    "pytest": "9.1.1"
+  },
+  "os_backend": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "backend": "offline fixtures; no executor certified"
+  },
+  "feature_flags": {
+    "ryoko_runtime": false,
+    "personal_mcp": false,
+    "laya": "off"
+  },
+  "observed_results": [
+    {
+      "scenario": "profile_scope",
+      "fixture": "tests/agent/test_secret_scope.py",
+      "status": "passed",
+      "passed": 37,
+      "failed": 0,
+      "duration_seconds": 2.2
+    },
+    {
+      "scenario": "projects",
+      "fixture": "tests/tui_gateway/test_projects_rpc.py",
+      "status": "failed",
+      "passed": 25,
+      "failed": 2,
+      "duration_seconds": 6.6
+    },
+    {
+      "scenario": "held_approval",
+      "fixture": "tests/agent/test_terminal_approval_batch.py",
+      "status": "passed",
+      "passed": 7,
+      "failed": 0,
+      "duration_seconds": 7.9
+    },
+    {
+      "scenario": "provider_timeout",
+      "fixture": "tests/agent/test_fallback_429_after_timeout.py",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "duration_seconds": 3.0
+    },
+    {
+      "scenario": "ownership",
+      "fixture": "tests/hermes_state/test_session_turn_lease.py",
+      "status": "passed",
+      "passed": 21,
+      "failed": 0,
+      "duration_seconds": 2.4
+    },
+    {
+      "scenario": "lost_delivery",
+      "fixture": "tests/cron/test_delivery_queue.py",
+      "status": "passed",
+      "passed": 10,
+      "failed": 0,
+      "duration_seconds": 0.8
+    },
+    {
+      "scenario": "compaction_restart",
+      "fixture": "tests/hermes_state/test_compression_watermark_commit.py",
+      "status": "passed",
+      "passed": 16,
+      "failed": 0,
+      "duration_seconds": 16.4
+    },
+    {
+      "scenario": "unavailable_memory",
+      "fixture": "tests/agent/test_memory_provider.py",
+      "status": "passed",
+      "passed": 55,
+      "failed": 0,
+      "duration_seconds": 2.1
+    },
+    {
+      "scenario": "baseline_manifest",
+      "fixture": "tests/scripts/test_ryoko_baseline.py",
+      "status": "passed",
+      "passed": 2,
+      "failed": 0
+    }
+  ],
+  "limits": [
+    "No live provider, personal harness, external mutation or delivery",
+    "No hostile-code isolation or deployment certification",
+    "Existing profiles are not same-profile per-agent isolation",
+    "Crash-after-external-acceptance coverage is a BE06 target"
+  ],
+  "campaign": {
+    "command": "HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/agent/test_secret_scope.py tests/tui_gateway/test_projects_rpc.py tests/agent/test_terminal_approval_batch.py tests/agent/test_fallback_429_after_timeout.py tests/hermes_state/test_session_turn_lease.py tests/cron/test_delivery_queue.py tests/hermes_state/test_compression_watermark_commit.py tests/agent/test_memory_provider.py tests/scripts/test_ryoko_baseline.py -j 3",
+    "passed": 174,
+    "failed": 2,
+    "duration_seconds": 19.3,
+    "runner_log_sha256": "2b55dc4acf8001e171f9dbc5c5c5b6a38623fbabc200aace2618b0e46b407d29",
+    "failure_ids": [
+      "test_projects_reads_are_scoped_to_the_requested_profile",
+      "test_projects_tree_is_scoped_to_the_requested_profile"
+    ],
+    "failure_detail": "Project trees include an extra tmp node; runtime source unchanged from planning base."
+  },
+  "runtime_source_unchanged": true
+}
