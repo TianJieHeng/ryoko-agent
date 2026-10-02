@@ -258,9 +258,13 @@ class RuntimeEventPayload(Result):
     command_id: str | None = None
     operation: RuntimeOperation | Literal["artifact"] | None = None
     effect_state: Literal["prepared", "dispatched", "confirmed", "failed", "outcome_unknown", "reconciliation_required"] | None = None
-    operation_type: Literal["artifact_publish", "project_artifact_publish", "unsupported"] | None = None
-    approval_status: Literal["pending", "approved", "denied", "consumed"] | None = None
+    operation_type: Literal["artifact_publish", "project_artifact_publish", "mission_test_execution", "unsupported"] | None = None
+    approval_status: Literal["pending", "approved", "denied", "consumed", "invalidated"] | None = None
     expires_at: float | None = None
+    invalidation_reason: str | None = None
+    mission_revision: int | None = None
+    mission_state: Literal["ready", "working", "waiting_for_user", "waiting_for_source", "ready_to_review",
+                           "completed", "partially_completed", "paused", "cancelled", "failed"] | None = None
     checkpoint_id: str | None = None
     included_seq: int | None = None
     cancellation: RuntimeCancellation | None = None

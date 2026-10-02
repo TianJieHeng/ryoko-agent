@@ -342,6 +342,20 @@ class ToolCallGuardrailController:
     def halt_decision(self) -> ToolGuardrailDecision | None:
         return self._halt_decision
 
+    def mission_evidence(self) -> list[dict[str, Any]]:
+        """Bounded observed loop evidence for durable mission finalization."""
+        result = []
+        if self._halt_decision is not None:
+            row = self._halt_decision
+            result.append({"code": row.code, "action": row.action, "tool_name": row.tool_name,
+                           "count": row.count, "signature_digest": row.signature.args_hash if row.signature else ""})
+        for signature, (_result_hash, count) in self._no_progress.items():
+            if count >= self.config.no_progress_warn_after and len(result) < 16:
+                result.append({"code": "idempotent_no_progress_warning", "action": "warn",
+                               "tool_name": signature.tool_name, "count": count,
+                               "signature_digest": signature.args_hash})
+        return result
+
     def _decide(
         self, action: str, code: str, tool_name: str, count: int, signature: ToolCallSignature,
         *, message: str | None = None, **fmt: Any,

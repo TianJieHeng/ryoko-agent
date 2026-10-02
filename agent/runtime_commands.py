@@ -48,6 +48,7 @@ class RuntimeRun:
     budget: Any = None
     task_scope: Any = None
     dispatch_blocked: threading.Event = field(default_factory=threading.Event, compare=False)
+    control_lock: threading.RLock = field(default_factory=threading.RLock, compare=False)
 
 
 _PENDING: ContextVar[_SubmittedCommand | None] = ContextVar("runtime_submitted_command", default=None)
@@ -132,6 +133,25 @@ def read_command_state(agent, command_id: str) -> dict | None:
 
 
 def submit_command(agent, envelope: dict) -> dict:
+    run = getattr(agent, "_active_runtime_run", None)
+    if isinstance(run, RuntimeRun) and isinstance(envelope, dict) and envelope.get("operation") != "submit":
+        with run.control_lock:
+            return _submit_command(agent, envelope, expected_run=run)
+    return _submit_command(agent, envelope)
+
+
+def _control_owner_still_active(db, sid, actor, command_id, run):
+    try:
+        _check_run(run)
+    except RuntimeFenceError:
+        record = db.settle_inactive_runtime_control(sid, actor, command_id)
+        if record["status"] == "blocked":
+            return False
+        raise
+    return True
+
+
+def _submit_command(agent, envelope: dict, *, expected_run=None) -> dict:
     """Accept once; controls record requests against the current local owner.
 
     A submit is executed by the existing host pipeline inside
@@ -143,6 +163,8 @@ def submit_command(agent, envelope: dict) -> dict:
     run = getattr(agent, "_active_runtime_run", None)
     existing = db.read_runtime_command(sid, command["command_id"])
     if operation != "submit" and existing is None:
+        if expected_run is not None and run is not expected_run:
+            return rejected_receipt(agent, command["command_id"], "target_run_ended")
         if not isinstance(run, RuntimeRun):
             if operation == "cancel":
                 from agent.admission import AdmissionQueue
@@ -150,21 +172,45 @@ def submit_command(agent, envelope: dict) -> dict:
                 if queued is not None:
                     return queued
             return rejected_receipt(agent, command["command_id"], "no_active_run")
-        _check_run(run)
+        try:
+            _check_run(run)
+        except RuntimeFenceError:
+            return rejected_receipt(agent, command["command_id"], "no_active_run")
     policy = getattr(agent, "_runtime_budget_policy", None)
-    receipt = db.submit_runtime_command(sid, actor=actor, command=command,
-        budget_policy_json=policy.snapshot if policy is not None and operation == "submit" else None)
+    from hermes_state_runtime import RuntimeStoreError
+    try:
+        receipt = db.submit_runtime_command(sid, actor=actor, command=command,
+            budget_policy_json=policy.snapshot if policy is not None and operation == "submit" else None)
+    except RuntimeStoreError as exc:
+        if exc.code == "no_active_run":
+            return rejected_receipt(agent, command["command_id"], "no_active_run")
+        raise
     if receipt["status"] == "rejected" or operation == "submit":
         return receipt
     record = db.read_runtime_command(sid, receipt["command_id"])
     if record["status"] != "accepted":
+        if record["status"] == "blocked" and (record.get("result") or {}).get("outcome") == "target_run_ended":
+            return rejected_receipt(agent, command["command_id"], "target_run_ended")
         return receipt
     if not isinstance(run, RuntimeRun):
+        record = db.settle_inactive_runtime_control(sid, actor, receipt["command_id"])
+        if record["status"] == "blocked":
+            return rejected_receipt(agent, command["command_id"], "target_run_ended")
         return receipt
-    _check_run(run)
-    if not db.claim_runtime_command(sid, receipt["command_id"], holder=run.holder, generation=run.generation):
+    if not _control_owner_still_active(db, sid, actor, receipt["command_id"], run):
+        return rejected_receipt(agent, command["command_id"], "target_run_ended")
+    try:
+        claimed = db.claim_runtime_command(sid, receipt["command_id"], holder=run.holder, generation=run.generation)
+    except RuntimeStoreError as exc:
+        if exc.code == "stale_owner":
+            settled = db.settle_inactive_runtime_control(sid, actor, receipt["command_id"])
+            if settled["status"] == "blocked":
+                return rejected_receipt(agent, command["command_id"], "target_run_ended")
+        raise
+    if not claimed:
         return receipt
-    _check_run(run)
+    if not _control_owner_still_active(db, sid, actor, receipt["command_id"], run):
+        return rejected_receipt(agent, command["command_id"], "target_run_ended")
     if receipt.get("run_id") != run.run_id:
         # A recovered, unclaimed control belongs to the original run. It must
         # never steer or cancel whichever newer turn happens to own the lease.
@@ -174,6 +220,8 @@ def submit_command(agent, envelope: dict) -> dict:
     if operation == "steer":
         queued = agent.steer(command["payload"]["text"])
         result = {"outcome": "steer_queued" if queued else "steer_not_queued", "applied": False}
+        if getattr(agent, "_mission_finalizing_run_id", None) == run.run_id:
+            result["missed_steer"] = True
     else:
         from agent.admission import AdmissionQueue
         cancelled_queued = AdmissionQueue(db).cancel_session(sid)
@@ -279,6 +327,8 @@ def reset_runtime_run(token, run):
         run.task_scope.stop_deadline_watchdog()
     if run is not None and getattr(run.agent, "_active_runtime_run", None) is run:
         run.agent._active_runtime_run = None
+    if run is not None and getattr(run.agent, "_mission_finalizing_run_id", None) == run.run_id:
+        run.agent._mission_finalizing_run_id = None
     _RUN.reset(token)
 
 
@@ -391,6 +441,13 @@ def invoke_runtime_operation(kind: str, callback, *, agent=None, name: str = "",
 
 
 def finish_turn_command(run, result=None, error=None):
+    if run is None:
+        return
+    with run.control_lock:
+        return _finish_turn_command(run, result=result, error=error)
+
+
+def _finish_turn_command(run, result=None, error=None):
     original_result = result
     if run is None:
         return
@@ -398,6 +455,9 @@ def finish_turn_command(run, result=None, error=None):
         result = {"failed": True, "completed": False, "final_response": "",
                   "error_type": type(error).__name__}
     result = dict(result or {})
+    if "mission" not in result:
+        from agent.mission_runtime import finalize_mission_result
+        result = finalize_mission_result(run, result)
     result.pop("messages", None)  # stored transcript is the canonical message projection
     result["runtime_command_id"] = run.command_id
     if run.dispatch_blocked.is_set():
@@ -424,7 +484,11 @@ def finish_turn_command(run, result=None, error=None):
         original_result.update(result)
     from gateway.durable_outbox import commit_result
     reference = commit_result(run, result, status)
+    from agent.mission_runtime import refresh_mission_result
+    refresh_mission_result(run.agent, result)
     if isinstance(original_result, dict):
+        if "mission" in result:
+            original_result["mission"] = result["mission"]
         original_result["runtime_result"] = reference
     snapshot = run.db.read_runtime_snapshot(run.session_id)
     run.db.publish_runtime_checkpoint(run.session_id, {

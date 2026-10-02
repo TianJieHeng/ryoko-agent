@@ -161,10 +161,71 @@ def is_goal_control(arg: str) -> bool:
     return normalized in _EXACT_HANDLERS or normalized.split(None, 1)[0] in {"wait", "gate"}
 
 
+def _dispatch_mission_goal(mgr, arg, mission_session_id):
+    """The shared parser's strict branch uses the same owned mission writer as RPC."""
+    from agent.mission_controls import mission_user_control
+    from agent.project_context import project_access
+    from agent.result_artifacts import artifact_actor
+    from dataclasses import asdict
+    agent = getattr(mgr, "_runtime_agent", None)
+    if agent is None:
+        return GoalCommandResult("Identity-bound goals require the owned runtime.mission controls.", error=True)
+    context, db = agent.runtime_context, agent._session_db
+    actor, access = artifact_actor(context), project_access(context)
+    current = db.get_mission(agent.session_id, actor, access=access)
+    lowered = arg.lower()
+    if lowered in {"", "status", "show"}:
+        if current is None:
+            return GoalCommandResult("No mission set.")
+        detail = f'Mission {current["state"]} (revision {current["revision"]}): {current["outcome"]}'
+        if lowered == "show":
+            detail += "\n" + mgr.render_contract()
+        return GoalCommandResult(detail)
+    if lowered in {"gate", "gate list"}:
+        return GoalCommandResult(mgr.render_gates())
+    if not mission_session_id:
+        return GoalCommandResult("Use the owned runtime.mission controls to change this mission.", error=True)
+    if lowered.startswith("draft ") or lowered == "draft":
+        return GoalCommandResult("Drafting a machine-checkable mission requires explicit acceptance criteria; use runtime.mission.create or revise.", error=True)
+    if lowered.startswith("gate ") or lowered.startswith("wait ") or lowered == "unwait":
+        return GoalCommandResult("Shell/PID mission controls are unsupported; use explicit criteria and dependencies in runtime.mission.revise.", error=True)
+    with mission_user_control(agent, mission_session_id) as control:
+        if lowered in {"pause", "resume", "clear", "stop", "done"}:
+            if current is None:
+                return GoalCommandResult("No mission set.")
+            state = "paused" if lowered == "pause" else "ready" if lowered == "resume" else "cancelled"
+            row = db.update_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
+                expected_revision=current["revision"], changes={"state": state,
+                    "paused_reason": "user-paused" if state == "paused" else None}, access=access)
+            if state in {"paused", "cancelled"}:
+                active = getattr(agent, "_active_runtime_run", None)
+                scope = getattr(active, "task_scope", None)
+                if scope is not None:
+                    scope.request_cancel("Mission " + state + " by user")
+            return GoalCommandResult(f'Mission {row["state"]}: {row["outcome"]}',
+                                     clear_pending="pause" if state == "paused" else "clear" if state == "cancelled" else None)
+        headline, contract = goals.parse_contract(arg)
+        changes = {"outcome": headline or arg, "legacy_contract": asdict(contract),
+                   "state": "waiting_for_user", "next_step": "Provide decisive machine-checkable acceptance criteria",
+                   "blockers": ["acceptance_criteria_required"]}
+        if current is None:
+            row = db.create_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
+                contract={"outcome": changes["outcome"], "legacy_contract": changes["legacy_contract"],
+                          "max_turns": min(100, mgr.default_max_turns)}, access=access)
+        else:
+            # Replacing vague prose cannot make an old acceptance contract prove a new goal.
+            changes["acceptance"] = []
+            row = db.update_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
+                expected_revision=current["revision"], changes=changes, access=access)
+    return GoalCommandResult(f'Mission saved, waiting for acceptance criteria: {row["outcome"]}. '
+        "Use runtime.mission.revise to bind checks to exact artifact versions; no automatic judge loop started.")
+
+
 def dispatch_goal_command(
     mgr: goals.GoalManager, arg: str, *, authorize_gate: Callable[[], str | None],
     last_user_message=None, render: Callable = _english,
     progress: Callable[[str], None] | None = None,
+    mission_session_id: str | None = None,
 ) -> GoalCommandResult:
     """Apply one command. ``authorize_gate`` returns a denial or None (explicit approval).
 
@@ -177,6 +238,8 @@ def dispatch_goal_command(
     rest = tokens[1].strip() if len(tokens) > 1 else ""
     prefix = "Invalid goal"
     try:
+        if callable(getattr(mgr, "_mission_mode", None)) and mgr._mission_mode() is True:
+            return _dispatch_mission_goal(mgr, arg, mission_session_id)
         if handler := _EXACT_HANDLERS.get(arg.lower()):
             return handler(mgr, "", render)
         if verb == "wait":
@@ -188,7 +251,7 @@ def dispatch_goal_command(
         return _set(mgr, rest if verb == "draft" else arg,
                     drafting=verb == "draft", last_user_message=last_user_message,
                     render=render, progress=progress)
-    except (RuntimeError, ValueError, IndexError) as exc:
+    except (RuntimeError, ValueError, IndexError, PermissionError) as exc:
         output = (render("gateway.goal.invalid", "Invalid goal: {error}", error=str(exc))
                   if prefix == "Invalid goal" else f"{prefix}: {exc}")
         return GoalCommandResult(output, error=True)

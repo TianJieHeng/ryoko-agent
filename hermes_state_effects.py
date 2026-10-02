@@ -351,7 +351,7 @@ class SessionEffectsMixin:
                           binding_json, approval_digest, expires_at, "pending", now))
             self._append_runtime_event_on_conn(conn, sid, "approval.requested", {"status": "pending", "expires_at": expires_at},
                                                generation, run_id=run_id, approval_id=approval_id)
-            return _approval_result(self._effect_approval_on_conn(conn, approval_id, actor))
+            return self._approval_projection_on_conn(conn, self._effect_approval_on_conn(conn, approval_id, actor))
         return self._execute_write(write)
 
     def resolve_effect_approval(self, approval_id, actor, *, holder, generation, approval_digest, choice):
@@ -371,7 +371,7 @@ class SessionEffectsMixin:
             conn.execute("UPDATE runtime_effect_approvals SET status=?,resolved_at=? WHERE approval_id=?", (status, time.time(), approval_id))
             self._append_runtime_event_on_conn(conn, row["session_id"], "approval.resolved", {"status": status}, generation,
                                                run_id=row["run_id"], approval_id=approval_id)
-            return _approval_result(self._effect_approval_on_conn(conn, approval_id, actor))
+            return self._approval_projection_on_conn(conn, self._effect_approval_on_conn(conn, approval_id, actor))
         return self._execute_write(write)
 
     def _consume_effect_approval_on_conn(self, conn, approval_id, actor, binding, consumer_id):
@@ -385,17 +385,27 @@ class SessionEffectsMixin:
                      (time.time(), consumer_id, approval_id))
         self._append_runtime_event_on_conn(conn, row["session_id"], "approval.resolved", {"status": "consumed"}, binding["generation"],
                                            run_id=row["run_id"], approval_id=approval_id)
-        return _approval_result(self._effect_approval_on_conn(conn, approval_id, actor))
+        return self._approval_projection_on_conn(conn, self._effect_approval_on_conn(conn, approval_id, actor))
 
     def consume_effect_approval(self, approval_id, actor, *, consumer_id, **binding):
         actor = _actor(actor)
         scope = _binding(**binding)
         return self._execute_write(lambda conn: self._consume_effect_approval_on_conn(conn, approval_id, actor, scope, consumer_id))
 
+    @staticmethod
+    def _approval_projection_on_conn(conn, row):
+        result = _approval_result(row)
+        if row["status"] == "invalidated":
+            audit = conn.execute("SELECT mission_id,mission_revision,invalidation_reason,created_at FROM runtime_mission_approval_invalidations WHERE approval_id=?", (row["approval_id"],)).fetchone()
+            if audit is not None:
+                result.update(mission_id=audit["mission_id"], mission_revision=audit["mission_revision"],
+                    invalidation_reason=audit["invalidation_reason"], invalidated_at=audit["created_at"])
+        return result
+
     def get_effect_approval(self, approval_id, actor):
         actor = _actor(actor)
         with self._runtime_read() as conn:
-            return _approval_result(self._effect_approval_on_conn(conn, approval_id, actor))
+            return self._approval_projection_on_conn(conn, self._effect_approval_on_conn(conn, approval_id, actor))
 
     def list_effect_approvals(self, session_id, actor, *, run_id=None, limit=100):
         actor = _actor(actor)
@@ -407,4 +417,4 @@ class SessionEffectsMixin:
             if run_id is not None:
                 sql += " AND run_id=?"
                 values.append(_identifier(run_id, "run_id"))
-            return [_approval_result(row) for row in conn.execute(sql + " ORDER BY created_at,approval_id LIMIT ?", (*values, limit))]
+            return [self._approval_projection_on_conn(conn, row) for row in conn.execute(sql + " ORDER BY created_at,approval_id LIMIT ?", (*values, limit))]

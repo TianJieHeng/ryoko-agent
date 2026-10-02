@@ -27,6 +27,10 @@ def _runtime_approval_public(row):
         input_revision_digest=_runtime_effect_reference_digest(binding["input_revision"]),
         artifact_revision_digest=_runtime_effect_reference_digest(binding["artifact_revision"]),
         expired=row["expires_at"] <= time.time())
+    if row["status"] == "invalidated":
+        for key in ("invalidation_reason", "mission_id", "mission_revision", "invalidated_at"):
+            if key in row:
+                result[key] = row[key]
     return result
 
 
@@ -35,7 +39,7 @@ def _runtime_effect_public(row):
               "policy_version", "policy_digest", "generation", "approval_id", "provider_idempotency", "created_at", "updated_at")
     result = {key: row[key] for key in fields}
     result.update(target_digest=_runtime_effect_reference_digest(row["target_ref"]),
-        operation_type=row["operation_type"] if row["operation_type"] in {"artifact_publish", "project_artifact_publish"} else "unsupported",
+        operation_type=row["operation_type"] if row["operation_type"] in {"artifact_publish", "project_artifact_publish", "mission_test_execution"} else "unsupported",
         exactly_once_external=False, replay_permitted=False)
     return result
 

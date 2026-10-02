@@ -112,6 +112,8 @@ class TurnFacadeMixin:
                 if runtime_run is None:
                     return recorded_turn_result(self, read_command_state(self, command["receipt"]["command_id"]))
                 runtime_token = bind_runtime_run(runtime_run)
+                from agent.mission_runtime import begin_mission_turn
+                begin_mission_turn(runtime_run)
 
             relay_session_cwd, relay_turn_cwd = resolve_relay_scope_cwds(
                 self,
@@ -171,6 +173,9 @@ class TurnFacadeMixin:
                         turn_author=turn_author,
                         title_user_message=title_user_message,
                     )
+                    if runtime_run is not None:
+                        from agent.mission_runtime import finalize_mission_result
+                        result = finalize_mission_result(runtime_run, result)
                 finally:
                     # Post-loop relay/task finalization must not receive a late refresh interrupt;
                     # the interrupt clear itself waits for the thread join in the outer finally.

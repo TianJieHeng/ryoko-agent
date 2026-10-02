@@ -17,6 +17,7 @@ _RESULT_FIELDS = frozenset({
     "runtime_command_id", "runtime_budget", "cancellation", "budget_blocked", "outcome_uncertain",
     "error_type", "error", "failure_reason", "billing_block", "response_previewed",
     "response_transformed", "attachments", "artifact_refs", "artifacts", "media_files", "media",
+    "mission",
 })
 
 
@@ -65,7 +66,8 @@ def load_committed_result(agent, command_id):
         data = read_result_artifact(context, descriptor)
     result = json.loads(data)
     _require(isinstance(result, dict), "invalid_artifact", "Committed result must be a JSON object")
-    return result
+    from agent.mission_runtime import refresh_mission_result
+    return refresh_mission_result(agent, result)
 
 
 def read_result(agent, command_id, offset=0, limit=MAX_RESULT_CHUNK_BYTES):

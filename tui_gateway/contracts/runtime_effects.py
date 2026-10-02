@@ -35,12 +35,16 @@ class RuntimeApprovalRecord(Result):
     artifact_revision_digest: str
     policy_version: str
     policy_digest: str
-    status: Literal["pending", "approved", "denied", "consumed"]
+    status: Literal["pending", "approved", "denied", "consumed", "invalidated"]
     expires_at: float
     expired: bool
     created_at: float
     resolved_at: float | None
     consumed_at: float | None
+    invalidation_reason: str | None = None
+    mission_id: str | None = None
+    mission_revision: int | None = None
+    invalidated_at: float | None = None
 
 
 class RuntimeApprovalListResult(Result):
@@ -77,7 +81,7 @@ class RuntimeEffectRecord(Result):
     effect_id: str
     run_id: str
     operation_id: str
-    operation_type: Literal["artifact_publish", "project_artifact_publish", "unsupported"]
+    operation_type: Literal["artifact_publish", "project_artifact_publish", "mission_test_execution", "unsupported"]
     state: RuntimeEffectState
     action_digest: str
     input_digest: str

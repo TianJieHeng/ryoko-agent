@@ -350,6 +350,11 @@ def test_queued_cancel_is_visible_and_startup_expires_unattached_command(runtime
     result = runtime.call("runtime.command", **envelope("cancel-queue", expected_revision=None,
         operation="cancel", payload={"reason": "stop"}))["result"]
     assert result["status"] == "accepted"
+    assert runtime.call("runtime.command", **envelope("cancel-queue", expected_revision=None,
+        operation="cancel", payload={"reason": "stop"}))["result"] == result
+    cancelled = runtime.agents["a"]._session_db.read_runtime_command("same-stored-id", "cancel-target")
+    assert cancelled["status"] == "cancelled"
+    assert cancelled["result"]["dispatched"] is False
     events = runtime.call("runtime.events.since")["result"]["events"]
     assert any(e["payload"].get("admission_state") == "cancelled" for e in events)
     cancel_events = [e for e in events if e["payload"].get("cancellation")]
@@ -369,6 +374,42 @@ def test_queued_cancel_is_visible_and_startup_expires_unattached_command(runtime
     assert len(callbacks) == 1
     callbacks[0]()  # lifecycle maintenance, with no new submit or attached session
     assert db.read_runtime_command("same-stored-id", "expire-after-restart")["result"]["admission_state"] == "expired"
+    assert runtime.dispatched == []
+
+
+@pytest.mark.parametrize("target_status", ["claimed", "completed"])
+def test_queued_cancel_losing_launch_race_cannot_control_claimed_run(runtime, monkeypatch, target_status):
+    runtime.sessions["live-a"]["running"] = True
+    runtime.call("runtime.command", **envelope("launch-race"))
+    db = runtime.agents["a"]._session_db
+    sid = "same-stored-id"
+    original = db.submit_runtime_command
+
+    def launch_before_cancel(*args, **kwargs):
+        if kwargs.get("queued_cancel"):
+            from agent.admission import AdmissionQueue
+            reserved = AdmissionQueue(db).reserve_next("launch-winner", [sid])
+            assert reserved["command_id"] == "launch-race"
+            assert db.try_acquire_session_turn_lease(sid, "launch-winner", ttl_seconds=60)
+            generation = db.get_session_turn_lease(sid)["generation"]
+            assert db.claim_runtime_command(sid, "launch-race", holder="launch-winner", generation=generation)
+            if target_status == "completed":
+                db.finish_runtime_command(sid, "launch-race", holder="launch-winner", generation=generation,
+                                          result={"final_response": "committed before cancellation"})
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(db, "submit_runtime_command", launch_before_cancel)
+    response = runtime.call("runtime.command", **envelope("late-queue-cancel", expected_revision=None,
+        operation="cancel", payload={"reason": "stop"}))
+    assert "result" in response, response
+    result = response["result"]
+    assert result["status"] == "rejected"
+    assert result["conflict"]["code"] == "no_active_run"
+    assert db.read_runtime_command(sid, "late-queue-cancel") is None
+    target = db.read_runtime_command(sid, "launch-race")
+    assert target["status"] == target_status
+    if target_status == "completed":
+        assert target["result"]["final_response"] == "committed before cancellation"
     assert runtime.dispatched == []
 
 

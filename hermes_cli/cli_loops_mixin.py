@@ -486,6 +486,10 @@ class CLILoopsMixin:
                     max_turns = int(goals_cfg.get("max_turns", 20) or 20)
                 except Exception:
                     max_turns = 20
+                from agent.mission_runtime import is_mission_agent
+                agent = getattr(self, "agent", None)
+                if is_mission_agent(agent):
+                    return GoalManager(session_id=sid, default_max_turns=max_turns, runtime_agent=agent)
                 return GoalManager(session_id=sid, default_max_turns=max_turns)
             return make
         return self._session_bound_manager("_goal_manager", "goal manager", load)
@@ -673,8 +677,10 @@ class CLILoopsMixin:
         "continue" and would re-queue exactly what was cancelled; pausing is recoverable
         via ``/goal resume``. Empty-response skip mirrors ``gateway/run.py``."""
         from cli import _DIM, _RST, _cprint, _looks_like_slash_command
+        from agent.mission_runtime import consume_goal_decision, is_mission_agent
+        strict = is_mission_agent(getattr(self, "agent", None))
         mgr = self._get_goal_manager()
-        if mgr is None or not mgr.is_active():
+        if not strict and (mgr is None or not mgr.is_active()):
             return
 
         # Slash commands don't count as "real user messages": they're dispatched via
@@ -695,6 +701,12 @@ class CLILoopsMixin:
                     return
         except Exception:
             pass
+        if strict:
+            decision = consume_goal_decision(self.agent)
+            _print_decision_message(decision)
+            if decision.get("should_continue") and decision.get("continuation_prompt"):
+                self._pending_input.put(decision["continuation_prompt"])
+            return
         if getattr(self, "_last_turn_interrupted", False):
             try:
                 mgr.pause(reason="user-interrupted (Ctrl+C)")

@@ -191,9 +191,12 @@ export interface RuntimeEventPayload {
   command_id?: string | null
   operation?: 'submit' | 'steer' | 'cancel' | 'approval' | 'artifact' | null
   effect_state?: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required' | null
-  operation_type?: 'artifact_publish' | 'project_artifact_publish' | 'unsupported' | null
-  approval_status?: 'pending' | 'approved' | 'denied' | 'consumed' | null
+  operation_type?: 'artifact_publish' | 'project_artifact_publish' | 'mission_test_execution' | 'unsupported' | null
+  approval_status?: 'pending' | 'approved' | 'denied' | 'consumed' | 'invalidated' | null
   expires_at?: number | null
+  invalidation_reason?: string | null
+  mission_revision?: number | null
+  mission_state?: 'ready' | 'working' | 'waiting_for_user' | 'waiting_for_source' | 'ready_to_review' | 'completed' | 'partially_completed' | 'paused' | 'cancelled' | 'failed' | null
   checkpoint_id?: string | null
   included_seq?: number | null
   cancellation?: RuntimeCancellation | null
@@ -2792,6 +2795,309 @@ export interface MemoryScopeResult {
   project_id: string | null
   scope_key: string
 }
+export interface MissionCreateParams {
+  session_id: string
+  schema_version: 1
+  mission_id: string
+  contract: MissionIntent
+}
+export interface MissionIntent {
+  outcome: string
+  project_id?: string | null
+  deliverables?: MissionDeliverable[]
+  acceptance?: (MissionExistenceCriterion | MissionSectionCriterion | MissionTextCriterion | MissionSchemaCriterion | MissionLinkedCriterion | MissionTestCriterion | MissionUserCriterion)[]
+  scope_ref?: string | null
+  budget_ref?: string | null
+  deadline?: number | null
+  dependencies?: MissionDependency[]
+  plan_steps?: MissionPlanStep[]
+  policy?: 'direct' | 'reviewed'
+  risk?: 'unknown' | 'low' | 'consequential'
+  uncertainty?: 'unknown' | 'low' | 'high'
+  max_turns?: number
+  no_progress_limit?: number
+  legacy_contract?: MissionLegacyContract
+  subgoals?: string[]
+  gates?: MissionHistoricalGate[]
+}
+export interface MissionDeliverable {
+  deliverable_id: string
+  description?: string
+  artifact_ref?: MissionArtifactRef | null
+  required?: boolean
+}
+export interface MissionArtifactRef {
+  artifact_id: string
+  version: number
+  digest: string
+}
+export interface MissionExistenceCriterion {
+  criterion_id: string
+  description?: string
+  artifact_refs?: MissionArtifactRef[]
+  required?: boolean
+  kind: 'existence'
+  parameters?: MissionReadParameters
+}
+export interface MissionReadParameters {
+  require_current_head?: boolean
+  require_current_dependencies?: boolean
+}
+export interface MissionSectionCriterion {
+  criterion_id: string
+  description?: string
+  artifact_refs?: MissionArtifactRef[]
+  required?: boolean
+  kind: 'markdown_sections'
+  parameters: MissionSectionParameters
+}
+export interface MissionSectionParameters {
+  require_current_head?: boolean
+  require_current_dependencies?: boolean
+  required_sections: string[]
+  nonempty?: boolean
+}
+export interface MissionTextCriterion {
+  criterion_id: string
+  description?: string
+  artifact_refs?: MissionArtifactRef[]
+  required?: boolean
+  kind: 'text_exact'
+  parameters: MissionTextParameters
+}
+export interface MissionTextParameters {
+  require_current_head?: boolean
+  require_current_dependencies?: boolean
+  contains?: string[]
+  excludes?: string[]
+  equals?: string | null
+}
+export interface MissionSchemaCriterion {
+  criterion_id: string
+  description?: string
+  artifact_refs?: MissionArtifactRef[]
+  required?: boolean
+  kind: 'json_schema'
+  parameters: MissionSchemaParameters
+}
+export interface MissionSchemaParameters {
+  require_current_head?: boolean
+  require_current_dependencies?: boolean
+  schema: Record<string, unknown>
+}
+export interface MissionLinkedCriterion {
+  criterion_id: string
+  description?: string
+  artifact_refs?: MissionArtifactRef[]
+  required?: boolean
+  kind: 'linked_consistency'
+  parameters: MissionLinkedParameters
+}
+export interface MissionLinkedParameters {
+  require_current_head?: boolean
+  require_current_dependencies?: boolean
+  sections?: MissionLinkedSection[]
+  tokens?: string[]
+}
+export interface MissionLinkedSection {
+  artifact_id: string
+  heading: string
+}
+export interface MissionTestCriterion {
+  criterion_id: string
+  description?: string
+  artifact_refs?: MissionArtifactRef[]
+  required?: boolean
+  kind: 'test_execution'
+  parameters?: MissionIsolatedTestParameters | MissionTestParameters
+}
+export interface MissionIsolatedTestParameters {
+  adapter: 'isolated_python_v1'
+  code: string
+  code_sha256: string
+}
+export interface MissionTestParameters {
+  command?: string | null
+  evidence_ref?: string | null
+}
+export interface MissionUserCriterion {
+  criterion_id: string
+  description?: string
+  artifact_refs?: MissionArtifactRef[]
+  required?: boolean
+  kind: 'user_acceptance'
+  parameters?: MissionEmptyParameters
+}
+export type MissionEmptyParameters = Record<string, never>
+export interface MissionDependency {
+  dependency_id: string
+  kind: 'artifact' | 'evidence' | 'input' | 'mission'
+  reference: string
+  version?: string | number | null
+  digest?: string | null
+  status?: string | null
+}
+export interface MissionPlanStep {
+  step_id: string
+  description?: string
+  status?: 'pending' | 'working' | 'completed' | 'blocked' | 'skipped'
+  checkpoint?: boolean
+  depends_on?: string[]
+  input_digests?: string[]
+  target_refs?: string[]
+  approval_ids?: string[]
+}
+export interface MissionLegacyContract {
+  outcome?: string
+  verification?: string
+  constraints?: string
+  boundaries?: string
+  stop_when?: string
+}
+export interface MissionHistoricalGate {
+  command: string
+  timeout_seconds?: number
+  max_retries?: number
+}
+export interface MissionResult {
+  mission: MissionRecord
+  dispatch_performed?: false
+}
+export interface MissionRecord {
+  outcome: string
+  project_id?: string | null
+  deliverables?: MissionDeliverable[]
+  acceptance?: (MissionExistenceCriterion | MissionSectionCriterion | MissionTextCriterion | MissionSchemaCriterion | MissionLinkedCriterion | MissionTestCriterion | MissionUserCriterion)[]
+  scope_ref?: string | null
+  budget_ref?: string | null
+  deadline?: number | null
+  dependencies?: MissionDependency[]
+  plan_steps?: MissionPlanStep[]
+  policy?: 'direct' | 'reviewed'
+  risk?: 'unknown' | 'low' | 'consequential'
+  uncertainty?: 'unknown' | 'low' | 'high'
+  max_turns?: number
+  no_progress_limit?: number
+  legacy_contract?: MissionLegacyContract
+  subgoals?: string[]
+  gates?: MissionHistoricalGate[]
+  schema_version: 1
+  mission_id: string
+  session_id: string
+  agent_id: string
+  revision: number
+  state: 'ready' | 'working' | 'waiting_for_user' | 'waiting_for_source' | 'ready_to_review' | 'completed' | 'partially_completed' | 'paused' | 'cancelled' | 'failed'
+  execution_status: string
+  acceptance_status: string
+  delivery_status: string
+  next_step: string
+  blockers: string[]
+  artifact_refs: MissionArtifactRef[]
+  effect_refs: MissionEffectRef[]
+  delivery_refs: MissionDeliveryRef[]
+  effect_refs_total?: number
+  effect_refs_truncated?: boolean
+  delivery_refs_total?: number
+  delivery_refs_truncated?: boolean
+  verification_current?: boolean | null
+  turns_used: number
+  consecutive_no_progress: number
+  verification_rounds: number
+  last_run_id: string | null
+  paused_reason: string | null
+  recovery_choices: string[]
+  missed_steer: MissionMissedSteer[]
+  created_at: number
+  updated_at: number
+  legacy_imported: boolean
+}
+export interface MissionEffectRef {
+  effect_id: string
+  state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
+}
+export interface MissionDeliveryRef {
+  delivery_id: string
+  state: string
+}
+export interface MissionMissedSteer {
+  revision: number
+  run_id?: string | null
+  effect_ids: string[]
+  reason: 'effect_already_dispatched' | 'turn_already_finalizing'
+}
+export interface MissionGetResult {
+  mission: MissionRecord | null
+}
+export interface MissionListParams {
+  session_id: string
+  schema_version: 1
+  limit?: number
+}
+export interface MissionListResult {
+  missions: MissionRecord[]
+  limit: number
+  limit_reached: boolean
+  complete: false
+}
+export interface MissionReviseParams {
+  session_id: string
+  schema_version: 1
+  expected_revision: number
+  contract: MissionIntent
+  changed_inputs?: string[]
+  changed_targets?: string[]
+  changed_plan_steps?: string[]
+}
+export interface MissionControlParams {
+  session_id: string
+  schema_version: 1
+  expected_revision: number
+  reason?: string
+}
+export interface MissionRevisionParams {
+  session_id: string
+  schema_version: 1
+  expected_revision: number
+}
+export interface MissionVerifyResult {
+  mission: MissionRecord
+  dispatch_performed?: false
+  receipts: MissionVerificationReceipt[]
+}
+export interface MissionVerificationReceipt {
+  receipt_id: string
+  criterion_id: string
+  criterion_digest: string
+  artifact_refs: MissionArtifactRef[]
+  verifier: string
+  evidence_ref: string
+  result: 'pass' | 'fail' | 'blocked' | 'unsupported'
+  observed_at: number
+  details: MissionVerificationDetails
+  mission_revision?: number | null
+  created_at?: number | null
+}
+export interface MissionVerificationDetails {
+  reason_codes?: string[]
+  checks?: string[]
+  dependencies?: MissionEvidenceDependency[]
+  inputs_digest?: string | null
+}
+export interface MissionEvidenceDependency {
+  kind: 'artifact' | 'evidence' | 'capture'
+  reference: string
+  version?: string | number | null
+  digest?: string | null
+  status?: string | null
+  head_version?: number | null
+  metadata_digest?: string | null
+}
+export interface MissionReceiptListResult {
+  receipts: MissionVerificationReceipt[]
+  limit: number
+  limit_reached: boolean
+  complete: false
+}
 /** ``word`` is the token under the cursor (``@`` prefix = context reference); ``cwd`` / ``session_id`` pick the directory the listing resolves against. */
 export interface CompletePathParams {
   profile?: string | null
@@ -3912,12 +4218,16 @@ export interface RuntimeApprovalRecord {
   artifact_revision_digest: string
   policy_version: string
   policy_digest: string
-  status: 'pending' | 'approved' | 'denied' | 'consumed'
+  status: 'pending' | 'approved' | 'denied' | 'consumed' | 'invalidated'
   expires_at: number
   expired: boolean
   created_at: number
   resolved_at: number | null
   consumed_at: number | null
+  invalidation_reason?: string | null
+  mission_id?: string | null
+  mission_revision?: number | null
+  invalidated_at?: number | null
 }
 export interface RuntimeApprovalResolveParams {
   session_id: string
@@ -3947,7 +4257,7 @@ export interface RuntimeEffectRecord {
   effect_id: string
   run_id: string
   operation_id: string
-  operation_type: 'artifact_publish' | 'project_artifact_publish' | 'unsupported'
+  operation_type: 'artifact_publish' | 'project_artifact_publish' | 'mission_test_execution' | 'unsupported'
   state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
   action_digest: string
   input_digest: string
@@ -6332,6 +6642,26 @@ export interface RpcMethods {
   'runtime.memory.scope.set': { params: MemoryScopeParams; result: MemoryScopeResult }
   /** Inspect the owned agent's single routed memory backend without recall or fallback. */
   'runtime.memory.status': { params: RuntimeSessionParams; result: MemoryStatusResult }
+  /** Record explicit human acceptance only after current deterministic verification succeeds. */
+  'runtime.mission.accept': { params: MissionRevisionParams; result: MissionResult }
+  /** Apply an explicit owned mission control with exact revision and existing budget scope. */
+  'runtime.mission.cancel': { params: MissionControlParams; result: MissionResult }
+  /** Create bounded mission intent under an owned user control; never dispatch or reset a budget. */
+  'runtime.mission.create': { params: MissionCreateParams; result: MissionResult }
+  /** Read the owned authoritative mission independently from runtime command state. */
+  'runtime.mission.get': { params: RuntimeSessionParams; result: MissionGetResult }
+  /** Read a bounded actor- and project-authorized mission list, without completeness inference. */
+  'runtime.mission.list': { params: MissionListParams; result: MissionListResult }
+  /** Apply an explicit owned mission control with exact revision and existing budget scope. */
+  'runtime.mission.pause': { params: MissionControlParams; result: MissionResult }
+  /** Read a bounded immutable verification receipt list; missing evidence is never a pass. */
+  'runtime.mission.receipts.list': { params: MissionListParams; result: MissionReceiptListResult }
+  /** Apply an explicit owned mission control with exact revision and existing budget scope. */
+  'runtime.mission.resume': { params: MissionControlParams; result: MissionResult }
+  /** CAS-revise intent while preserving prior evidence, retained versions and budget ceilings. */
+  'runtime.mission.revise': { params: MissionReviseParams; result: MissionResult }
+  /** Run bounded deterministic checks over retained artifact bytes; no model, shell or effect dispatch. */
+  'runtime.mission.verify': { params: MissionRevisionParams; result: MissionVerifyResult }
   'runtime.project.claim': { params: RuntimeProjectRevisionParams; result: RuntimeProjectResult }
   'runtime.project.create': { params: RuntimeProjectCreateParams; result: RuntimeProjectResult }
   'runtime.project.get': { params: RuntimeProjectParams; result: RuntimeProjectResult }
@@ -6724,6 +7054,16 @@ export const RPC_METHODS = [
   'runtime.memory.records.list',
   'runtime.memory.scope.set',
   'runtime.memory.status',
+  'runtime.mission.accept',
+  'runtime.mission.cancel',
+  'runtime.mission.create',
+  'runtime.mission.get',
+  'runtime.mission.list',
+  'runtime.mission.pause',
+  'runtime.mission.receipts.list',
+  'runtime.mission.resume',
+  'runtime.mission.revise',
+  'runtime.mission.verify',
   'runtime.project.claim',
   'runtime.project.create',
   'runtime.project.get',

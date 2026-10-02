@@ -293,9 +293,12 @@ class SessionRuntimeMixin:
                      (seq, _json(projection), session_id))
         return event
 
-    def submit_runtime_command(self, session_id, actor, command, *, admission=None, budget_policy_json=None):
+    def submit_runtime_command(self, session_id, actor, command, *, admission=None, budget_policy_json=None,
+                               queued_cancel=False):
         """Durably accept once per authenticated principal/session/key; never dispatch here."""
         command_json, digest = _validated_command(actor, command)
+        _require(not queued_cancel or (command["operation"] == "cancel" and callable(admission)),
+                 "invalid_command", "Queue cancellation requires its atomic admission consumer")
         if budget_policy_json is not None:
             _require(isinstance(budget_policy_json, str) and len(budget_policy_json.encode("utf-8")) <= 16384,
                      "invalid_budget", "Accepted budget snapshot must be bounded JSON")
@@ -319,6 +322,19 @@ class SessionRuntimeMixin:
                 return json.loads(duplicates[0]["receipt_json"])
             _revision(state["revision"], command.get("expected_revision"))
             run_id = uuid.uuid4().hex if command["operation"] in {"submit", "artifact"} else json.loads(state["snapshot_json"])["state"]["run_id"]
+            if queued_cancel:
+                # Queue-only cancellation is a local terminal transition. Its
+                # target must still be unclaimed in this same writer transaction;
+                # it grants no authority to control a model run that won launch.
+                pending = conn.execute("SELECT c.run_id FROM runtime_admission_queue q JOIN runtime_commands c "
+                    "USING(session_id,command_id) WHERE q.session_id=? AND c.status='accepted' "
+                    "AND q.state IN ('queued','running') ORDER BY q.enqueued_at DESC,q.command_id DESC LIMIT 1",
+                    (sid,)).fetchone()
+                _require(pending is not None, "no_active_run", "No unclaimed queue target remains")
+                run_id = pending["run_id"]
+            elif command["operation"] in {"steer", "cancel"}:
+                active = conn.execute("SELECT 1 FROM runtime_commands WHERE session_id=? AND run_id=? AND status='claimed' AND json_extract(command_json,'$.operation')='submit'", (sid, run_id)).fetchone()
+                _require(active is not None, "no_active_run", "Control target is no longer a claimed submit run")
             generation = conn.execute("SELECT turn_owner_generation FROM sessions WHERE id=?", (sid,)).fetchone()[0]
             event = self._append_runtime_event_on_conn(conn, sid, "command.accepted",
                 {"command_id": command["command_id"], "operation": command["operation"]}, generation, run_id=run_id)
@@ -396,9 +412,37 @@ class SessionRuntimeMixin:
                      and row["claimed_generation"] == generation, "claim_conflict", "Command is not owned by this claim")
             conn.execute("UPDATE runtime_commands SET status=?,result_json=? WHERE session_id=? AND command_id=?",
                          (status, result_json, sid, command_id))
+            command = json.loads(row["command_json"])
+            if command["operation"] == "steer" and (result or {}).get("missed_steer"):
+                state = self._runtime_state_on_conn(conn, sid)
+                actor = {key: state[key] for key in ("principal_id", "profile_id", "agent_id")}
+                self._settle_mission_delivery_on_conn(conn, sid, actor, row["run_id"], generation)
             return self._append_runtime_event_on_conn(conn, sid, f"command.{status}",
                 {"command_id": command_id, "result": json.loads(result_json)}, generation, run_id=row["run_id"])
         return self._execute_write(write)
+
+    def settle_inactive_runtime_control(self, session_id, actor, command_id):
+        """Terminalize a stranded control; this grants no lease, dispatch or replay."""
+        def write(conn):
+            sid = self._mission_owner_on_conn(conn, session_id, actor)
+            row = self._runtime_command_on_conn(conn, sid, command_id)
+            _require(row is not None, "command_not_found", "Runtime command does not exist")
+            command = json.loads(row["command_json"])
+            _require(command["operation"] in {"steer", "cancel"}, "invalid_command", "Only inactive controls may settle")
+            if row["status"] in _FINISH_STATES:
+                return
+            target = conn.execute("SELECT * FROM runtime_commands WHERE session_id=? AND run_id=? AND json_extract(command_json,'$.operation')='submit'", (sid, row["run_id"])).fetchone()
+            lease = conn.execute("SELECT * FROM session_turn_leases WHERE conversation_id=?", (sid,)).fetchone()
+            live = target is not None and target["status"] == "claimed" and lease is not None and lease["expires_at"] > time.time() and lease["holder"] == target["claimed_holder"] and lease["generation"] == target["claimed_generation"]
+            _require(not live, "active_run", "Live controls must be settled by their current owner")
+            result = {"outcome": "target_run_ended", "applied": False if row["status"] == "accepted" else None,
+                      "missed_steer": command["operation"] == "steer"}
+            generation = row["claimed_generation"] or (lease["generation"] if lease else 0)
+            conn.execute("UPDATE runtime_commands SET status='blocked',result_json=? WHERE session_id=? AND command_id=?", (_json(result), sid, command_id))
+            self._settle_mission_delivery_on_conn(conn, sid, actor, row["run_id"], generation)
+            self._append_runtime_event_on_conn(conn, sid, "command.blocked", {"command_id": command_id, "result": result}, generation, run_id=row["run_id"])
+        self._execute_write(write)
+        return self.read_runtime_command(session_id, command_id)
 
     def append_runtime_event(self, session_id, event_type, payload, *, holder, generation,
                              schema_version=1, expected_revision=None, **correlations):

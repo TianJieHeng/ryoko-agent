@@ -224,6 +224,8 @@ def _authorize_action(action):
         if project_artifact_action(scope) != action:
             raise CapabilityDenied("capability_scope_mismatch", "Artifact action contract changed")
         descriptor = validate_artifact_descriptor(run.context, scope["descriptor"])
+        from agent.mission_runtime import assert_mission_project_scope
+        assert_mission_project_scope(run, scope["project_id"])
         project = authorize_project(run.context, scope["project_id"], "write")
         if (descriptor["producing_run"] != run.run_id
                 or project["revision"] != scope["project_revision"]):

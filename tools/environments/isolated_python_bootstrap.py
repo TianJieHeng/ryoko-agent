@@ -233,6 +233,10 @@ def main():
     result = {"isolated": isolated, "exit_code": os.waitstatus_to_exitcode(status),
               "timed_out": timed_out, "stdout": chunks[0].decode("utf-8", "replace"),
               "stderr": chunks[1].decode("utf-8", "replace"),
+              # Hash captured pipe bytes before display decoding. Truncation flags
+              # distinguish a bounded captured prefix from a complete stream.
+              "stdout_sha256": hashlib.sha256(chunks[0]).hexdigest(),
+              "stderr_sha256": hashlib.sha256(chunks[1]).hexdigest(),
               "stdout_truncated": truncated[0], "stderr_truncated": truncated[1], "outputs": []}
     if isolated:
         try:

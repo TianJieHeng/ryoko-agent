@@ -396,6 +396,9 @@ def _gate_workspace() -> Tuple[Optional[str], Optional[str]]:
 def run_gate(gate: GoalGate, *, cwd: Optional[str] = None) -> Tuple[bool, int, str]:
     """Run one gate through the shell. Returns ``(passed, exit_code, output_tail)``; a timeout kills
     the process and counts as exit code -1."""
+    from agent.identity_lifecycle import strict_identity_enabled
+    if strict_identity_enabled():
+        return False, -1, "Legacy shell goal gates are unsupported for identity-bound missions"
     try:
         # utf-8/replace: operator-configured output is arbitrary bytes; strict codepage decoding of
         # one unmappable byte (emoji/CJK on a non-UTF-8 Windows console) kills the reader thread and
@@ -634,6 +637,9 @@ def _warn_dropped_write(manager: str, kind: str, session_id: str) -> None:
 
 def load_goal(session_id: str) -> Optional[GoalState]:
     """Load the goal for a session, or None if none exists."""
+    from agent.identity_lifecycle import strict_identity_enabled
+    if strict_identity_enabled():
+        return None  # Strict callers require an actual agent and the mission reader.
     if not session_id:
         return None
     db = _get_session_db()
@@ -655,6 +661,9 @@ def load_goal(session_id: str) -> Optional[GoalState]:
 
 def save_goal(session_id: str, state: GoalState) -> None:
     """Persist a goal to SessionDB. No-op if DB unavailable."""
+    from agent.identity_lifecycle import strict_identity_enabled
+    if strict_identity_enabled():
+        raise RuntimeError("Identity-bound goals require the owned mission controls")
     if not session_id:
         return
     db = _get_session_db()
@@ -906,6 +915,9 @@ def judge_goal(
     blocked / continue / wait / skipped. ``parse_failed`` means unusable output; transport errors
     set ``transport_failed`` instead and fail-open to ``continue``.
     """
+    from agent.identity_lifecycle import strict_identity_enabled
+    if strict_identity_enabled():
+        return "blocked", "Identity-bound missions use stored deterministic verification receipts", False, None, False
     if not goal.strip():
         return "skipped", "empty goal", False, None, False
     if not last_response.strip():
@@ -1093,28 +1105,44 @@ class GoalManager:
     canonical user-role message to feed back into ``run_conversation``.
     """
 
-    def __init__(self, session_id: str, *, default_max_turns: int = DEFAULT_MAX_TURNS):
+    def __init__(self, session_id: str, *, default_max_turns: int = DEFAULT_MAX_TURNS, runtime_agent=None):
         self.session_id = session_id
         self.default_max_turns = int(default_max_turns or DEFAULT_MAX_TURNS)
-        self._state: Optional[GoalState] = load_goal(session_id)
+        self._runtime_agent = runtime_agent
+        self._state: Optional[GoalState] = None
+        self._state = self._mission_state() if self._mission_mode() else load_goal(session_id)
+
+    def _mission_mode(self) -> bool:
+        from agent.identity_lifecycle import strict_identity_enabled
+        from agent.runtime_context import AgentContext
+        return isinstance(getattr(self._runtime_agent, "runtime_context", None), AgentContext) or strict_identity_enabled()
+
+    def _mission_state(self):
+        from agent.mission_runtime import goal_state_for_agent
+        return goal_state_for_agent(self._runtime_agent) if self._runtime_agent is not None else None
 
     # --- introspection ------------------------------------------------
 
     @property
     def state(self) -> Optional[GoalState]:
+        if self._mission_mode():
+            self._state = self._mission_state()
         return self._state
 
     def is_active(self) -> bool:
-        return self._state is not None and self._state.status == "active"
+        state = self.state
+        return state is not None and state.status == "active"
 
     def has_goal(self) -> bool:
-        return self._state is not None and self._state.status in {"active", "paused"}
+        state = self.state
+        return state is not None and state.status in {"active", "paused"}
 
     def has_contract(self) -> bool:
-        return self._state is not None and self._state.has_contract()
+        state = self.state
+        return state is not None and state.has_contract()
 
     def status_line(self) -> str:
-        s = self._state
+        s = self.state
         if s is None or s.status == "cleared":
             return "No active goal. Set one with /goal <text>."
         turns = f"{s.turns_used}/{s.max_turns} turns"
@@ -1142,6 +1170,9 @@ class GoalManager:
     # --- mutation -----------------------------------------------------
 
     def _save(self) -> Optional[GoalState]:
+        if self._mission_mode():
+            self._state = self._mission_state()
+            raise RuntimeError("Identity-bound goals require the owned mission controls")
         save_goal(self.session_id, self._state)
         return self._state
 
@@ -1484,6 +1515,9 @@ class GoalManager:
         """Run gates + judge and update state. Return a decision dict (``status``, ``should_continue``,
         ``continuation_prompt``, ``verdict``, ``reason``, ``message``). Both real user prompts and our
         own continuations increment ``turns_used`` — both consume model budget."""
+        if self._mission_mode():
+            from agent.mission_runtime import consume_goal_decision
+            return consume_goal_decision(self._runtime_agent)
         state = self._state
         if state is None or state.status != "active":
             return _decision(state.status if state else None, False, None, "inactive", "no active goal", "")
@@ -1563,7 +1597,7 @@ class GoalManager:
         )
 
     def next_continuation_prompt(self) -> Optional[str]:
-        s = self._state
+        s = self.state
         if not s or s.status != "active":
             return None
         # Contract first (it carries the verification surface); subgoals fold in as extra criteria.
@@ -1578,9 +1612,10 @@ class GoalManager:
 
     def render_contract(self) -> str:
         """Public helper for the /goal show + /goal draft slash commands."""
-        if self._state is None:
+        state = self.state
+        if state is None:
             return "(no active goal)"
-        return self._state.contract.render_block() if self._state.has_contract() else (
+        return state.contract.render_block() if state.has_contract() else (
             "(no completion contract — set one with /goal draft <objective> or inline field: value lines)")
 
 

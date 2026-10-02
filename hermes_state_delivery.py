@@ -130,7 +130,11 @@ class SessionDeliveryMixin:
                  _json(metadata), now + _DELIVERY_DEADLINE_SECONDS, now + _RETENTION_SECONDS,
                  now, _MAX_ATTEMPTS, _json({"level": "none", "components": {
                      "text": "not_sent", "artifact": "not_sent"}, "platform_ids": []})))
+            mission = self._settle_mission_delivery_on_conn(conn, sid, actor, command["run_id"], generation)
             stored = {**result_summary, "runtime_result": reference}
+            if mission is not None and "mission" in stored:
+                from agent.mission_runtime import _summary
+                stored["mission"] = _summary(mission)
             result_json = _json(stored)
             conn.execute("UPDATE runtime_commands SET status=?,result_json=? WHERE session_id=? AND command_id=?",
                          (status, result_json, sid, command_id))

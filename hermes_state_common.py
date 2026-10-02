@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 37
+SCHEMA_VERSION = 38
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -643,6 +643,65 @@ CREATE TABLE IF NOT EXISTS runtime_checkpoints (
     generation INTEGER NOT NULL,
     checkpoint_json TEXT NOT NULL
 );
+
+-- BE09 one root-scoped mission authority; legacy goal metadata is migration input only.
+CREATE TABLE IF NOT EXISTS runtime_missions (
+    session_id TEXT PRIMARY KEY,
+    mission_id TEXT NOT NULL UNIQUE,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    project_id TEXT,
+    revision INTEGER NOT NULL,
+    generation INTEGER NOT NULL,
+    record_json TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    updated_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_runtime_missions_actor ON runtime_missions(principal_id,profile_id,agent_id);
+CREATE TABLE IF NOT EXISTS runtime_mission_verifications (
+    receipt_id TEXT PRIMARY KEY,
+    mission_id TEXT NOT NULL,
+    mission_revision INTEGER NOT NULL,
+    criterion_id TEXT NOT NULL,
+    criterion_digest TEXT NOT NULL,
+    receipt_json TEXT NOT NULL,
+    created_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mission_verifications ON runtime_mission_verifications(mission_id,criterion_id,created_at);
+CREATE TABLE IF NOT EXISTS runtime_mission_turns (
+    mission_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    revision INTEGER NOT NULL,
+    finalization_digest TEXT NOT NULL,
+    decision_json TEXT NOT NULL,
+    consumed_at REAL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY(mission_id,run_id)
+);
+CREATE TABLE IF NOT EXISTS runtime_mission_approval_invalidations (
+    approval_id TEXT PRIMARY KEY,
+    mission_id TEXT NOT NULL,
+    mission_revision INTEGER NOT NULL,
+    invalidation_reason TEXT NOT NULL,
+    created_at REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS runtime_mission_test_executions (
+    receipt_id TEXT PRIMARY KEY,
+    mission_id TEXT NOT NULL REFERENCES runtime_missions(mission_id),
+    session_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    criterion_digest TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    effect_id TEXT NOT NULL UNIQUE REFERENCES runtime_effects(effect_id),
+    record_json TEXT NOT NULL,
+    observed_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mission_test_executions ON runtime_mission_test_executions(mission_id,criterion_digest,observed_at);
 
 -- BE08 latest recovery context is committed with the transcript and checkpoint.
 CREATE TABLE IF NOT EXISTS runtime_context_projections (

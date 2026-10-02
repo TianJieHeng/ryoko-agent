@@ -342,6 +342,14 @@ def _goal_followup_after_turn(
     """/goal continuation (mirrors gateway/run._post_turn_goal_continuation): the prompt to
     chain once ``running`` is released, or None.  Compression failures are never judge
     input: the error text is not work toward the goal, and judging it spends a turn."""
+    from agent.mission_runtime import consume_goal_decision, is_mission_agent
+    agent = session.get("agent")
+    if is_mission_agent(agent):
+        mission = result.get("mission") if isinstance(result, dict) else None
+        decision = consume_goal_decision(agent, run_id=mission.get("run_id") if isinstance(mission, dict) else None)
+        if message := decision.get("message"):
+            _emit("status.update", sid, {"kind": "goal", "text": message})
+        return decision.get("continuation_prompt") if decision.get("should_continue") else None
     goal_followup = None
     compression_exhausted = bool(isinstance(result, dict) and result.get("compression_exhausted"))
     try:

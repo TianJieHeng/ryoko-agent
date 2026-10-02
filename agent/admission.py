@@ -225,7 +225,16 @@ class AdmissionQueue:
             generation = conn.execute("SELECT turn_owner_generation FROM sessions WHERE id=?", (root_sid,)).fetchone()[0]
             db._append_runtime_event_on_conn(conn, root_sid, "command.completed",
                 {"command_id": receipt["command_id"], "result": result}, generation, run_id=receipt["run_id"])
-        return db.submit_runtime_command(sid, actor=actor, command=command, admission=cancel)
+        try:
+            return db.submit_runtime_command(sid, actor=actor, command=command, admission=cancel,
+                                             queued_cancel=True)
+        except RuntimeStoreError as exc:
+            if exc.code == "no_active_run":
+                # A concurrent launch may claim the target after the read above.
+                # The queue consumer cannot cancel that run or retain an orphan
+                # accepted control; the caller reports the unavailable target.
+                return None
+            raise
 
     def set_draining(self, draining=True, *, reject_queued=False):
         def write(conn):

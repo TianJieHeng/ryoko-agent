@@ -121,16 +121,31 @@ def _runtime_event_projection(event):
             except ValidationError:
                 # Unknown/malformed private metadata is never forwarded wholesale.
                 pass
+    if event["type"] == "runtime.state":
+        mission_state = event["payload"].get("mission_state")
+        mission_revision = event["payload"].get("mission_revision")
+        if isinstance(mission_state, str) and mission_state in {"ready", "working", "waiting_for_user", "waiting_for_source",
+                "ready_to_review", "completed", "partially_completed", "paused", "cancelled", "failed"}:
+            projection["payload"]["mission_state"] = mission_state
+        if type(mission_revision) is int and mission_revision > 0:
+            projection["payload"]["mission_revision"] = mission_revision
     if event["type"] == "effect.recorded":
         state = event["payload"].get("state")
         if isinstance(state, str) and state in {"prepared", "dispatched", "confirmed", "failed", "outcome_unknown", "reconciliation_required"}:
             projection["payload"]["effect_state"] = state
         projection["payload"]["operation_type"] = (
-            event["payload"]["operation_type"] if event["payload"].get("operation_type") in ("artifact_publish", "project_artifact_publish") else "unsupported")
+            event["payload"]["operation_type"] if event["payload"].get("operation_type") in ("artifact_publish", "project_artifact_publish", "mission_test_execution") else "unsupported")
     if event["type"] in {"approval.requested", "approval.resolved"}:
         status = event["payload"].get("status")
-        if isinstance(status, str) and status in {"pending", "approved", "denied", "consumed"}:
+        if isinstance(status, str) and status in {"pending", "approved", "denied", "consumed", "invalidated"}:
             projection["payload"]["approval_status"] = status
+        if status == "invalidated":
+            reason = event["payload"].get("invalidation_reason")
+            revision = event["payload"].get("mission_revision")
+            if isinstance(reason, str) and reason in {"mission_changed", "input_changed", "target_changed", "plan_step_changed"}:
+                projection["payload"]["invalidation_reason"] = reason
+            if type(revision) is int and revision > 0:
+                projection["payload"]["mission_revision"] = revision
         expiry = event["payload"].get("expires_at")
         if type(expiry) in (int, float) and 0 < expiry <= 253402300799:
             projection["payload"]["expires_at"] = expiry

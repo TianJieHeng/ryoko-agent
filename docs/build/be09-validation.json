@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "phase": "BE09",
+  "base_sha": "7861692f1f4a2b6fd591a25684c941af2c37853f",
+  "publication": "direct main; no PR",
+  "database_schema": 38,
+  "qualification": "local artifact and isolated test adapters; empirical human review study and live personal harness qualification remain pending",
+  "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/hermes_state/test_mission_records.py tests/agent/test_mission_verifier.py tests/agent/test_mission_runtime.py tests/agent/test_mission_test_adapter.py tests/tui_gateway/test_missions_rpc.py tests/evals/test_mission_policy_comparison.py tests/hermes_cli/test_goals.py tests/hermes_cli/test_goal_gates.py tests/hermes_cli/test_goal_dispatch.py tests/tui_gateway/test_goal_command.py tests/tui_gateway/test_session_control.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_effect_records.py tests/hermes_state/test_artifact_records.py tests/hermes_state/test_delivery_outbox.py tests/agent/test_runtime_commands.py tests/agent/test_budget_runtime.py tests/agent/test_tool_guardrails.py tests/agent/test_effect_reconciler.py tests/hermes_cli/test_artifact_store.py tests/tools/test_isolated_python.py tests/tools/test_code_execution_isolated.py tests/tools/test_capability_broker.py tests/tools/test_capability_approvals_durable.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/test_runtime_effects_rpc.py tests/tui_gateway/contracts/test_generated.py -j 5 --file-retries 0",
+  "initial_consolidated": {
+    "log": "be09-final.log",
+    "log_sha256": "14235f371c30c42713e5e2e05de9892538b0359751329c6a513a38ff3bbb77a8",
+    "files": 27,
+    "passed": 465,
+    "failed": 1,
+    "seconds": 63.1,
+    "regression": "queue-only cancellation active-run guard regression corrected; final focused campaign below passes"
+  },
+  "limits": [
+    "isolated_python_v1 only; no host shell/network/packages",
+    "synthetic policy comparison fixtures are not measured human cleanup savings",
+    "live personal memory harness acceptance remains pending operator contract/configuration",
+    "optional legacy verification-command tests have 18 inherited environment failures caused by /tmp/.git ancestor detection; source unchanged from BE08"
+  ],
+  "settled_source_recheck": {
+    "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tui_gateway/test_runtime_rpc.py tests/agent/test_mission_runtime.py tests/agent/test_runtime_commands.py -j 9 --file-retries 0",
+    "log": "be09-queue-cancel-final.log",
+    "log_sha256": "f9f409baf69a12ecceae33301f059b0c5c37132442586d29e1e51fb0379325d3",
+    "files": 3,
+    "passed": 40,
+    "failed": 0,
+    "seconds": 14.8,
+    "note": "counts overlap consolidated checks; includes two new launch-race cases; original queued cancellation regression fixed"
+  },
+  "checks": {
+    "changed_python_ruff": "passed",
+    "generated_contracts_freshness": "passed",
+    "shared_typescript": "passed",
+    "git_diff_check": "passed"
+  }
+}
