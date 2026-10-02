@@ -83,8 +83,9 @@ def render_reference() -> str:
         "",
         "## Enforcement boundaries",
         "",
-        "These contracts describe authority, not an OS sandbox. Nonempty egress_purposes and project_grants "
-        "are rejected until BE05/BE07 provide concrete dispatch enforcement. This phase does not implement personal MCP memory "
+        "These contracts describe authority, not an OS sandbox. Exact project_grants are intersected with live "
+        "principal/agent project permissions at every BE07 read or mutation. Nonempty egress_purposes remain rejected; "
+        "use the enforced recipient_plan. This phase does not implement personal MCP memory "
         "semantics or specialist memory persistence; those are BE08 dependencies. No raw AIAgent, "
         "secret dictionary or generic service locator is exposed by AgentContext.",
         "",

@@ -126,7 +126,7 @@ def _runtime_event_projection(event):
         if isinstance(state, str) and state in {"prepared", "dispatched", "confirmed", "failed", "outcome_unknown", "reconciliation_required"}:
             projection["payload"]["effect_state"] = state
         projection["payload"]["operation_type"] = (
-            "artifact_publish" if event["payload"].get("operation_type") == "artifact_publish" else "unsupported")
+            event["payload"]["operation_type"] if event["payload"].get("operation_type") in ("artifact_publish", "project_artifact_publish") else "unsupported")
     if event["type"] in {"approval.requested", "approval.resolved"}:
         status = event["payload"].get("status")
         if isinstance(status, str) and status in {"pending", "approved", "denied", "consumed"}:

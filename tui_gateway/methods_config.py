@@ -70,6 +70,10 @@ def _projects_handler(name: str):
     def deco(fn):
         def handler(rid, params: dict) -> dict:
             try:
+                from agent.project_context import legacy_project_surface_allowed
+                if not legacy_project_surface_allowed():
+                    return _err(rid, 4030, "Strict projects require owned runtime.project controls",
+                                {"code": "project_control_required"})
                 return fn(rid, params)
             except Exception as e:
                 return _err(rid, 5061, str(e))

@@ -3031,6 +3031,186 @@
       }
     },
     {
+      "name": "runtime.artifact.cancel",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactCommandParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactControlStatus"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.edit.prepare",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactEditParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactProposalResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.edit.publish",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactEditPublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactPublishResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.get",
+      "summary": "Read complete immutable bytes in bounded chunks; render only as plain text.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactReadParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactReadResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.merge.prepare",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactMergeParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactProposalResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.merge.publish",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactMergePublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactPublishResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.prepare",
+      "summary": "Prepare one exact owned edit for approval; does not dispatch a model or publish bytes.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactPrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactProposalResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.publish",
+      "summary": "Approve and publish exactly the prepared content under the same live bounded control claim.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactPublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactPublishResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.recovery.get",
+      "summary": "Recover exact confirmed publication bytes without publishing a catalog version or moving a head.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactRecoveryParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactRecoveryResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.status",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactCommandParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactControlStatus"
+        }
+      }
+    },
+    {
       "name": "runtime.capabilities",
       "summary": "Negotiate the owned session's durable runtime API and executable operations.",
       "params": [
@@ -3045,6 +3225,132 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/RuntimeCapabilities"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.create",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.duplicates",
+      "summary": "Propose matching-content review without changing or deleting any original.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SourceListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureDuplicatesResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.extraction.record",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureExtractionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.file",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureFileParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.get",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.list",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SourceListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.read",
+      "summary": "Read retained original bytes with digest verification and plain-text-only preview.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureReadParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactReadResult"
         }
       }
     },
@@ -3193,6 +3499,168 @@
       }
     },
     {
+      "name": "runtime.evidence.create",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/EvidenceCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/EvidenceResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.evidence.get",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/EvidenceParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/EvidenceResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.evidence.list",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SourceListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/EvidenceListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.project.claim",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeProjectRevisionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeProjectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.project.create",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeProjectCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeProjectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.project.get",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeProjectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeProjectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.project.grants.set",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeProjectGrantsParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeProjectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.project.list",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeProjectListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.project.update",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeProjectUpdateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeProjectResult"
+        }
+      }
+    },
+    {
       "name": "runtime.result.get",
       "summary": "Read bounded digest-checked immutable result bytes without executing or delivering work.",
       "params": [
@@ -3211,6 +3679,24 @@
       }
     },
     {
+      "name": "runtime.resume.get",
+      "summary": "Assemble bounded authorized project references and blockers without private memory or a completeness claim.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ProjectResumeParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ProjectResumeResult"
+        }
+      }
+    },
+    {
       "name": "runtime.snapshot",
       "summary": "Read a consistent durable mission projection and its restart-stable cursor.",
       "params": [
@@ -3225,6 +3711,60 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/MissionSnapshot"
+        }
+      }
+    },
+    {
+      "name": "runtime.template.create",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/TemplateCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/TemplateResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.template.get",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/TemplateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/TemplateResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.template.list",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SourceListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/TemplateListResult"
         }
       }
     },
@@ -5486,6 +6026,1202 @@
         "title": "ArgumentMode",
         "type": "string"
       },
+      "ArtifactBlockedResult": {
+        "additionalProperties": false,
+        "properties": {
+          "blocked": {
+            "const": true,
+            "title": "Blocked",
+            "type": "boolean"
+          },
+          "reason": {
+            "const": "budget_unavailable",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "blocked",
+          "reason"
+        ],
+        "title": "ArtifactBlockedResult",
+        "type": "object"
+      },
+      "ArtifactCancelledResult": {
+        "additionalProperties": false,
+        "properties": {
+          "cancel_requested": {
+            "title": "Cancel Requested",
+            "type": "boolean"
+          },
+          "effects_undone": {
+            "const": false,
+            "title": "Effects Undone",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cancel_requested",
+          "effects_undone"
+        ],
+        "title": "ArtifactCancelledResult",
+        "type": "object"
+      },
+      "ArtifactCommandParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id"
+        ],
+        "title": "ArtifactCommandParams",
+        "type": "object"
+      },
+      "ArtifactControlStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "command_id": {
+            "title": "Command Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "claimed",
+              "completed",
+              "cancelled",
+              "failed",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "owner_live": {
+            "title": "Owner Live",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactPublishResult"
+              },
+              {
+                "$ref": "#/components/schemas/ArtifactCancelledResult"
+              },
+              {
+                "$ref": "#/components/schemas/ArtifactBlockedResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "command_id",
+          "run_id",
+          "status",
+          "owner_live",
+          "expires_at",
+          "result"
+        ],
+        "title": "ArtifactControlStatus",
+        "type": "object"
+      },
+      "ArtifactEditParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "parent_version": {
+            "minimum": 1,
+            "title": "Parent Version",
+            "type": "integer"
+          },
+          "expected_head_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Head Version"
+          },
+          "edits": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSectionEdit"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Edits",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "artifact_id",
+          "parent_version",
+          "edits"
+        ],
+        "title": "ArtifactEditParams",
+        "type": "object"
+      },
+      "ArtifactEditPublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "parent_version": {
+            "minimum": 1,
+            "title": "Parent Version",
+            "type": "integer"
+          },
+          "expected_head_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Head Version"
+          },
+          "edits": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSectionEdit"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Edits",
+            "type": "array"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "artifact_id",
+          "parent_version",
+          "edits",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "ArtifactEditPublishParams",
+        "type": "object"
+      },
+      "ArtifactMergeParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "branch_version": {
+            "minimum": 1,
+            "title": "Branch Version",
+            "type": "integer"
+          },
+          "current_head_version": {
+            "minimum": 1,
+            "title": "Current Head Version",
+            "type": "integer"
+          },
+          "approved_anchors": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Approved Anchors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "artifact_id",
+          "branch_version",
+          "current_head_version",
+          "approved_anchors"
+        ],
+        "title": "ArtifactMergeParams",
+        "type": "object"
+      },
+      "ArtifactMergePublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "branch_version": {
+            "minimum": 1,
+            "title": "Branch Version",
+            "type": "integer"
+          },
+          "current_head_version": {
+            "minimum": 1,
+            "title": "Current Head Version",
+            "type": "integer"
+          },
+          "approved_anchors": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Approved Anchors",
+            "type": "array"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "artifact_id",
+          "branch_version",
+          "current_head_version",
+          "approved_anchors",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "ArtifactMergePublishParams",
+        "type": "object"
+      },
+      "ArtifactPrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "content": {
+            "maxLength": 65536,
+            "title": "Content",
+            "type": "string"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifact Id"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parent Version"
+          },
+          "expected_head_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Head Version"
+          },
+          "locked_sections": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Locked Sections",
+            "type": "array"
+          },
+          "source_refs": {
+            "default": [],
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "derived_from": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "maxItems": 100,
+            "title": "Derived From",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "content"
+        ],
+        "title": "ArtifactPrepareParams",
+        "type": "object"
+      },
+      "ArtifactProposalResult": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Version"
+          },
+          "expected_head_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Head Version"
+          },
+          "action_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Action Digest",
+            "type": "string"
+          },
+          "approval_id": {
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "request_id",
+          "project_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "parent_version",
+          "expected_head_version",
+          "action_digest",
+          "approval_id",
+          "approval_digest",
+          "expires_at"
+        ],
+        "title": "ArtifactProposalResult",
+        "type": "object"
+      },
+      "ArtifactPublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "content": {
+            "maxLength": 65536,
+            "title": "Content",
+            "type": "string"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifact Id"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parent Version"
+          },
+          "expected_head_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Head Version"
+          },
+          "locked_sections": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Locked Sections",
+            "type": "array"
+          },
+          "source_refs": {
+            "default": [],
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "derived_from": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "maxItems": 100,
+            "title": "Derived From",
+            "type": "array"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "content",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "ArtifactPublishParams",
+        "type": "object"
+      },
+      "ArtifactPublishResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Version"
+          },
+          "disposition": {
+            "enum": [
+              "canonical",
+              "branch"
+            ],
+            "title": "Disposition",
+            "type": "string"
+          },
+          "head_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Version"
+          },
+          "validation_status": {
+            "const": "passed",
+            "title": "Validation Status",
+            "type": "string"
+          },
+          "approval_status": {
+            "const": "approved",
+            "title": "Approval Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "parent_version",
+          "disposition",
+          "head_version",
+          "validation_status",
+          "approval_status"
+        ],
+        "title": "ArtifactPublishResult",
+        "type": "object"
+      },
+      "ArtifactReadParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Version"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 65536,
+            "maximum": 65536,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "artifact_id"
+        ],
+        "title": "ArtifactReadParams",
+        "type": "object"
+      },
+      "ArtifactReadResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "data_base64": {
+            "title": "Data Base64",
+            "type": "string"
+          },
+          "next_offset": {
+            "title": "Next Offset",
+            "type": "integer"
+          },
+          "eof": {
+            "title": "Eof",
+            "type": "boolean"
+          },
+          "preview_mode": {
+            "const": "plain_text",
+            "title": "Preview Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "offset",
+          "data_base64",
+          "next_offset",
+          "eof",
+          "preview_mode"
+        ],
+        "title": "ArtifactReadResult",
+        "type": "object"
+      },
+      "ArtifactRecoveryParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "effect_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Effect Id",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 65536,
+            "maximum": 65536,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "effect_id"
+        ],
+        "title": "ArtifactRecoveryParams",
+        "type": "object"
+      },
+      "ArtifactRecoveryResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "data_base64": {
+            "title": "Data Base64",
+            "type": "string"
+          },
+          "next_offset": {
+            "title": "Next Offset",
+            "type": "integer"
+          },
+          "eof": {
+            "title": "Eof",
+            "type": "boolean"
+          },
+          "preview_mode": {
+            "const": "plain_text",
+            "title": "Preview Mode",
+            "type": "string"
+          },
+          "publication_state": {
+            "enum": [
+              "committed",
+              "published_uncommitted"
+            ],
+            "title": "Publication State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "offset",
+          "data_base64",
+          "next_offset",
+          "eof",
+          "preview_mode",
+          "publication_state"
+        ],
+        "title": "ArtifactRecoveryResult",
+        "type": "object"
+      },
+      "ArtifactSectionEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Anchor",
+            "type": "string"
+          },
+          "expected_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Sha256",
+            "type": "string"
+          },
+          "replacement": {
+            "maxLength": 65536,
+            "title": "Replacement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "anchor",
+          "expected_sha256",
+          "replacement"
+        ],
+        "title": "ArtifactSectionEdit",
+        "type": "object"
+      },
+      "ArtifactVersionRef": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "version"
+        ],
+        "title": "ArtifactVersionRef",
+        "type": "object"
+      },
       "AttachedImageResult": {
         "additionalProperties": false,
         "description": "``methods_prompt.py::_attached_image_result``: the image is queued for the next turn.",
@@ -7737,6 +9473,520 @@
           "name"
         ],
         "title": "CapabilityEntry",
+        "type": "object"
+      },
+      "CaptureCreateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "original_ref": {
+            "$ref": "#/components/schemas/ArtifactVersionRef"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Url"
+          },
+          "acquired_at": {
+            "anyOf": [
+              {
+                "maximum": 253402300799,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Acquired At"
+          },
+          "annotation": {
+            "default": "",
+            "maxLength": 4096,
+            "title": "Annotation",
+            "type": "string"
+          },
+          "suggested_project_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Suggested Project Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "capture_id",
+          "original_ref"
+        ],
+        "title": "CaptureCreateParams",
+        "type": "object"
+      },
+      "CaptureDuplicateGroup": {
+        "additionalProperties": false,
+        "properties": {
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "capture_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capture Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sha256",
+          "capture_ids"
+        ],
+        "title": "CaptureDuplicateGroup",
+        "type": "object"
+      },
+      "CaptureDuplicatesResult": {
+        "additionalProperties": false,
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureDuplicateGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "scanned": {
+            "title": "Scanned",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "consolidation_performed": {
+            "const": false,
+            "title": "Consolidation Performed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "groups",
+          "scanned",
+          "truncated",
+          "complete",
+          "consolidation_performed"
+        ],
+        "title": "CaptureDuplicatesResult",
+        "type": "object"
+      },
+      "CaptureExtractionParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "succeeded",
+              "failed",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "extracted_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactVersionRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Failure Code"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "capture_id",
+          "status"
+        ],
+        "title": "CaptureExtractionParams",
+        "type": "object"
+      },
+      "CaptureExtractionRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "succeeded",
+              "failed",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "extracted_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactVersionRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "sequence",
+          "status",
+          "extracted_ref",
+          "failure_code",
+          "created_at"
+        ],
+        "title": "CaptureExtractionRecord",
+        "type": "object"
+      },
+      "CaptureFileParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "filed_project_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Project Id"
+          },
+          "expected_revision": {
+            "minimum": 0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "capture_id",
+          "filed_project_id",
+          "expected_revision"
+        ],
+        "title": "CaptureFileParams",
+        "type": "object"
+      },
+      "CaptureListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "captures": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureRecord"
+            },
+            "title": "Captures",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "limit_reached": {
+            "title": "Limit Reached",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "captures",
+          "limit",
+          "limit_reached",
+          "complete"
+        ],
+        "title": "CaptureListResult",
+        "type": "object"
+      },
+      "CaptureParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "capture_id"
+        ],
+        "title": "CaptureParams",
+        "type": "object"
+      },
+      "CaptureReadParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 65536,
+            "maximum": 65536,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "capture_id"
+        ],
+        "title": "CaptureReadParams",
+        "type": "object"
+      },
+      "CaptureRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_id": {
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "original_ref": {
+            "$ref": "#/components/schemas/ArtifactVersionRef"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "acquired_at": {
+            "title": "Acquired At",
+            "type": "number"
+          },
+          "annotation": {
+            "title": "Annotation",
+            "type": "string"
+          },
+          "suggested_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Project Id"
+          },
+          "filed_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Project Id"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "extractions": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureExtractionRecord"
+            },
+            "title": "Extractions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "capture_id",
+          "project_id",
+          "original_ref",
+          "source_url",
+          "acquired_at",
+          "annotation",
+          "suggested_project_id",
+          "filed_project_id",
+          "revision",
+          "extractions"
+        ],
+        "title": "CaptureRecord",
+        "type": "object"
+      },
+      "CaptureResult": {
+        "additionalProperties": false,
+        "properties": {
+          "capture": {
+            "$ref": "#/components/schemas/CaptureRecord"
+          }
+        },
+        "required": [
+          "capture"
+        ],
+        "title": "CaptureResult",
         "type": "object"
       },
       "CatalogAppState": {
@@ -13941,6 +16191,442 @@
           "retryable"
         ],
         "title": "ErrorSurface",
+        "type": "object"
+      },
+      "EvidenceApprovalRef": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approval_id"
+        ],
+        "title": "EvidenceApprovalRef",
+        "type": "object"
+      },
+      "EvidenceCaptureRef": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capture_id"
+        ],
+        "title": "EvidenceCaptureRef",
+        "type": "object"
+      },
+      "EvidenceCreateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "anchor_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Anchor Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "source_span",
+              "source_id",
+              "decision",
+              "constraint",
+              "approval",
+              "artifact_version"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactVersionRef"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceCaptureRef"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceApprovalRef"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "source_version": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Source Version",
+            "type": "string"
+          },
+          "range_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceNumericRange"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceSectionRange"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Range Ref"
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "maximum": 253402300799,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Captured At"
+          },
+          "authority": {
+            "default": "source_claim",
+            "enum": [
+              "observed",
+              "source_claim",
+              "user_approved",
+              "inferred"
+            ],
+            "title": "Authority",
+            "type": "string"
+          },
+          "validity": {
+            "default": "unverified",
+            "enum": [
+              "current",
+              "stale",
+              "revoked",
+              "unverified"
+            ],
+            "title": "Validity",
+            "type": "string"
+          },
+          "fresh_until": {
+            "anyOf": [
+              {
+                "maximum": 253402300799,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fresh Until"
+          },
+          "annotation": {
+            "default": "",
+            "maxLength": 4096,
+            "title": "Annotation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "anchor_id",
+          "kind",
+          "source_ref",
+          "source_version"
+        ],
+        "title": "EvidenceCreateParams",
+        "type": "object"
+      },
+      "EvidenceListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRecord"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "limit_reached": {
+            "title": "Limit Reached",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "evidence",
+          "limit",
+          "limit_reached",
+          "complete"
+        ],
+        "title": "EvidenceListResult",
+        "type": "object"
+      },
+      "EvidenceNumericRange": {
+        "additionalProperties": false,
+        "properties": {
+          "unit": {
+            "enum": [
+              "line",
+              "byte"
+            ],
+            "title": "Unit",
+            "type": "string"
+          },
+          "start": {
+            "minimum": 0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "end": {
+            "minimum": 0,
+            "title": "End",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unit",
+          "start",
+          "end"
+        ],
+        "title": "EvidenceNumericRange",
+        "type": "object"
+      },
+      "EvidenceParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "anchor_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Anchor Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "anchor_id"
+        ],
+        "title": "EvidenceParams",
+        "type": "object"
+      },
+      "EvidenceRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor_id": {
+            "title": "Anchor Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "source_span",
+              "source_id",
+              "decision",
+              "constraint",
+              "approval",
+              "artifact_version"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactVersionRef"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceCaptureRef"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceApprovalRef"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          },
+          "range_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceNumericRange"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceSectionRange"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Ref"
+          },
+          "captured_at": {
+            "title": "Captured At",
+            "type": "number"
+          },
+          "authority": {
+            "enum": [
+              "observed",
+              "source_claim",
+              "user_approved",
+              "inferred"
+            ],
+            "title": "Authority",
+            "type": "string"
+          },
+          "validity": {
+            "enum": [
+              "current",
+              "stale",
+              "revoked",
+              "unverified"
+            ],
+            "title": "Validity",
+            "type": "string"
+          },
+          "effective_validity": {
+            "enum": [
+              "current",
+              "stale",
+              "revoked",
+              "unverified"
+            ],
+            "title": "Effective Validity",
+            "type": "string"
+          },
+          "fresh_until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fresh Until"
+          },
+          "annotation": {
+            "title": "Annotation",
+            "type": "string"
+          },
+          "grants_execution": {
+            "const": false,
+            "title": "Grants Execution",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "anchor_id",
+          "project_id",
+          "kind",
+          "source_ref",
+          "source_version",
+          "range_ref",
+          "captured_at",
+          "authority",
+          "validity",
+          "effective_validity",
+          "fresh_until",
+          "annotation",
+          "grants_execution"
+        ],
+        "title": "EvidenceRecord",
+        "type": "object"
+      },
+      "EvidenceResult": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "$ref": "#/components/schemas/EvidenceRecord"
+          }
+        },
+        "required": [
+          "evidence"
+        ],
+        "title": "EvidenceResult",
+        "type": "object"
+      },
+      "EvidenceSectionRange": {
+        "additionalProperties": false,
+        "properties": {
+          "unit": {
+            "const": "section",
+            "title": "Unit",
+            "type": "string"
+          },
+          "start": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "unit",
+          "start",
+          "end"
+        ],
+        "title": "EvidenceSectionRange",
         "type": "object"
       },
       "FailedDelegation": {
@@ -25148,6 +27834,44 @@
         "title": "ProjectFolderParams",
         "type": "object"
       },
+      "ProjectGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "principal_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "agent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "permissions": {
+            "items": {
+              "enum": [
+                "read",
+                "write",
+                "share"
+              ],
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Permissions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "principal_id",
+          "agent_id",
+          "permissions"
+        ],
+        "title": "ProjectGrant",
+        "type": "object"
+      },
       "ProjectIdParams": {
         "additionalProperties": false,
         "description": "Any method addressed at one stored project (``5062`` when the id resolves to nothing).",
@@ -25277,6 +28001,29 @@
         "title": "ProjectInfo",
         "type": "object"
       },
+      "ProjectMissionRef": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "run_id"
+        ],
+        "title": "ProjectMissionRef",
+        "type": "object"
+      },
       "ProjectRef": {
         "additionalProperties": false,
         "description": "``tui_gateway/server.py::_project_info_for_cwd``.",
@@ -25325,6 +28072,156 @@
           "project"
         ],
         "title": "ProjectResult",
+        "type": "object"
+      },
+      "ProjectResumeParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "mission_limit": {
+            "default": 8,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Mission Limit",
+            "type": "integer"
+          },
+          "artifact_limit": {
+            "default": 16,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Artifact Limit",
+            "type": "integer"
+          },
+          "source_limit": {
+            "default": 16,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Source Limit",
+            "type": "integer"
+          },
+          "evidence_limit": {
+            "default": 32,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Evidence Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id"
+        ],
+        "title": "ProjectResumeParams",
+        "type": "object"
+      },
+      "ProjectResumeResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/ResumeProject"
+          },
+          "missions": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeMission"
+            },
+            "title": "Missions",
+            "type": "array"
+          },
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeArtifact"
+            },
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeCapture"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "blockers": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeBlocker"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/ResumeLimits"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "project_revision_stable": {
+            "title": "Project Revision Stable",
+            "type": "boolean"
+          },
+          "assembled_at": {
+            "title": "Assembled At",
+            "type": "number"
+          },
+          "truncated": {
+            "$ref": "#/components/schemas/ResumeTruncated"
+          }
+        },
+        "required": [
+          "project",
+          "missions",
+          "artifacts",
+          "sources",
+          "evidence",
+          "blockers",
+          "limits",
+          "complete",
+          "project_revision_stable",
+          "assembled_at",
+          "truncated"
+        ],
+        "title": "ProjectResumeResult",
+        "type": "object"
+      },
+      "ProjectSourceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capture_id"
+        ],
+        "title": "ProjectSourceRef",
         "type": "object"
       },
       "ProjectTreeLane": {
@@ -27391,6 +30288,335 @@
         "title": "RequestCancelPayload",
         "type": "object"
       },
+      "ResumeArtifact": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "filed_version": {
+            "title": "Filed Version",
+            "type": "integer"
+          },
+          "derived_validity": {
+            "enum": [
+              "current",
+              "stale"
+            ],
+            "title": "Derived Validity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "version",
+          "sha256",
+          "mime",
+          "size",
+          "filed_version",
+          "derived_validity"
+        ],
+        "title": "ResumeArtifact",
+        "type": "object"
+      },
+      "ResumeBlocker": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "mission",
+              "artifact",
+              "capture",
+              "evidence",
+              "project"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "reference",
+          "code"
+        ],
+        "title": "ResumeBlocker",
+        "type": "object"
+      },
+      "ResumeCapture": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_id": {
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "original_ref": {
+            "$ref": "#/components/schemas/ArtifactVersionRef"
+          },
+          "acquired_at": {
+            "title": "Acquired At",
+            "type": "number"
+          },
+          "extraction_status": {
+            "enum": [
+              "not_attempted",
+              "succeeded",
+              "failed",
+              "unavailable"
+            ],
+            "title": "Extraction Status",
+            "type": "string"
+          },
+          "annotation": {
+            "title": "Annotation",
+            "type": "string"
+          },
+          "annotation_truncated": {
+            "title": "Annotation Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "capture_id",
+          "original_ref",
+          "acquired_at",
+          "extraction_status",
+          "annotation",
+          "annotation_truncated"
+        ],
+        "title": "ResumeCapture",
+        "type": "object"
+      },
+      "ResumeEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor_id": {
+            "title": "Anchor Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "source_span",
+              "source_id",
+              "decision",
+              "constraint",
+              "approval",
+              "artifact_version"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactVersionRef"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceCaptureRef"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceApprovalRef"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          },
+          "range_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceNumericRange"
+              },
+              {
+                "$ref": "#/components/schemas/EvidenceSectionRange"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Ref"
+          },
+          "captured_at": {
+            "title": "Captured At",
+            "type": "number"
+          },
+          "authority": {
+            "enum": [
+              "observed",
+              "source_claim",
+              "user_approved",
+              "inferred"
+            ],
+            "title": "Authority",
+            "type": "string"
+          },
+          "validity": {
+            "enum": [
+              "current",
+              "stale",
+              "revoked",
+              "unverified"
+            ],
+            "title": "Validity",
+            "type": "string"
+          },
+          "effective_validity": {
+            "enum": [
+              "current",
+              "stale",
+              "revoked",
+              "unverified"
+            ],
+            "title": "Effective Validity",
+            "type": "string"
+          },
+          "fresh_until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fresh Until"
+          },
+          "annotation": {
+            "title": "Annotation",
+            "type": "string"
+          },
+          "annotation_truncated": {
+            "title": "Annotation Truncated",
+            "type": "boolean"
+          },
+          "execution_authority": {
+            "const": false,
+            "title": "Execution Authority",
+            "type": "boolean"
+          },
+          "freshness": {
+            "enum": [
+              "unspecified",
+              "stale",
+              "within_declared_window"
+            ],
+            "title": "Freshness",
+            "type": "string"
+          }
+        },
+        "required": [
+          "anchor_id",
+          "kind",
+          "source_ref",
+          "source_version",
+          "range_ref",
+          "captured_at",
+          "authority",
+          "validity",
+          "effective_validity",
+          "fresh_until",
+          "annotation",
+          "annotation_truncated",
+          "execution_authority",
+          "freshness"
+        ],
+        "title": "ResumeEvidence",
+        "type": "object"
+      },
+      "ResumeLimits": {
+        "additionalProperties": false,
+        "properties": {
+          "missions": {
+            "title": "Missions",
+            "type": "integer"
+          },
+          "artifacts": {
+            "title": "Artifacts",
+            "type": "integer"
+          },
+          "sources": {
+            "title": "Sources",
+            "type": "integer"
+          },
+          "evidence": {
+            "title": "Evidence",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "missions",
+          "artifacts",
+          "sources",
+          "evidence"
+        ],
+        "title": "ResumeLimits",
+        "type": "object"
+      },
+      "ResumeMission": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "idle",
+              "accepted",
+              "claimed",
+              "completed",
+              "failed",
+              "blocked",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "run_id",
+          "revision",
+          "status"
+        ],
+        "title": "ResumeMission",
+        "type": "object"
+      },
       "ResumePhaseStatus": {
         "enum": [
           "loading",
@@ -27399,6 +30625,64 @@
         ],
         "title": "ResumePhaseStatus",
         "type": "string"
+      },
+      "ResumeProject": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "purpose_truncated": {
+            "title": "Purpose Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project_id",
+          "revision",
+          "purpose",
+          "purpose_truncated"
+        ],
+        "title": "ResumeProject",
+        "type": "object"
+      },
+      "ResumeTruncated": {
+        "additionalProperties": false,
+        "properties": {
+          "missions": {
+            "title": "Missions",
+            "type": "boolean"
+          },
+          "artifacts": {
+            "title": "Artifacts",
+            "type": "boolean"
+          },
+          "sources": {
+            "title": "Sources",
+            "type": "boolean"
+          },
+          "evidence": {
+            "title": "Evidence",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "missions",
+          "artifacts",
+          "sources",
+          "evidence"
+        ],
+        "title": "ResumeTruncated",
+        "type": "object"
       },
       "ReviewSummaryPayload": {
         "additionalProperties": false,
@@ -29692,6 +32976,7 @@
           "operation_type": {
             "enum": [
               "artifact_publish",
+              "project_artifact_publish",
               "unsupported"
             ],
             "title": "Operation Type",
@@ -29967,6 +33252,10 @@
                 "type": "string"
               },
               {
+                "const": "artifact",
+                "type": "string"
+              },
+              {
                 "type": "null"
               }
             ],
@@ -29998,6 +33287,7 @@
               {
                 "enum": [
                   "artifact_publish",
+                  "project_artifact_publish",
                   "unsupported"
                 ],
                 "type": "string"
@@ -30352,6 +33642,527 @@
           "logical_request_id"
         ],
         "title": "RuntimePhysicalAttempt",
+        "type": "object"
+      },
+      "RuntimeProjectChanges": {
+        "additionalProperties": false,
+        "properties": {
+          "purpose": {
+            "anyOf": [
+              {
+                "maxLength": 8192,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Purpose"
+          },
+          "source_refs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ProjectSourceRef"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Refs"
+          },
+          "canonical_artifact_refs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ArtifactVersionRef"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Canonical Artifact Refs"
+          },
+          "active_mission_refs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ProjectMissionRef"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Active Mission Refs"
+          }
+        },
+        "title": "RuntimeProjectChanges",
+        "type": "object"
+      },
+      "RuntimeProjectCreateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Slug"
+          },
+          "folders": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Folders",
+            "type": "array"
+          },
+          "primary_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Primary Path"
+          },
+          "purpose": {
+            "default": "",
+            "maxLength": 8192,
+            "title": "Purpose",
+            "type": "string"
+          },
+          "grants": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ProjectGrant"
+            },
+            "maxItems": 100,
+            "title": "Grants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "name"
+        ],
+        "title": "RuntimeProjectCreateParams",
+        "type": "object"
+      },
+      "RuntimeProjectFolder": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "is_primary": {
+            "title": "Is Primary",
+            "type": "boolean"
+          },
+          "added_at": {
+            "title": "Added At",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "label",
+          "is_primary",
+          "added_at"
+        ],
+        "title": "RuntimeProjectFolder",
+        "type": "object"
+      },
+      "RuntimeProjectGrantsParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "grants": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectGrant"
+            },
+            "maxItems": 100,
+            "title": "Grants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "expected_revision",
+          "grants"
+        ],
+        "title": "RuntimeProjectGrantsParams",
+        "type": "object"
+      },
+      "RuntimeProjectListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeProjectRecord"
+            },
+            "title": "Projects",
+            "type": "array"
+          }
+        },
+        "required": [
+          "projects"
+        ],
+        "title": "RuntimeProjectListResult",
+        "type": "object"
+      },
+      "RuntimeProjectParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id"
+        ],
+        "title": "RuntimeProjectParams",
+        "type": "object"
+      },
+      "RuntimeProjectRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "board_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Board Slug"
+          },
+          "primary_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Path"
+          },
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "integer"
+          },
+          "folders": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeProjectFolder"
+            },
+            "title": "Folders",
+            "type": "array"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "owner_principal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Principal Id"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectSourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "canonical_artifact_refs": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "title": "Canonical Artifact Refs",
+            "type": "array"
+          },
+          "active_mission_refs": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectMissionRef"
+            },
+            "title": "Active Mission Refs",
+            "type": "array"
+          },
+          "grants": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectGrant"
+            },
+            "title": "Grants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "slug",
+          "name",
+          "description",
+          "icon",
+          "color",
+          "board_slug",
+          "primary_path",
+          "archived",
+          "created_at",
+          "folders",
+          "revision",
+          "owner_principal_id",
+          "purpose",
+          "source_refs",
+          "canonical_artifact_refs",
+          "active_mission_refs",
+          "grants"
+        ],
+        "title": "RuntimeProjectRecord",
+        "type": "object"
+      },
+      "RuntimeProjectResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/RuntimeProjectRecord"
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "title": "RuntimeProjectResult",
+        "type": "object"
+      },
+      "RuntimeProjectRevisionParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "expected_revision"
+        ],
+        "title": "RuntimeProjectRevisionParams",
+        "type": "object"
+      },
+      "RuntimeProjectUpdateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/RuntimeProjectChanges"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "expected_revision",
+          "changes"
+        ],
+        "title": "RuntimeProjectUpdateParams",
         "type": "object"
       },
       "RuntimeProviderCapabilities": {
@@ -36567,6 +40378,42 @@
         "title": "SlashExecResult",
         "type": "object"
       },
+      "SourceListParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id"
+        ],
+        "title": "SourceListParams",
+        "type": "object"
+      },
       "SpawnTreeEntry": {
         "additionalProperties": true,
         "description": "Index row (``server._append_spawn_tree_index``) or a legacy file scan.",
@@ -38393,6 +42240,306 @@
           "task_id"
         ],
         "title": "TaskIdResult",
+        "type": "object"
+      },
+      "TemplateCreateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "template_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parent Version"
+          },
+          "baseline_ref": {
+            "$ref": "#/components/schemas/ArtifactVersionRef"
+          },
+          "structure": {
+            "items": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Structure",
+            "type": "array"
+          },
+          "style": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Style",
+            "type": "object"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "maxItems": 64,
+            "title": "Assets",
+            "type": "array"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateSlot"
+            },
+            "maxItems": 64,
+            "title": "Slots",
+            "type": "array"
+          },
+          "exclusions": {
+            "items": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Exclusions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "template_id",
+          "baseline_ref",
+          "structure",
+          "style",
+          "assets",
+          "slots",
+          "exclusions"
+        ],
+        "title": "TemplateCreateParams",
+        "type": "object"
+      },
+      "TemplateListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateRecord"
+            },
+            "title": "Templates",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "limit_reached": {
+            "title": "Limit Reached",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "templates",
+          "limit",
+          "limit_reached",
+          "complete"
+        ],
+        "title": "TemplateListResult",
+        "type": "object"
+      },
+      "TemplateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "template_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Version"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "template_id"
+        ],
+        "title": "TemplateParams",
+        "type": "object"
+      },
+      "TemplateRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "baseline_ref": {
+            "$ref": "#/components/schemas/ArtifactVersionRef"
+          },
+          "structure": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Structure",
+            "type": "array"
+          },
+          "style": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Style",
+            "type": "object"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateSlot"
+            },
+            "title": "Slots",
+            "type": "array"
+          },
+          "exclusions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclusions",
+            "type": "array"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Version"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "project_id",
+          "baseline_ref",
+          "structure",
+          "style",
+          "assets",
+          "slots",
+          "exclusions",
+          "parent_version"
+        ],
+        "title": "TemplateRecord",
+        "type": "object"
+      },
+      "TemplateResult": {
+        "additionalProperties": false,
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/TemplateRecord"
+          }
+        },
+        "required": [
+          "template"
+        ],
+        "title": "TemplateResult",
+        "type": "object"
+      },
+      "TemplateSlot": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "purpose": {
+            "maxLength": 4096,
+            "title": "Purpose",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "purpose",
+          "required"
+        ],
+        "title": "TemplateSlot",
         "type": "object"
       },
       "TerminalClosePayload": {

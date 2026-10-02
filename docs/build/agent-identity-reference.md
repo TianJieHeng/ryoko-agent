@@ -32,7 +32,7 @@ The optional `agent_identity` root is read from effective profile configuration.
 | `mcp_policies` | `Mapping` | no | Exact per-server HTTP endpoint, read, tool, credential and refresh contracts |
 | `recipient_plan` | `object \| None` | no | Versioned exact purpose/recipient egress plan; absent denies strict egress |
 | `secret_refs` | `frozenset[str]` | no | Exact credential reference names, never credential values |
-| `project_grants` | `frozenset[str]` | no | Reserved project grant list; must be empty until BE07 enforcement |
+| `project_grants` | `frozenset[str]` | no | Exact project IDs; intersected with live project principal/agent permissions |
 | `egress_purposes` | `frozenset[str]` | no | Reserved egress purpose list; must be empty until BE05 enforcement |
 
 ## Identity and lifecycle rules
@@ -55,7 +55,7 @@ Configuration changes apply at the next construction/session boundary. The curre
 
 ## Enforcement boundaries
 
-These contracts describe authority, not an OS sandbox. Nonempty egress_purposes and project_grants are rejected until BE05/BE07 provide concrete dispatch enforcement. This phase does not implement personal MCP memory semantics or specialist memory persistence; those are BE08 dependencies. No raw AIAgent, secret dictionary or generic service locator is exposed by AgentContext.
+These contracts describe authority, not an OS sandbox. Exact project_grants are intersected with live principal/agent project permissions at every BE07 read or mutation. Nonempty egress_purposes remain rejected; use the enforced recipient_plan. This phase does not implement personal MCP memory semantics or specialist memory persistence; those are BE08 dependencies. No raw AIAgent, secret dictionary or generic service locator is exposed by AgentContext.
 
 ## Regeneration
 

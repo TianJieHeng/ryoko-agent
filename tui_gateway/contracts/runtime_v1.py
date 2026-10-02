@@ -256,9 +256,9 @@ class RuntimeEventPayload(Result):
     """Safe correlation metadata only. Raw model/tool outputs stay off this wire."""
 
     command_id: str | None = None
-    operation: RuntimeOperation | None = None
+    operation: RuntimeOperation | Literal["artifact"] | None = None
     effect_state: Literal["prepared", "dispatched", "confirmed", "failed", "outcome_unknown", "reconciliation_required"] | None = None
-    operation_type: Literal["artifact_publish", "unsupported"] | None = None
+    operation_type: Literal["artifact_publish", "project_artifact_publish", "unsupported"] | None = None
     approval_status: Literal["pending", "approved", "denied", "consumed"] | None = None
     expires_at: float | None = None
     checkpoint_id: str | None = None

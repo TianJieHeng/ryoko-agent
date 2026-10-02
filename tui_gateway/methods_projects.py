@@ -32,6 +32,10 @@ def _projects_method(name: str):
         @_registry.profile_scoped
         def handler(rid, params: dict) -> dict:
             try:
+                from agent.project_context import legacy_project_surface_allowed
+                if not legacy_project_surface_allowed():
+                    return _err(rid, 4030, "Strict projects require owned runtime.project controls",
+                                {"code": "project_control_required"})
                 from hermes_cli import projects_db as pdb
                 with pdb.connect_closing() as conn:
                     return fn(rid, params, pdb, conn)

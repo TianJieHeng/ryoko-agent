@@ -134,7 +134,7 @@ def test_immutable_snapshot_and_inspection_never_expose_secrets(tmp_path):
         (("agents", "specialist", "project_grants"), {"project": True}),
         (("agents", "specialist", "egress_purposes"), [1]),
         (("personal_mcp_servers",), ["*"]),
-        (("agents", "specialist", "project_grants"), ["project-a"]),
+        (("agents", "specialist", "project_grants"), ["*"]),
         (("agents", "specialist", "egress_purposes"), ["research"]),
         (("child_policy", "role"), "specialist"),
     ],

@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import math
 import time
+from contextlib import nullcontext
 
 from agent.result_artifacts import (
     ArtifactConflict, _publish_bytes, artifact_actor, descriptor_digest,
@@ -32,13 +33,35 @@ def _target(descriptor):
     return f"artifact:{descriptor['artifact_id']}:{descriptor['version']}"
 
 
-def dispatch_certified_effect(operation_type, *, run, input_ref, payload, operation_id, intent_key):
+def dispatch_certified_effect(operation_type, *, run, input_ref, payload, operation_id, intent_key,
+                               action=None, approval=None):
     """Called by the broker; provider classification never comes from model hints."""
-    if operation_type != "artifact_publish":
+    if operation_type not in {"artifact_publish", "project_artifact_publish"}:
         raise CapabilityDenied("effect_adapter_unsupported", "No durable adapter certifies this mutation")
-    from agent.runtime_commands import assert_runtime_finalization
-    assert_runtime_finalization(run)
+    if operation_type == "project_artifact_publish":
+        from agent.artifact_commands import assert_artifact_dispatch
+        from tools.capability_broker import _action_authority, _approval_binding, _approval_record, _authorize_action
+        authority_check = assert_artifact_dispatch
+        if action is None or action.operation_class != operation_type or approval is None:
+            raise CapabilityDenied("exact_approval_required", "Project publication needs its exact approved action", pending=True)
+        _authorize_action(action)
+        authority = _action_authority(action)
+        _db, _actor, record = _approval_record(approval, authority, action)
+        if record["status"] not in {"approved", "consumed"}:
+            raise CapabilityDenied("exact_approval_required", "Project publication has not been approved once", pending=True)
+        binding = _approval_binding(authority, action)
+        intent_options = {key: binding[key] for key in ("action_digest", "input_revision", "artifact_revision")}
+        intent_options["approval_id"] = approval.approval_id
+    else:
+        from agent.runtime_commands import assert_runtime_finalization
+        authority_check = assert_runtime_finalization
+        intent_options = {"input_revision": input_ref["sha256"], "artifact_revision": str(input_ref["version"])}
+    authority_check(run)
     descriptor = validate_artifact_descriptor(run.context, input_ref)
+    if operation_type == "project_artifact_publish":
+        import json
+        if json.loads(action.input_json)["descriptor"] != descriptor:
+            raise CapabilityDenied("capability_scope_mismatch", "Artifact bytes differ from the approved descriptor")
     if descriptor["producing_run"] != run.run_id:
         raise CapabilityDenied("effect_scope_mismatch", "Artifact belongs to a different producing run")
     # Validate bytes before preparing intent, but do not create a staging file.
@@ -51,10 +74,9 @@ def dispatch_certified_effect(operation_type, *, run, input_ref, payload, operat
         operation_id=operation_id, intent_key=intent_key, operation_type=operation_type,
         input_digest=descriptor_digest(descriptor), target_ref=_target(descriptor),
         policy_digest=run.context.policy.digest, policy_version=str(run.context.policy.policy_version),
-        input_revision=descriptor["sha256"], artifact_revision=str(descriptor["version"]),
         provider_idempotency="supported", idempotency_key=descriptor_digest({"target": _target(descriptor)}),
-        input_ref=descriptor, **fence)
-    assert_runtime_finalization(run)
+        input_ref=descriptor, **intent_options, **fence)
+    authority_check(run)
     dispatched = run.db.dispatch_effect(effect["effect_id"], actor, **fence)
     if not dispatched["dispatched_now"]:
         if dispatched["state"] == "confirmed":
@@ -62,9 +84,17 @@ def dispatch_certified_effect(operation_type, *, run, input_ref, payload, operat
             read_result_artifact(run.context, descriptor)
             return dispatched
         raise CapabilityDenied("effect_reconciliation_required", "Prior publication needs read-only reconciliation", pending=True)
-    assert_runtime_finalization(run)
+    authority_check(run)
+    guard = nullcontext()
+    if operation_type == "project_artifact_publish":
+        from agent.project_context import project_access
+        guard = project_access(run.context).guard(json.loads(action.input_json)["project_id"], actor, "write")
     try:
-        receipt = _publish_bytes(run.context, descriptor, payload)
+        with guard:
+            authority_check(run)
+            if operation_type == "project_artifact_publish":
+                _authorize_action(action)
+            receipt = _publish_bytes(run.context, descriptor, payload)
     except BaseException as error:
         # This is deliberately not 'failed': even fsync can report an error after
         # the namespace entry became visible. A journal outage leaves dispatched.
@@ -109,9 +139,13 @@ def reconcile_effect(db, effect_id, *, context, holder, generation, deadline_at)
     evidence = {"kind": "read_only_reconciliation", "reason": "adapter_unsupported"}
     state = "reconciliation_required"
     receipt = None
-    if effect["operation_type"] == "artifact_publish":
+    if effect["operation_type"] in {"artifact_publish", "project_artifact_publish"}:
         descriptor = effect["input_ref"]
         try:
+            if effect["operation_type"] == "project_artifact_publish":
+                from agent.project_context import project_access
+                db.read_artifact_reservation(descriptor["artifact_id"], descriptor["version"], actor,
+                                             access=project_access(context))
             validate_artifact_descriptor(context, descriptor)
             if (descriptor_digest(descriptor) != effect["input_digest"]
                     or descriptor["producing_run"] != effect["run_id"]

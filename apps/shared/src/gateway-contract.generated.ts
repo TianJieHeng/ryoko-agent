@@ -3,6 +3,826 @@
 // tests/tui_gateway/contracts/test_generated.py fails when this file is stale.
 /* eslint-disable */
 // ── Types ──
+export interface RuntimeCapabilitiesParams {
+  session_id: string
+}
+export interface RuntimeCapabilities {
+  schema_versions: 1[]
+  operations: RuntimeOperationCapability[]
+  strict_identity_required: boolean
+  durable_replay: boolean
+  max_events: number
+  admission?: RuntimeAdmissionLimits | null
+  provider?: RuntimeProviderCapabilities | null
+  tool_view?: RuntimeToolView | null
+  cursor_policy: 'snapshot_required_on_expired_or_unknown_cursor'
+}
+export interface RuntimeOperationCapability {
+  operation: 'submit' | 'steer' | 'cancel' | 'approval'
+  accepts_commands: boolean
+  executes: boolean
+  effects_enabled: boolean
+  reason?: string | null
+}
+export interface RuntimeAdmissionLimits {
+  scope?: 'profile_store'
+  max_active: number
+  max_queued: number
+  max_per_principal: number
+  max_payload_bytes: number
+  max_queue_bytes: number
+  max_database_bytes: number
+  ttl_seconds: number
+  interactive_boost_seconds: number
+  launch_lease_seconds: number
+}
+/** Adapter declarations; model support and live cancellation remain separate. */
+export interface RuntimeProviderCapabilities {
+  schema_version: 1
+  api_mode: string
+  adapter: string
+  declaration_scope: 'adapter'
+  streaming: 'supported' | 'unsupported' | 'unknown'
+  parallel_tools: 'supported' | 'unsupported' | 'unknown'
+  media_inputs: string[]
+  model_capabilities: 'unverified'
+  usage: 'final_response' | 'provider_reported' | 'unknown'
+  cancellation: 'local_only' | 'provider_acknowledgment' | 'unknown'
+  cache_semantics: string
+  opaque_state_version: number | null
+  execution_owner: 'hermes' | 'provider' | 'unknown'
+  durable_execution: boolean
+  bounded_budget: 'conditional_openai_text' | 'unsupported'
+}
+/** Frozen authorized metadata only; inspection cannot refresh the prompt. */
+export interface RuntimeToolView {
+  catalog_version: string
+  session_policy_version: string
+  installed_tool_ids: string[]
+  authorized_tool_ids: string[]
+  discoverable_tool_ids: string[]
+  selected_tool_ids: string[]
+  unavailable_reasons: Record<string, string>
+}
+/** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. */
+export interface RuntimeCommandParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  idempotency_key: string
+  expected_revision: number | null
+  operation: 'submit' | 'steer' | 'cancel' | 'approval'
+  payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
+}
+export interface RuntimeTextPayload {
+  text: string
+}
+export interface RuntimeCancelPayload {
+  reason?: string
+}
+export interface RuntimeApprovalPayload {
+  approval_id: string
+  decision: 'approve' | 'deny'
+}
+export interface CommandReceipt {
+  schema_version: 1
+  command_id: string
+  status: 'accepted' | 'rejected' | 'duplicate'
+  durable_revision: number
+  run_id: string | null
+  conflict?: RuntimeConflict | null
+}
+export interface RuntimeConflict {
+  code: string
+  message: string
+}
+export interface RuntimeSessionParams {
+  session_id: string
+  schema_version: 1
+}
+export interface MissionSnapshot {
+  schema_version: 1
+  session_id: string
+  revision: number
+  state: RuntimeSnapshotState
+  outstanding_requests: RuntimeOutstandingRequest[]
+  artifacts: RuntimeArtifactReference[]
+  unresolved_effects: RuntimeUnresolvedEffect[]
+  unresolved_invocations?: RuntimeUnresolvedInvocation[]
+  reference_counts?: RuntimeReferenceCounts
+  reference_limit?: number
+  references_truncated?: boolean
+  last_cursor: string
+  compatibility_status: 'native' | 'legacy'
+  admission?: RuntimeAdmissionSnapshot | null
+}
+export interface RuntimeSnapshotState {
+  status: 'idle' | 'accepted' | 'claimed' | 'completed' | 'failed' | 'blocked' | 'cancelled'
+  run_id: string | null
+  last_command_id: string | null
+  last_operation: 'submit' | 'steer' | 'cancel' | 'approval' | null
+}
+export interface RuntimeOutstandingRequest {
+  request_id: string
+  kind: 'approval' | 'input'
+  status: 'pending'
+}
+export interface RuntimeArtifactReference {
+  artifact_id: string
+  version: string
+}
+export interface RuntimeUnresolvedEffect {
+  effect_id: string
+  status: 'prepared' | 'dispatched' | 'outcome_unknown' | 'reconciliation_required'
+}
+export interface RuntimeUnresolvedInvocation {
+  operation_id: string
+  status: 'pending' | 'outcome_uncertain'
+}
+export interface RuntimeReferenceCounts {
+  outstanding_requests?: number
+  artifacts?: number
+  unresolved_effects?: number
+  unresolved_invocations?: number
+}
+export interface RuntimeAdmissionSnapshot {
+  draining: boolean
+  jobs: RuntimeAdmissionJob[]
+}
+export interface RuntimeAdmissionJob {
+  command_id: string
+  state: 'queued' | 'running' | 'finished' | 'expired' | 'cancelled' | 'rejected'
+  enqueued_at: number
+  expires_at: number
+  reason: string | null
+}
+export interface RuntimeEventsSinceParams {
+  session_id: string
+  schema_version: 1
+  cursor?: string | null
+  limit?: number
+}
+export interface RuntimeEventsSinceResult {
+  status: 'ok' | 'snapshot_required'
+  events: RuntimeEventEnvelope[]
+  snapshot: MissionSnapshot | null
+  last_cursor: string
+  has_more: boolean
+}
+export interface RuntimeEventEnvelope {
+  schema_version: 1
+  event_id: string
+  session_id: string
+  seq: number
+  cursor: string
+  generation: number
+  mission_id: string | null
+  run_id: string | null
+  operation_id: string | null
+  effect_id: string | null
+  delivery_id: string | null
+  approval_id: string | null
+  occurred_at: number
+  type: 'command.accepted' | 'command.claimed' | 'command.completed' | 'command.failed' | 'command.blocked' | 'command.cancelled' | 'checkpoint.published' | 'runtime.output' | 'runtime.state' | 'approval.requested' | 'approval.resolved' | 'effect.recorded' | 'model.started' | 'model.completed' | 'model.failed' | 'tool.started' | 'tool.completed' | 'tool.failed'
+  payload: RuntimeEventPayload
+}
+/** Safe correlation metadata only. Raw model/tool outputs stay off this wire. */
+export interface RuntimeEventPayload {
+  command_id?: string | null
+  operation?: 'submit' | 'steer' | 'cancel' | 'approval' | 'artifact' | null
+  effect_state?: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required' | null
+  operation_type?: 'artifact_publish' | 'project_artifact_publish' | 'unsupported' | null
+  approval_status?: 'pending' | 'approved' | 'denied' | 'consumed' | null
+  expires_at?: number | null
+  checkpoint_id?: string | null
+  included_seq?: number | null
+  cancellation?: RuntimeCancellation | null
+  physical_attempt?: RuntimePhysicalAttempt | null
+  admission_state?: 'expired' | 'cancelled' | 'rejected' | null
+  control_outcome?: 'steer_queued' | 'steer_not_queued' | 'cancel_requested' | 'cancel_not_requested' | null
+}
+export interface RuntimeCancellation {
+  request_id: string | null
+  requested_at: number | null
+  local_state: 'running' | 'requested' | 'stopped'
+  upstream_ack: boolean | null
+  pending_effect_ids: string[]
+  pending_handles: string[]
+  partial_result_available: boolean
+  remote_effects_undone: false
+}
+/** Opaque account correlation only, never credentials, endpoint or payload. */
+export interface RuntimePhysicalAttempt {
+  attempt_id: string
+  reason: 'initial' | 'auth_failure' | 'quota_exhausted' | 'throttled' | 'overloaded' | 'context_overflow' | 'unsupported_capability' | 'ambiguous_transport' | 'request_rejected'
+  provider_account_ref: string
+  reservation_id: string
+  remote_acceptance: 'unknown' | 'rejected' | 'accepted'
+  logical_request_id: string
+}
+export interface RuntimeResultGetParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  offset?: number
+  limit?: number
+}
+export interface RuntimeResultChunk {
+  command_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  size: number
+  mime: string
+  offset: number
+  data_base64: string
+  next_offset: number
+  eof: boolean
+  publication_state: 'committed' | 'published_uncommitted'
+  delivery_id: string | null
+}
+export interface RuntimeDeliveryParams {
+  session_id: string
+  schema_version: 1
+  delivery_id: string
+}
+export interface RuntimeDeliveryReceipt {
+  delivery_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  destination: RuntimeDeliveryDestination
+  state: 'pending' | 'attempting' | 'awaiting_ack' | 'partial' | 'delivered' | 'failed' | 'outcome_unknown' | 'dead_letter'
+  acknowledgment_level: 'none' | 'transport_accepted' | 'client_received'
+  components: RuntimeDeliveryComponents
+  platform_ids: string[]
+  attempt_count: number
+  max_attempts: number
+  next_attempt_at: number | null
+  deadline_at: number
+  retention_until: number
+  last_error: string | null
+  result_available: boolean
+}
+export interface RuntimeDeliveryDestination {
+  kind: 'local_runtime'
+  session_id: string
+  principal_id: string
+  profile_id: string
+  agent_id: string
+}
+export interface RuntimeDeliveryComponents {
+  text: 'not_sent' | 'client_received'
+  artifact: 'not_sent' | 'client_received'
+}
+export interface RuntimeDeliveryAckParams {
+  session_id: string
+  schema_version: 1
+  delivery_id: string
+  attempt_token: string
+  sha256: string
+  text_received?: boolean
+  artifact_received?: boolean
+}
+export interface RuntimeProjectCreateParams {
+  session_id: string
+  schema_version: 1
+  name: string
+  slug?: string | null
+  folders?: string[]
+  primary_path?: string | null
+  purpose?: string
+  grants?: ProjectGrant[]
+}
+export interface ProjectGrant {
+  principal_id: string
+  agent_id: string
+  permissions: ('read' | 'write' | 'share')[]
+}
+export interface RuntimeProjectResult {
+  project: RuntimeProjectRecord
+}
+export interface RuntimeProjectRecord {
+  id: string
+  project_id: string
+  slug: string
+  name: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  board_slug: string | null
+  primary_path: string | null
+  archived: boolean
+  created_at: number
+  folders: RuntimeProjectFolder[]
+  revision: number
+  owner_principal_id: string | null
+  purpose: string
+  source_refs: ProjectSourceRef[]
+  canonical_artifact_refs: ArtifactVersionRef[]
+  active_mission_refs: ProjectMissionRef[]
+  grants: ProjectGrant[]
+}
+export interface RuntimeProjectFolder {
+  path: string
+  label: string | null
+  is_primary: boolean
+  added_at: number
+}
+export interface ProjectSourceRef {
+  capture_id: string
+}
+export interface ArtifactVersionRef {
+  artifact_id: string
+  version: number
+}
+export interface ProjectMissionRef {
+  session_id: string
+  run_id: string
+}
+export interface RuntimeProjectParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+}
+export interface RuntimeProjectListResult {
+  projects: RuntimeProjectRecord[]
+}
+export interface RuntimeProjectRevisionParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  expected_revision: number
+}
+export interface RuntimeProjectUpdateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  expected_revision: number
+  changes: RuntimeProjectChanges
+}
+export interface RuntimeProjectChanges {
+  purpose?: string | null
+  source_refs?: ProjectSourceRef[] | null
+  canonical_artifact_refs?: ArtifactVersionRef[] | null
+  active_mission_refs?: ProjectMissionRef[] | null
+}
+export interface RuntimeProjectGrantsParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  expected_revision: number
+  grants: ProjectGrant[]
+}
+export interface ArtifactPrepareParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  content: string
+  artifact_id?: string | null
+  parent_version?: number | null
+  expected_head_version?: number | null
+  locked_sections?: string[]
+  source_refs?: string[]
+  derived_from?: ArtifactVersionRef[]
+}
+export interface ArtifactProposalResult {
+  request_id: string
+  project_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  size: number
+  mime: string
+  parent_version: number | null
+  expected_head_version: number | null
+  action_digest: string
+  approval_id: string
+  approval_digest: string
+  expires_at: number
+}
+export interface ArtifactPublishParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  content: string
+  artifact_id?: string | null
+  parent_version?: number | null
+  expected_head_version?: number | null
+  locked_sections?: string[]
+  source_refs?: string[]
+  derived_from?: ArtifactVersionRef[]
+  approval_id: string
+  approval_digest: string
+}
+export interface ArtifactPublishResult {
+  project_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  size: number
+  mime: string
+  parent_version: number | null
+  disposition: 'canonical' | 'branch'
+  head_version: number | null
+  validation_status: 'passed'
+  approval_status: 'approved'
+}
+export interface ArtifactReadParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  artifact_id: string
+  version?: number | null
+  offset?: number
+  limit?: number
+}
+export interface ArtifactReadResult {
+  project_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  size: number
+  mime: string
+  offset: number
+  data_base64: string
+  next_offset: number
+  eof: boolean
+  preview_mode: 'plain_text'
+}
+export interface ArtifactCommandParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+}
+export interface ArtifactControlStatus {
+  command_id: string
+  run_id: string
+  status: 'accepted' | 'claimed' | 'completed' | 'cancelled' | 'failed' | 'blocked'
+  owner_live: boolean
+  expires_at: number | null
+  result: ArtifactPublishResult | ArtifactCancelledResult | ArtifactBlockedResult | null
+}
+export interface ArtifactCancelledResult {
+  cancel_requested: boolean
+  effects_undone: false
+}
+export interface ArtifactBlockedResult {
+  blocked: true
+  reason: 'budget_unavailable'
+}
+export interface ArtifactEditParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  artifact_id: string
+  parent_version: number
+  expected_head_version?: number | null
+  edits: ArtifactSectionEdit[]
+}
+export interface ArtifactSectionEdit {
+  anchor: string
+  expected_sha256: string
+  replacement: string
+}
+export interface ArtifactEditPublishParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  artifact_id: string
+  parent_version: number
+  expected_head_version?: number | null
+  edits: ArtifactSectionEdit[]
+  approval_id: string
+  approval_digest: string
+}
+export interface ArtifactMergeParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  artifact_id: string
+  branch_version: number
+  current_head_version: number
+  approved_anchors: string[]
+}
+export interface ArtifactMergePublishParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  artifact_id: string
+  branch_version: number
+  current_head_version: number
+  approved_anchors: string[]
+  approval_id: string
+  approval_digest: string
+}
+export interface ArtifactRecoveryParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  effect_id: string
+  offset?: number
+  limit?: number
+}
+export interface ArtifactRecoveryResult {
+  project_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  size: number
+  mime: string
+  offset: number
+  data_base64: string
+  next_offset: number
+  eof: boolean
+  preview_mode: 'plain_text'
+  publication_state: 'committed' | 'published_uncommitted'
+}
+export interface CaptureCreateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  capture_id: string
+  original_ref: ArtifactVersionRef
+  source_url?: string | null
+  acquired_at?: number | null
+  annotation?: string
+  suggested_project_id?: string | null
+}
+export interface CaptureResult {
+  capture: CaptureRecord
+}
+export interface CaptureRecord {
+  capture_id: string
+  project_id: string
+  original_ref: ArtifactVersionRef
+  source_url: string | null
+  acquired_at: number
+  annotation: string
+  suggested_project_id: string | null
+  filed_project_id: string | null
+  revision: number
+  extractions: CaptureExtractionRecord[]
+}
+export interface CaptureExtractionRecord {
+  sequence: number
+  status: 'succeeded' | 'failed' | 'unavailable'
+  extracted_ref: ArtifactVersionRef | null
+  failure_code: string | null
+  created_at: number
+}
+export interface CaptureParams {
+  session_id: string
+  schema_version: 1
+  capture_id: string
+}
+export interface SourceListParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  limit?: number
+}
+export interface CaptureListResult {
+  captures: CaptureRecord[]
+  limit: number
+  limit_reached: boolean
+  complete: false
+}
+export interface CaptureFileParams {
+  session_id: string
+  schema_version: 1
+  capture_id: string
+  filed_project_id: string | null
+  expected_revision: number
+}
+export interface CaptureExtractionParams {
+  session_id: string
+  schema_version: 1
+  capture_id: string
+  status: 'succeeded' | 'failed' | 'unavailable'
+  extracted_ref?: ArtifactVersionRef | null
+  failure_code?: string | null
+}
+export interface CaptureReadParams {
+  session_id: string
+  schema_version: 1
+  capture_id: string
+  offset?: number
+  limit?: number
+}
+export interface CaptureDuplicatesResult {
+  groups: CaptureDuplicateGroup[]
+  scanned: number
+  truncated: boolean
+  complete: false
+  consolidation_performed: false
+}
+export interface CaptureDuplicateGroup {
+  sha256: string
+  capture_ids: string[]
+}
+export interface TemplateCreateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  template_id: string
+  version?: number
+  parent_version?: number | null
+  baseline_ref: ArtifactVersionRef
+  structure: string[]
+  style: Record<string, string>
+  assets: ArtifactVersionRef[]
+  slots: TemplateSlot[]
+  exclusions: string[]
+}
+export interface TemplateSlot {
+  name: string
+  purpose: string
+  required: boolean
+}
+export interface TemplateResult {
+  template: TemplateRecord
+}
+export interface TemplateRecord {
+  template_id: string
+  version: number
+  project_id: string
+  baseline_ref: ArtifactVersionRef
+  structure: string[]
+  style: Record<string, string>
+  assets: ArtifactVersionRef[]
+  slots: TemplateSlot[]
+  exclusions: string[]
+  parent_version: number | null
+}
+export interface TemplateParams {
+  session_id: string
+  schema_version: 1
+  template_id: string
+  version?: number | null
+}
+export interface TemplateListResult {
+  templates: TemplateRecord[]
+  limit: number
+  limit_reached: boolean
+  complete: false
+}
+export interface EvidenceCreateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  anchor_id: string
+  kind: 'source_span' | 'source_id' | 'decision' | 'constraint' | 'approval' | 'artifact_version'
+  source_ref: ArtifactVersionRef | EvidenceCaptureRef | EvidenceApprovalRef
+  source_version: string
+  range_ref?: EvidenceNumericRange | EvidenceSectionRange | null
+  captured_at?: number | null
+  authority?: 'observed' | 'source_claim' | 'user_approved' | 'inferred'
+  validity?: 'current' | 'stale' | 'revoked' | 'unverified'
+  fresh_until?: number | null
+  annotation?: string
+}
+export interface EvidenceCaptureRef {
+  capture_id: string
+}
+export interface EvidenceApprovalRef {
+  approval_id: string
+}
+export interface EvidenceNumericRange {
+  unit: 'line' | 'byte'
+  start: number
+  end: number
+}
+export interface EvidenceSectionRange {
+  unit: 'section'
+  start: string
+  end: string
+}
+export interface EvidenceResult {
+  evidence: EvidenceRecord
+}
+export interface EvidenceRecord {
+  anchor_id: string
+  project_id: string
+  kind: 'source_span' | 'source_id' | 'decision' | 'constraint' | 'approval' | 'artifact_version'
+  source_ref: ArtifactVersionRef | EvidenceCaptureRef | EvidenceApprovalRef
+  source_version: string
+  range_ref: EvidenceNumericRange | EvidenceSectionRange | null
+  captured_at: number
+  authority: 'observed' | 'source_claim' | 'user_approved' | 'inferred'
+  validity: 'current' | 'stale' | 'revoked' | 'unverified'
+  effective_validity: 'current' | 'stale' | 'revoked' | 'unverified'
+  fresh_until: number | null
+  annotation: string
+  grants_execution: false
+}
+export interface EvidenceParams {
+  session_id: string
+  schema_version: 1
+  anchor_id: string
+}
+export interface EvidenceListResult {
+  evidence: EvidenceRecord[]
+  limit: number
+  limit_reached: boolean
+  complete: false
+}
+export interface ProjectResumeParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  mission_limit?: number
+  artifact_limit?: number
+  source_limit?: number
+  evidence_limit?: number
+}
+export interface ProjectResumeResult {
+  project: ResumeProject
+  missions: ResumeMission[]
+  artifacts: ResumeArtifact[]
+  sources: ResumeCapture[]
+  evidence: ResumeEvidence[]
+  blockers: ResumeBlocker[]
+  limits: ResumeLimits
+  complete: false
+  project_revision_stable: boolean
+  assembled_at: number
+  truncated: ResumeTruncated
+}
+export interface ResumeProject {
+  project_id: string
+  revision: number
+  purpose: string
+  purpose_truncated: boolean
+}
+export interface ResumeMission {
+  session_id: string
+  run_id: string
+  revision: number
+  status: 'idle' | 'accepted' | 'claimed' | 'completed' | 'failed' | 'blocked' | 'cancelled'
+}
+export interface ResumeArtifact {
+  artifact_id: string
+  version: number
+  sha256: string
+  mime: string
+  size: number
+  filed_version: number
+  derived_validity: 'current' | 'stale'
+}
+export interface ResumeCapture {
+  capture_id: string
+  original_ref: ArtifactVersionRef
+  acquired_at: number
+  extraction_status: 'not_attempted' | 'succeeded' | 'failed' | 'unavailable'
+  annotation: string
+  annotation_truncated: boolean
+}
+export interface ResumeEvidence {
+  anchor_id: string
+  kind: 'source_span' | 'source_id' | 'decision' | 'constraint' | 'approval' | 'artifact_version'
+  source_ref: ArtifactVersionRef | EvidenceCaptureRef | EvidenceApprovalRef
+  source_version: string
+  range_ref: EvidenceNumericRange | EvidenceSectionRange | null
+  captured_at: number
+  authority: 'observed' | 'source_claim' | 'user_approved' | 'inferred'
+  validity: 'current' | 'stale' | 'revoked' | 'unverified'
+  effective_validity: 'current' | 'stale' | 'revoked' | 'unverified'
+  fresh_until: number | null
+  annotation: string
+  annotation_truncated: boolean
+  execution_authority: false
+  freshness: 'unspecified' | 'stale' | 'within_declared_window'
+}
+export interface ResumeBlocker {
+  kind: 'mission' | 'artifact' | 'capture' | 'evidence' | 'project'
+  reference: string
+  code: string
+}
+export interface ResumeLimits {
+  missions: number
+  artifacts: number
+  sources: number
+  evidence: number
+}
+export interface ResumeTruncated {
+  missions: boolean
+  artifacts: boolean
+  sources: boolean
+  evidence: boolean
+}
 /** Any method the desktop may route to a named profile (``requestGatewayForProfile`` adds ``profile``). */
 export interface ProfileParams {
   profile?: string | null
@@ -1369,287 +2189,6 @@ export interface DisplayLeaseReleaseParams {
   profile?: string | null
   viewer_id?: string | null
   force?: boolean | null
-}
-export interface RuntimeCapabilitiesParams {
-  session_id: string
-}
-export interface RuntimeCapabilities {
-  schema_versions: 1[]
-  operations: RuntimeOperationCapability[]
-  strict_identity_required: boolean
-  durable_replay: boolean
-  max_events: number
-  admission?: RuntimeAdmissionLimits | null
-  provider?: RuntimeProviderCapabilities | null
-  tool_view?: RuntimeToolView | null
-  cursor_policy: 'snapshot_required_on_expired_or_unknown_cursor'
-}
-export interface RuntimeOperationCapability {
-  operation: 'submit' | 'steer' | 'cancel' | 'approval'
-  accepts_commands: boolean
-  executes: boolean
-  effects_enabled: boolean
-  reason?: string | null
-}
-export interface RuntimeAdmissionLimits {
-  scope?: 'profile_store'
-  max_active: number
-  max_queued: number
-  max_per_principal: number
-  max_payload_bytes: number
-  max_queue_bytes: number
-  max_database_bytes: number
-  ttl_seconds: number
-  interactive_boost_seconds: number
-  launch_lease_seconds: number
-}
-/** Adapter declarations; model support and live cancellation remain separate. */
-export interface RuntimeProviderCapabilities {
-  schema_version: 1
-  api_mode: string
-  adapter: string
-  declaration_scope: 'adapter'
-  streaming: 'supported' | 'unsupported' | 'unknown'
-  parallel_tools: 'supported' | 'unsupported' | 'unknown'
-  media_inputs: string[]
-  model_capabilities: 'unverified'
-  usage: 'final_response' | 'provider_reported' | 'unknown'
-  cancellation: 'local_only' | 'provider_acknowledgment' | 'unknown'
-  cache_semantics: string
-  opaque_state_version: number | null
-  execution_owner: 'hermes' | 'provider' | 'unknown'
-  durable_execution: boolean
-  bounded_budget: 'conditional_openai_text' | 'unsupported'
-}
-/** Frozen authorized metadata only; inspection cannot refresh the prompt. */
-export interface RuntimeToolView {
-  catalog_version: string
-  session_policy_version: string
-  installed_tool_ids: string[]
-  authorized_tool_ids: string[]
-  discoverable_tool_ids: string[]
-  selected_tool_ids: string[]
-  unavailable_reasons: Record<string, string>
-}
-/** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. */
-export interface RuntimeCommandParams {
-  session_id: string
-  schema_version: 1
-  command_id: string
-  idempotency_key: string
-  expected_revision: number | null
-  operation: 'submit' | 'steer' | 'cancel' | 'approval'
-  payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
-}
-export interface RuntimeTextPayload {
-  text: string
-}
-export interface RuntimeCancelPayload {
-  reason?: string
-}
-export interface RuntimeApprovalPayload {
-  approval_id: string
-  decision: 'approve' | 'deny'
-}
-export interface CommandReceipt {
-  schema_version: 1
-  command_id: string
-  status: 'accepted' | 'rejected' | 'duplicate'
-  durable_revision: number
-  run_id: string | null
-  conflict?: RuntimeConflict | null
-}
-export interface RuntimeConflict {
-  code: string
-  message: string
-}
-export interface RuntimeSessionParams {
-  session_id: string
-  schema_version: 1
-}
-export interface MissionSnapshot {
-  schema_version: 1
-  session_id: string
-  revision: number
-  state: RuntimeSnapshotState
-  outstanding_requests: RuntimeOutstandingRequest[]
-  artifacts: RuntimeArtifactReference[]
-  unresolved_effects: RuntimeUnresolvedEffect[]
-  unresolved_invocations?: RuntimeUnresolvedInvocation[]
-  reference_counts?: RuntimeReferenceCounts
-  reference_limit?: number
-  references_truncated?: boolean
-  last_cursor: string
-  compatibility_status: 'native' | 'legacy'
-  admission?: RuntimeAdmissionSnapshot | null
-}
-export interface RuntimeSnapshotState {
-  status: 'idle' | 'accepted' | 'claimed' | 'completed' | 'failed' | 'blocked' | 'cancelled'
-  run_id: string | null
-  last_command_id: string | null
-  last_operation: 'submit' | 'steer' | 'cancel' | 'approval' | null
-}
-export interface RuntimeOutstandingRequest {
-  request_id: string
-  kind: 'approval' | 'input'
-  status: 'pending'
-}
-export interface RuntimeArtifactReference {
-  artifact_id: string
-  version: string
-}
-export interface RuntimeUnresolvedEffect {
-  effect_id: string
-  status: 'prepared' | 'dispatched' | 'outcome_unknown' | 'reconciliation_required'
-}
-export interface RuntimeUnresolvedInvocation {
-  operation_id: string
-  status: 'pending' | 'outcome_uncertain'
-}
-export interface RuntimeReferenceCounts {
-  outstanding_requests?: number
-  artifacts?: number
-  unresolved_effects?: number
-  unresolved_invocations?: number
-}
-export interface RuntimeAdmissionSnapshot {
-  draining: boolean
-  jobs: RuntimeAdmissionJob[]
-}
-export interface RuntimeAdmissionJob {
-  command_id: string
-  state: 'queued' | 'running' | 'finished' | 'expired' | 'cancelled' | 'rejected'
-  enqueued_at: number
-  expires_at: number
-  reason: string | null
-}
-export interface RuntimeEventsSinceParams {
-  session_id: string
-  schema_version: 1
-  cursor?: string | null
-  limit?: number
-}
-export interface RuntimeEventsSinceResult {
-  status: 'ok' | 'snapshot_required'
-  events: RuntimeEventEnvelope[]
-  snapshot: MissionSnapshot | null
-  last_cursor: string
-  has_more: boolean
-}
-export interface RuntimeEventEnvelope {
-  schema_version: 1
-  event_id: string
-  session_id: string
-  seq: number
-  cursor: string
-  generation: number
-  mission_id: string | null
-  run_id: string | null
-  operation_id: string | null
-  effect_id: string | null
-  delivery_id: string | null
-  approval_id: string | null
-  occurred_at: number
-  type: 'command.accepted' | 'command.claimed' | 'command.completed' | 'command.failed' | 'command.blocked' | 'command.cancelled' | 'checkpoint.published' | 'runtime.output' | 'runtime.state' | 'approval.requested' | 'approval.resolved' | 'effect.recorded' | 'model.started' | 'model.completed' | 'model.failed' | 'tool.started' | 'tool.completed' | 'tool.failed'
-  payload: RuntimeEventPayload
-}
-/** Safe correlation metadata only. Raw model/tool outputs stay off this wire. */
-export interface RuntimeEventPayload {
-  command_id?: string | null
-  operation?: 'submit' | 'steer' | 'cancel' | 'approval' | null
-  effect_state?: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required' | null
-  operation_type?: 'artifact_publish' | 'unsupported' | null
-  approval_status?: 'pending' | 'approved' | 'denied' | 'consumed' | null
-  expires_at?: number | null
-  checkpoint_id?: string | null
-  included_seq?: number | null
-  cancellation?: RuntimeCancellation | null
-  physical_attempt?: RuntimePhysicalAttempt | null
-  admission_state?: 'expired' | 'cancelled' | 'rejected' | null
-  control_outcome?: 'steer_queued' | 'steer_not_queued' | 'cancel_requested' | 'cancel_not_requested' | null
-}
-export interface RuntimeCancellation {
-  request_id: string | null
-  requested_at: number | null
-  local_state: 'running' | 'requested' | 'stopped'
-  upstream_ack: boolean | null
-  pending_effect_ids: string[]
-  pending_handles: string[]
-  partial_result_available: boolean
-  remote_effects_undone: false
-}
-/** Opaque account correlation only, never credentials, endpoint or payload. */
-export interface RuntimePhysicalAttempt {
-  attempt_id: string
-  reason: 'initial' | 'auth_failure' | 'quota_exhausted' | 'throttled' | 'overloaded' | 'context_overflow' | 'unsupported_capability' | 'ambiguous_transport' | 'request_rejected'
-  provider_account_ref: string
-  reservation_id: string
-  remote_acceptance: 'unknown' | 'rejected' | 'accepted'
-  logical_request_id: string
-}
-export interface RuntimeResultGetParams {
-  session_id: string
-  schema_version: 1
-  command_id: string
-  offset?: number
-  limit?: number
-}
-export interface RuntimeResultChunk {
-  command_id: string
-  artifact_id: string
-  version: number
-  sha256: string
-  size: number
-  mime: string
-  offset: number
-  data_base64: string
-  next_offset: number
-  eof: boolean
-  publication_state: 'committed' | 'published_uncommitted'
-  delivery_id: string | null
-}
-export interface RuntimeDeliveryParams {
-  session_id: string
-  schema_version: 1
-  delivery_id: string
-}
-export interface RuntimeDeliveryReceipt {
-  delivery_id: string
-  artifact_id: string
-  version: number
-  sha256: string
-  destination: RuntimeDeliveryDestination
-  state: 'pending' | 'attempting' | 'awaiting_ack' | 'partial' | 'delivered' | 'failed' | 'outcome_unknown' | 'dead_letter'
-  acknowledgment_level: 'none' | 'transport_accepted' | 'client_received'
-  components: RuntimeDeliveryComponents
-  platform_ids: string[]
-  attempt_count: number
-  max_attempts: number
-  next_attempt_at: number | null
-  deadline_at: number
-  retention_until: number
-  last_error: string | null
-  result_available: boolean
-}
-export interface RuntimeDeliveryDestination {
-  kind: 'local_runtime'
-  session_id: string
-  principal_id: string
-  profile_id: string
-  agent_id: string
-}
-export interface RuntimeDeliveryComponents {
-  text: 'not_sent' | 'client_received'
-  artifact: 'not_sent' | 'client_received'
-}
-export interface RuntimeDeliveryAckParams {
-  session_id: string
-  schema_version: 1
-  delivery_id: string
-  attempt_token: string
-  sha256: string
-  text_received?: boolean
-  artifact_received?: boolean
 }
 export interface GroupsCapabilitiesParams {
   profile?: string | null
@@ -3270,7 +3809,7 @@ export interface RuntimeEffectRecord {
   effect_id: string
   run_id: string
   operation_id: string
-  operation_type: 'artifact_publish' | 'unsupported'
+  operation_type: 'artifact_publish' | 'project_artifact_publish' | 'unsupported'
   state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
   action_digest: string
   input_digest: string
@@ -5599,8 +6138,31 @@ export interface RpcMethods {
   'runtime.approval.resolve': { params: RuntimeApprovalResolveParams; result: RuntimeApprovalResolveResult }
   /** Read an owned oldest-first bounded approval snapshot. This is not complete history or permission to act. */
   'runtime.approvals.list': { params: RuntimeApprovalListParams; result: RuntimeApprovalListResult }
+  'runtime.artifact.cancel': { params: ArtifactCommandParams; result: ArtifactControlStatus }
+  'runtime.artifact.edit.prepare': { params: ArtifactEditParams; result: ArtifactProposalResult }
+  'runtime.artifact.edit.publish': { params: ArtifactEditPublishParams; result: ArtifactPublishResult }
+  /** Read complete immutable bytes in bounded chunks; render only as plain text. */
+  'runtime.artifact.get': { params: ArtifactReadParams; result: ArtifactReadResult }
+  'runtime.artifact.merge.prepare': { params: ArtifactMergeParams; result: ArtifactProposalResult }
+  'runtime.artifact.merge.publish': { params: ArtifactMergePublishParams; result: ArtifactPublishResult }
+  /** Prepare one exact owned edit for approval; does not dispatch a model or publish bytes. */
+  'runtime.artifact.prepare': { params: ArtifactPrepareParams; result: ArtifactProposalResult }
+  /** Approve and publish exactly the prepared content under the same live bounded control claim. */
+  'runtime.artifact.publish': { params: ArtifactPublishParams; result: ArtifactPublishResult }
+  /** Recover exact confirmed publication bytes without publishing a catalog version or moving a head. */
+  'runtime.artifact.recovery.get': { params: ArtifactRecoveryParams; result: ArtifactRecoveryResult }
+  'runtime.artifact.status': { params: ArtifactCommandParams; result: ArtifactControlStatus }
   /** Negotiate the owned session's durable runtime API and executable operations. */
   'runtime.capabilities': { params: RuntimeCapabilitiesParams; result: RuntimeCapabilities }
+  'runtime.capture.create': { params: CaptureCreateParams; result: CaptureResult }
+  /** Propose matching-content review without changing or deleting any original. */
+  'runtime.capture.duplicates': { params: SourceListParams; result: CaptureDuplicatesResult }
+  'runtime.capture.extraction.record': { params: CaptureExtractionParams; result: CaptureResult }
+  'runtime.capture.file': { params: CaptureFileParams; result: CaptureResult }
+  'runtime.capture.get': { params: CaptureParams; result: CaptureResult }
+  'runtime.capture.list': { params: SourceListParams; result: CaptureListResult }
+  /** Read retained original bytes with digest verification and plain-text-only preview. */
+  'runtime.capture.read': { params: CaptureReadParams; result: ArtifactReadResult }
   /** Accept one idempotent command. Retries return the original durable receipt. */
   'runtime.command': { params: RuntimeCommandParams; result: CommandReceipt }
   /** Record exact attempt/digest-bound client component receipt, not human read confirmation. */
@@ -5617,10 +6179,24 @@ export interface RpcMethods {
   'runtime.effects.list': { params: RuntimeEffectListParams; result: RuntimeEffectListResult }
   /** Read bounded durable transitions, or an explicit snapshot_required with a consistent snapshot. */
   'runtime.events.since': { params: RuntimeEventsSinceParams; result: RuntimeEventsSinceResult }
+  'runtime.evidence.create': { params: EvidenceCreateParams; result: EvidenceResult }
+  'runtime.evidence.get': { params: EvidenceParams; result: EvidenceResult }
+  'runtime.evidence.list': { params: SourceListParams; result: EvidenceListResult }
+  'runtime.project.claim': { params: RuntimeProjectRevisionParams; result: RuntimeProjectResult }
+  'runtime.project.create': { params: RuntimeProjectCreateParams; result: RuntimeProjectResult }
+  'runtime.project.get': { params: RuntimeProjectParams; result: RuntimeProjectResult }
+  'runtime.project.grants.set': { params: RuntimeProjectGrantsParams; result: RuntimeProjectResult }
+  'runtime.project.list': { params: RuntimeSessionParams; result: RuntimeProjectListResult }
+  'runtime.project.update': { params: RuntimeProjectUpdateParams; result: RuntimeProjectResult }
   /** Read bounded digest-checked immutable result bytes without executing or delivering work. */
   'runtime.result.get': { params: RuntimeResultGetParams; result: RuntimeResultChunk }
+  /** Assemble bounded authorized project references and blockers without private memory or a completeness claim. */
+  'runtime.resume.get': { params: ProjectResumeParams; result: ProjectResumeResult }
   /** Read a consistent durable mission projection and its restart-stable cursor. */
   'runtime.snapshot': { params: RuntimeSessionParams; result: MissionSnapshot }
+  'runtime.template.create': { params: TemplateCreateParams; result: TemplateResult }
+  'runtime.template.get': { params: TemplateParams; result: TemplateResult }
+  'runtime.template.list': { params: SourceListParams; result: TemplateListResult }
   /** Attach the frontend to a live session without closing the previously focused one. */
   'session.activate': { params: SessionActivateParams; result: SessionActivateResult }
   /** Live sessions in this process, insertion order (not a DB browser). */
@@ -5962,7 +6538,24 @@ export const RPC_METHODS = [
   'rollback.restore',
   'runtime.approval.resolve',
   'runtime.approvals.list',
+  'runtime.artifact.cancel',
+  'runtime.artifact.edit.prepare',
+  'runtime.artifact.edit.publish',
+  'runtime.artifact.get',
+  'runtime.artifact.merge.prepare',
+  'runtime.artifact.merge.publish',
+  'runtime.artifact.prepare',
+  'runtime.artifact.publish',
+  'runtime.artifact.recovery.get',
+  'runtime.artifact.status',
   'runtime.capabilities',
+  'runtime.capture.create',
+  'runtime.capture.duplicates',
+  'runtime.capture.extraction.record',
+  'runtime.capture.file',
+  'runtime.capture.get',
+  'runtime.capture.list',
+  'runtime.capture.read',
   'runtime.command',
   'runtime.delivery.ack',
   'runtime.delivery.retry',
@@ -5971,8 +6564,21 @@ export const RPC_METHODS = [
   'runtime.effect.reconcile',
   'runtime.effects.list',
   'runtime.events.since',
+  'runtime.evidence.create',
+  'runtime.evidence.get',
+  'runtime.evidence.list',
+  'runtime.project.claim',
+  'runtime.project.create',
+  'runtime.project.get',
+  'runtime.project.grants.set',
+  'runtime.project.list',
+  'runtime.project.update',
   'runtime.result.get',
+  'runtime.resume.get',
   'runtime.snapshot',
+  'runtime.template.create',
+  'runtime.template.get',
+  'runtime.template.list',
   'session.activate',
   'session.active_list',
   'session.archive',

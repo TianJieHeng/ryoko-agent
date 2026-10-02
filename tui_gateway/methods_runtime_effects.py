@@ -35,7 +35,7 @@ def _runtime_effect_public(row):
               "policy_version", "policy_digest", "generation", "approval_id", "provider_idempotency", "created_at", "updated_at")
     result = {key: row[key] for key in fields}
     result.update(target_digest=_runtime_effect_reference_digest(row["target_ref"]),
-        operation_type="artifact_publish" if row["operation_type"] == "artifact_publish" else "unsupported",
+        operation_type=row["operation_type"] if row["operation_type"] in {"artifact_publish", "project_artifact_publish"} else "unsupported",
         exactly_once_external=False, replay_permitted=False)
     return result
 
@@ -196,7 +196,7 @@ def _runtime_effect_reconcile(rid, params):
         actor = _runtime_effect_actor(agent)
         row = db.get_effect(request.effect_id, actor)
         _runtime_effect_require_session(agent, db, row)
-        if row["operation_type"] != "artifact_publish":
+        if row["operation_type"] not in {"artifact_publish", "project_artifact_publish"}:
             raise CapabilityDenied("effect_adapter_unsupported", "Only local immutable artifact inspection is supported")
         with agent_runtime_scope(agent.runtime_context):
             _runtime_effect_policy(agent)

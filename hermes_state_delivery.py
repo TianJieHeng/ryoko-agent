@@ -149,7 +149,8 @@ class SessionDeliveryMixin:
     def read_runtime_result_artifact(self, session_id, actor, command_id):
         with self._runtime_read() as conn:
             sid, actor = self._delivery_actor_on_conn(conn, session_id, actor)
-            row = conn.execute("SELECT * FROM runtime_artifact_versions WHERE session_id=? AND command_id=?",
+            row = conn.execute("SELECT * FROM runtime_artifact_versions WHERE session_id=? AND command_id=? "
+                               "AND artifact_kind='runtime_result' AND publication_state='committed'",
                                (sid, _identifier(command_id, "command_id"))).fetchone()
             _require(row is not None, "result_not_found", "No committed result exists")
             _require(all(row[key] == actor[key] for key in _ACTOR_FIELDS),
@@ -167,7 +168,8 @@ class SessionDeliveryMixin:
             sid, actor = self._delivery_actor_on_conn(conn, session_id, actor)
             command = self._runtime_command_on_conn(conn, sid, command_id)
             _require(command is not None, "result_not_found", "No result exists for this command")
-            row = conn.execute("SELECT * FROM runtime_artifact_versions WHERE session_id=? AND command_id=?",
+            row = conn.execute("SELECT * FROM runtime_artifact_versions WHERE session_id=? AND command_id=? "
+                               "AND artifact_kind='runtime_result' AND publication_state='committed'",
                                (sid, command_id)).fetchone()
             if row is not None:
                 _require(all(row[key] == actor[key] for key in _ACTOR_FIELDS),

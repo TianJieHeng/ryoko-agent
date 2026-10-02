@@ -85,14 +85,32 @@ def _calling_session_project_id(conn, task_id: Optional[str]) -> tuple[bool, Opt
     return True, project.id if project else None
 
 
+def _strict_project_context(*, mutation=False):
+    from tools.capability_broker import CapabilityDenied, require_live_policy
+    context = require_live_policy(require_run=False)
+    if context is not None and mutation:
+        raise CapabilityDenied("project_mutation_unsupported", "Project creation/switching requires owned user controls")
+    return context
+
+
 def project_list(task_id: Optional[str] = None) -> str:
     from hermes_cli import projects_db as pdb
+    from tools.capability_broker import CapabilityDenied
+    try:
+        context = _strict_project_context()
+    except CapabilityDenied as exc:
+        return exc.result()
     with pdb.connect_closing() as conn:
         # Another tab's switch moves the profile-global pointer; this chat's project is its own cwd.
         scoped, active = _calling_session_project_id(conn, task_id)
         if not scoped:
             active = pdb.get_active_id(conn)
         projects = pdb.list_projects(conn)
+        if context is not None:
+            from agent.project_context import list_authorized_projects
+            allowed = {row["project_id"] for row in list_authorized_projects(context)}
+            projects = [project for project in projects if project.id in allowed]
+            active = active if active in allowed else None
     return json.dumps({
         "active_id": active,
         "projects": [
@@ -103,6 +121,11 @@ def project_list(task_id: Optional[str] = None) -> str:
 
 
 def project_create(name: str, path: Optional[str] = None, task_id: Optional[str] = None) -> str:
+    from tools.capability_broker import CapabilityDenied
+    try:
+        _strict_project_context(mutation=True)
+    except CapabilityDenied as exc:
+        return exc.result()
     name = (name or "").strip()
     if not name:
         return json.dumps({"success": False, "error": "name is required"})
@@ -133,6 +156,11 @@ def project_create(name: str, path: Optional[str] = None, task_id: Optional[str]
 
 
 def project_switch(project: str, task_id: Optional[str] = None) -> str:
+    from tools.capability_broker import CapabilityDenied
+    try:
+        _strict_project_context(mutation=True)
+    except CapabilityDenied as exc:
+        return exc.result()
     from hermes_cli import projects_db as pdb
     with pdb.connect_closing() as conn:
         proj = _resolve(conn, project)

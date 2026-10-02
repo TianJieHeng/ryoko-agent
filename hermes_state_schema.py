@@ -829,6 +829,25 @@ class SessionSchemaMixin:
         for sql in indexes:
             cursor.execute(sql)
 
+    def _heal_artifact_version_uniqueness(self, cursor: sqlite3.Cursor) -> None:
+        """Schema35's one-result-per-command uniqueness becomes a partial result index.
+
+        Copy stored descriptor/provenance bytes unchanged. The existing writer owns
+        the entire rebuild; no version or delivery obligation is reclassified.
+        """
+        indexes = cursor.execute("PRAGMA index_list(runtime_artifact_versions)").fetchall()
+        broad_unique = any(item[2] and not item[4] and
+            [row[2] for row in cursor.execute(f'PRAGMA index_info("{item[1]}")').fetchall()] == ["session_id", "command_id"]
+            for item in indexes)
+        if not broad_unique:
+            return
+        start = SCHEMA_SQL.index("CREATE TABLE IF NOT EXISTS runtime_artifact_versions (")
+        ddl = SCHEMA_SQL[start:SCHEMA_SQL.index(";", start) + 1]
+        columns = [row[1] for row in cursor.execute("PRAGMA table_info(runtime_artifact_versions)")]
+        names = ",".join(_q(name) for name in columns)
+        self._rebuild_table(cursor, "runtime_artifact_versions", "runtime_artifact_versions_v35",
+                            ddl, f"INSERT INTO runtime_artifact_versions({names}) SELECT {names} FROM runtime_artifact_versions_v35")
+
     def _heal_gateway_routing_pk(self, cursor: sqlite3.Cursor) -> None:
         """Rebuild ``gateway_routing`` when its PRIMARY KEY predates scoping (``session_key TEXT
         PRIMARY KEY``): the reconciler ADDs ``scope`` but SQLite cannot ALTER a PK, so every
@@ -939,6 +958,7 @@ class SessionSchemaMixin:
         # Column reconciliation, then the two table-shape repairs ADD COLUMN cannot express.
         self._reconcile_columns(cursor)
         self._heal_gateway_routing_pk(cursor)
+        self._heal_artifact_version_uniqueness(cursor)
         # Rebuild session_model_usage if its PRIMARY KEY lacks the ``task`` column (5-column PK on installs
         # already at v22+ when the column landed — the version-gated rebuild is unreachable there, #73823).
         # Same PK-rebuild constraint as gateway_routing above.

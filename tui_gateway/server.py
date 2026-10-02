@@ -2298,6 +2298,13 @@ def _project_info_for_cwd(cwd: str) -> dict | None:
         from hermes_cli import projects_db as pdb
         with pdb.connect_closing() as conn:
             project = pdb.project_for_path(conn, cwd)
+        from agent.project_context import legacy_project_surface_allowed, authorize_project
+        if project is not None and not legacy_project_surface_allowed():
+            from agent.runtime_context import current_agent_context
+            context = current_agent_context()
+            if context is None:
+                return None
+            authorize_project(context, project.id, "read")
         return None if project is None else {
             "id": project.id, "slug": project.slug, "name": project.name, "primary_path": project.primary_path}
     except Exception:
@@ -3662,6 +3669,8 @@ from . import (  # noqa: E402
     methods_runtime as _methods_runtime,
     methods_runtime_effects as _methods_runtime_effects,
     methods_runtime_results as _methods_runtime_results,
+    methods_artifacts as _methods_artifacts,
+    methods_project_sources as _methods_project_sources,
     methods_vault as _methods_vault, methods_free_tier as _methods_free_tier,
     methods_connectors as _methods_connectors, methods_connectors_account as _methods_connectors_account,
     methods_display as _methods_display, methods_display_watch as _methods_display_watch,
@@ -3676,7 +3685,7 @@ for _m in (
     _methods_browser_control, _methods_session, _methods_prompt, _methods_config,
     _methods_config_set, _methods_complete, _methods_tools, _methods_profiles, _methods_images,
     _methods_bot_relay, _prompt_turn, _billing_view, _methods_projects, _methods_session_foreign,
-    _methods_session_control, _methods_subagents, _methods_runtime, _methods_runtime_effects, _methods_runtime_results, _methods_vault, _methods_free_tier, _methods_connectors,
+    _methods_session_control, _methods_subagents, _methods_runtime, _methods_runtime_effects, _methods_runtime_results, _methods_artifacts, _methods_project_sources, _methods_vault, _methods_free_tier, _methods_connectors,
     _methods_connectors_account, _methods_display, _methods_display_watch, _methods_onboarding,
     _methods_i18n, _methods_shared_metrics):
     _m.register(sys.modules[__name__])

@@ -48,9 +48,13 @@ def _identifier(value, name):
     return value
 
 
-def _locator(context, artifact_id: str, version: int) -> str:
-    actor = descriptor_digest(artifact_actor(context))
+def _owner_locator(owner_actor, artifact_id: str, version: int) -> str:
+    actor = descriptor_digest(owner_actor)
     return f"runtime-artifacts/{actor}/{_digest(artifact_id.encode())}.{version}.blob"
+
+
+def _locator(context, artifact_id: str, version: int) -> str:
+    return _owner_locator(artifact_actor(context), artifact_id, version)
 
 
 def result_artifact_descriptor(context, producing_run: str, payload_bytes: bytes,
@@ -68,7 +72,7 @@ def result_artifact_descriptor(context, producing_run: str, payload_bytes: bytes
             "mime": mime, "producing_run": producing_run}
 
 
-def validate_artifact_descriptor(context, descriptor: dict) -> dict:
+def _validate_descriptor(descriptor: dict, owner_actor: dict) -> dict:
     if not isinstance(descriptor, dict) or set(descriptor) != _FIELDS:
         raise ArtifactConflict("Invalid artifact descriptor")
     _identifier(descriptor["artifact_id"], "artifact identity")
@@ -80,9 +84,13 @@ def validate_artifact_descriptor(context, descriptor: dict) -> dict:
     if (type(descriptor["size"]) is not int or not 0 <= descriptor["size"] <= MAX_ARTIFACT_BYTES
             or not isinstance(descriptor["sha256"], str) or not _HEX.fullmatch(descriptor["sha256"])):
         raise ArtifactConflict("Invalid artifact content bounds")
-    if descriptor["locator"] != _locator(context, descriptor["artifact_id"], version):
+    if descriptor["locator"] != _owner_locator(owner_actor, descriptor["artifact_id"], version):
         raise ArtifactConflict("Artifact locator does not belong to this actor")
     return dict(descriptor)
+
+
+def validate_artifact_descriptor(context, descriptor: dict) -> dict:
+    return _validate_descriptor(descriptor, artifact_actor(context))
 
 
 def _open_namespace(context, descriptor, *, create=False):
@@ -194,6 +202,29 @@ def read_result_artifact(context, descriptor: dict) -> bytes:
         return _read_at(parent, leaf, descriptor)
     finally:
         os.close(parent)
+
+
+def read_project_artifact(context, db, project_id: str, artifact_id: str, version: int) -> bytes:
+    """Read a granted stored version without acquiring its producer's identity.
+
+    The catalog supplies the immutable locator and owning namespace after live
+    project authorization. A caller cannot substitute a descriptor or owner.
+    """
+    from agent.project_context import project_access
+    from tools.capability_broker import require_live_policy
+    if require_live_policy(require_run=False) != context:
+        raise ArtifactConflict("Artifact read requires its live requesting context")
+    actor, access = artifact_actor(context), project_access(context)
+    with access.guard(project_id, actor, "read"):
+        row = db.read_artifact_version(artifact_id, version, actor, access=access)
+        if row["project_id"] != project_id:
+            raise ArtifactConflict("Artifact belongs to a different project")
+        descriptor = _validate_descriptor(row["descriptor"], row["owner_actor"])
+        parent, leaf = _open_namespace(context, descriptor)
+        try:
+            return _read_at(parent, leaf, descriptor)
+        finally:
+            os.close(parent)
 
 
 def publish_result_artifact(run, payload_bytes: bytes, artifact_id: str, version=1,

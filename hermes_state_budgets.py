@@ -163,7 +163,7 @@ class SessionBudgetsMixin:
         command = conn.execute("SELECT command_json FROM runtime_commands WHERE session_id=? "
                                "AND principal_id=? AND run_id=?",
                                (sid, actor["principal_id"], run_id)).fetchall()
-        _check(any(json.loads(item[0])["operation"] == "submit" for item in command),
+        _check(any(json.loads(item[0])["operation"] in {"submit", "artifact"} for item in command),
                "budget_run_not_found", "Root and child accounts require an actual accepted runtime run")
         return sid
 

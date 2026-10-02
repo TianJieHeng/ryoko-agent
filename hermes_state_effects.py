@@ -156,7 +156,7 @@ class SessionEffectsMixin:
                "identity_mismatch", "Effect actor differs from the accepted runtime actor")
         rows = conn.execute("SELECT * FROM runtime_commands WHERE session_id=? AND run_id=? AND principal_id=?",
                             (sid, run_id, actor["principal_id"])).fetchall()
-        command = next((item for item in rows if json.loads(item["command_json"])["operation"] == "submit"), None)
+        command = next((item for item in rows if json.loads(item["command_json"])["operation"] in {"submit", "artifact"}), None)
         _check(command is not None, "effect_run_not_found", "An accepted runtime run is required")
         if dispatch:
             _check(command["status"] == "claimed" and command["claimed_holder"] == holder

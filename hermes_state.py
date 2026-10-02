@@ -79,6 +79,7 @@ from hermes_state_runtime import SessionRuntimeMixin
 from hermes_state_budgets import SessionBudgetsMixin
 from hermes_state_effects import SessionEffectsMixin
 from hermes_state_delivery import SessionDeliveryMixin
+from hermes_state_artifacts import SessionArtifactsMixin
 
 try:  # Hard dependency, but tolerate scaffold-phase imports before pip install.
     import psutil
@@ -456,7 +457,7 @@ class SessionDB(
     SessionSessionsMixin, SessionFtsSetupMixin, SessionSearchMixin, SessionSchemaMixin,
     SessionPortabilityMixin, SessionTelegramTopicsMixin, SessionCompressionMixin,
     SessionGatewayMixin, SessionMaintenanceMixin, SessionUsageMixin, SessionTitlesMixin,
-    SessionMessagesMixin, SessionRewindMixin, SessionProfileRepairMixin, SessionRuntimeMixin, SessionBudgetsMixin, SessionEffectsMixin, SessionDeliveryMixin,
+    SessionMessagesMixin, SessionRewindMixin, SessionProfileRepairMixin, SessionRuntimeMixin, SessionBudgetsMixin, SessionEffectsMixin, SessionDeliveryMixin, SessionArtifactsMixin,
 ):
     """SQLite-backed session storage with FTS5 search; many reader threads, one writer (WAL)."""
 

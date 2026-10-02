@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "phase": "BE07",
+  "base_sha": "a138372d8df64a5424a64df8e4ea73c41a2cd290",
+  "publication": "direct main; no PR",
+  "database_schema": 36,
+  "runtime_schema": 1,
+  "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/agent/test_artifact_commands.py tests/agent/test_project_context.py tests/agent/test_evidence_ledger.py tests/agent/test_agent_identity.py tests/agent/test_runtime_commands.py tests/agent/test_effect_reconciler.py tests/agent/test_budget_runtime.py tests/hermes_cli/test_artifact_store.py tests/hermes_cli/test_project_sources.py tests/hermes_cli/test_projects_db.py tests/hermes_state/test_artifact_records.py tests/hermes_state/test_effect_records.py tests/hermes_state/test_delivery_outbox.py tests/hermes_state/test_runtime_store.py tests/tools/test_capability_broker.py tests/tools/test_capability_approvals_durable.py tests/tools/test_project_tools.py tests/tui_gateway/test_artifact_rpc.py tests/tui_gateway/test_project_sources_rpc.py tests/tui_gateway/test_runtime_effects_rpc.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_runtime_v1.py tests/tui_gateway/contracts/test_generated.py -j 5 --file-retries 0",
+  "log": "be07-final.log",
+  "log_sha256": "7df0f7acc753afc2a3df6dfa34f9c1e14f0b9644c475141e8b4e0e4c4d569d9f",
+  "files": 23,
+  "passed": 304,
+  "failed": 0,
+  "seconds": 27.3,
+  "per_file": [
+    {
+      "file": "tests/agent/test_agent_identity.py",
+      "passed": 49,
+      "seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_evidence_ledger.py",
+      "passed": 3,
+      "seconds": 1.8
+    },
+    {
+      "file": "tests/agent/test_project_context.py",
+      "passed": 3,
+      "seconds": 2.6
+    },
+    {
+      "file": "tests/agent/test_effect_reconciler.py",
+      "passed": 12,
+      "seconds": 3.6
+    },
+    {
+      "file": "tests/hermes_cli/test_project_sources.py",
+      "passed": 7,
+      "seconds": 2.2
+    },
+    {
+      "file": "tests/hermes_cli/test_projects_db.py",
+      "passed": 7,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/hermes_state/test_artifact_records.py",
+      "passed": 8,
+      "seconds": 1.3
+    },
+    {
+      "file": "tests/agent/test_artifact_commands.py",
+      "passed": 23,
+      "seconds": 8.2
+    },
+    {
+      "file": "tests/hermes_state/test_delivery_outbox.py",
+      "passed": 2,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/hermes_state/test_runtime_store.py",
+      "passed": 13,
+      "seconds": 1.2
+    },
+    {
+      "file": "tests/hermes_state/test_effect_records.py",
+      "passed": 25,
+      "seconds": 3.4
+    },
+    {
+      "file": "tests/hermes_cli/test_artifact_store.py",
+      "passed": 10,
+      "seconds": 9.6
+    },
+    {
+      "file": "tests/tools/test_capability_broker.py",
+      "passed": 3,
+      "seconds": 2.5
+    },
+    {
+      "file": "tests/agent/test_runtime_commands.py",
+      "passed": 17,
+      "seconds": 12.5
+    },
+    {
+      "file": "tests/tools/test_capability_approvals_durable.py",
+      "passed": 28,
+      "seconds": 5.0
+    },
+    {
+      "file": "tests/tui_gateway/contracts/test_runtime_v1.py",
+      "passed": 2,
+      "seconds": 1.3
+    },
+    {
+      "file": "tests/tui_gateway/contracts/test_generated.py",
+      "passed": 2,
+      "seconds": 2.3
+    },
+    {
+      "file": "tests/tools/test_project_tools.py",
+      "passed": 9,
+      "seconds": 3.9
+    },
+    {
+      "file": "tests/agent/test_budget_runtime.py",
+      "passed": 35,
+      "seconds": 20.4
+    },
+    {
+      "file": "tests/tui_gateway/test_project_sources_rpc.py",
+      "passed": 8,
+      "seconds": 6.8
+    },
+    {
+      "file": "tests/tui_gateway/test_artifact_rpc.py",
+      "passed": 10,
+      "seconds": 9.5
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_rpc.py",
+      "passed": 11,
+      "seconds": 8.0
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_effects_rpc.py",
+      "passed": 17,
+      "seconds": 10.8
+    }
+  ],
+  "checks": {
+    "changed_python_ruff": "passed",
+    "generated_contracts": "passed",
+    "shared_typescript": "passed",
+    "git_diff_check": "passed"
+  },
+  "other_campaigns": [
+    {
+      "log": "be07-state-frozen.log",
+      "log_sha256": "f71f2d11af1ad030ec69d53d936557464e771a6add77396f54573a65dc716f9e",
+      "files": 5,
+      "passed": 63,
+      "failed": 0,
+      "seconds": 3.4,
+      "per_file": [
+        {
+          "file": "tests/hermes_state/test_delivery_outbox.py",
+          "passed": 2,
+          "seconds": 0.9
+        },
+        {
+          "file": "tests/hermes_state/test_artifact_records.py",
+          "passed": 8,
+          "seconds": 1.4
+        },
+        {
+          "file": "tests/hermes_state/test_runtime_store.py",
+          "passed": 13,
+          "seconds": 1.5
+        },
+        {
+          "file": "tests/hermes_state/test_budget_accounts.py",
+          "passed": 15,
+          "seconds": 1.6
+        },
+        {
+          "file": "tests/hermes_state/test_effect_records.py",
+          "passed": 25,
+          "seconds": 3.4
+        }
+      ]
+    },
+    {
+      "log": "be07-project-final.log",
+      "log_sha256": "edf23f589af204a7ea1367fc9dad4acb3a76f56bd13595914723df9849129d0d",
+      "files": 6,
+      "passed": 86,
+      "failed": 0,
+      "seconds": 9.1,
+      "per_file": [
+        {
+          "file": "tests/agent/test_agent_identity.py",
+          "passed": 49,
+          "seconds": 0.9
+        },
+        {
+          "file": "tests/hermes_cli/test_projects_db.py",
+          "passed": 7,
+          "seconds": 1.0
+        },
+        {
+          "file": "tests/hermes_state/test_artifact_records.py",
+          "passed": 8,
+          "seconds": 1.3
+        },
+        {
+          "file": "tests/agent/test_project_context.py",
+          "passed": 3,
+          "seconds": 2.5
+        },
+        {
+          "file": "tests/tools/test_project_tools.py",
+          "passed": 9,
+          "seconds": 3.6
+        },
+        {
+          "file": "tests/tui_gateway/test_artifact_rpc.py",
+          "passed": 10,
+          "seconds": 9.1
+        }
+      ]
+    },
+    {
+      "log": "be07-artifact-final.log",
+      "log_sha256": "69a60f303f36b9324d245db5cea36e93cfb619697137b8c99ac7f23f3fe10637",
+      "files": 4,
+      "passed": 53,
+      "failed": 0,
+      "seconds": 9.3,
+      "per_file": [
+        {
+          "file": "tests/tools/test_capability_broker.py",
+          "passed": 3,
+          "seconds": 2.3
+        },
+        {
+          "file": "tests/agent/test_effect_reconciler.py",
+          "passed": 12,
+          "seconds": 3.4
+        },
+        {
+          "file": "tests/tools/test_capability_approvals_durable.py",
+          "passed": 28,
+          "seconds": 4.6
+        },
+        {
+          "file": "tests/hermes_cli/test_artifact_store.py",
+          "passed": 10,
+          "seconds": 9.3
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "First complete file adapter is UTF-8 Markdown; plaintext preview only",
+    "Capture URLs are metadata only; no fetch or extractor claimed",
+    "Artifact control uses separate accepted operation and original300-second lease; no model/tool dispatch",
+    "Cross-store project filing is separate from artifact-head CAS, not distributed atomicity",
+    "Schema35 downgrade readers unsupported after schema36 multiple projectversions; retain compatible readers and disable new classes",
+    "Full project regression is BE18; inherited extra tmp project-tree, AF_UNIX and process visibility limitations unchanged",
+    "No remote sharing/live services/deployment/credentials used"
+  ]
+}

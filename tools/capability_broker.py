@@ -135,6 +135,31 @@ def _authority():
             context.policy.policy_version, context.policy.digest, context.config_digest)
 
 
+def _action_authority(action):
+    if action.operation_class != "project_artifact_publish":
+        return _authority()
+    from agent.artifact_commands import assert_artifact_dispatch
+    run = assert_artifact_dispatch()
+    context, identity = run.context, run.context.identity
+    return DispatchAuthority(identity.principal_id, identity.profile_id, identity.agent_id,
+        context.profile_home, run.session_id, run.run_id, run.holder, run.generation,
+        context.policy.policy_version, context.policy.digest, context.config_digest)
+
+
+def project_artifact_action(scope):
+    """Host-owned exact local artifact contract; no new model-facing tool."""
+    fields = {"project_id", "request_id", "descriptor", "metadata", "expected_head_version",
+              "project_revision", "base_sha256"}
+    if not isinstance(scope, dict) or set(scope) != fields:
+        raise CapabilityDenied("invalid_artifact_action", "An exact artifact proposal is required")
+    descriptor = scope["descriptor"]
+    if not isinstance(descriptor, dict):
+        raise CapabilityDenied("invalid_artifact_action", "An immutable artifact descriptor is required")
+    return ActionSpec("runtime.project_artifact_publish", scope, "project_artifact_publish",
+        destination=f"project:{scope['project_id']}", destination_purpose="project_artifact",
+        contract_digest=hashlib.sha256(b"be07.project-artifact-markdown.v1").hexdigest())
+
+
 _SESSION_MODULES = {"todo_list": "tools.todo_tool", "clarify": "tools.clarify_tool",
                     "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
                     "tool_call": "tools.tool_search"}
@@ -179,6 +204,20 @@ def tool_action(name: str, arguments: dict, *, entry=None) -> ActionSpec:
 
 
 def _authorize_action(action):
+    if action.operation_class == "project_artifact_publish":
+        from agent.artifact_commands import assert_artifact_dispatch
+        from agent.project_context import authorize_project
+        from agent.result_artifacts import validate_artifact_descriptor
+        run = assert_artifact_dispatch()
+        scope = json.loads(action.input_json)
+        if project_artifact_action(scope) != action:
+            raise CapabilityDenied("capability_scope_mismatch", "Artifact action contract changed")
+        descriptor = validate_artifact_descriptor(run.context, scope["descriptor"])
+        project = authorize_project(run.context, scope["project_id"], "write")
+        if (descriptor["producing_run"] != run.run_id
+                or project["revision"] != scope["project_revision"]):
+            raise CapabilityDenied("artifact_revision_changed", "Artifact owner or project authorization revision changed")
+        return
     from tools.agent_policy_gate import authorize_tool
     denied = authorize_tool(action.name)
     if denied is not None:
@@ -247,16 +286,28 @@ def _approval_binding(authority, action):
     input_digest = hashlib.sha256(action.input_json.encode()).hexdigest()
     target_ref = _digest({"destination": action.destination, "purpose": action.destination_purpose,
                           "resource_roots": list(action.resource_roots)})
-    return {"session_id": authority.session_id, "run_id": authority.run_id,
+    result = {"session_id": authority.session_id, "run_id": authority.run_id,
             "holder": authority.holder, "generation": authority.generation,
             "action_digest": action.digest, "input_digest": input_digest, "target_ref": target_ref,
             "policy_version": str(authority.policy_version), "policy_digest": authority.policy_digest,
             "input_revision": "inline:" + input_digest, "artifact_revision": "none"}
+    if action.operation_class == "project_artifact_publish":
+        from agent.result_artifacts import descriptor_digest
+        scope = json.loads(action.input_json)
+        descriptor = scope["descriptor"]
+        result.update(input_digest=descriptor_digest(descriptor),
+            target_ref=f"artifact:{descriptor['artifact_id']}:{descriptor['version']}",
+            input_revision=scope["base_sha256"], artifact_revision=str(descriptor["version"]))
+    return result
 
 
-def _approval_store(authority):
-    from agent.runtime_commands import assert_runtime_dispatch
-    run = assert_runtime_dispatch()
+def _approval_store(authority, action=None):
+    if action is not None and action.operation_class == "project_artifact_publish":
+        from agent.artifact_commands import assert_artifact_dispatch
+        run = assert_artifact_dispatch()
+    else:
+        from agent.runtime_commands import assert_runtime_dispatch
+        run = assert_runtime_dispatch()
     actor = {"principal_id": authority.principal_id, "profile_id": authority.profile_id,
              "agent_id": authority.agent_id}
     return run.db, actor
@@ -267,7 +318,7 @@ def _approval_record(preview, authority, action):
     if (not isinstance(preview, ApprovalPreview) or preview.authority != authority
             or preview.action != action or preview.expires_at <= time.time()):
         raise CapabilityDenied("approval_mismatch", "Approval expired, changed, or belongs to another runtime owner")
-    db, actor = _approval_store(authority)
+    db, actor = _approval_store(authority, action)
     try:
         record = db.get_effect_approval(preview.approval_id, actor)
     except RuntimeStoreError as exc:
@@ -279,14 +330,19 @@ def _approval_record(preview, authority, action):
     return db, actor, record
 
 
-def preview_action(action: ActionSpec, *, ttl_seconds=300) -> ApprovalPreview:
+def preview_action(action: ActionSpec, *, ttl_seconds=300, approval_id=None, expires_at=None) -> ApprovalPreview:
     from hermes_state_runtime import RuntimeStoreError
-    authority = _authority()
+    authority = _action_authority(action)
     _authorize_action(action)
     expires = _expiry(ttl_seconds, 300)
-    db, actor = _approval_store(authority)
+    if expires_at is not None:
+        if (type(expires_at) not in (int, float) or not math.isfinite(expires_at)
+                or not time.time() < expires_at <= expires):
+            raise CapabilityDenied("approval_expired", "Exact proposal approval has expired")
+        expires = expires_at
+    db, actor = _approval_store(authority, action)
     try:
-        record = db.request_effect_approval(actor=actor, expires_at=expires,
+        record = db.request_effect_approval(actor=actor, expires_at=expires, approval_id=approval_id,
                                             **_approval_binding(authority, action))
     except RuntimeStoreError as exc:
         raise CapabilityDenied(exc.code, str(exc)) from exc
@@ -294,12 +350,24 @@ def preview_action(action: ActionSpec, *, ttl_seconds=300) -> ApprovalPreview:
                            record["approval_digest"], record["expires_at"])
 
 
+def recover_approval_preview(approval_id, action):
+    """Reconstruct a projection; durable exact scope remains the authority."""
+    authority = _action_authority(action)
+    _authorize_action(action)
+    db, actor = _approval_store(authority, action)
+    record = db.get_effect_approval(approval_id, actor)
+    preview = ApprovalPreview(record["approval_id"], authority, action,
+                              record["approval_digest"], record["expires_at"])
+    _approval_record(preview, authority, action)
+    return preview
+
+
 def resolve_approval(preview: ApprovalPreview, digest: str, choice: str) -> dict:
     """Only the bound human surface supplies a decision; SQLite owns its status."""
     from hermes_state_runtime import RuntimeStoreError
-    authority = _authority()
     if not isinstance(preview, ApprovalPreview) or digest != preview.approval_digest:
         raise CapabilityDenied("approval_mismatch", "The answer does not name the exact approval digest")
+    authority = _action_authority(preview.action)
     _authorize_action(preview.action)
     db, actor, _record = _approval_record(preview, authority, preview.action)
     try:
@@ -313,7 +381,9 @@ def resolve_approval(preview: ApprovalPreview, digest: str, choice: str) -> dict
 def issue_capability(action: ActionSpec, *, approval: ApprovalPreview | None = None,
                      ttl_seconds=60) -> Capability:
     from hermes_state_runtime import RuntimeStoreError
-    authority = _authority()
+    authority = _action_authority(action)
+    if action.operation_class == "project_artifact_publish":
+        raise CapabilityDenied("effect_dispatch_required", "Artifact approval must be consumed with durable effect dispatch")
     _authorize_action(action)
     expires = _expiry(ttl_seconds, 60)
     identifier, digest = uuid.uuid4().hex, None
@@ -462,7 +532,8 @@ def invoke_bound_handler(name, arguments, callback, *, handler):
     return invoke_tool_dispatch(name, arguments, callback, entry=entry)
 
 
-def invoke_effect_dispatch(operation_type, *, run, input_ref, payload, operation_id, intent_key):
+def invoke_effect_dispatch(operation_type, *, run, input_ref, payload, operation_id, intent_key,
+                           action=None, approval=None):
     """Internal durable mutation edge, separate from model-facing tool tickets.
 
     Only host-certified adapters may classify an effect. Immutable result storage
@@ -472,4 +543,4 @@ def invoke_effect_dispatch(operation_type, *, run, input_ref, payload, operation
     """
     from agent.effect_reconciler import dispatch_certified_effect
     return dispatch_certified_effect(operation_type, run=run, input_ref=input_ref,
-        payload=payload, operation_id=operation_id, intent_key=intent_key)
+        payload=payload, operation_id=operation_id, intent_key=intent_key, action=action, approval=approval)

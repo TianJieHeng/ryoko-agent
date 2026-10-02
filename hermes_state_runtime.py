@@ -17,7 +17,7 @@ RUNTIME_SCHEMA_VERSION = 1
 MAX_RUNTIME_PAYLOAD_BYTES = 256 * 1024
 MAX_RUNTIME_PAGE = 500
 MAX_SNAPSHOT_REFERENCES = 100
-_OPERATIONS = frozenset({"submit", "steer", "cancel", "approval"})
+_OPERATIONS = frozenset({"submit", "steer", "cancel", "approval", "artifact"})
 _FINISH_STATES = frozenset({"completed", "failed", "blocked", "cancelled"})
 _RECORDED_TYPES = frozenset({"runtime.output", "runtime.state", "approval.requested",
                              "approval.resolved", "effect.recorded", "model.started", "model.completed", "model.failed",
@@ -223,7 +223,7 @@ class SessionRuntimeMixin:
         effects = [{"effect_id": item["effect_id"], "status": item["state"]} for item in conn.execute(
             "SELECT effect_id,state FROM " + effect_from + " ORDER BY created_at,effect_id LIMIT ?",
             (*params, MAX_SNAPSHOT_REFERENCES))]
-        artifact_from = "runtime_artifact_versions WHERE " + scope
+        artifact_from = "runtime_artifact_versions WHERE " + scope + " AND publication_state='committed' AND artifact_kind='runtime_result'"
         artifact_count = conn.execute("SELECT COUNT(*) FROM " + artifact_from, params).fetchone()[0]
         artifacts = [{"artifact_id": item["artifact_id"], "version": str(item["version"])} for item in conn.execute(
             "SELECT artifact_id,version FROM " + artifact_from + " ORDER BY created_at DESC,artifact_id,version DESC LIMIT ?",
@@ -236,7 +236,7 @@ class SessionRuntimeMixin:
             "AND c.status='claimed' AND c.claimed_holder=l.holder AND c.claimed_generation=l.generation "
             "WHERE a.session_id=? AND a.principal_id=? AND a.profile_id=? AND a.agent_id=? "
             "AND a.status='pending' AND a.expires_at>? AND l.expires_at>? "
-            "AND json_extract(c.command_json,'$.operation')='submit' "
+            "AND json_extract(c.command_json,'$.operation') IN ('submit','artifact') "
             "AND NOT EXISTS (SELECT 1 FROM runtime_commands stop WHERE stop.session_id=a.session_id "
             "AND stop.run_id=a.run_id AND json_extract(stop.command_json,'$.operation')='cancel')")
         approval_params = (*params, now, now)
@@ -318,7 +318,7 @@ class SessionRuntimeMixin:
                 _version(duplicates[0]["schema_version"])
                 return json.loads(duplicates[0]["receipt_json"])
             _revision(state["revision"], command.get("expected_revision"))
-            run_id = uuid.uuid4().hex if command["operation"] == "submit" else json.loads(state["snapshot_json"])["state"]["run_id"]
+            run_id = uuid.uuid4().hex if command["operation"] in {"submit", "artifact"} else json.loads(state["snapshot_json"])["state"]["run_id"]
             generation = conn.execute("SELECT turn_owner_generation FROM sessions WHERE id=?", (sid,)).fetchone()[0]
             event = self._append_runtime_event_on_conn(conn, sid, "command.accepted",
                 {"command_id": command["command_id"], "operation": command["operation"]}, generation, run_id=run_id)
@@ -361,7 +361,7 @@ class SessionRuntimeMixin:
             row = conn.execute("SELECT MIN(e.occurred_at) FROM runtime_events e JOIN runtime_commands c "
                 "ON c.session_id=e.session_id AND c.accepted_revision=e.seq "
                 "WHERE c.session_id=? AND c.run_id=? AND e.type='command.accepted' "
-                "AND json_extract(c.command_json,'$.operation')='submit'", (sid, run_id)).fetchone()
+                "AND json_extract(c.command_json,'$.operation') IN ('submit','artifact')", (sid, run_id)).fetchone()
             # An absent/pruned acceptance cannot authorize a fresh deadline.
             return row[0] if row is not None else None
 

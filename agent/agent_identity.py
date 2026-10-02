@@ -151,7 +151,7 @@ class AgentPolicy:
     project_grants: frozenset[str] = field(
         default_factory=frozenset,
         metadata=_schema(
-            "Reserved project grant list; must be empty until BE07 enforcement"
+            "Exact project IDs; intersected with live project principal/agent permissions"
         ),
     )
     egress_purposes: frozenset[str] = field(
@@ -333,10 +333,8 @@ def _parse_policy(value: object, path: str) -> AgentPolicy:
     data = _mapping(value, path)
     _validate_fields(data, AgentPolicy, path)
     policy = AgentPolicy(**data)
-    if policy.project_grants or policy.egress_purposes:
-        raise IdentityPolicyError(
-            "project_grants and egress_purposes must be empty until their enforcement is implemented"
-        )
+    if policy.egress_purposes:
+        raise IdentityPolicyError("egress_purposes must be empty; use the enforced recipient_plan")
     return policy
 
 

@@ -7,6 +7,7 @@ opening an old DB is always safe.
 from __future__ import annotations
 
 import contextlib
+import json
 import os
 import re
 import secrets
@@ -36,7 +37,13 @@ CREATE TABLE IF NOT EXISTS projects (
     board_slug    TEXT,
     primary_path  TEXT,
     created_at    INTEGER NOT NULL,
-    archived      INTEGER NOT NULL DEFAULT 0
+    archived      INTEGER NOT NULL DEFAULT 0,
+    revision      INTEGER NOT NULL DEFAULT 0,
+    owner_principal_id TEXT,
+    purpose       TEXT NOT NULL DEFAULT '',
+    source_refs_json TEXT NOT NULL DEFAULT '[]',
+    canonical_artifact_refs_json TEXT NOT NULL DEFAULT '[]',
+    active_mission_refs_json TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS project_folders (
@@ -50,6 +57,14 @@ CREATE TABLE IF NOT EXISTS project_folders (
 
 CREATE INDEX IF NOT EXISTS idx_project_folders_path
     ON project_folders(path);
+
+CREATE TABLE IF NOT EXISTS project_grants (
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    principal_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    permission TEXT NOT NULL CHECK(permission IN ('read','write','share')),
+    PRIMARY KEY(project_id,principal_id,agent_id,permission)
+);
 
 CREATE TABLE IF NOT EXISTS project_meta (
     key    TEXT PRIMARY KEY,
@@ -75,6 +90,24 @@ _INITIALIZED_PATHS: set[str] = set()
 # TEXT columns added to `projects` after v1; re-applied idempotently on every open so a legacy DB
 # upgrades in place.
 _OPTIONAL_PROJECT_COLUMNS = ("board_slug", "primary_path", "icon", "color")
+_PROJECT_RECORD_COLUMNS = {
+    "revision": "INTEGER NOT NULL DEFAULT 0", "owner_principal_id": "TEXT",
+    "purpose": "TEXT NOT NULL DEFAULT ''", "source_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+    "canonical_artifact_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+    "active_mission_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+}
+_REVISION_TRIGGERS = """
+CREATE TRIGGER IF NOT EXISTS projects_legacy_revision AFTER UPDATE OF
+    slug,name,description,icon,color,board_slug,primary_path,archived ON projects
+WHEN NEW.revision = OLD.revision
+BEGIN UPDATE projects SET revision=revision+1 WHERE id=NEW.id; END;
+CREATE TRIGGER IF NOT EXISTS project_folder_insert_revision AFTER INSERT ON project_folders
+BEGIN UPDATE projects SET revision=revision+1 WHERE id=NEW.project_id; END;
+CREATE TRIGGER IF NOT EXISTS project_folder_update_revision AFTER UPDATE ON project_folders
+BEGIN UPDATE projects SET revision=revision+1 WHERE id=NEW.project_id; END;
+CREATE TRIGGER IF NOT EXISTS project_folder_delete_revision AFTER DELETE ON project_folders
+BEGIN UPDATE projects SET revision=revision+1 WHERE id=OLD.project_id; END;
+"""
 # Nullable TEXT columns that may be absent from a legacy row.
 _OPTIONAL_ROW_FIELDS = ("description", "icon", "color", "board_slug", "primary_path")
 _ACTIVE_META_KEY = "active_id"
@@ -128,6 +161,10 @@ def connect(db_path: Optional[Path] = None) -> sqlite3.Connection:
         for col in _OPTIONAL_PROJECT_COLUMNS:
             if col not in cols:
                 _add_column_if_missing(conn, "projects", col, f"{col} TEXT")
+        for col, ddl in _PROJECT_RECORD_COLUMNS.items():
+            if col not in cols:
+                _add_column_if_missing(conn, "projects", col, f"{col} {ddl}")
+        conn.executescript(_REVISION_TRIGGERS)
         _INITIALIZED_PATHS.add(resolved)
 
     return open_db(path, db_label="projects.db", foreign_keys=True, initialize=_initialize)
@@ -221,6 +258,7 @@ def create_project(
     conn: sqlite3.Connection, *, name: str, slug: Optional[str] = None, folders: Optional[Iterable[str]] = None,
     primary_path: Optional[str] = None, description: Optional[str] = None, icon: Optional[str] = None,
     color: Optional[str] = None, board_slug: Optional[str] = None, allow_duplicate_path: bool = False,
+    owner_principal_id: Optional[str] = None, purpose: str = "", grants: Iterable[dict] = (),
 ) -> str:
     """Create a project and return its id. ``folders`` are normalized to absolute paths; ``primary_path``
     is added to the folder set (if absent) and marked primary, else the first folder becomes primary."""
@@ -244,15 +282,16 @@ def create_project(
         )
     with write_txn(conn):
         conn.execute(
-            "INSERT INTO projects (id, slug, name, description, icon, color, board_slug,  primary_path, created_at, archived) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
+            "INSERT INTO projects (id, slug, name, description, icon, color, board_slug, primary_path, created_at, archived,"
+            "owner_principal_id,purpose) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)",
             (pid, _unique_slug(conn, slug_candidate), name, description, icon, color,
-             normalize_slug(board_slug) if board_slug else None, primary, now),
+             normalize_slug(board_slug) if board_slug else None, primary, now, owner_principal_id, purpose),
         )
         conn.executemany(
             "INSERT INTO project_folders (project_id, path, label, is_primary, added_at) VALUES (?, ?, ?, ?, ?)",
             [(pid, path, None, 1 if path == primary else 0, now) for path in folder_paths],
         )
+        _replace_grants_locked(conn, pid, grants)
     return pid
 
 
@@ -483,3 +522,32 @@ def branch_name_for(project: Project, task_id: str, *, title: str = "") -> str:
     base = f"{project.slug or _slugify(project.name)}/{task_id}"
     tslug = _BRANCH_SAFE_RE.sub("-", str(title).strip().lower()).strip("-")[:40].strip("-") if title else ""
     return f"{base}-{tslug}" if tslug else base
+
+
+# BE07 metadata is a projection of these same project IDs, never another catalog.
+def project_record(conn: sqlite3.Connection, project_id: str) -> Optional[dict]:
+    row = conn.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
+    if row is None:
+        return None
+    grants = {}
+    for grant in conn.execute("SELECT principal_id,agent_id,permission FROM project_grants WHERE project_id=? "
+                              "ORDER BY principal_id,agent_id,permission", (project_id,)):
+        grants.setdefault((grant["principal_id"], grant["agent_id"]), []).append(grant["permission"])
+    return {**_load_project(conn, row).to_dict(), "project_id": row["id"], "revision": row["revision"],
+            "owner_principal_id": row["owner_principal_id"], "purpose": row["purpose"],
+            **{key: json.loads(row[f"{key}_json"]) for key in (
+                "source_refs", "canonical_artifact_refs", "active_mission_refs")},
+            "grants": [{"principal_id": principal, "agent_id": agent, "permissions": permissions}
+                       for (principal, agent), permissions in grants.items()]}
+
+
+def _replace_grants_locked(conn, project_id, grants):
+    conn.execute("DELETE FROM project_grants WHERE project_id=?", (project_id,))
+    conn.executemany("INSERT INTO project_grants(project_id,principal_id,agent_id,permission) VALUES(?,?,?,?)",
+                     [(project_id, row["principal_id"], row["agent_id"], permission)
+                      for row in grants for permission in row["permissions"]])
+
+
+def project_permission(conn, project_id, principal_id, agent_id, permission):
+    return conn.execute("SELECT 1 FROM project_grants WHERE project_id=? AND principal_id=? "
+                        "AND agent_id=? AND permission=?", (project_id, principal_id, agent_id, permission)).fetchone() is not None

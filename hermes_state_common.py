@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 35
+SCHEMA_VERSION = 36
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -725,8 +725,75 @@ CREATE TABLE IF NOT EXISTS runtime_artifact_versions (
     agent_id TEXT NOT NULL,
     descriptor_json TEXT NOT NULL,
     created_at REAL NOT NULL,
-    PRIMARY KEY(artifact_id,version),
-    UNIQUE(session_id,command_id)
+    artifact_kind TEXT NOT NULL DEFAULT 'runtime_result',
+    publication_state TEXT NOT NULL DEFAULT 'committed',
+    project_id TEXT,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    reservation_key TEXT,
+    reservation_json TEXT NOT NULL DEFAULT '{}',
+    commit_digest TEXT,
+    disposition TEXT NOT NULL DEFAULT 'committed',
+    PRIMARY KEY(artifact_id,version)
+);
+CREATE TABLE IF NOT EXISTS artifact_heads (
+    artifact_id TEXT PRIMARY KEY,
+    version INTEGER NOT NULL,
+    revision INTEGER NOT NULL,
+    project_id TEXT NOT NULL,
+    updated_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS artifact_derivations (
+    artifact_id TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    source_artifact_id TEXT NOT NULL,
+    source_version INTEGER NOT NULL,
+    invalidated_at REAL,
+    PRIMARY KEY(artifact_id,version,source_artifact_id,source_version)
+);
+CREATE TABLE IF NOT EXISTS artifact_captures (
+    capture_id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    record_json TEXT NOT NULL,
+    filed_project_id TEXT,
+    filing_revision INTEGER NOT NULL DEFAULT 0,
+    created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS artifact_capture_extractions (
+    capture_id TEXT NOT NULL,
+    sequence INTEGER NOT NULL,
+    record_json TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY(capture_id,sequence)
+);
+CREATE TABLE IF NOT EXISTS artifact_capture_filings (
+    capture_id TEXT NOT NULL,
+    revision INTEGER NOT NULL,
+    project_id TEXT,
+    created_at REAL NOT NULL,
+    PRIMARY KEY(capture_id,revision)
+);
+CREATE TABLE IF NOT EXISTS artifact_templates (
+    template_id TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    project_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    record_json TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY(template_id,version)
+);
+CREATE TABLE IF NOT EXISTS artifact_evidence_anchors (
+    anchor_id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    record_json TEXT NOT NULL,
+    created_at REAL NOT NULL
 );
 -- One table, explicit disjoint authorities. Legacy sweeps cannot claim runtime.v1.
 CREATE TABLE IF NOT EXISTS delivery_obligations (
@@ -884,6 +951,15 @@ CREATE INDEX IF NOT EXISTS idx_async_delegations_delivery
 
 # Indexes on later-added columns must run AFTER _reconcile_columns(), or executescript fails on legacy DBs.
 DEFERRED_INDEX_SQL = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_runtime_result_command ON runtime_artifact_versions(session_id,command_id)
+    WHERE artifact_kind='runtime_result';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_artifact_reservation_key ON runtime_artifact_versions(session_id,run_id,reservation_key)
+    WHERE reservation_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_artifact_project_versions ON runtime_artifact_versions(project_id,artifact_id,publication_state,version);
+CREATE INDEX IF NOT EXISTS idx_artifact_capture_project ON artifact_captures(project_id,created_at);
+CREATE INDEX IF NOT EXISTS idx_artifact_template_project ON artifact_templates(project_id,created_at);
+CREATE INDEX IF NOT EXISTS idx_artifact_anchor_project ON artifact_evidence_anchors(project_id,created_at);
+
 CREATE INDEX IF NOT EXISTS idx_messages_session_active
     ON messages(session_id, active, timestamp);
 CREATE INDEX IF NOT EXISTS idx_messages_display_page

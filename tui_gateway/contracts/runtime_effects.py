@@ -77,7 +77,7 @@ class RuntimeEffectRecord(Result):
     effect_id: str
     run_id: str
     operation_id: str
-    operation_type: Literal["artifact_publish", "unsupported"]
+    operation_type: Literal["artifact_publish", "project_artifact_publish", "unsupported"]
     state: RuntimeEffectState
     action_digest: str
     input_digest: str
