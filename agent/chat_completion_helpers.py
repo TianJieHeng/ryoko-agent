@@ -770,6 +770,12 @@ def _dispatch_nonstreaming_api_request(agent, api_kwargs: dict, *, make_client):
     manage their own clients. Interrupt/abort/close semantics stay in callers.
     """
     assert_runtime_dispatch(agent)
+    from agent.budget_account import current_budget, invoke_budgeted_completion
+    budget = current_budget(agent)
+    if budget is not None:
+        if agent.api_mode != "chat_completions" or agent.provider == "moa":
+            budget.block("provider transport has no certified finite physical-request adapter")
+        return invoke_budgeted_completion(make_client("chat_completion_request"), api_kwargs, agent=agent)
     if agent.api_mode == "codex_responses":
         return agent._run_codex_stream(api_kwargs, client=make_client("codex_stream_request"),
             on_first_delta=getattr(agent, "_codex_on_first_delta", None))
@@ -4128,6 +4134,9 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
     streaming codex runner; cron turns and delegated children run inline."""
     if agent._interrupt_requested:
         raise InterruptedError("Agent interrupted before streaming API call")
+    from agent.budget_account import current_budget
+    if current_budget(agent) is not None:
+        return interruptible_api_call(agent, api_kwargs)
     if agent.api_mode == "codex_responses":
         return _stream_codex_passthrough(agent, api_kwargs, on_first_delta)
     if agent.api_mode == "bedrock_converse":

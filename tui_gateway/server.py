@@ -383,6 +383,11 @@ def _load_interim_assistant_messages() -> bool:
 
 
 def _shutdown_sessions() -> None:
+    from tui_gateway import prompt_admission
+    try:
+        prompt_admission.shutdown(sys.modules[__name__])
+    except Exception:
+        logger.exception("Durable queue shutdown failed; accepted records remain recoverable")
     # Durable-first: flush transcripts (bounded budget) BEFORE the slow teardown so a supervisor SIGKILL can't lose them.
     for step in (_flush_sessions_before_exit, _release_gateway_wake_owner, _stop_turns_before_exit):
         with contextlib.suppress(Exception):
@@ -402,6 +407,11 @@ _REAPER_SCAN_S = 300.0
 # mid-update loses at most one flush interval of session state.
 _EXIT_FLUSH_BUDGET_S = max(0.0, env_float("HERMES_TUI_EXIT_FLUSH_BUDGET_S", 5.0))
 _INCREMENTAL_FLUSH_INTERVAL_S = max(0.0, env_float("HERMES_TUI_SESSION_FLUSH_INTERVAL_S", _REAPER_SCAN_S))
+
+
+def _start_runtime_admission() -> None:
+    from tui_gateway.prompt_admission import start
+    start(sys.modules[__name__])
 
 
 def _start_idle_reaper() -> None:

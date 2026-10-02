@@ -259,6 +259,12 @@ def _build_child_agent(
                     from hermes_state_registry import release_or_close
                     release_or_close(child_session_db)
             raise
+    from agent.budget_account import bind_child_budget
+    try:
+        bind_child_budget(parent_agent, child)
+    except BaseException:
+        child.close()
+        raise
     child._print_fn = getattr(parent_agent, "_print_fn", None)
     _apply_child_cache_ttl(child)
     if child_session_db is not None:

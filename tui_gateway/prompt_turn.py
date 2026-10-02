@@ -1154,6 +1154,8 @@ def _run_prompt_submit(
             session["agent"], session.pop("one_turn_model_restore", None), terminal_callback,
             receipt_committed=terminal_callback is None)
         from agent.runtime_context import AgentContext
+        previous_cancel_waits = getattr(st.agent, "_runtime_cancel_waits", None)
+        st.agent._runtime_cancel_waits = lambda: _clear_pending(sid)
         strict_runtime = isinstance(getattr(agent, "runtime_context", None), AgentContext)
         st.marker_key = _record_turn_marker(session, text,
             auto_continue=terminal_callback is None and not strict_runtime,
@@ -1186,6 +1188,7 @@ def _run_prompt_submit(
             _recover_turn_exception(sid, session, st, e)
         finally:
             _finish_turn(sid, session, st)
+            st.agent._runtime_cancel_waits = previous_cancel_waits
             _current_runtime_session_record.reset(runtime_session_token)
             reset_transport(transport_token)
             # A stale interim closure must not fire during a later turn.
@@ -1230,6 +1233,12 @@ def _run_prompt_submit(
                              if runtime_command_receipt is not None else contextlib.nullcontext())
             with command_scope:
                 followup = run_body()
+        if runtime_command_receipt is not None:
+            from agent.admission import AdmissionQueue
+            AdmissionQueue(agent._session_db).reject_launch(
+                agent.session_id, runtime_command_receipt["command_id"], "turn_not_claimed")
+            from tui_gateway import prompt_admission, server
+            prompt_admission.wake(server)
         if followup is not None:
             _run_post_turn_followups(rid, sid, session, *followup)
     # The handle is resolved BEFORE _sessions_lock: a profile session opens its own SessionDB through the

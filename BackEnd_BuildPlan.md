@@ -2,7 +2,9 @@
 
 This plan chronicles the full runtime upgrade, its dependencies, implementation seams and evidence required to finish each phase. Use it with [FrontEnd_BuildPlan.md](FrontEnd_BuildPlan.md) and the shared [buildjournal.md](buildjournal.md).
 
-**Status:** implementation plan only. This documentation change implements no application behavior, deploys no service and does not claim tests or benchmarks passed.
+**Role:** implementation roadmap. Current completed checkpoints, exact commits, validation and remaining limits are recorded in [buildjournal.md](buildjournal.md). The original planning-only status is historical; this roadmap itself is not execution evidence.
+
+**Current Git publication rule:** publish verified phase commits directly to `main`, with the journal and a user update after each phase. The user explicitly declined pull requests. This rule supersedes the branch/draft-PR publication wording retained in the original phase instructions below; preserve concurrent work and never force-push.
 
 **Reviewed:** 2 October 2026. **Runtime repository:** `TianJieHeng/ryoko-agent`, `main` baseline [`b78931e3b0959c42dca7400c78a4dffd1bb48575`](https://github.com/TianJieHeng/ryoko-agent/commit/b78931e3b0959c42dca7400c78a4dffd1bb48575). The checkout is substantially newer than the supplied Hermes 0.21.1 / `cbd03e6e4ca143c1d5c2db881320afb85783c30b` analysis. Its packaging `0.0.0` placeholder is not a release version; use the recorded commit and the runtime version resolver.
 

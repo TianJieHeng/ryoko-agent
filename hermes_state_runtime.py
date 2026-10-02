@@ -224,9 +224,16 @@ class SessionRuntimeMixin:
                      (seq, _json(projection), session_id))
         return event
 
-    def submit_runtime_command(self, session_id, actor, command):
+    def submit_runtime_command(self, session_id, actor, command, *, admission=None, budget_policy_json=None):
         """Durably accept once per authenticated principal/session/key; never dispatch here."""
         command_json, digest = _validated_command(actor, command)
+        if budget_policy_json is not None:
+            _require(isinstance(budget_policy_json, str) and len(budget_policy_json.encode("utf-8")) <= 16384,
+                     "invalid_budget", "Accepted budget snapshot must be bounded JSON")
+            from agent.budget_account import parse_budget_policy
+            accepted_policy = parse_budget_policy({"runtime_budget": json.loads(budget_policy_json)})
+            _require(accepted_policy is not None, "invalid_budget", "Empty budget snapshot must be represented as null")
+            budget_policy_json = accepted_policy.snapshot
         def write(conn):
             sid = self._runtime_session_on_conn(conn, session_id)
             state = self._runtime_state_on_conn(conn, sid, create=True)
@@ -249,9 +256,11 @@ class SessionRuntimeMixin:
             receipt = {"schema_version": 1, "command_id": command["command_id"], "status": "accepted",
                        "durable_revision": event["seq"], "run_id": run_id}
             conn.execute("INSERT INTO runtime_commands(session_id,principal_id,command_id,idempotency_key,"
-                "schema_version,digest,command_json,receipt_json,accepted_revision,run_id) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                "schema_version,digest,command_json,receipt_json,accepted_revision,run_id,budget_policy_json) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                 (sid, actor["principal_id"], command["command_id"], command["idempotency_key"], 1, digest,
-                 command_json, _json(receipt), event["seq"], run_id))
+                 command_json, _json(receipt), event["seq"], run_id, budget_policy_json))
+            if admission is not None:
+                admission(conn, sid, command_json, receipt)
             conn.execute("UPDATE runtime_state SET principal_id=?,profile_id=?,agent_id=? WHERE session_id=?",
                          (actor["principal_id"], actor["profile_id"], actor["agent_id"], sid))
             return receipt
@@ -272,8 +281,20 @@ class SessionRuntimeMixin:
             row = self._runtime_command_on_conn(conn, sid, command_id)
             return None if row is None else {"command": json.loads(row["command_json"]),
                 "receipt": json.loads(row["receipt_json"]), "status": row["status"],
+                "budget_policy_json": row["budget_policy_json"],
                 "claimed_holder": row["claimed_holder"], "claimed_generation": row["claimed_generation"],
                 "result": json.loads(row["result_json"]) if row["result_json"] is not None else None}
+
+    def read_runtime_run_accepted_at(self, session_id, run_id):
+        """Original acceptance time; retries and queue recovery cannot reset it."""
+        with self._runtime_read() as conn:
+            sid = self._runtime_session_on_conn(conn, session_id)
+            row = conn.execute("SELECT MIN(e.occurred_at) FROM runtime_events e JOIN runtime_commands c "
+                "ON c.session_id=e.session_id AND c.accepted_revision=e.seq "
+                "WHERE c.session_id=? AND c.run_id=? AND e.type='command.accepted' "
+                "AND json_extract(c.command_json,'$.operation')='submit'", (sid, run_id)).fetchone()
+            # An absent/pruned acceptance cannot authorize a fresh deadline.
+            return row[0] if row is not None else None
 
     def claim_runtime_command(self, session_id, command_id, *, holder, generation):
         """One durable admission; a crashed claim is unresolved, never implicitly retried."""
@@ -284,6 +305,8 @@ class SessionRuntimeMixin:
             _require(row is not None, "command_not_found", "Runtime command does not exist")
             if row["status"] != "accepted":
                 return False
+            from agent.admission import assert_launch_on_conn
+            assert_launch_on_conn(conn, sid, command_id)
             conn.execute("UPDATE runtime_commands SET status='claimed',claimed_holder=?,claimed_generation=? "
                          "WHERE session_id=? AND command_id=?", (holder, generation, sid, command_id))
             self._append_runtime_event_on_conn(conn, sid, "command.claimed", {"command_id": command_id},

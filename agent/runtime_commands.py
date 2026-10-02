@@ -11,7 +11,7 @@ import json
 import time
 import threading
 import uuid
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
@@ -45,6 +45,8 @@ class RuntimeRun:
     holder: str
     generation: int
     context: AgentContext
+    budget: Any = None
+    task_scope: Any = None
     dispatch_blocked: threading.Event = field(default_factory=threading.Event, compare=False)
 
 
@@ -128,9 +130,16 @@ def submit_command(agent, envelope: dict) -> dict:
     existing = db.read_runtime_command(sid, command["command_id"])
     if operation != "submit" and existing is None:
         if not isinstance(run, RuntimeRun):
+            if operation == "cancel":
+                from agent.admission import AdmissionQueue
+                queued = AdmissionQueue(db).cancel_command(agent, envelope)
+                if queued is not None:
+                    return queued
             return rejected_receipt(agent, command["command_id"], "no_active_run")
         _check_run(run)
-    receipt = db.submit_runtime_command(sid, actor=actor, command=command)
+    policy = getattr(agent, "_runtime_budget_policy", None)
+    receipt = db.submit_runtime_command(sid, actor=actor, command=command,
+        budget_policy_json=policy.snapshot if policy is not None and operation == "submit" else None)
     if receipt["status"] == "rejected" or operation == "submit":
         return receipt
     record = db.read_runtime_command(sid, receipt["command_id"])
@@ -152,8 +161,12 @@ def submit_command(agent, envelope: dict) -> dict:
         queued = agent.steer(command["payload"]["text"])
         result = {"outcome": "steer_queued" if queued else "steer_not_queued", "applied": False}
     else:
-        requested = agent.interrupt(command["payload"].get("reason") or "Runtime cancellation requested", hard_cancel=True)
-        result = {"outcome": "cancel_requested" if requested is not False else "cancel_not_requested", "provider_cancelled": False}
+        from agent.admission import AdmissionQueue
+        cancelled_queued = AdmissionQueue(db).cancel_session(sid)
+        from agent.task_scope import create_task_scope
+        scope = run.task_scope or create_task_scope(agent, run.run_id)
+        cancellation = scope.request_cancel(command["payload"].get("reason") or "Runtime cancellation requested")
+        result = {"outcome": "cancel_requested", "provider_cancelled": False, "cancellation": cancellation, "cancelled_queued": cancelled_queued}
     db.finish_runtime_command(sid, receipt["command_id"], holder=run.holder,
                               generation=run.generation, result=result)
     return receipt
@@ -219,23 +232,42 @@ def claim_turn_command(agent, record, lease):
     command_id = record["receipt"]["command_id"]
     if not db.claim_runtime_command(sid, command_id, holder=lease.holder, generation=lease.generation):
         return None
-    return RuntimeRun(agent, db, sid, command_id, record["receipt"]["run_id"],
-                      lease.holder, lease.generation, context)
+    from agent.budget_account import create_run_budget, BudgetBlocked, BudgetPolicyError
+    from agent.task_scope import create_task_scope
+    run_id = record["receipt"]["run_id"]
+    try:
+        budget = create_run_budget(agent, db, context, run_id, lease.holder, lease.generation, command_id)
+    except (BudgetBlocked, BudgetPolicyError, ValueError) as exc:
+        db.finish_runtime_command(sid, command_id, holder=lease.holder,
+            generation=lease.generation, status="blocked", result={"completed": False,
+            "runtime_status": "blocked", "final_response": str(exc), "budget_blocked": True})
+        return None
+    scope = create_task_scope(agent, run_id, deadline=budget.deadline if budget else None)
+    return RuntimeRun(agent, db, sid, command_id, run_id,
+                      lease.holder, lease.generation, context, budget=budget, task_scope=scope)
 
 
 def bind_runtime_run(run):
     if run is not None:
         run.agent._active_runtime_run = run
+        if run.task_scope is not None:
+            run.task_scope.start_deadline_watchdog()
     return _RUN.set(run)
 
 
 def reset_runtime_run(token, run):
+    if run is not None and run.task_scope is not None:
+        run.task_scope.stop_deadline_watchdog()
     if run is not None and getattr(run.agent, "_active_runtime_run", None) is run:
         run.agent._active_runtime_run = None
     _RUN.reset(token)
 
 
 def _check_run(run):
+    if run.budget is not None:
+        run.budget.check()
+    if run.task_scope is not None:
+        run.task_scope.check_cancelled()
     if run.dispatch_blocked.is_set():
         raise RuntimeFenceError("Runtime outcome was not committed; further dispatch is blocked")
     lease = run.db.get_session_turn_lease(run.session_id)
@@ -299,8 +331,10 @@ def invoke_runtime_operation(kind: str, callback, *, agent=None, name: str = "",
     payload = {"command_id": run.command_id, "kind": kind, "name": name, "phase": "started"}
     _record_operation_event(run, f"{kind}.started", payload, **common)
     assert_runtime_dispatch(agent)
+    from agent.budget_account import budget_tool_scope
     try:
-        result = callback()
+        with budget_tool_scope(run, name) if kind == "tool" else nullcontext():
+            result = callback()
     except BaseException as exc:
         _record_operation_event(run, f"{kind}.failed", {
             **payload, "phase": "failed", "error_type": type(exc).__name__}, **common)
@@ -316,6 +350,7 @@ def invoke_runtime_operation(kind: str, callback, *, agent=None, name: str = "",
 
 
 def finish_turn_command(run, result=None, error=None):
+    original_result = result
     if run is None:
         return
     if error is not None:
@@ -328,7 +363,24 @@ def finish_turn_command(run, result=None, error=None):
         result["outcome_uncertain"] = True
         result["failed"] = True
         result["completed"] = False
-    status = "cancelled" if result.get("interrupted") else "failed" if result.get("failed") else "completed"
+    if run.budget is not None:
+        if result.get("interrupted") or (run.task_scope is not None and run.task_scope.cancelled.is_set()):
+            run.budget.db.close_budget_account(run.budget.account_id, run.budget.actor,
+                                               state="cancelled", **run.budget.fence)
+        result["runtime_budget"] = run.budget.status()
+        if run.budget.blocked_reason:
+            result["completed"] = False
+            result["runtime_status"] = "partial" if result.get("final_response") else "blocked"
+            result["budget_blocked"] = True
+            if not result.get("final_response"):
+                result["final_response"] = run.budget.blocked_reason
+    if run.task_scope is not None:
+        result["cancellation"] = run.task_scope.complete(partial_result_available=bool(result.get("final_response")))
+    status = ("blocked" if result.get("budget_blocked") else "cancelled" if result.get("interrupted")
+              else "failed" if result.get("failed") else "completed")
+    # The caller's partial response/artifacts remain usable with explicit budget status.
+    if isinstance(original_result, dict):
+        original_result.update(result)
     stored = _bounded_outcome(result)
     run.db.finish_runtime_command(run.session_id, run.command_id, holder=run.holder,
                                   generation=run.generation, status=status, result=stored)

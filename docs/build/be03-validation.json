@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "phase": "BE03",
+  "base_sha": "85001fc450cbeaa3615ede9a610f59cfa6841db2",
+  "publication": "direct main; no PR",
+  "database_schema": 33,
+  "runtime_schema": 1,
+  "python": "3.14.7",
+  "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/hermes_state/test_budget_accounts.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_schema_read_probe.py tests/hermes_state/test_session_turn_lease.py tests/agent/test_budget_runtime.py tests/agent/test_admission.py tests/agent/test_task_scope.py tests/agent/test_runtime_commands.py tests/agent/test_identity_lifecycle.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_generated.py tests/hermes_cli/test_plugin_event_bus.py tests/hermes_cli/test_plugin_hook_failure_reporting.py -j 5 --file-retries 0",
+  "results": [
+    {
+      "file": "tests/agent/test_task_scope.py",
+      "passed": 3,
+      "duration_seconds": 0.9
+    },
+    {
+      "file": "tests/agent/test_admission.py",
+      "passed": 5,
+      "duration_seconds": 1.0
+    },
+    {
+      "file": "tests/hermes_cli/test_plugin_event_bus.py",
+      "passed": 22,
+      "duration_seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_identity_lifecycle.py",
+      "passed": 20,
+      "duration_seconds": 2.2
+    },
+    {
+      "file": "tests/hermes_cli/test_plugin_hook_failure_reporting.py",
+      "passed": 6,
+      "duration_seconds": 1.5
+    },
+    {
+      "file": "tests/hermes_state/test_schema_read_probe.py",
+      "passed": 4,
+      "duration_seconds": 0.7
+    },
+    {
+      "file": "tests/hermes_state/test_budget_accounts.py",
+      "passed": 15,
+      "duration_seconds": 1.4
+    },
+    {
+      "file": "tests/hermes_state/test_runtime_store.py",
+      "passed": 13,
+      "duration_seconds": 1.2
+    },
+    {
+      "file": "tests/tui_gateway/contracts/test_generated.py",
+      "passed": 2,
+      "duration_seconds": 2.2
+    },
+    {
+      "file": "tests/hermes_state/test_session_turn_lease.py",
+      "passed": 21,
+      "duration_seconds": 2.7
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_rpc.py",
+      "passed": 7,
+      "duration_seconds": 4.4
+    },
+    {
+      "file": "tests/agent/test_runtime_commands.py",
+      "passed": 13,
+      "duration_seconds": 8.8
+    },
+    {
+      "file": "tests/agent/test_budget_runtime.py",
+      "passed": 22,
+      "duration_seconds": 10.1
+    }
+  ],
+  "passed": 153,
+  "failed": 0,
+  "skipped": 0,
+  "duration_seconds": 10.1,
+  "log_sha256": "b8b48bc22108f5eb444870be4ea1c9d3ca8456d8b99da0bcdf2ac3f6c3206771",
+  "other_campaigns": [
+    {
+      "command": "scripts/run_tests.sh tests/agent/test_turn_api_call_interrupt.py tests/agent/test_streaming.py tests/agent/test_aux_progress_streaming.py tests/agent/test_aux_stream_host_deadline.py tests/tools/test_delegate.py tests/tools/test_delegate_fallback_matrix.py tests/tui_gateway/test_retirement_admission.py tests/tui_gateway/test_queued_prompt_persistence.py -j 4",
+      "passed": 202,
+      "failed": 0,
+      "skipped": 4,
+      "duration_seconds": 14.7,
+      "log_sha256": "5260a79fb19f911c6ea942e953ceed52b7bbd4dd6e77ab8e4c575a39d89583da",
+      "note": "Overlapping bounded regression campaign; final changed seams retested above",
+      "command_source": "Selected paths and concurrency from canonical runner header; final campaign above records exact invocation"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/agent/test_budget_runtime.py tests/hermes_cli/test_plugin_hook_failure_reporting.py tests/hermes_cli/test_plugins.py tests/hermes_cli/test_lifecycle.py -j 9",
+      "passed": 115,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 10.6,
+      "log_sha256": "02db98c07a4ad5e67ccc6a78617490f8c91fe346a663ea921e6ff43c8c178a39",
+      "note": "Overlapping bounded regression campaign; final changed seams retested above",
+      "command_source": "Selected paths and concurrency from canonical runner header; final campaign above records exact invocation"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/agent/test_admission.py tests/agent/test_task_scope.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_generated.py tests/tui_gateway/test_session_control.py tests/tui_gateway/test_backend_heartbeat.py tests/agent/test_runtime_commands.py tests/agent/test_interrupt_propagation.py tests/agent/test_provider_client_cancel.py -j 9",
+      "passed": 71,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 24.9,
+      "log_sha256": "9649b5460c54685f84932d34cd9d91d0930eda195016a6381a6ad9fbae9a2dd5",
+      "note": "Overlapping bounded regression campaign; final changed seams retested above",
+      "command_source": "Selected paths and concurrency from canonical runner header; final campaign above records exact invocation"
+    }
+  ],
+  "checks": [
+    "Shared TypeScript workspace typecheck passed",
+    "Generated gateway contracts and runtime-budget reference freshness passed",
+    "Focused Ruff and git diff --check passed"
+  ],
+  "limits": [
+    "Deterministic provider HTTP fixtures; no live billing or provider-cancellation certification",
+    "Bounded adapter currently text-only OpenAI SDK completion, local todo and trusted delegation; other opaque paths fail closed",
+    "Admission scope is runtime.command text submissions per profile store; no global cross-profile or new cron queue claim",
+    "Unknown remote/claimed work conservatively retains capacity pending reconciliation",
+    "Full project regression deferred to BE18",
+    "BE00 inherited project-tree failures and earlier AF_UNIX environment limitation remain open"
+  ]
+}

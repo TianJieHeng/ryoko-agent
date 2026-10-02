@@ -651,42 +651,30 @@ def _lock_in_submit_turn(
 
 
 def _submit_runtime_prompt(rid, sid, session, agent, envelope):
-    """Admit a durable text command into the existing streaming turn pipeline."""
-    from agent.runtime_commands import (
-        RuntimeCommandError, read_command_state, rejected_receipt, submit_command,
-    )
-    with _session_turn_admission(session) as admitted:
+    """Accept atomically, then consume the durable reference through the normal pipeline."""
+    from agent.admission import AdmissionQueue
+    from agent.runtime_commands import RuntimeCommandError, rejected_receipt, read_command_state, submit_command
+    from tui_gateway import prompt_admission, server
+
+    with prompt_admission.admission_open() as accepting, _session_turn_admission(session) as admitted:
         transport, owned = _current_session_steer_authority(sid)
         if transport is None or owned is not session or session.get("agent") is not agent:
             raise RuntimeCommandError("identity_mismatch")
         record = read_command_state(agent, envelope["command_id"])
         if record is not None:
-            # Always validate the duplicate's contents before returning its receipt.
             receipt = submit_command(agent, envelope)
-            if record["status"] != "accepted" or session.get("running"):
+            if record["status"] != "accepted" or not accepting or not admitted or session.get("_closing"):
                 return receipt
-        if not admitted or session.get("_closing") or session.get("running"):
-            return receipt if record is not None else rejected_receipt(agent, envelope["command_id"], "session_busy")
+        if not accepting or not admitted or session.get("_closing"):
+            return rejected_receipt(agent, envelope["command_id"], "admission_draining")
         if _ensure_active_session_slot(sid, session) is not None:
-            return receipt if record is not None else rejected_receipt(agent, envelope["command_id"], "session_not_owned")
-        if record is None:
-            receipt = submit_command(agent, envelope)
-        if receipt["status"] == "rejected":
-            return receipt
-        session["running"] = True
-        session["_turn_cancel_requested"] = False
-        session["last_active"] = time.time()
-        _start_inflight_turn(session, envelope["payload"]["text"])
-    # _run_prompt_submit owns work/thread admission and the normal completion
-    # events. Pass a trusted argument, never a dispatcher ContextVar or a slot
-    # another command can overwrite before this worker starts.
-    try:
-        _run_prompt_submit(rid, sid, session, envelope["payload"]["text"],
-                           image_paths=[], runtime_command_receipt=receipt)
-    except BaseException:
-        with session["history_lock"]:
-            session["running"] = False
-        raise
+            return rejected_receipt(agent, envelope["command_id"], "session_not_owned")
+        if session.get("_runtime_admission_stopped"):
+            AdmissionQueue(agent._session_db).cancel_session(agent.session_id, "cancelled_before_launch")
+        from agent.budget_account import admission_deadline
+        receipt = AdmissionQueue(agent._session_db).submit(agent, envelope, deadline=admission_deadline(agent))
+        session.pop("_runtime_admission_stopped", None)
+    prompt_admission.wake(server)
     return receipt
 
 

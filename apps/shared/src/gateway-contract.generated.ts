@@ -2940,6 +2940,7 @@ export interface RuntimeCapabilities {
   strict_identity_required: boolean
   durable_replay: boolean
   max_events: number
+  admission?: RuntimeAdmissionLimits | null
   cursor_policy: 'snapshot_required_on_expired_or_unknown_cursor'
 }
 export interface RuntimeOperationCapability {
@@ -2948,6 +2949,18 @@ export interface RuntimeOperationCapability {
   executes: boolean
   effects_enabled: boolean
   reason?: string | null
+}
+export interface RuntimeAdmissionLimits {
+  scope?: 'profile_store'
+  max_active: number
+  max_queued: number
+  max_per_principal: number
+  max_payload_bytes: number
+  max_queue_bytes: number
+  max_database_bytes: number
+  ttl_seconds: number
+  interactive_boost_seconds: number
+  launch_lease_seconds: number
 }
 /** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. */
 export interface RuntimeCommandParams {
@@ -2995,6 +3008,7 @@ export interface MissionSnapshot {
   unresolved_effects: RuntimeUnresolvedEffect[]
   last_cursor: string
   compatibility_status: 'native' | 'legacy'
+  admission?: RuntimeAdmissionSnapshot | null
 }
 export interface RuntimeSnapshotState {
   status: 'idle' | 'accepted' | 'claimed' | 'completed' | 'failed' | 'blocked' | 'cancelled'
@@ -3014,6 +3028,17 @@ export interface RuntimeArtifactReference {
 export interface RuntimeUnresolvedEffect {
   effect_id: string
   status: 'pending' | 'outcome_uncertain'
+}
+export interface RuntimeAdmissionSnapshot {
+  draining: boolean
+  jobs: RuntimeAdmissionJob[]
+}
+export interface RuntimeAdmissionJob {
+  command_id: string
+  state: 'queued' | 'running' | 'finished' | 'expired' | 'cancelled' | 'rejected'
+  enqueued_at: number
+  expires_at: number
+  reason: string | null
 }
 export interface RuntimeEventsSinceParams {
   session_id: string
@@ -3051,7 +3076,19 @@ export interface RuntimeEventPayload {
   operation?: 'submit' | 'steer' | 'cancel' | 'approval' | null
   checkpoint_id?: string | null
   included_seq?: number | null
+  cancellation?: RuntimeCancellation | null
+  admission_state?: 'expired' | 'cancelled' | 'rejected' | null
   control_outcome?: 'steer_queued' | 'steer_not_queued' | 'cancel_requested' | 'cancel_not_requested' | null
+}
+export interface RuntimeCancellation {
+  request_id: string | null
+  requested_at: number | null
+  local_state: 'running' | 'requested' | 'stopped'
+  upstream_ack: boolean | null
+  pending_effect_ids: string[]
+  pending_handles: string[]
+  partial_result_available: boolean
+  remote_effects_undone: false
 }
 export interface SessionCreateParams {
   profile?: string | null

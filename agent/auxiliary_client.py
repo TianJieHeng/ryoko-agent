@@ -2627,6 +2627,12 @@ def _relay_sync_completion(
     def callback(request):
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
+        from agent.budget_account import current_budget, invoke_budgeted_completion
+        budget = current_budget()
+        if budget is not None:
+            if create is not None or api_mode not in (None, "chat_completions"):
+                budget.block("auxiliary adapter has no certified physical-request bound")
+            return invoke_budgeted_completion(client, request)
         return provider_callback(request)
     route = _relay_auxiliary_metadata(provider=provider, api_mode=api_mode)
     # Isolate only the provider callback so the owning thread can unwind its lease/DB
@@ -2660,6 +2666,12 @@ async def _relay_async_completion(
     async def callback(request):
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
+        from agent.budget_account import current_budget, invoke_budgeted_completion_async
+        budget = current_budget()
+        if budget is not None:
+            if create is not None or api_mode not in (None, "chat_completions"):
+                budget.block("auxiliary adapter has no certified physical-request bound")
+            return await invoke_budgeted_completion_async(client, request)
         return await provider_callback(request)
     route = _relay_auxiliary_metadata(provider=provider, api_mode=api_mode)
     if route is None:
@@ -2689,6 +2701,10 @@ def _relay_sync_stream(
     def create(request):
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
+        from agent.budget_account import current_budget
+        budget = current_budget()
+        if budget is not None:
+            budget.block("raw auxiliary streams have no certified finite settlement adapter")
         return client.chat.completions.create(**bypass_chat_sdk_request_transform(request, client))
     route = _relay_auxiliary_metadata(provider=provider, api_mode=api_mode)
     if route is None:
@@ -8050,6 +8066,10 @@ def _call_llm_impl(
     # Streaming path (MoA aggregator): return the raw SDK stream, skipping validation and
     # the fallback chain (they assume a complete response); the caller owns reassembly/fallback.
     if stream:
+        from agent.budget_account import current_budget
+        budget = current_budget()
+        if budget is not None:
+            budget.block("raw auxiliary streams have no certified finite settlement adapter")
         kwargs["stream"] = True
         if stream_options:
             kwargs["stream_options"] = stream_options

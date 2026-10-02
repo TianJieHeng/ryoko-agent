@@ -172,6 +172,8 @@ def _run_execution_chain(kind: str, terminal_call: Callable[[Any], Any], **kwarg
             return terminal_call(payload)
 
         callback = callbacks[index]
+        from agent.budget_account import reject_opaque_callback
+        reject_opaque_callback("execution middleware " + kind)
         next_called = False
         next_succeeded = False
         next_result: Any = None

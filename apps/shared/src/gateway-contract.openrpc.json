@@ -18896,6 +18896,17 @@
             ],
             "title": "Compatibility Status",
             "type": "string"
+          },
+          "admission": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeAdmissionSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": [
@@ -28278,6 +28289,137 @@
         "title": "RoomTombstone",
         "type": "object"
       },
+      "RuntimeAdmissionJob": {
+        "additionalProperties": false,
+        "properties": {
+          "command_id": {
+            "title": "Command Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "running",
+              "finished",
+              "expired",
+              "cancelled",
+              "rejected"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "enqueued_at": {
+            "title": "Enqueued At",
+            "type": "number"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "command_id",
+          "state",
+          "enqueued_at",
+          "expires_at",
+          "reason"
+        ],
+        "title": "RuntimeAdmissionJob",
+        "type": "object"
+      },
+      "RuntimeAdmissionLimits": {
+        "additionalProperties": false,
+        "properties": {
+          "scope": {
+            "const": "profile_store",
+            "default": "profile_store",
+            "title": "Scope",
+            "type": "string"
+          },
+          "max_active": {
+            "title": "Max Active",
+            "type": "integer"
+          },
+          "max_queued": {
+            "title": "Max Queued",
+            "type": "integer"
+          },
+          "max_per_principal": {
+            "title": "Max Per Principal",
+            "type": "integer"
+          },
+          "max_payload_bytes": {
+            "title": "Max Payload Bytes",
+            "type": "integer"
+          },
+          "max_queue_bytes": {
+            "title": "Max Queue Bytes",
+            "type": "integer"
+          },
+          "max_database_bytes": {
+            "title": "Max Database Bytes",
+            "type": "integer"
+          },
+          "ttl_seconds": {
+            "title": "Ttl Seconds",
+            "type": "number"
+          },
+          "interactive_boost_seconds": {
+            "title": "Interactive Boost Seconds",
+            "type": "number"
+          },
+          "launch_lease_seconds": {
+            "title": "Launch Lease Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "max_active",
+          "max_queued",
+          "max_per_principal",
+          "max_payload_bytes",
+          "max_queue_bytes",
+          "max_database_bytes",
+          "ttl_seconds",
+          "interactive_boost_seconds",
+          "launch_lease_seconds"
+        ],
+        "title": "RuntimeAdmissionLimits",
+        "type": "object"
+      },
+      "RuntimeAdmissionSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "draining": {
+            "title": "Draining",
+            "type": "boolean"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeAdmissionJob"
+            },
+            "title": "Jobs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "draining",
+          "jobs"
+        ],
+        "title": "RuntimeAdmissionSnapshot",
+        "type": "object"
+      },
       "RuntimeApprovalPayload": {
         "additionalProperties": false,
         "properties": {
@@ -28335,6 +28477,88 @@
         "title": "RuntimeCancelPayload",
         "type": "object"
       },
+      "RuntimeCancellation": {
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested At"
+          },
+          "local_state": {
+            "enum": [
+              "running",
+              "requested",
+              "stopped"
+            ],
+            "title": "Local State",
+            "type": "string"
+          },
+          "upstream_ack": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Ack"
+          },
+          "pending_effect_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pending Effect Ids",
+            "type": "array"
+          },
+          "pending_handles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pending Handles",
+            "type": "array"
+          },
+          "partial_result_available": {
+            "title": "Partial Result Available",
+            "type": "boolean"
+          },
+          "remote_effects_undone": {
+            "const": false,
+            "title": "Remote Effects Undone",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request_id",
+          "requested_at",
+          "local_state",
+          "upstream_ack",
+          "pending_effect_ids",
+          "pending_handles",
+          "partial_result_available",
+          "remote_effects_undone"
+        ],
+        "title": "RuntimeCancellation",
+        "type": "object"
+      },
       "RuntimeCapabilities": {
         "additionalProperties": false,
         "properties": {
@@ -28364,6 +28588,17 @@
           "max_events": {
             "title": "Max Events",
             "type": "integer"
+          },
+          "admission": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeAdmissionLimits"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "cursor_policy": {
             "const": "snapshot_required_on_expired_or_unknown_cursor",
@@ -28696,6 +28931,34 @@
             ],
             "default": null,
             "title": "Included Seq"
+          },
+          "cancellation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeCancellation"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "admission_state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "expired",
+                  "cancelled",
+                  "rejected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Admission State"
           },
           "control_outcome": {
             "anyOf": [

@@ -33,6 +33,9 @@ def _aux(timeout, *, reasoning_effort=True, **extra):
 DEFAULT_CONFIG = {
     # Empty preserves legacy profiles. Nonempty versioned policy is validated before agent setup.
     "agent_identity": {},
+    # Optional finite durable tree budget; complete versioned policy or empty (legacy off).
+    # Reader and field contract: agent/budget_account.py::parse_budget_policy.
+    "runtime_budget": {},
     "model": "",
     "providers": {},
     "fallback_providers": [],

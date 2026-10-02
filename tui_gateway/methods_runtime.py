@@ -87,7 +87,7 @@ def _runtime_snapshot_projection(snapshot):
         RuntimeSnapshotState, RuntimeUnresolvedEffect,
     )
 
-    projection = {key: snapshot[key] for key in MissionSnapshot.model_fields}
+    projection = {key: snapshot.get(key) for key in MissionSnapshot.model_fields}
     projection["state"] = {key: snapshot["state"][key] for key in RuntimeSnapshotState.model_fields}
     references = {
         "outstanding_requests": RuntimeOutstandingRequest,
@@ -110,6 +110,14 @@ def _runtime_event_projection(event):
     if (event["type"] == "command.completed" and isinstance(result, dict)
             and result.get("outcome") in ("steer_queued", "steer_not_queued", "cancel_requested", "cancel_not_requested")):
         projection["payload"]["control_outcome"] = result["outcome"]
+    if isinstance(result, dict):
+        cancellation = result.get("cancellation")
+        if isinstance(cancellation, dict):
+            from tui_gateway.contracts.runtime_v1 import RuntimeCancellation
+            projection["payload"]["cancellation"] = {
+                field: cancellation[field] for field in RuntimeCancellation.model_fields if field in cancellation}
+        if result.get("admission_state") in {"expired", "cancelled", "rejected"}:
+            projection["payload"]["admission_state"] = result["admission_state"]
     return projection
 
 
@@ -125,6 +133,8 @@ def _runtime_capabilities(rid, params):
     agent, _db, error = _runtime_authority(rid, request.model_dump())
     if error:
         return error
+    from dataclasses import asdict
+    from agent.admission import AdmissionPolicy
     executable = supports_runtime_execution(agent)
     descriptions = {
         "submit": "existing agent turn pipeline; acceptance is not completion",
@@ -138,6 +148,7 @@ def _runtime_capabilities(rid, params):
                        "effects_enabled": False, "reason": "approval and effect authorization pending BE05/BE06"})
     return _ok(rid, {"schema_versions": [1], "operations": operations, "strict_identity_required": True,
                      "durable_replay": True, "max_events": 200,
+                     "admission": {"scope": "profile_store", **asdict(AdmissionPolicy())} if executable else None,
                      "cursor_policy": "snapshot_required_on_expired_or_unknown_cursor"})
 
 
@@ -187,7 +198,8 @@ def _runtime_snapshot(rid, params):
     if error:
         return error
     try:
-        return _ok(rid, _runtime_snapshot_projection(db.read_runtime_snapshot(agent.session_id)))
+        from agent.admission import AdmissionQueue
+        return _ok(rid, _runtime_snapshot_projection(AdmissionQueue(db).runtime_snapshot(agent.session_id)))
     except RuntimeStoreError as exc:
         return _runtime_store_error(rid, exc)
 
@@ -208,6 +220,10 @@ def _runtime_events_since(rid, params):
         replay = db.replay_runtime_events(agent.session_id, cursor=request.cursor, limit=request.limit)
     except RuntimeStoreError as exc:
         return _runtime_store_error(rid, exc)
+    if replay.get("snapshot") is not None:
+        from agent.admission import AdmissionQueue
+        replay["snapshot"] = AdmissionQueue(db).runtime_snapshot(agent.session_id)
+        replay["last_cursor"] = replay["snapshot"]["last_cursor"]
     return _ok(rid, {"status": replay["status"], "events": [_runtime_event_projection(e) for e in replay["events"]],
                      "snapshot": _runtime_snapshot_projection(replay["snapshot"]) if replay.get("snapshot") else None,
                      "last_cursor": replay["last_cursor"], "has_more": replay["has_more"]})

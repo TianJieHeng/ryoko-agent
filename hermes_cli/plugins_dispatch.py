@@ -225,6 +225,8 @@ class PluginDispatchMixin:
         use_timeout = _hook_uses_callback_timeout(hook_name, timeout)
         fail_closed = hook_name in _HOOK_TIMEOUT_FAIL_CLOSED_HOOKS
         for cb in self._hooks.get(hook_name, []):
+            from agent.budget_account import reject_opaque_callback
+            reject_opaque_callback("plugin hook " + hook_name)
             try:
                 if use_timeout:
                     ret = self._run_hook_callback_bounded(hook_name, cb, kwargs, timeout)
@@ -428,7 +430,9 @@ class PluginDispatchMixin:
                     if not any(cur is subscription for cur in self._subscriptions.get(item.event, [])):
                         continue
                 callback = subscription.callback
+                from agent.budget_account import reject_opaque_callback
                 try:
+                    item.context.copy().run(reject_opaque_callback, "plugin event " + item.event)
                     # Fresh deep copy per subscriber: no callback can mutate what the next sees.
                     resolve_plugin_command_result(
                         item.context.copy().run(callback, **copy.deepcopy(item.payload)))
@@ -459,6 +463,8 @@ class PluginDispatchMixin:
             subscriptions = tuple(self._subscriptions.get(event, []))
             if not subscriptions:
                 return 0
+            from agent.budget_account import reject_opaque_callback
+            reject_opaque_callback("plugin event " + event)
             generation = self._event_generation
             pending = self._event_pending_by_generation.get(generation, 0)
             if pending >= _EVENT_PENDING_CAP:
@@ -499,6 +505,8 @@ class PluginDispatchMixin:
         use_timeout = _hook_uses_callback_timeout(hook_name, timeout)
         fail_closed = hook_name in _HOOK_TIMEOUT_FAIL_CLOSED_HOOKS
         for cb in self._hooks.get(hook_name, []):
+            from agent.budget_account import reject_opaque_callback
+            reject_opaque_callback("plugin hook " + hook_name)
             callback_name = getattr(cb, "__name__", repr(cb))
             try:
                 ret = cb(**self._hook_callback_kwargs(cb, kwargs))
@@ -565,6 +573,9 @@ class PluginDispatchMixin:
             logger.warning(
                 "Plugin system prompt section %s (%s) " + detail, section.id, section.plugin, *args)
 
+        if callable(section.content):
+            from agent.budget_account import reject_opaque_callback
+            reject_opaque_callback("plugin prompt section")
         try:
             value = section.content(frozen_info) if callable(section.content) else section.content
         except (Exception, SystemExit) as exc:
@@ -592,6 +603,8 @@ class PluginDispatchMixin:
         """Call middleware callbacks for *kind* (each isolated); return non-``None`` results."""
         results: List[Any] = []
         for cb in self._middleware.get(kind, []):
+            from agent.budget_account import reject_opaque_callback
+            reject_opaque_callback("plugin middleware " + kind)
             try:
                 ret = cb(**kwargs)
                 if ret is not None:

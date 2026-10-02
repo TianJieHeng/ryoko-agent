@@ -93,12 +93,26 @@ class RuntimeOperationCapability(Result):
     reason: str | None = None
 
 
+class RuntimeAdmissionLimits(Result):
+    scope: Literal["profile_store"] = "profile_store"
+    max_active: int
+    max_queued: int
+    max_per_principal: int
+    max_payload_bytes: int
+    max_queue_bytes: int
+    max_database_bytes: int
+    ttl_seconds: float
+    interactive_boost_seconds: float
+    launch_lease_seconds: float
+
+
 class RuntimeCapabilities(Result):
     schema_versions: list[Literal[1]]
     operations: list[RuntimeOperationCapability]
     strict_identity_required: bool
     durable_replay: bool
     max_events: int
+    admission: RuntimeAdmissionLimits | None = None
     cursor_policy: Literal["snapshot_required_on_expired_or_unknown_cursor"]
 
 
@@ -139,6 +153,30 @@ class RuntimeUnresolvedEffect(Result):
     status: Literal["pending", "outcome_uncertain"]
 
 
+class RuntimeAdmissionJob(Result):
+    command_id: str
+    state: Literal["queued", "running", "finished", "expired", "cancelled", "rejected"]
+    enqueued_at: float
+    expires_at: float
+    reason: str | None
+
+
+class RuntimeAdmissionSnapshot(Result):
+    draining: bool
+    jobs: list[RuntimeAdmissionJob]
+
+
+class RuntimeCancellation(Result):
+    request_id: str | None
+    requested_at: float | None
+    local_state: Literal["running", "requested", "stopped"]
+    upstream_ack: bool | None
+    pending_effect_ids: list[str]
+    pending_handles: list[str]
+    partial_result_available: bool
+    remote_effects_undone: Literal[False]
+
+
 class MissionSnapshot(Result):
     schema_version: Literal[1]
     session_id: str
@@ -149,6 +187,7 @@ class MissionSnapshot(Result):
     unresolved_effects: list[RuntimeUnresolvedEffect]
     last_cursor: str
     compatibility_status: Literal["native", "legacy"]
+    admission: RuntimeAdmissionSnapshot | None = None
 
 
 class RuntimeEventPayload(Result):
@@ -158,6 +197,8 @@ class RuntimeEventPayload(Result):
     operation: RuntimeOperation | None = None
     checkpoint_id: str | None = None
     included_seq: int | None = None
+    cancellation: RuntimeCancellation | None = None
+    admission_state: Literal["expired", "cancelled", "rejected"] | None = None
     control_outcome: Literal["steer_queued", "steer_not_queued", "cancel_requested", "cancel_not_requested"] | None = None
 
 

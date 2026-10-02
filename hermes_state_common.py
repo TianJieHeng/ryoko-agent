@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 32
+SCHEMA_VERSION = 33
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -602,6 +602,7 @@ CREATE TABLE IF NOT EXISTS runtime_commands (
     schema_version INTEGER NOT NULL,
     digest TEXT NOT NULL,
     command_json TEXT NOT NULL,
+    budget_policy_json TEXT,
     receipt_json TEXT NOT NULL,
     accepted_revision INTEGER NOT NULL,
     run_id TEXT,
@@ -640,6 +641,82 @@ CREATE TABLE IF NOT EXISTS runtime_checkpoints (
     published_seq INTEGER NOT NULL,
     generation INTEGER NOT NULL,
     checkpoint_json TEXT NOT NULL
+);
+
+-- BE03 shares SessionDB transactions and the existing fenced turn owner.
+-- Audit rows deliberately survive transcript deletion: losing invoice uncertainty
+-- or root consumption would reset the budget on retry/recovery.
+CREATE TABLE IF NOT EXISTS budget_accounts (
+    account_id TEXT PRIMARY KEY,
+    root_id TEXT NOT NULL REFERENCES budget_accounts(account_id),
+    parent_id TEXT REFERENCES budget_accounts(account_id),
+    session_id TEXT NOT NULL,
+    run_id TEXT NOT NULL UNIQUE,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    depth INTEGER NOT NULL,
+    limits_json TEXT NOT NULL,
+    policy_json TEXT NOT NULL DEFAULT 'null',
+    reserved_json TEXT NOT NULL,
+    consumed_json TEXT NOT NULL,
+    deadline REAL NOT NULL,
+    state TEXT NOT NULL DEFAULT 'open',
+    unknown_count INTEGER NOT NULL DEFAULT 0,
+    debt INTEGER NOT NULL DEFAULT 0,
+    created_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_budget_accounts_root ON budget_accounts(root_id);
+CREATE INDEX IF NOT EXISTS idx_budget_accounts_session ON budget_accounts(session_id);
+
+CREATE TABLE IF NOT EXISTS budget_child_bindings (
+    child_session_id TEXT PRIMARY KEY,
+    parent_id TEXT NOT NULL REFERENCES budget_accounts(account_id),
+    created_at REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS budget_reservations (
+    root_id TEXT NOT NULL REFERENCES budget_accounts(account_id),
+    operation_id TEXT NOT NULL,
+    account_id TEXT NOT NULL REFERENCES budget_accounts(account_id),
+    maxima_json TEXT NOT NULL,
+    actual_json TEXT,
+    held_json TEXT NOT NULL,
+    consumed_json TEXT NOT NULL,
+    deadline REAL NOT NULL,
+    settlement_state TEXT NOT NULL DEFAULT 'reserved',
+    unknown_usage INTEGER NOT NULL DEFAULT 0,
+    slots_released INTEGER NOT NULL DEFAULT 0,
+    debt INTEGER NOT NULL DEFAULT 0,
+    created_at REAL NOT NULL,
+    dispatched_at REAL,
+    settled_at REAL,
+    PRIMARY KEY(root_id,operation_id)
+);
+CREATE INDEX IF NOT EXISTS idx_budget_reservations_account ON budget_reservations(account_id);
+
+CREATE TABLE IF NOT EXISTS runtime_admission_queue (
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    command_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    workload TEXT NOT NULL,
+    enqueued_at REAL NOT NULL,
+    expires_at REAL NOT NULL,
+    payload_bytes INTEGER NOT NULL,
+    budget_policy_json TEXT,
+    state TEXT NOT NULL DEFAULT 'queued',
+    worker_id TEXT,
+    lease_until REAL,
+    started_at REAL,
+    finished_at REAL,
+    reason TEXT,
+    PRIMARY KEY(session_id,command_id)
+);
+CREATE INDEX IF NOT EXISTS idx_runtime_admission_state_expiry ON runtime_admission_queue(state,expires_at);
+CREATE INDEX IF NOT EXISTS idx_runtime_admission_principal_state ON runtime_admission_queue(principal_id,state);
+CREATE TABLE IF NOT EXISTS runtime_admission_control (
+    id INTEGER PRIMARY KEY CHECK(id=1),
+    draining INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS async_delegations (

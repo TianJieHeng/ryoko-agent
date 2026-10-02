@@ -109,6 +109,9 @@ def identity_construction(function):
 
         arguments = signature.bind(agent, *args, **kwargs)
         config = identity_config()
+        from agent.budget_account import install_budget_policy
+        install_budget_policy(agent, config, session_db=arguments.arguments.get("session_db"),
+                              session_id=arguments.arguments.get("session_id"))
         parent = current_agent_context()
         if parse_agent_identity_config(config) is None:
             if parent is not None:

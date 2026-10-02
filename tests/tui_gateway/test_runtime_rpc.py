@@ -78,6 +78,12 @@ def runtime(tmp_path, monkeypatch):
 
     yield SimpleNamespace(server=server, homes=homes, agents=agents, peers=peers, sessions=sessions,
                           dispatched=dispatched, call=call)
+    from tui_gateway import prompt_admission
+    if prompt_admission._HANDLE is not None:
+        prompt_admission._HANDLE.cancel(wait=2)
+        prompt_admission._HANDLE = None
+    prompt_admission._STARTED = False
+    prompt_admission._STOPPING = False
     for session in sessions.values():
         server._release_active_session_slot(session)
     for agent in agents.values():
@@ -246,3 +252,76 @@ def test_accepted_retry_keeps_receipt_without_dispatching_a_closing_session(runt
     assert runtime.dispatched == [receipt["command_id"]]
     assert runtime.call("runtime.command", **envelope())["result"] == receipt
     assert runtime.dispatched == [receipt["command_id"]]
+
+
+def test_busy_command_is_durably_queued_and_existing_consumer_launches_it(runtime):
+    from tui_gateway import prompt_admission
+    session = runtime.sessions["live-a"]
+    session["running"] = True
+    first = runtime.call("runtime.command", **envelope("queued"))["result"]
+    assert first["status"] == "accepted" and runtime.dispatched == []
+    assert runtime.call("runtime.command", **envelope("queued"))["result"] == first
+    snapshot = runtime.call("runtime.snapshot")["result"]
+    assert snapshot["admission"]["jobs"][0]["state"] == "queued"
+    # Losing transport does not cancel, and a status read does not execute.
+    old_transport = session["transport"]
+    session["transport"] = runtime.server._detached_ws_transport
+    session["running"] = False
+    prompt_admission.pump(runtime.server)
+    assert runtime.dispatched == []
+    session["transport"] = old_transport
+    prompt_admission.pump(runtime.server)
+    assert runtime.dispatched == ["queued"]
+    assert runtime.call("runtime.command", **envelope("queued"))["result"] == first
+    assert runtime.dispatched == ["queued"]
+    assert runtime.call("runtime.snapshot")["result"]["admission"]["jobs"][0]["state"] == "finished"
+
+
+def test_queued_cancel_is_visible_and_startup_expires_unattached_command(runtime, monkeypatch):
+    from tui_gateway import prompt_admission
+    session = runtime.sessions["live-a"]
+    session["running"] = True
+    runtime.call("runtime.command", **envelope("cancel-target"))
+    result = runtime.call("runtime.command", **envelope("cancel-queue", expected_revision=None,
+        operation="cancel", payload={"reason": "stop"}))["result"]
+    assert result["status"] == "accepted"
+    events = runtime.call("runtime.events.since")["result"]["events"]
+    assert any(e["payload"].get("admission_state") == "cancelled" for e in events)
+    cancel_events = [e for e in events if e["payload"].get("cancellation")]
+    assert cancel_events[-1]["payload"]["cancellation"]["upstream_ack"] is None
+    runtime.call("runtime.command", **envelope("expire-after-restart", expected_revision=None))
+    db = runtime.agents["a"]._session_db
+    db._execute_write(lambda conn: conn.execute("UPDATE runtime_admission_queue SET expires_at=0 "
+        "WHERE command_id='expire-after-restart'"))
+    monkeypatch.setattr(runtime.server, "_sessions", {})
+    monkeypatch.setattr(runtime.server, "_get_db", lambda: db)
+    callbacks = []
+    def schedule(callback, interval):
+        callbacks.append(callback)
+        return SimpleNamespace(cancelled=False, cancel=lambda **kw: None)
+    monkeypatch.setattr("agent.periodic_scheduler.schedule", schedule)
+    prompt_admission.start(runtime.server)
+    assert len(callbacks) == 1
+    callbacks[0]()  # lifecycle maintenance, with no new submit or attached session
+    assert db.read_runtime_command("same-stored-id", "expire-after-restart")["result"]["admission_state"] == "expired"
+    assert runtime.dispatched == []
+
+
+def test_real_shutdown_fences_launch_and_leaves_terminal_queue_receipts(runtime, monkeypatch):
+    from tui_gateway import prompt_admission
+    runtime.sessions["live-a"]["running"] = True
+    runtime.call("runtime.command", **envelope("shutdown-queued"))
+    # Exercise the actual server lifecycle, isolating unrelated plugin/process
+    # teardown after the queue's own shutdown boundary.
+    for name in ("_flush_sessions_before_exit", "_release_gateway_wake_owner", "_stop_turns_before_exit"):
+        monkeypatch.setattr(runtime.server, name, lambda: None)
+    monkeypatch.setattr(runtime.server, "_close_session_by_id", lambda *a, **k: None)
+    runtime.server._shutdown_sessions()
+    runtime.sessions["live-a"]["running"] = False
+    prompt_admission.pump(runtime.server)
+    assert runtime.dispatched == []
+    record = runtime.agents["a"]._session_db.read_runtime_command("same-stored-id", "shutdown-queued")
+    assert record["status"] == "cancelled"
+    assert record["result"]["outcome"] == "shutdown_before_launch"
+    denied = runtime.call("runtime.command", **envelope("after-shutdown", expected_revision=None))["result"]
+    assert denied["status"] == "rejected" and denied["conflict"]["code"] == "admission_draining"
