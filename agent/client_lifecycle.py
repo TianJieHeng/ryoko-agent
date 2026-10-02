@@ -125,6 +125,13 @@ class ClientLifecycleMixin:
             from tools.computer_use.tool import release_computer_use_session
             release_computer_use_session(task_id)
 
+        def close_child_mcp() -> None:
+            from agent.runtime_context import current_agent_context
+            context = current_agent_context()
+            if context is not None and context.identity.lifecycle == "ephemeral":
+                from tools.mcp_tool_lifecycle import close_agent_mcp_connections
+                close_agent_mcp_connections()
+
         def forget_file_state() -> None:
             # File tools key their read stamps / writer claims by the per-turn task_id (cron:
             # ``cron:<job>:<uuid>``, subagents: ``subagent-N-xxxx``), which differs from session_id;
@@ -135,7 +142,7 @@ class ClientLifecycleMixin:
                     clear_file_ops_cache(owner)
 
         for step in (kill_processes, lambda: cleanup_vm(task_id), lambda: cleanup_browser(task_id),
-                     release_computer_use, forget_file_state):
+                     release_computer_use, forget_file_state, close_child_mcp):
             _quietly(step)
 
     def _client_log_context(self) -> str:

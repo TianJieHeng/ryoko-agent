@@ -129,6 +129,11 @@ class MCPServerRunMixin:
                 # concurrent ping can wedge the stdio stream; a busy server is alive anyway).
                 # Timeout — no lifecycle event fired. See #48069.
                 if self.session:
+                    from tools.agent_policy_gate import authorize_mcp
+                    if authorize_mcp(self.name, connection=self) is not None:
+                        self._deregister_tools()
+                        self._shutdown_event.set()
+                        break
                     if self._rpc_lock.locked() or any(not t.done() for t in self._inflight_tasks):
                         continue
                     try:
@@ -258,6 +263,8 @@ class MCPServerRunMixin:
         """Bind config, build sampling/elicitation handlers, validate HTTP. False when the server
         must not start (bad remote URL / non-MCP endpoint: fail fast with ``_error`` set and
         ``_ready`` fired instead of burning the reconnect ladder inside the SDK's httpx layer)."""
+        from tools.mcp_tool_policy import require_transport
+        require_transport(self.name, config, connection=self)
         self._config = config
         self.tool_timeout = _resolve_tool_timeout(config)
         self._auth_type = (config.get("auth") or "").lower().strip()
@@ -266,7 +273,9 @@ class MCPServerRunMixin:
         # The _MCP_*_TYPES flags are False until the lazy SDK import runs.
         _core._ensure_mcp_sdk()
         sampling_config = config.get("sampling", {})
-        self._sampling = (_sampling.SamplingHandler(self.name, sampling_config)
+        self._sampling = (_sampling.SamplingHandler(self.name, sampling_config,
+                          call_context=lambda: self._pending_call_context,
+                          policy_owned=getattr(self, "_agent_policy_owner", None) is not None)
                           if sampling_config.get("enabled", True) and _core._MCP_SAMPLING_TYPES else None)
         # elicitation/create lets a server ask for structured input mid-call; the handler
         # routes it through Hermes' approval system.
@@ -336,7 +345,11 @@ class MCPServerRunMixin:
         if denied is not None:
             self._publish_error(PermissionError("MCP agent policy denied connection"))
             return
-        if not await self._prepare_run(config):
+        try:
+            if not await self._prepare_run(config):
+                return
+        except PermissionError as exc:
+            self._publish_error(exc)
             return
         self._reconnect_retries = 0
         budget = _RetryBudget()
@@ -362,6 +375,8 @@ class MCPServerRunMixin:
                             from agent.secret_scope import reset_secret_scope
                             reset_secret_scope(scope_token)
                 rebuild = True
+                from tools.mcp_tool_policy import require_transport
+                require_transport(self.name, config, connection=self)
                 run_transport = self._run_http if self._is_http() else self._run_stdio
                 self._resolved_identity = None  # the transport publishes the inputs it connects with
                 if not await self._on_clean_return(await run_transport(config), budget):
@@ -377,6 +392,10 @@ class MCPServerRunMixin:
                 raise
             except Exception as exc:
                 self.session = None
+                if vars(self).get("_agent_policy_owner") is not None and isinstance(exc, PermissionError):
+                    self._publish_error(exc)
+                    self._deregister_tools()
+                    break
                 if not await self._on_transport_error(exc, budget):
                     break
             finally:

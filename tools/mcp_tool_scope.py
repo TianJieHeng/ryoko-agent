@@ -17,10 +17,15 @@ whose own scope has none.
 from __future__ import annotations
 
 from typing import Optional, Tuple, Union
+from pathlib import Path
 
 from tools.mcp_tool_common import _core
 
 ServerKey = Union[str, Tuple[str, str]]
+
+
+def _is_agent_scope(scope) -> bool:
+    return scope is not None and ".agent-mcp" in Path(scope).parts
 
 
 def _server_key(name: str, scope: Optional[str] = None, *, current: bool = True) -> ServerKey:
@@ -44,7 +49,7 @@ def _key_visible_in_scope(key: ServerKey, scope: Optional[str]) -> bool:
     """Whether the connection under *key* serves *scope*: owned by it or adopted into it.
     Caller holds ``_core._lock`` or tolerates a racy read (status surfaces)."""
     if scope is None:
-        return True
+        return not _is_agent_scope(_key_scope(key))
     return _key_scope(key) == scope or scope in _core._server_tool_scopes.get(key, ())
 
 
@@ -56,6 +61,9 @@ def _resolve_server_key(name: str, scope: Optional[str] = None, *, current: bool
         scope = _core._mcp_registry_scope()
     own = _server_key(name, scope, current=False)
     if scope is None or own in _core._servers or own in _core._lazy_server_configs:
+        return own
+    # Agent-owned namespaces never adopt a legacy or foreign connection.
+    if _is_agent_scope(scope):
         return own
     for key, scopes in _core._server_tool_scopes.items():
         if scope in scopes and _key_name(key) == name and key in _core._servers:

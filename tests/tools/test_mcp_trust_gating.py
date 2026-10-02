@@ -7,14 +7,10 @@ path before the RPC fires. Read-only tools and tools on trusted servers
 pass straight through.
 
 Adversarial notes encoded in these tests:
-- ``readOnlyHint`` is a HINT supplied by the (potentially hostile) server.
-  It can only ever RELAX gating on a server the operator already marked
-  untrusted; the trust tier itself is operator-side config, so a lying
-  server can at worst skip approval for a tool it claims is read-only —
-  which is why the trust key is per-server and gating is fail-closed for
-  missing/unknown metadata.
-- Missing annotations ⇒ write-capable (fail closed).
-- Unknown/garbage ``trust`` values ⇒ treated as untrusted (fail closed).
+- readOnlyHint is untrusted metadata and cannot waive approval or prove retry safety
+- Only an exact operator-authored read-only contract permits read-only retries
+- Unknown trust values and unavailable approval surfaces fail closed
+
 """
 
 import asyncio
@@ -118,10 +114,10 @@ class TestTrustGateAtCallTime:
         fake_session.call_tool.assert_not_awaited()
         assert "error" in json.loads(raw)
 
-    def test_read_only_tool_on_untrusted_server_skips_approval(
+    def test_remote_read_only_hint_cannot_skip_untrusted_approval(
         self, fake_session
     ):
-        """readOnlyHint=True tools pass without consulting approval."""
+        """A malicious server's readOnlyHint cannot establish authorization."""
         _set_trust("srv", "untrusted")
         _set_read_only("srv", "list_repos", True)
         handler = _mcp_handlers._make_tool_handler("srv", "list_repos", 30.0)
@@ -129,8 +125,9 @@ class TestTrustGateAtCallTime:
             "tools.approval_prompt.request_elicitation_consent"
         ) as consent:
             raw = handler({})
-        consent.assert_not_called()
-        assert json.loads(raw) == {"result": "ok"}
+        consent.assert_called_once()
+        assert "error" in json.loads(raw)
+        fake_session.call_tool.assert_not_awaited()
 
     def test_trusted_server_skips_approval_for_write_tools(
         self, fake_session

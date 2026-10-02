@@ -162,7 +162,7 @@ def _openai_http_client_kwargs(base_url: Optional[str], *, async_mode: bool = Fa
     try:
         from agent.process_bootstrap import build_keepalive_http_client
         client = build_keepalive_http_client(
-            str(base_url or ""), async_mode=async_mode, verify=_resolve_aux_verify(base_url))
+            str(base_url or ""), async_mode=async_mode, verify=_resolve_aux_verify(base_url), egress_purpose="aux_model")
     except (ImportError, AttributeError):
         # Version-skewed install (Desktop runtime lagging a git tree) lacks this helper:
         # degrade to the SDK default httpx client rather than kill the job; warn once.
@@ -179,6 +179,9 @@ def _openai_http_client_kwargs(base_url: Optional[str], *, async_mode: bool = Fa
 
 
 def _create_openai_client(*, api_key: str, base_url: str, **kwargs: Any) -> Any:
+    from tools.egress_policy import policy_active, build_model_client
+    if policy_active() and not _aux_probe_active():
+        return build_model_client({"api_key": api_key, "base_url": base_url, **kwargs}, purpose="aux_model")
     if _aux_probe_active():
         # Availability probe: resolved credentials/base_url are the answer.
         return _AuxProbeClientStub(api_key=api_key, base_url=base_url)
@@ -2629,6 +2632,9 @@ def _relay_sync_completion(
     api_mode: str | None = None, create: Callable[[dict[str, Any]], Any] | None = None,
 ) -> Any:
     from agent.auxiliary_wire import prepare_chat_messages
+    from tools.egress_policy import reject_unsupported_route
+    if create is not None or api_mode not in (None, "chat_completions"):
+        reject_unsupported_route("auxiliary_callback")
 
     kwargs = prepare_chat_messages(client, kwargs)
     # The progress hook is installed per TASK, so every attempt (retries, recovery rungs, fallbacks)
@@ -2637,6 +2643,8 @@ def _relay_sync_completion(
     def callback(request):
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
+        from tools.egress_policy import assert_provider_client
+        assert_provider_client(client, purpose="aux_model")
         from agent.budget_account import current_budget, invoke_budgeted_completion
         budget = current_budget()
         if budget is not None:
@@ -2669,6 +2677,9 @@ async def _relay_async_completion(
     api_mode: str | None = None, create: Callable[[dict[str, Any]], Any] | None = None,
 ) -> Any:
     from agent.auxiliary_wire import prepare_chat_messages
+    from tools.egress_policy import reject_unsupported_route
+    if create is not None or api_mode not in (None, "chat_completions"):
+        reject_unsupported_route("auxiliary_callback")
 
     kwargs = prepare_chat_messages(client, kwargs)
     # Async twin of the seam default above (#98466).
@@ -2676,6 +2687,8 @@ async def _relay_async_completion(
     async def callback(request):
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
+        from tools.egress_policy import assert_provider_client
+        assert_provider_client(client, purpose="aux_model")
         from agent.budget_account import current_budget, invoke_budgeted_completion_async
         budget = current_budget()
         if budget is not None:
@@ -2711,6 +2724,8 @@ def _relay_sync_stream(
     def create(request):
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
+        from tools.egress_policy import assert_provider_client
+        assert_provider_client(client, purpose="aux_model")
         from agent.budget_account import current_budget
         budget = current_budget()
         if budget is not None:
@@ -4765,6 +4780,12 @@ def _to_async_client(sync_client, model: str, is_vision: bool = False):
     from openai import AsyncOpenAI
     if isinstance(sync_client, _AuxProbeClientStub):
         return sync_client, model
+    from tools.egress_policy import policy_active, build_model_client, assert_provider_client
+    if policy_active():
+        assert_provider_client(sync_client, purpose="aux_model", require_run=False)
+        return build_model_client({"api_key": sync_client.api_key, "base_url": str(sync_client.base_url),
+                                   "default_headers": dict(sync_client._custom_headers)},
+                                  purpose="aux_model", async_mode=True), model
     if isinstance(sync_client, CodexAuxiliaryClient):
         return AsyncCodexAuxiliaryClient(sync_client), model
     if isinstance(sync_client, AnthropicAuxiliaryClient):
@@ -5488,6 +5509,11 @@ def resolve_provider_client(
     (full auto-detection chain). ``model=None`` → provider's default aux model. ``raw_codex`` → bare OpenAI
     client for ``responses.stream()`` callers. ``api_mode`` forces "codex_responses"/"chat_completions"/
     "anthropic_messages" instead of auto-detect. Returns (client, resolved_model) or (None, None)."""
+    from tools.egress_policy import policy_active, resolve_auxiliary_client
+    if policy_active():
+        return resolve_auxiliary_client(provider=provider, model=model, base_url=explicit_base_url,
+                                        api_key=explicit_api_key, api_mode=api_mode,
+                                        main_runtime=main_runtime, async_mode=async_mode)
     _validate_proxy_env_urls()
     # Keep the pre-alias name so a custom_providers entry named like a built-in alias
     # (e.g. "kimi" → "kimi-coding") is still reachable via the named-custom branch.
@@ -5748,6 +5774,14 @@ def resolve_vision_provider_client(
     requested, resolved_model, resolved_base_url, resolved_api_key, resolved_api_mode = _resolve_task_provider_model(
         "vision", provider, model, base_url, api_key
     )
+    from tools.egress_policy import policy_active, resolve_auxiliary_client
+    if policy_active():
+        client, chosen_model = resolve_auxiliary_client(
+            provider=requested, model=resolved_model, base_url=resolved_base_url,
+            api_key=resolved_api_key, api_mode=resolved_api_mode,
+            main_runtime=main_runtime, async_mode=async_mode)
+        return requested, client, chosen_model
+
     requested = _normalize_vision_provider(requested)
     if resolved_base_url:
         provider_for_base_override = requested if requested and requested not in {"", "auto"} else "custom"
@@ -8135,6 +8169,8 @@ def _call_llm_impl(
         if task == "moa_aggregator" and isinstance(client, CodexAuxiliaryClient):
             # Responses-shim clients consume the stream internally and return a completed
             # object Relay's managed stream would iterate; the MoA facade wraps it as one chunk.
+            from tools.egress_policy import assert_provider_client
+            assert_provider_client(client, purpose="aux_model")
             return client.chat.completions.create(**kwargs)
         return _relay_sync_stream(client, kwargs, provider=request_provider, api_mode=req.resolved_api_mode)
 

@@ -55,9 +55,24 @@ _RUN: ContextVar[RuntimeRun | None] = ContextVar("runtime_authoritative_run", de
 _MAX_OUTCOME_BYTES = 240000
 
 
-def supports_runtime_execution(agent) -> bool:
+def runtime_execution_denial(agent) -> str | None:
+    if isinstance(getattr(agent, "runtime_context", None), AgentContext):
+        # Only owned local response surfaces are certified here. Gateway/cron
+        # external delivery happens after the turn context exits and requires
+        # the separate recipient-bound BE06 delivery adapter.
+        if getattr(agent, "platform", None) not in {None, "cli", "tui", "desktop", "subagent"}:
+            return "runtime_delivery_transport_unsupported"
+        import openai
+        # BE05 certifies the guarded HTTPX chat route only. A runtime mutation
+        # must not jump into a native adapter that bypasses recipient checks.
+        if getattr(agent, "api_mode", None) != "chat_completions" or type(getattr(agent, "client", None)) is not openai.OpenAI:
+            return "runtime_transport_unsupported"
     from agent.provider_capabilities import provider_capabilities_for
-    return provider_capabilities_for(agent).durable_execution
+    return None if provider_capabilities_for(agent).durable_execution else "runtime_transport_unsupported"
+
+
+def supports_runtime_execution(agent) -> bool:
+    return runtime_execution_denial(agent) is None
 
 
 def _authority(agent):
@@ -66,8 +81,8 @@ def _authority(agent):
     if not isinstance(context, AgentContext) or db is None or getattr(agent, "_persist_disabled", False):
         raise RuntimeCommandError("identity_required")
     context.validate_profile_home()
-    if not supports_runtime_execution(agent):
-        raise RuntimeCommandError("runtime_transport_unsupported")
+    if denial := runtime_execution_denial(agent):
+        raise RuntimeCommandError(denial)
     if not callable(getattr(type(db), "submit_runtime_command", None)):
         raise RuntimeCommandError("durable_store_required")
     sid = str(agent.session_id)

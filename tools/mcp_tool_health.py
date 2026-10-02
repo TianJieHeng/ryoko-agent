@@ -115,9 +115,17 @@ class MCPServerHealthMixin:
                     self._schedule_tools_refresh()
                     await asyncio.sleep(0)  # one tick so short-lived contexts (and tests) observe it
                 elif isinstance(payload, _core.PromptListChangedNotification):
-                    logger.debug("MCP server '%s': prompts/list_changed (ignored)", self.name)
+                    if getattr(self, "_agent_policy_owner", None) is not None:
+                        from tools.mcp_tool_policy import invalidate_refresh
+                        invalidate_refresh(self, "MCP prompt refresh unsupported; reauthorization and a new context required")
+                    else:
+                        logger.debug("MCP server '%s': prompts/list_changed (ignored)", self.name)
                 elif isinstance(payload, _core.ResourceListChangedNotification):
-                    logger.debug("MCP server '%s': resources/list_changed (ignored)", self.name)
+                    if getattr(self, "_agent_policy_owner", None) is not None:
+                        from tools.mcp_tool_policy import invalidate_refresh
+                        invalidate_refresh(self, "MCP resource refresh unsupported; reauthorization and a new context required")
+                    else:
+                        logger.debug("MCP server '%s': resources/list_changed (ignored)", self.name)
             except Exception:
                 logger.exception("Error in MCP message handler for '%s'", self.name)
         return _handler
@@ -146,7 +154,11 @@ class MCPServerHealthMixin:
                 if session is None:
                     logger.debug("MCP server '%s': skipping dynamic tool refresh; session not connected", self.name)
                     return
+                from tools.agent_policy_gate import require_mcp
+                require_mcp(self.name, connection=self)
                 new_mcp_tools = await _core._paginate_full_list(session.list_tools, "tools", self.name)
+                from tools.mcp_tool_policy import validate_schemas
+                validate_schemas(self, new_mcp_tools)
             # Remove only stale names first — no nuke-and-repave: live turns may hold tool-call
             # IDs pointing at existing handlers; in-place replacement avoids "not connected" races.
             self._deregister_owned(old_tool_names - {mcp_prefixed_tool_name(self.name, tool.name) for tool in new_mcp_tools})

@@ -488,7 +488,14 @@ class ToolRegistry:
 
     def _merged_tools(self, scope: Optional[str] = None) -> Dict[str, ToolEntry]:
         """Return global tools overlaid with one profile's plugin tools."""
-        return {**self._tools, **self._scoped_tools.get(hermes_home_key(scope), {})}
+        merged = {**self._tools, **self._scoped_tools.get(hermes_home_key(scope), {})}
+        from tools.mcp_tool_policy import registry_scope
+        owner = registry_scope()
+        if owner is not None:
+            # A strict identity must never discover another agent's/global MCP schema.
+            merged = {name: entry for name, entry in merged.items() if not entry.toolset.startswith("mcp-")}
+            merged.update(self._scoped_tools.get(owner, {}))
+        return merged
 
     def _toolset_entries(self, toolset: str, scope: Optional[str]) -> List[ToolEntry]:
         return self._grouped(self._merged_tools(scope).values()).get(toolset, [])
@@ -521,10 +528,18 @@ class ToolRegistry:
 
     def _lookup(self, name: str, scope_key: Optional[str]) -> Optional[ToolEntry]:
         """``_merged_tools(scope_key).get(name)`` without building the merged dict."""
+        from tools.mcp_tool_policy import registry_scope
+        owner = registry_scope()
+        if owner is not None:
+            owned = self._scoped_tools.get(owner, {}).get(name)
+            if owned is not None:
+                return owned
         scoped = self._scoped_tools.get(scope_key)
-        if scoped is not None and name in scoped:
-            return scoped[name]
-        return self._tools.get(name)
+        entry = scoped.get(name) if scoped is not None else None
+        entry = entry if entry is not None else self._tools.get(name)
+        if owner is not None and entry is not None and entry.toolset.startswith("mcp-"):
+            return None
+        return entry
 
     def snapshot_registration(
         self, name: str, *, scope: Optional[str] = None) -> Optional[ToolEntry]:
@@ -545,7 +560,8 @@ class ToolRegistry:
         before showing any names or reasons to an agent.
         """
         with self._lock:
-            key = (self.current_scope_key(), self._generation)
+            from tools.mcp_tool_policy import registry_scope
+            key = (self.current_scope_key(), registry_scope(), self._generation)
             cached = self._catalog_metadata_cache.get(key)
             if cached is None:
                 cached = tuple(ToolCatalogMetadata(
@@ -942,6 +958,7 @@ class ToolRegistry:
             return denied
         if not entry:
             return tool_error(f"Unknown tool: {name}")
+        from tools.capability_broker import CapabilityDenied
         try:
             # Plugin contract (plugins/AGENTS.md): optional context kwargs (task_id, session_id, user_task,
             # parent_agent, ...) are signature-inspected like hook payloads, so a narrow ``handle(args)``
@@ -949,12 +966,16 @@ class ToolRegistry:
             from tools.agent_policy_gate import assert_runtime_dispatch
             assert_runtime_dispatch()
             kwargs = _kwargs_accepted_by(entry.handler, kwargs)
-            if entry.is_async:
-                from model_tools import _run_async
-                result = _run_async(entry.handler(args, **kwargs))
-            else:
-                result = entry.handler(args, **kwargs)
+            def execute():
+                if entry.is_async:
+                    from model_tools import _run_async
+                    return _run_async(entry.handler(args, **kwargs))
+                return entry.handler(args, **kwargs)
+            from tools.capability_broker import invoke_tool_dispatch
+            result = invoke_tool_dispatch(name, args, execute, entry=entry)
             return self._normalize_handler_result(name, result)
+        except CapabilityDenied as exc:
+            return exc.result()
         except Exception as e:
             # exc_info already renders the exception, so keep the message copy bounded.
             logger.exception("Tool %s dispatch error: %s", name, _bound_error_text(str(e)))

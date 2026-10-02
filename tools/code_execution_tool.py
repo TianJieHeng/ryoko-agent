@@ -726,6 +726,15 @@ def execute_code(
     if not code or not code.strip():
         return tool_error("No code provided. execute_code requires a non-empty 'code' "
                           "parameter containing Python source. To run shell commands, use terminal(command=...) instead.")
+    # A strict identity can never fall through to the legacy session kernel,
+    # project interpreter, remote script shipment, or nested tool RPC.
+    from tools.capability_broker import CapabilityDenied, require_live_policy
+    try:
+        if require_live_policy(require_run=False) is not None:
+            from tools.code_execution_isolated import execute_strict_code
+            return execute_strict_code(code, reset=bool(reset))
+    except CapabilityDenied as denial:
+        return denial.result()
     # Hard-block gateway-lifecycle commands (mirrors the terminal_tool guard — otherwise
     # `os.system("launchctl bootout ...")` here bypasses it and SIGTERMs the gateway mid-task).
     # Gated on PID-file ownership, not the inherited env marker.
@@ -875,9 +884,31 @@ _TOOL_DOC_LINES = [
 
 
 def build_execute_code_schema(enabled_sandbox_tools: set = None,
-                              mode: str = None) -> dict:
+                              mode: str = None, *, isolated: bool | None = None) -> dict:
     """execute_code schema listing only *enabled_sandbox_tools* — a disabled tool (e.g. web off)
     must not appear or the model keeps trying it. ``mode`` (None → config) picks the cwd sentence."""
+    if isolated is None:
+        from agent.runtime_context import current_agent_context
+        isolated = current_agent_context() is not None
+    if isolated:
+        return {
+            "name": "execute_code",
+            "description": (
+                "Run stateless Python computation inside the certified Linux isolation boundary. "
+                "Each call starts fresh, with selected standard-library modules only. No network, "
+                "host files, child processes, installed project packages, or tool RPC are available. "
+                "The working directory is /outputs; write result files there for staged review. "
+                "Inputs at /inputs are immutable; this interface currently supplies no host inputs. "
+                "Outputs are hashed and retained in a private staging directory, never promoted "
+                "to parent files automatically. Print a concise result. Limits: up to 30 seconds "
+                "of computation, 256 MiB address space, 2 MiB per file, 8 MiB output storage, "
+                "64 KiB each stdout/stderr. A smaller remaining budget may shorten execution. "
+                "Unsupported executors refuse rather than run outside confinement."),
+            "parameters": {"type": "object", "properties": {
+                "code": {"type": "string", "description": "Python source; print the result or write files in /outputs."},
+                "reset": {"type": "boolean", "description": "Accepted for compatibility; every isolated call already starts fresh."},
+            }, "required": ["code"]},
+        }
     if enabled_sandbox_tools is None:
         enabled_sandbox_tools = SANDBOX_ALLOWED_TOOLS
     if mode is None:
@@ -942,7 +973,7 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None,
 
 
 # Registration-time schema (all sandbox tools, configured mode); model_tools.py rebuilds per-session.
-EXECUTE_CODE_SCHEMA = build_execute_code_schema()
+EXECUTE_CODE_SCHEMA = build_execute_code_schema(isolated=False)
 
 
 def _execute_code_handler(args: dict, **kwargs) -> str:

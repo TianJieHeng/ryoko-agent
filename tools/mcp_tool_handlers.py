@@ -51,11 +51,9 @@ _SESSION_OUTCOME_UNCERTAIN_MSG = (
 
 
 def _tool_is_read_only(server_name: str, tool_name: str) -> bool:
-    """True only when discovery captured ``readOnlyHint=True`` for the tool. Missing or malformed
-    metadata fails safe to False (treated as write-capable). readOnlyHint is a property of the
-    connection's tools, so it lives under the connection key."""
-    from tools.mcp_tool_scope import _resolve_server_key
-    return _core._tool_read_only_hints.get(_resolve_server_key(server_name), {}).get(tool_name) is True
+    """Retry safety is an operator contract, never an untrusted readOnlyHint."""
+    from tools.mcp_tool_policy import operator_read_only
+    return operator_read_only(server_name, tool_name)
 
 
 def _trust_gate_check(server_name: str, tool_name: str) -> Optional[str]:
@@ -70,7 +68,7 @@ def _trust_gate_check(server_name: str, tool_name: str) -> Optional[str]:
         from tools.approval_prompt import request_elicitation_consent
         answer = request_elicitation_consent(
             f"MCP tool '{tool_name}' on UNTRUSTED server '{server_name}' wants to run. This tool is write-capable "
-            f"(no readOnlyHint=true annotation) and may modify external state.",
+            f"and may modify external state; server hints do not establish authority.",
             f"Server '{server_name}' is configured 'trust: untrusted'. "
             f"Approve to run '{tool_name}' once, or deny to block it.",
             surface=f"mcp-trust/{server_name}", title=f"MCP server '{server_name}' is asking")
@@ -580,22 +578,28 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
     op = f"tools/call {tool_name}"
     registry_name = mcp_prefixed_tool_name(server_name, tool_name)
 
-    def _handler(args: dict, **kwargs) -> str:
+    def _invoke(args: dict, **kwargs) -> str:
         # Security boundary: untrusted-server write tools need approval before ANY transport work (incl. lazy spawn).
         error = (authorize_tool(registry_name) or authorize_mcp(server_name, tool_name)
                  or _trust_gate_check(server_name, tool_name) or _check_circuit_breaker(server_name))
         if error is not None:
             return error
+        try:
+            from tools.mcp_tool_policy import require_operation
+            require_operation(server_name, tool_name, args, require_run=True)
+        except (PermissionError, ValueError) as exc:
+            return tool_error(str(exc))
         server, error = _acquire_call_server(server_name, tool_timeout)
         if server is None:
             return error
-        # Only a tool annotated readOnlyHint=True is replayed after session expiry; a 401 is always
-        # pre-dispatch so the auth recoverer keeps its retry for every tool.
+        # Only an operator-declared read-only contract permits session-loss replay.
         read_only = _tool_is_read_only(server_name, tool_name)
 
         async def _call():
             async with server._rpc_lock, _track_inflight_rpc(server, server_name, op, retry_safe=read_only):
                 require_mcp(server_name, tool_name, connection=server)
+                from tools.mcp_tool_policy import require_operation
+                require_operation(server_name, tool_name, args, connection=server, require_run=True)
                 server._pending_call_context = contextvars.copy_context()  # for the elicitation callback
                 try:
                     result = await _call_tool_racing_stdio_death(server, server_name, tool_name, args)
@@ -613,6 +617,19 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             server_name, server, op, _call, tool_timeout,
             (_handle_stdio_child_exited_and_retry, _handle_auth_error_and_retry, session_expired),
             _on_failure, record_outcome=True)
+    def _handler(args: dict, **kwargs) -> str:
+        from tools.capability_broker import invoke_bound_handler, CapabilityDenied
+        try:
+            denial = authorize_mcp(server_name, tool_name)
+            if denial is not None:
+                return denial
+            from tools.mcp_tool_policy import require_operation
+            require_operation(server_name, tool_name, args, require_run=True)
+            return invoke_bound_handler(registry_name, args, lambda: _invoke(args, **kwargs), handler=_handler)
+        except CapabilityDenied as exc:
+            return exc.result()
+        except (PermissionError, InterruptedError, ValueError) as exc:
+            return tool_error(str(exc), status="denied")
     _handler._agent_mcp_target = (server_name, tool_name)
     return _handler
 
@@ -622,11 +639,16 @@ def _make_utility_handler(op: str, log_label: str, rpc, render, required: Option
     server_name)`` awaited under ``_rpc_lock``, ``render(result, server_name)`` -> JSON-able
     payload, ``required`` validated before any transport work."""
     def _factory(server_name: str, tool_timeout: float):
-        def _handler(args: dict, **kwargs) -> str:
+        def _invoke(args: dict, **kwargs) -> str:
             denied = (authorize_tool(mcp_prefixed_tool_name(server_name, log_label))
                       or authorize_mcp(server_name, op))
             if denied is not None:
                 return denied
+            try:
+                from tools.mcp_tool_policy import require_operation
+                require_operation(server_name, op, args, require_run=True)
+            except (PermissionError, ValueError) as exc:
+                return tool_error(str(exc))
             server, denied = _acquire_call_server(server_name, tool_timeout)
             if server is None:
                 return denied
@@ -636,12 +658,31 @@ def _make_utility_handler(op: str, log_label: str, rpc, render, required: Option
             async def _call():
                 async with server._rpc_lock:
                     require_mcp(server_name, op, connection=server)
-                    result = await rpc(server.session, args, server_name)
+                    require_operation(server_name, op, args, connection=server, require_run=True)
+                    server._pending_call_context = contextvars.copy_context()
+                    try:
+                        result = await rpc(server.session, args, server_name)
+                    finally:
+                        server._pending_call_context = None
                 return json.dumps(render(result, server_name), ensure_ascii=False)
             return _dispatch(
                 server_name, server, op, _call, tool_timeout,
                 (_handle_auth_error_and_retry, _handle_session_expired_and_retry),
                 lambda exc: logger.error("MCP %s/%s failed: %s", server_name, log_label, exc))
+        def _handler(args: dict, **kwargs) -> str:
+            from tools.capability_broker import invoke_bound_handler, CapabilityDenied
+            try:
+                denial = authorize_mcp(server_name, op)
+                if denial is not None:
+                    return denial
+                from tools.mcp_tool_policy import require_operation
+                require_operation(server_name, op, args, require_run=True)
+                return invoke_bound_handler(mcp_prefixed_tool_name(server_name, log_label), args,
+                                            lambda: _invoke(args, **kwargs), handler=_handler)
+            except CapabilityDenied as exc:
+                return exc.result()
+            except (PermissionError, InterruptedError, ValueError) as exc:
+                return tool_error(str(exc), status="denied")
         _handler._agent_mcp_target = (server_name, op)
         return _handler
     return _factory

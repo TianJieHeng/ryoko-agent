@@ -267,7 +267,7 @@ def close_shared_transports() -> int:
     return len(transports)
 
 
-def build_keepalive_http_client(base_url: str = "", *, async_mode: bool = False, verify: Any = True) -> Optional[Any]:
+def build_keepalive_http_client(base_url: str = "", *, async_mode: bool = False, verify: Any = True, egress_purpose: str = "main_model") -> Optional[Any]:
     """httpx client for OpenAI SDK calls with env-only proxy policy (None on failure).
 
     Explicit no-proxy mounts disable httpx's ``trust_env`` path so macOS system
@@ -285,9 +285,23 @@ def build_keepalive_http_client(base_url: str = "", *, async_mode: bool = False,
     See #12952, #54049.
     See #10933.
     """
+    from tools.egress_policy import prepare_recipient, wrap_httpx_transport, EgressDenied
+    authorization = prepare_recipient(egress_purpose, base_url)
     try:
         import httpx
         proxy = _get_proxy_for_base_url(base_url)
+        if authorization is not None and proxy is not None:
+            raise EgressDenied("recipient_proxy_transport_unsupported")
+        if authorization is not None and verify is False:
+            raise EgressDenied("recipient_tls_verification_required")
+
+        def finish(client):
+            if authorization is not None:
+                # The default fallback must be guarded as well as scheme mounts.
+                if getattr(client._transport, "authorization", None) is not authorization:
+                    client._transport = wrap_httpx_transport(client._transport, authorization, async_mode=async_mode)
+                client._hermes_recipient_authorization = authorization
+            return client
         limits = httpx.Limits(max_keepalive_connections=20, max_connections=100, keepalive_expiry=20.0)
         timeout = httpx.Timeout(connect=15.0, read=None, write=15.0, pool=10.0)  # read=None for SSE streaming
         transport_cls = httpx.AsyncHTTPTransport if async_mode else httpx.HTTPTransport
@@ -310,19 +324,23 @@ def build_keepalive_http_client(base_url: str = "", *, async_mode: bool = False,
                 return transport
 
             if async_mode:
-                mounts = {"http://": _build_direct(), "https://": _build_direct()}
+                mounts = {f"{scheme}://": wrap_httpx_transport(_build_direct(), authorization, async_mode=True)
+                          for scheme in ("http", "https")}
             else:
                 key = _shared_transport_key(base_url, verify, proxy)
                 view_cls = _shared_transport_cls()
                 mounts = {
-                    f"{scheme}://": view_cls(_get_shared_transport((scheme, *key), _build_direct))
+                    f"{scheme}://": wrap_httpx_transport(view_cls(_get_shared_transport((scheme, *key), _build_direct)), authorization)
                     for scheme in ("http", "https")
                 }
                 # Default transport = the https view; otherwise httpx builds a third, never-used
                 # direct transport (pool + SSL context) per client.
-                return client_cls(limits=limits, timeout=timeout, transport=mounts["https://"], mounts=mounts)
-        return client_cls(limits=limits, timeout=timeout, proxy=proxy, mounts=mounts or None, verify=verify)
+                return finish(client_cls(limits=limits, timeout=timeout, transport=mounts["https://"], mounts=mounts, trust_env=False))
+        return finish(client_cls(limits=limits, timeout=timeout, proxy=proxy, mounts=mounts or None,
+                                 verify=verify, trust_env=False))
     except Exception:
+        if authorization is not None:
+            raise
         return None
 
 

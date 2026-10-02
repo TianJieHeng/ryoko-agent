@@ -145,6 +145,20 @@ def shutdown_mcp_servers(*, scope: Optional[str] = None, names: Optional[set] = 
     profile under a total budget divides it, or N profiles × 15s starve the wildcard pass that
     actually stops the loop."""
     from tools.mcp_tool_scope import _key_name
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        owned_scope = _core._mcp_registry_scope()
+        if scope is not None and scope != owned_scope:
+            from tools.agent_policy_gate import _owner
+            actor = _owner(current_agent_context())[:4]
+            with _core._lock:
+                own_old_scope = any(_core._server_scope_keys.get(key) == scope
+                    and (vars(server).get("_agent_policy_owner") or ())[:4] == actor
+                    for key, server in _core._servers.items())
+            if not own_old_scope:
+                raise PermissionError("An agent cannot tear down another MCP owner's connections")
+        else:
+            scope = owned_scope
     wildcard = scope is None and names is None
     with _core._lock:
         selected = [key for key in _core._servers if wildcard or _core._server_scope_keys.get(key) == scope]
@@ -169,12 +183,23 @@ def shutdown_mcp_servers(*, scope: Optional[str] = None, names: Optional[set] = 
                     if adopter != scope:
                         _core._orphaned_adopters.setdefault(adopter, set()).add(_key_name(key))
 
+    # Revocation is synchronous; transport unwinding can lag without leaving a
+    # cached callable authority. Strict HTTP teardown suppresses remote DELETE.
+    for server in servers_snapshot:
+        if vars(server).get("_agent_policy_owner") is not None:
+            server._agent_refresh_blocked = "MCP connection owner is closing"
+            server._deregister_tools()
+            server._agent_remote_cleanup_status = "unconfirmed"
+
     def clear_selected_status():
         _core._server_connecting.difference_update(selected_status)
         for key in selected_status:
             _core._server_connect_errors.pop(key, None)
             _core._server_scope_keys.pop(key, None)
             _core._server_tool_scopes.pop(key, None)
+            _core._server_trust_levels.pop(key, None)
+            _core._tool_read_only_hints.pop(key, None)
+            _core._tool_operator_read_only.pop(key, None)
 
     # Fast path: nothing to shut down. The connect-cooldown maps can still be populated here — a server that
     # failed to connect is never recorded in ``_servers`` (that is the very premise of the #50394 cooldown),
@@ -209,6 +234,13 @@ def shutdown_mcp_servers(*, scope: Optional[str] = None, names: Optional[set] = 
     # stale backoff entries), no connect-cooldown state may survive shutdown.
     with _core._lock:
         if not servers_snapshot:
+            clear_selected_status()
+        elif _core._mcp_loop is None or not _core._mcp_loop.is_running():
+            # No live loop can own a usable socket; retire local authority without
+            # attempting new authenticated transport work just to clean up.
+            for key, server in zip(selected, servers_snapshot):
+                _core._servers.pop(key, None)
+                server.session = None
             clear_selected_status()
         _clear_connect_cooldowns(None if wildcard else selected_status)
     _loop._stop_mcp_loop(only_if_idle=not wildcard)
@@ -367,3 +399,19 @@ async def _drain_and_stop_mcp_loop() -> None:
         await _drain_mcp_loop_tasks(timeout=_core._MCP_LOOP_DRAIN_TIMEOUT)
     finally:
         loop.call_soon(loop.stop)
+
+
+def close_agent_mcp_connections() -> None:
+    """Close only the currently bound agent's local pools, including stale grants."""
+    from agent.runtime_context import current_agent_context
+    from tools.agent_policy_gate import _owner
+    context = current_agent_context()
+    if context is None:
+        return
+    actor = _owner(context)[:4]
+    with _core._lock:
+        scopes = {_core._server_scope_keys.get(key) for key, server in _core._servers.items()
+                  if (vars(server).get("_agent_policy_owner") or ())[:4] == actor}
+    for scope in scopes:
+        if scope is not None:
+            shutdown_mcp_servers(scope=scope)

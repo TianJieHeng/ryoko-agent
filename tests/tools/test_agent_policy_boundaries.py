@@ -1,4 +1,4 @@
-"""BE01 real dispatch boundaries; BE05 executor/pool isolation stays unsupported.
+"""Real identity dispatch boundaries and the BE05 certified-adapter floor.
 
 Authority comes from real config parsing and real ContextVars. Only the external
 RPC/transport is a harmless stub; registry, discovery, bridge and hook paths are real.
@@ -10,15 +10,26 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.tools.test_capability_broker import live_runtime  # noqa: F401
+
 from agent.agent_identity import resolve_agent_context
 from agent.runtime_context import bind_agent_context, current_agent_context
 from hermes_constants import reset_hermes_home_override, set_hermes_home_override
 from tools.agent_policy_gate import authorize_mcp, authorize_tool, bind_mcp_connection
+from tests.tools.test_mcp_agent_trust_lifecycle import fixture as mcp_runtime  # noqa: F401
 
 
 def config(active="primary", *, allowed=(), mcp=None):
     primary = {"policy_version": 1, "role": "primary", "memory_backend": "personal_mcp",
                "allowed_tools": list(allowed), "mcp_grants": mcp or {}}
+    if mcp:
+        primary["mcp_policies"] = {server: {
+            "policy_version": 1, "transport": "streamable_http", "endpoint": "https://fixture.invalid/mcp",
+            "tool_allowlist": [tool for tool in granted if not tool.startswith(("resources/", "prompts/"))],
+            "read_scopes": {op: (True if op.endswith("/list") else
+                                    ["fixture://allowed"] if op == "resources/read" else ["allowed"])
+                            for op in granted if op.startswith(("resources/", "prompts/"))},
+        } for server, granted in mcp.items()}
     specialist = {"policy_version": 1, "role": "specialist", "memory_backend": "builtin",
                   "allowed_tools": list(allowed), "mcp_grants": {}}
     return {"agent_identity": {"schema_version": 1, "principal_id": "owner", "profile_id": "profile",
@@ -77,29 +88,34 @@ def test_unknown_and_hidden_direct_dispatch_deny_before_hooks(home, monkeypatch)
 def test_nonprimary_execution_requires_certified_boundary_even_if_granted(home, name):
     ctx = context(home, config("specialist", allowed=[name]))
     with bind_agent_context(ctx):
-        denied = json.loads(authorize_tool(name))
-    assert denied["status"] == "unsupported"
-    assert "BE05" in denied["message"]
+        if name == "execute_code":
+            import tools.code_execution_tool  # noqa: F401
+            from tools.registry import registry
+            assert authorize_tool(name) is None
+            # Schema admission is not execution authority: no admitted live run.
+            denied = json.loads(registry.dispatch(name, {"code": "print('unreachable')"}))
+            assert "durable command" in denied["error"]
+        else:
+            denied = json.loads(authorize_tool(name))
+            assert denied["status"] == "unsupported"
+            assert "BE05" in denied["message"]
 
 
 def test_policy_bound_schema_cache_is_primary_specialist_primary(home, monkeypatch):
     import model_tools
-    from tools.registry import registry
-    name = "policy_fixture"
-    registry.register(name=name, toolset="policy_fixture", schema={"name": name, "parameters": {}}, handler=lambda a: '{}')
+    import tools.todo_tool  # noqa: F401
+    name = "todo_list"
     monkeypatch.setattr(model_tools, "_select_tool_names", lambda *a, **k: {name})
     cfg = config(allowed=[name])
+    cfg["agent_identity"]["agents"]["specialist"]["allowed_tools"] = []
     first = context(home, cfg)
     cfg2 = copy.deepcopy(cfg)
     cfg2["agent_identity"]["active_agent_id"] = "specialist"
     second = context(home, cfg2, "other")
-    try:
-        for ctx, expected in [(first, [name]), (second, []), (first, [name])]:
-            with bind_agent_context(ctx):
-                defs = model_tools.get_tool_definitions(quiet_mode=True, skip_tool_search_assembly=True)
-                assert [d["function"]["name"] for d in defs] == expected
-    finally:
-        registry.deregister(name)
+    for ctx, expected in [(first, [name]), (second, []), (first, [name])]:
+        with bind_agent_context(ctx):
+            defs = model_tools.get_tool_definitions(quiet_mode=True, skip_tool_search_assembly=True)
+            assert [d["function"]["name"] for d in defs] == expected
 
 
 def test_strict_boot_defers_before_config_credentials_or_sdk(home, monkeypatch):
@@ -136,39 +152,28 @@ def test_utility_operations_require_explicit_grant_before_transport(home, monkey
         assert json.loads(getattr(handlers, factory)("vault", 1)(args))["status"] == "denied"
 
 
-def test_primary_call_and_utility_use_only_matching_owned_connection(home, monkeypatch, mcp_state):
-    from tools import mcp_tool_handlers as handlers, mcp_tool_discovery as discovery
+def test_primary_call_and_utility_use_only_matching_owned_connection(mcp_runtime):
+    from tools.mcp_tool_discovery import _get_connected_server_for_call
     from tools.mcp_tool_scope import _server_key
-    cfg = config(allowed=["mcp__vault__read", "mcp__vault__read_resource"],
-                 mcp={"vault": ["read", "resources/read"]})
-    ctx = context(home, cfg)
-    calls = []
-    class Session:
-        async def call_tool(self, name, arguments):
-            calls.append((name, arguments))
-            return SimpleNamespace(content=[], isError=False, structuredContent=None)
-        async def read_resource(self, uri):
-            calls.append(("resource", uri))
-            return SimpleNamespace(contents=[])
-    server = SimpleNamespace(name="vault", session=Session(), _rpc_lock=asyncio.Lock())
-    monkeypatch.setattr(handlers._loop, "_run_on_mcp_loop", lambda call, **kw: asyncio.run(call()))
-    with bind_agent_context(ctx):
-        bind_mcp_connection(server)
-        discovery._adopt_server("vault", server)
-        assert "error" not in json.loads(handlers._make_tool_handler("vault", "read", 1)({"x": 1}))
-        assert "error" not in json.loads(handlers._make_read_resource_handler("vault", 1)({"uri": "fixture://allowed"}))
-    changed = copy.deepcopy(cfg)
-    changed["agent_identity"]["agents"]["primary"]["allowed_tools"].append("clarify")
-    other = context(home, changed, "changed")
-    with bind_agent_context(other):
-        assert discovery._get_connected_server_for_call("vault") is None
-        denied = json.loads(handlers._make_tool_handler("vault", "read", 1)({}))
-        assert denied["status"] == "denied"
-    assert calls == [("read", {"x": 1}), ("resource", "fixture://allowed")]
-    # The original owner still works; ownership is not stolen by the failed caller.
-    with bind_agent_context(ctx):
-        assert discovery._get_connected_server_for_call("vault") is server
-        assert mcp_state._servers[_server_key("vault")] is server
+    from tools.registry import registry
+    from tests.tools.test_mcp_agent_trust_lifecycle import server
+    runtime = mcp_runtime
+    with runtime.scope():
+        live = server()
+        handler = registry.get_entry("mcp__public__read").handler
+        resource = registry.get_entry("mcp__public__read_resource").handler
+        assert "error" not in json.loads(handler({"x": 1}))
+        assert "error" not in json.loads(resource({"uri": "fixture://allowed"}))
+        assert _get_connected_server_for_call("public") is live
+    with runtime.scope(runtime.child):
+        assert _get_connected_server_for_call("public") is None
+        assert "error" in json.loads(handler({}))
+    with runtime.scope():
+        assert _get_connected_server_for_call("public") is live
+        from tools.mcp_tool import _servers
+        assert _servers[_server_key("public")] is live
+    live.session.call_tool.assert_awaited_once_with("read", arguments={"x": 1})
+    live.session.read_resource.assert_awaited_once_with("fixture://allowed")
 
 
 def test_nonprimary_cannot_connect_or_wake_same_profile_personal_server(home, monkeypatch, mcp_state):
@@ -243,16 +248,14 @@ def test_nonprimary_discovery_does_not_hydrate_credentials(home, monkeypatch):
         assert discovery.discover_mcp_tools() == []
 
 
-def test_hook_exception_frozen_mutation_and_duplicate_callback_do_not_bypass(home, monkeypatch):
+def test_hook_exception_frozen_mutation_and_duplicate_callback_do_not_bypass(live_runtime, monkeypatch):
     from agent import tool_executor as executor, relay_tools
     from dataclasses import FrozenInstanceError
-    ctx = context(home, config(allowed=["clarify"]))
-    agent = SimpleNamespace(runtime_context=ctx, session_id="session", _current_turn_id="",
-                            _tool_guardrails=SimpleNamespace(before_call=lambda *a: SimpleNamespace(allows_execution=True)))
-    import httpx
-    from openai import OpenAI
-    agent.client = OpenAI(api_key="fixture", base_url="https://fixture.invalid/v1", max_retries=0,
-        http_client=httpx.Client(transport=httpx.MockTransport(lambda request: pytest.fail("no network expected"))))
+    from tools.todo_tool import TodoStore, todo_tool
+    ctx, agent = live_runtime.context, live_runtime.run.agent
+    agent.session_id, agent._current_turn_id = "session", ""
+    agent._tool_guardrails = SimpleNamespace(before_call=lambda *a: SimpleNamespace(allows_execution=True))
+    store = TodoStore()
     calls, mutation_errors, duplicate_errors = [], [], []
     monkeypatch.setattr(executor, "_begin_tool_execution", lambda *a, **kw: None)
     monkeypatch.setattr(executor, "_run_with_activity_heartbeat", lambda agent, name, fn: fn())
@@ -267,44 +270,24 @@ def test_hook_exception_frozen_mutation_and_duplicate_callback_do_not_bypass(hom
             mutation_errors.append(True)
         raise RuntimeError("plugin failure must not skip immutable authority")
     monkeypatch.setattr("hermes_cli.plugins._dispatch_pre_tool_call_hooks", broken_hook)
+    todos = [{"id": "1", "content": "approved local task", "status": "completed"}]
     def twice(name, args, callback, **kw):
-        result = callback({"questions": []})
+        result = callback({"todos": todos})
         try:
             callback({"command": "must not execute"})
         except RuntimeError as exc:
             duplicate_errors.append(str(exc))
         return result, args
     monkeypatch.setattr(relay_tools, "execute", twice)
-    from agent.identity_lifecycle import agent_runtime_scope
-    from agent.runtime_commands import (prepare_turn_command, claim_turn_command,
-        bind_runtime_run, reset_runtime_run, finish_turn_command)
-    from agent.turn_facade_lease import DurableTurnLease
-    from hermes_state import SessionDB
-    db = SessionDB(home / "state.db")
-    db.create_session("session", source="test")
-    db.claim_session_agent_identity("session", ctx.identity.to_record())
-    agent._session_db = db
-    with agent_runtime_scope(ctx):
-        command = prepare_turn_command(agent, "test plugin boundary")
-        assert db.acquire_session_turn_lease("session", "fixture", wait_seconds=0)
-        lease = DurableTurnLease(agent, db, "session", "fixture")
-        lease.generation = db.get_session_turn_lease("session")["generation"]
-        run = claim_turn_command(agent, command, lease)
-        token = bind_runtime_run(run)
-        try:
-            result = executor._run_agent_tool_execution_middleware(
-                agent, function_name="clarify", function_args={}, effective_task_id="task", tool_call_id="call",
-                execute=lambda args: calls.append((args, current_agent_context())) or "ok")
-            finish_turn_command(run, {"final_response": "ok"})
-        finally:
-            reset_runtime_run(token, run)
-            lease.release()
-            db.close()
-            agent.client.close()
-    assert result.result == "ok"
-    assert calls == [({"questions": []}, ctx)]
-    assert mutation_errors == [True]
-    assert len(duplicate_errors) == 1
+    def execute(args):
+        calls.append((args, current_agent_context()))
+        return todo_tool(todos=args["todos"], store=store)
+    result = executor._run_agent_tool_execution_middleware(
+        agent, function_name="todo_list", function_args={}, effective_task_id="task", tool_call_id="call",
+        execute=execute)
+    assert "error" not in json.loads(result.result)
+    assert store.read() == todos and calls == [({"todos": todos}, ctx)]
+    assert mutation_errors == [True] and len(duplicate_errors) == 1
     denied = executor._run_agent_tool_execution_middleware(
         agent, function_name="terminal", function_args={}, effective_task_id="task", tool_call_id="denied",
         execute=lambda args: pytest.fail("denied tool must not dispatch"))
@@ -344,13 +327,13 @@ def test_lifecycle_reconnect_rechecks_connection_ownership_before_transport(home
     server = Server()
     with bind_agent_context(ctx):
         bind_mcp_connection(server)
-        asyncio.run(server.run({}))
+        asyncio.run(server.run({"url": "https://fixture.invalid/mcp"}))
     assert calls == ["transport", "PermissionError", "deregister"]
 
 
-def test_tool_call_bridge_cannot_resolve_hidden_unauthorized_tool(home):
+def test_tool_call_bridge_cannot_resolve_hidden_unauthorized_tool(live_runtime):
     import model_tools
-    ctx = context(home, config(allowed=["tool_call", "tool_describe", "tool_search"]))
-    with bind_agent_context(ctx):
-        result = model_tools.handle_function_call("tool_call", {"name": "terminal", "arguments": {"command": "false"}})
+    # The bridge itself is explicitly granted. Its inner terminal target is not.
+    assert authorize_tool("tool_call") is None
+    result = model_tools.handle_function_call("tool_call", {"name": "terminal", "arguments": {"command": "false"}})
     assert "error" in json.loads(result)

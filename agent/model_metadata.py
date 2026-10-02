@@ -2247,6 +2247,18 @@ def get_model_context_length(
     probe, Ollama); 4 Anthropic /v1/models (API keys only); 5 provider-aware (Copilot,
     Nous, Codex OAuth, GMI, Ollama, OpenRouter live, models.dev); 6 OpenRouter for
     unknown providers; 7 local server; 8 hardcoded defaults; 9 256K fallback."""
+    from tools.egress_policy import policy_active
+    if policy_active():
+        # No constructor/compression metadata probe may send scoped credentials
+        # to an undeclared recipient or provision a local model. These are
+        # offline hints, not live route capability certification.
+        if type(config_context_length) is int and config_context_length > 0:
+            return config_context_length
+        hit = _longest_key_match(DEFAULT_CONTEXT_LENGTHS, str(model or "").lower()) if model else None
+        if hit:
+            return hit[1]
+        _warn_context_length_fallback(model, base_url)
+        return DEFAULT_FALLBACK_CONTEXT
     # 0. Explicit config override — user knows best
     if isinstance(config_context_length, int) and config_context_length > 0:
         return config_context_length

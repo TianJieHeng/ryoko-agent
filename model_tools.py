@@ -970,6 +970,14 @@ def handle_function_call(
     if denied is not None:
         return _emit(denied, status="blocked", error_type="agent_policy_denied")
 
+    # Fence before bridge discovery, permission hooks or request middleware.
+    # Exact input capability is minted after their argument rewrites.
+    from tools.capability_broker import CapabilityDenied, require_live_policy
+    try:
+        require_live_policy()
+    except CapabilityDenied as exc:
+        return _emit(exc.result(), status="blocked", error_type=exc.code)
+
     # Tool Search bridge: tool_search / tool_describe are catalog reads handled
     # inline; tool_call is unwrapped so every downstream hook (pre/post, edit
     # approval, guardrails) sees the real tool name, never the bridge.

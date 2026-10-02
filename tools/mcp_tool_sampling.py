@@ -95,7 +95,11 @@ class SamplingHandler:
     _STOP_REASON_MAP = {"stop": "endTurn", "length": "maxTokens", "tool_calls": "toolUse"}
     _LOG_LEVELS = {"debug": logging.DEBUG, "info": logging.INFO, "warning": logging.WARNING}
 
-    def __init__(self, server_name: str, config: dict):
+    def __init__(self, server_name: str, config: dict, *,
+                 call_context: Callable[[], Optional[Context]] = lambda: None,
+                 policy_owned: bool = False):
+        self._call_context = call_context
+        self._policy_owned = policy_owned
         self.server_name = server_name
         self.max_rpm = _safe_numeric(config.get("max_rpm", 10), 10, int)
         self.timeout = _safe_numeric(config.get("timeout", 30), 30, float)
@@ -209,6 +213,16 @@ class SamplingHandler:
 
     async def __call__(self, context, params):
         """SDK ``SamplingFnT``: CreateMessageResult, CreateMessageResultWithTools, or ErrorData."""
+        from agent.runtime_context import current_agent_context
+        from agent.budget_account import current_budget
+        captured = self._call_context()
+        caller = captured.run(current_agent_context) if captured is not None else current_agent_context()
+        budget = captured.run(current_budget) if captured is not None else current_budget()
+        if self._policy_owned or caller is not None or budget is not None:
+            # Both legacy callbacks and modern SDK MRTR enter here. No model call
+            # may borrow the connection task's discovery context or an ambient budget.
+            return self._fail("MCP sampling/MRTR unsupported: no certified initiating-run budget, "
+                              "model/prompt/output/depth/concurrency adapter is available")
         resolved_model, err = self._admit(params)
         if err is not None:
             return err
@@ -289,6 +303,16 @@ class ElicitationHandler:
     async def __call__(self, context, params):
         """SDK elicitation callback (``ElicitationFnT``). Returns ElicitResult or ErrorData."""
         self.metrics["requests"] += 1
+        from agent.runtime_context import current_agent_context
+        captured = self._call_context()
+        if current_agent_context() is not None:
+            if captured is None:
+                return self._result("decline", "declined")
+            try:
+                from tools.mcp_tool_policy import require_operation
+                captured.copy().run(require_operation, self.server_name, require_run=True)
+            except (PermissionError, ValueError):
+                return self._result("decline", "declined")
         if getattr(params, "mode", "form") == "url":  # OAuth/payment: needs a browser + elicitation/complete; unsupported
             logger.info("MCP server '%s' requested URL-mode elicitation; declining "
                         "(URL-mode elicitation not implemented)", self.server_name)

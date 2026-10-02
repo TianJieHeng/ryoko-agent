@@ -75,6 +75,7 @@ def _runtime_store_error(rid, exc):
         "revision_conflict": 4090,
         "session_not_found": 4001,
         "runtime_transport_unsupported": 5010,
+        "runtime_delivery_transport_unsupported": 5010,
         "unsupported_operation": 5010,
     }
     return _err(rid, codes.get(exc.code, 4090), "Runtime request rejected: " + exc.code,
@@ -133,7 +134,7 @@ def _runtime_event_projection(event):
 @method("runtime.capabilities")
 @_profile_scoped
 def _runtime_capabilities(rid, params):
-    from agent.runtime_commands import supports_runtime_execution
+    from agent.runtime_commands import runtime_execution_denial
     from agent.provider_capabilities import provider_capabilities_for
     from agent.tool_view import ToolView
     from tui_gateway.contracts.runtime_v1 import RuntimeCapabilitiesParams
@@ -146,7 +147,8 @@ def _runtime_capabilities(rid, params):
         return error
     from dataclasses import asdict
     from agent.admission import AdmissionPolicy
-    executable = supports_runtime_execution(agent)
+    denial = runtime_execution_denial(agent)
+    executable = denial is None
     tool_view = getattr(agent, "tool_view", None)
     if (not isinstance(tool_view, ToolView)
             or tool_view.session_policy_version != agent.runtime_context.policy.digest):
@@ -157,7 +159,7 @@ def _runtime_capabilities(rid, params):
         "cancel": "requests interruption of an active local run; external cancellation is not guaranteed",
     }
     operations = [{"operation": operation, "accepts_commands": executable, "executes": executable,
-                   "effects_enabled": False, "reason": reason if executable else "runtime transport unsupported"}
+                   "effects_enabled": False, "reason": reason if executable else denial}
                   for operation, reason in descriptions.items()]
     operations.append({"operation": "approval", "accepts_commands": False, "executes": False,
                        "effects_enabled": False, "reason": "approval and effect authorization pending BE05/BE06"})

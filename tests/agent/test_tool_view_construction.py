@@ -1,5 +1,6 @@
 """Final constructor schemas and inspection agree after trusted late injections."""
 import json
+import copy
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,12 +11,15 @@ def test_final_injected_schema_is_grant_checked_before_frozen_view(tmp_path, mon
     from hermes_state import SessionDB
     from run_agent import AIAgent
 
-    name = "fixture_context_tool"
+    name = "todo_list"
     config = {"agent_identity": {
         "schema_version": 1, "principal_id": "fixture-owner", "profile_id": "fixture-profile",
         "primary_agent_id": "primary", "active_agent_id": "primary",
         "agents": {"primary": {"policy_version": 1, "role": "primary", "memory_backend": "personal_mcp",
-            "secret_refs": ["OPENAI_API_KEY"], "allowed_tools": [name] if granted else []}},
+            "secret_refs": ["OPENAI_API_KEY"], "allowed_tools": [name] if granted else [],
+            "recipient_plan": {"schema_version": 1, "envelope": "declared", "grants": [
+                {"recipient_id": "fixture-model", "purpose": "main_model",
+                 "endpoint": "https://fixture.invalid/v1", "transport": "httpx"}]}}},
     }}
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(json.dumps(config))
@@ -24,8 +28,11 @@ def test_final_injected_schema_is_grant_checked_before_frozen_view(tmp_path, mon
     monkeypatch.setattr("model_tools.check_toolset_requirements", lambda *args, **kwargs: {})
 
     def inject(agent):
-        agent.tools.append({"type": "function", "function": {"name": name,
-            "description": "Fixture context engine schema", "parameters": {"type": "object", "properties": {}}}})
+        from tools.todo_tool import TODO_SCHEMA
+        # Late exposure is still a real certified handler, not a grant that
+        # silently authorizes arbitrary injected Python or plugin code.
+        agent.tools = [tool for tool in agent.tools if tool["function"]["name"] != name]
+        agent.tools.append({"type": "function", "function": copy.deepcopy(TODO_SCHEMA)})
         agent.valid_tool_names.add(name)
 
     monkeypatch.setattr("agent.agent_init._inject_context_engine_tools", inject)

@@ -731,6 +731,17 @@ def _dispatch_authorized_once(
             }
             block_error_type = _PRUNED_TOOL_ARGUMENTS_ERROR
 
+    # Mint only after argument-rewriting hooks, before any model-based gate.
+    # The exact digest is checked again at the real executor/registry boundary.
+    from tools.capability_broker import CapabilityDenied, prepare_tool_capability, dispatch_capability
+    capability = None
+    if block_body is None:
+        try:
+            capability = prepare_tool_capability(ref.name, ref.args)
+        except CapabilityDenied as exc:
+            block_body = json.loads(exc.result())
+            block_error_type = exc.code
+
     guardrail_decision = None
     if block_body is None:
         guardrail_decision = agent._tool_guardrails.before_call(ref.name, ref.args)
@@ -764,8 +775,11 @@ def _dispatch_authorized_once(
     from agent.runtime_context import bind_agent_context
     with bind_agent_context(trusted_context):
         from agent.runtime_commands import invoke_runtime_operation
+        def dispatch_exact():
+            with dispatch_capability(capability, ref.name, ref.args):
+                return execute(ref.args)
         return _run_with_activity_heartbeat(agent, ref.name, lambda: invoke_runtime_operation(
-            "tool", lambda: execute(ref.args), agent=agent, name=ref.name))
+            "tool", dispatch_exact, agent=agent, name=ref.name))
 
 
 @bound_agent_lifecycle
@@ -791,6 +805,8 @@ def _run_agent_tool_execution_middleware(
     )
 
     trace = middleware_trace if middleware_trace is not None else []
+    from tools.capability_broker import require_live_policy
+    require_live_policy()
     from tools.agent_policy_gate import authorize_tool
     from agent.runtime_context import current_agent_context
     trusted_context = current_agent_context()

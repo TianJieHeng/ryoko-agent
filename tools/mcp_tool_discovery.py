@@ -78,6 +78,11 @@ def _owner_scope_home() -> Optional[Path]:
     caller already bound is rebuilt rather than trusted: a bound mapping is a snapshot, and the
     gateway's boot-time one is taken before the profile's external secret source may have answered
     (#119092) — the rebuild retries that hydration (cached once it succeeds)."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        # Preserve the identity lifecycle's exact stamped secret snapshot. Hydrating
+        # a profile-wide helper here would escape the agent-owned credential scope.
+        return None
     scope_key = _core._mcp_registry_scope()
     if scope_key is None:
         return None
@@ -150,6 +155,8 @@ async def _connect_server(name: str, config: dict) -> _core.MCPServerTask:
     """Create an MCPServerTask, start it, return once ready (tear down with ``server.shutdown()``
     on the same loop). Raises on bad config, missing HTTP support or connect failure."""
     require_mcp(name)
+    from tools.mcp_tool_policy import require_transport
+    require_transport(name, config)
     server = _core.MCPServerTask(name)
     bind_mcp_connection(server)
     claim = _core._connect_server_claim.get()
@@ -406,6 +413,10 @@ def _register_lazy_from_cache(new_servers: Dict[str, dict]) -> Tuple[Dict[str, d
     # A missing or stale cache entry falls back to the normal eager connect below (which write-through
     # refreshes the cache for next time). See #56832.
     eager_servers: Dict[str, dict] = dict(new_servers)
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        # Legacy profile caches lack credential/agent/schema-authorization provenance.
+        return eager_servers, 0, 0
     lazy_registered = 0
     lazy_server_count = 0
     try:
@@ -609,7 +620,8 @@ def discover_mcp_tools(allowed_mcp_names: Optional[List[str]] = None) -> List[st
     each); it only affects which servers start, not which names ``-t`` validation can see."""
     denial = mcp_discovery_denial()
     if denial is not None:
-        logger.info("MCP discovery unavailable under the current agent policy")
+        import json
+        logger.info("MCP discovery unavailable: %s", json.loads(denial)["message"])
         return []
     with _owner_secret_scope():
         servers = filter_mcp_servers(_config._load_mcp_config())
@@ -668,7 +680,7 @@ def reconcile_mcp_servers_with_config() -> Dict[str, List[str]]:
     is reported under ``"pending"`` so the caller retries. Returns
     ``{"removed": [...], "added": [...], "pending": [...]}``; a no-op when nothing changed."""
     with _owner_secret_scope():
-        servers = _config._load_mcp_config()
+        servers = filter_mcp_servers(_config._load_mcp_config())
     wanted = {name for name, cfg in servers.items() if mcp_server_enabled(cfg)}
     scope = _core._mcp_registry_scope()
     with _core._lock:
@@ -712,7 +724,7 @@ def mcp_servers_awaiting_connect() -> List[str]:
     run, or one whose earlier connect failed. Read-only — what the next :func:`discover_mcp_tools`
     would connect."""
     with _owner_secret_scope():
-        servers = _config._load_mcp_config()
+        servers = filter_mcp_servers(_config._load_mcp_config())
     wanted = {name for name, cfg in servers.items() if mcp_server_enabled(cfg)}
     return _awaiting_connect(wanted, _core._mcp_registry_scope())
 
@@ -788,6 +800,14 @@ def get_mcp_status(configured: Optional[Dict[str, dict]] = None, *, include_runt
                               else len(server._tools))
             if server._sampling:
                 entry["sampling"] = dict(server._sampling.metrics)
+            if vars(server).get("_agent_policy_owner") is not None:
+                entry["cost_tracking"] = "untracked"
+                entry["sampling_status"] = "unsupported"
+                entry["prompt_resource_refresh_status"] = "unsupported"
+                blocked = vars(server).get("_agent_refresh_blocked")
+                if blocked:
+                    entry["status"] = "reauthorization_required"
+                    entry["error"] = blocked
         elif status == "failed":
             entry["error"] = connect_errors[name]
         elif status == "lazy":
@@ -816,10 +836,11 @@ def mcp_server_reconnecting(name: str) -> bool:
 def probe_mcp_server_tools() -> Dict[str, List[tuple]]:
     """Connect each enabled server, list ``(tool_name, description)``, disconnect; nothing is
     registered and failed servers are omitted."""
-    if not _core._ensure_mcp_sdk():
+    if mcp_discovery_denial() is not None or not _core._ensure_mcp_sdk():
         return {}
     with _owner_secret_scope():
-        enabled = {k: v for k, v in (_config._load_mcp_config() or {}).items() if mcp_server_enabled(v)}
+        enabled = {k: v for k, v in filter_mcp_servers(_config._load_mcp_config() or {}).items()
+                   if mcp_server_enabled(v)}
     if not enabled:
         return {}
     _loop._ensure_mcp_loop()

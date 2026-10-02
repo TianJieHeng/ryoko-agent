@@ -29,6 +29,8 @@ The optional `agent_identity` root is read from effective profile configuration.
 | `memory_backend` | `Literal['personal_mcp', 'builtin']` | yes | personal_mcp for primary only; builtin for every specialist and child |
 | `allowed_tools` | `frozenset[str]` | no | Exact model tool names; empty denies every tool |
 | `mcp_grants` | `Mapping[str, frozenset[str]]` | no | Exact MCP server names mapped to exact tool-name lists; empty grants admit nothing |
+| `mcp_policies` | `Mapping` | no | Exact per-server HTTP endpoint, read, tool, credential and refresh contracts |
+| `recipient_plan` | `object \| None` | no | Versioned exact purpose/recipient egress plan; absent denies strict egress |
 | `secret_refs` | `frozenset[str]` | no | Exact credential reference names, never credential values |
 | `project_grants` | `frozenset[str]` | no | Reserved project grant list; must be empty until BE07 enforcement |
 | `egress_purposes` | `frozenset[str]` | no | Reserved egress purpose list; must be empty until BE05 enforcement |

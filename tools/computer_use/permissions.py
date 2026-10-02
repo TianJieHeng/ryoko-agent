@@ -8,7 +8,6 @@ detail into one payload for the desktop card, the ``permissions`` CLI and ``/api
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import sys
 from contextlib import suppress
@@ -37,16 +36,12 @@ def stale_tcc_grant_hint(*missing: str) -> str:
             f"driver's signature): run `{resets}`, then `hermes computer-use permissions grant`.")
 
 def _child_env() -> Dict[str, str]:
-    """cua-driver child env (telemetry policy + provider secrets stripped); ``os.environ`` on import error.
-
-    cua-driver is a third-party binary — it must never inherit provider API keys (#53503/#55709/#58889
-    lineage). Each layer degrades gracefully so permission probes never break on a helper import error.
-    """
+    """Prepare a sanitized driver environment or refuse the privileged launch."""
     try:
         from tools.computer_use.cua_backend import sanitized_cua_driver_env
         return sanitized_cua_driver_env()
     except Exception:
-        return dict(os.environ)
+        raise RuntimeError("CUA permission probe refused: environment sanitization unavailable") from None
 
 def _run(binary: str, *args: str, timeout: float) -> subprocess.CompletedProcess:
     return subprocess.run([binary, *args], capture_output=True, text=True, encoding='utf-8', errors='replace',

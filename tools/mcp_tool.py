@@ -486,6 +486,7 @@ _CIRCUIT_BREAKER_THRESHOLD, _CIRCUIT_BREAKER_COOLDOWN_SEC = 3, 60.0
 _server_trust_levels: Dict[Any, str] = {}
 _tool_read_only_hints: Dict[Any, Dict[str, bool]] = {}
 
+_tool_operator_read_only: Dict[Any, set] = {}
 _TRUST_FULL, _TRUST_UNTRUSTED = "full", "untrusted"
 
 
@@ -655,6 +656,10 @@ def _mcp_registry_scope() -> Optional[str]:
     ticker) is a multiplexer too, even with the flag off — keying its connections by the bare name
     would hand one profile's credentialed connection to every other served profile (#111151).
     Single-profile processes (no override, or an override naming their own home) keep bare names."""
+    from tools.mcp_tool_policy import registry_scope
+    agent_scope = registry_scope()
+    if agent_scope is not None:
+        return agent_scope
     from agent.secret_scope import serves_routed_profile
     if not serves_routed_profile():
         return None
@@ -675,7 +680,8 @@ def _server_visible_in_scope(key, scope: Optional[str]) -> bool:
     """Whether the live connection under *key* is visible from ``scope`` without changing its
     teardown owner."""
     if scope is None:
-        return True
+        from tools.mcp_tool_scope import _key_scope, _is_agent_scope
+        return not _is_agent_scope(_key_scope(key))
     return (_server_scope_keys.get(key) == scope
             or scope in _server_tool_scopes.get(key, ()))
 

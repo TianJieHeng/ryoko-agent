@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "phase": "BE05",
+  "base_sha": "f7e4b6fa8e7fc69e496077d2e9bd7a70aba0ccca",
+  "publication": "direct main; no PR",
+  "database_schema": 34,
+  "runtime_schema": 1,
+  "python": "3.14.7",
+  "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tools/test_capability_broker.py tests/agent/test_capability_dispatch.py tests/tools/test_egress_policy.py tests/tools/test_isolated_python.py tests/tools/test_code_execution_isolated.py tests/tools/test_workspace_manifest.py tests/tools/test_mcp_agent_trust_lifecycle.py tests/tools/test_code_rpc_capability_scope.py tests/tools/test_code_execution_file_rpc.py tests/computer_use/test_cua_sanitizer_fail_closed.py tests/computer_use/test_cua_spawn_env_sanitization.py tests/agent/test_strict_startup_boundaries.py tests/agent/test_identity_lifecycle.py tests/agent/test_budget_runtime.py tests/agent/test_runtime_commands.py tests/agent/test_tool_view.py tests/agent/test_tool_view_construction.py tests/tools/test_agent_policy_boundaries.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_generated.py -j 5 --file-retries 0",
+  "results": [
+    {
+      "file": "tests/agent/test_strict_startup_boundaries.py",
+      "passed": 7,
+      "duration_seconds": 1.7
+    },
+    {
+      "file": "tests/agent/test_identity_lifecycle.py",
+      "passed": 20,
+      "duration_seconds": 2.1
+    },
+    {
+      "file": "tests/agent/test_capability_dispatch.py",
+      "passed": 2,
+      "duration_seconds": 2.4
+    },
+    {
+      "file": "tests/computer_use/test_cua_sanitizer_fail_closed.py",
+      "passed": 5,
+      "duration_seconds": 0.6
+    },
+    {
+      "file": "tests/computer_use/test_cua_spawn_env_sanitization.py",
+      "passed": 5,
+      "duration_seconds": 0.6
+    },
+    {
+      "file": "tests/agent/test_tool_view_construction.py",
+      "passed": 2,
+      "duration_seconds": 2.9
+    },
+    {
+      "file": "tests/agent/test_tool_view.py",
+      "passed": 15,
+      "duration_seconds": 4.1
+    },
+    {
+      "file": "tests/tools/test_agent_policy_boundaries.py",
+      "passed": 27,
+      "duration_seconds": 3.9
+    },
+    {
+      "file": "tests/tools/test_capability_broker.py",
+      "passed": 3,
+      "duration_seconds": 2.4
+    },
+    {
+      "file": "tests/tools/test_code_execution_file_rpc.py",
+      "passed": 1,
+      "duration_seconds": 3.8
+    },
+    {
+      "file": "tests/agent/test_runtime_commands.py",
+      "passed": 14,
+      "duration_seconds": 9.9
+    },
+    {
+      "file": "tests/tools/test_code_rpc_capability_scope.py",
+      "passed": 6,
+      "duration_seconds": 3.1
+    },
+    {
+      "file": "tests/tools/test_code_execution_isolated.py",
+      "passed": 6,
+      "duration_seconds": 3.8
+    },
+    {
+      "file": "tests/tools/test_workspace_manifest.py",
+      "passed": 16,
+      "duration_seconds": 1.4
+    },
+    {
+      "file": "tests/tools/test_isolated_python.py",
+      "passed": 9,
+      "duration_seconds": 3.9
+    },
+    {
+      "file": "tests/tui_gateway/contracts/test_generated.py",
+      "passed": 2,
+      "duration_seconds": 2.1
+    },
+    {
+      "file": "tests/tools/test_egress_policy.py",
+      "passed": 33,
+      "duration_seconds": 5.3
+    },
+    {
+      "file": "tests/tools/test_mcp_agent_trust_lifecycle.py",
+      "passed": 25,
+      "duration_seconds": 5.1
+    },
+    {
+      "file": "tests/agent/test_budget_runtime.py",
+      "passed": 35,
+      "duration_seconds": 18.7
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_rpc.py",
+      "passed": 9,
+      "duration_seconds": 6.0
+    }
+  ],
+  "passed": 242,
+  "failed": 0,
+  "skipped": 0,
+  "duration_seconds": 19.8,
+  "log_sha256": "7f96dd2d3342428e9c02e312b9a58e00203fa3671f3b090041aa976db3e234a4",
+  "other_campaigns": [
+    {
+      "command": "scripts/run_tests.sh tests/tools/test_egress_policy.py tests/agent/test_budget_runtime.py tests/agent/test_shared_http_transport.py tests/agent/test_auxiliary_client.py tests/agent/test_attempt_policy.py tests/agent/test_create_openai_client_reuse.py tests/agent/test_provider_client_seam.py tests/agent/test_provider_client_cancel.py -j 4",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 8,
+      "passed": 324,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 21.0,
+      "log_sha256": "0a50ff762953b491bbe1824a42183750cacc98d9cb62044915035201098f54a1",
+      "note": "Overlapping regression campaign; counts are not additive"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/tools/test_code_execution_isolated.py tests/tools/test_isolated_python.py tests/tools/test_workspace_manifest.py -j 9",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 3,
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 4.2,
+      "log_sha256": "c395e80d6a9461428dce53257bbd3a10625b7003259935aff8dd87d49675b007",
+      "note": "Overlapping regression campaign; counts are not additive"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/tools/test_code_execution.py tests/tools/test_code_execution_modes.py tests/tools/test_code_execution_hermes_home.py tests/tools/test_code_execution_pm_runtime.py tests/agent/test_budget_runtime.py -j 9",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 5,
+      "passed": 66,
+      "failed": 24,
+      "skipped": 0,
+      "duration_seconds": 20.1,
+      "log_sha256": "a22b522c3dd4fcc52ee6f824010b2bc4fc02f42c30b1f4e3dc7b4fec20356f5a",
+      "note": "24 existing legacy kernel failures: AF_UNIX PermissionError EPERM independently reproduced with standalone Python; code_kernel.py unchanged"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/tools/test_mcp_agent_trust_lifecycle.py tests/tools/test_agent_policy_boundaries.py tests/tools/test_mcp_tool_session_expired.py tests/tools/test_mcp_trust_gating.py tests/tools/test_mcp_preflight_content_type.py tests/tools/test_refresh_agent_mcp_tools.py tests/agent/test_agent_identity.py -j 9",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 7,
+      "passed": 169,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 8.4,
+      "log_sha256": "63ee8ca632eb33be4844df3b7d5058d9f44f778e593d952c6d488d7522b86ad8",
+      "note": "Overlapping regression campaign; counts are not additive"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/tools/test_mcp_agent_trust_lifecycle.py tests/tools/test_mcp_app_gate.py tests/tools/test_mcp_bridge_single_failure.py tests/tools/test_mcp_cancelled_error_propagation.py tests/tools/test_mcp_capability_gating.py tests/tools/test_mcp_cimd.py tests/tools/test_mcp_circuit_breaker.py tests/tools/test_mcp_client_cert.py tests/tools/test_mcp_config_change_rebind.py tests/tools/test_mcp_config_whitespace_warning.py tests/tools/test_mcp_connect_secret_scope.py tests/tools/test_mcp_dashboard_oauth.py tests/tools/test_mcp_death_supervisor.py tests/tools/test_mcp_device_flow.py tests/tools/test_mcp_dynamic_discovery.py tests/tools/test_mcp_elicitation.py tests/tools/test_mcp_empty_error_message.py tests/tools/test_mcp_enabled_reader.py tests/tools/test_mcp_failure_classification.py tests/tools/test_mcp_google_offline_access.py tests/tools/test_mcp_http_body_cap.py tests/tools/test_mcp_http_proxy.py tests/tools/test_mcp_identity_header.py tests/tools/test_mcp_image_content.py tests/tools/test_mcp_initial_connect_shutdown.py tests/tools/test_mcp_invalid_url.py tests/tools/test_mcp_lazy_start.py tests/tools/test_mcp_list_pagination.py tests/tools/test_mcp_liveness.py tests/tools/test_mcp_liveness_catalog.py tests/tools/test_mcp_loop_profile_override.py tests/tools/test_mcp_multiplex_connection_keys.py tests/tools/test_mcp_node_abi.py tests/tools/test_mcp_npx_cached_bin.py tests/tools/test_mcp_oauth.py tests/tools/test_mcp_oauth_bidirectional.py tests/tools/test_mcp_oauth_callback_latch.py tests/tools/test_mcp_oauth_cold_load_expiry.py tests/tools/test_mcp_oauth_discovery_requests.py tests/tools/test_mcp_oauth_integration.py tests/tools/test_mcp_oauth_issuer_binding.py tests/tools/test_mcp_oauth_issuer_origin.py tests/tools/test_mcp_oauth_manager.py tests/tools/test_mcp_oauth_metadata.py tests/tools/test_mcp_oauth_missing_iss.py tests/tools/test_mcp_oauth_stdin_console.py tests/tools/test_mcp_oauth_user_agent.py tests/tools/test_mcp_park_log_dedupe.py tests/tools/test_mcp_parked_probe_no_browser.py tests/tools/test_mcp_parked_probe_skips_disabled.py tests/tools/test_mcp_parked_self_probe.py tests/tools/test_mcp_poll_loop_oom_integration.py tests/tools/test_mcp_preflight_content_type.py tests/tools/test_mcp_probe.py tests/tools/test_mcp_protocol_negotiation.py tests/tools/test_mcp_rapid_drop_budget.py tests/tools/test_mcp_reconcile_with_config.py tests/tools/test_mcp_reconnect_log_hygiene.py tests/tools/test_mcp_reconnect_retry_reset.py tests/tools/test_mcp_reconnect_signal.py tests/tools/test_mcp_register_wakes_stale.py tests/tools/test_mcp_resource_content.py tests/tools/test_mcp_result_size_limit.py tests/tools/test_mcp_schema_cache.py tests/tools/test_mcp_schema_cache_ttl.py tests/tools/test_mcp_server_log_notifications.py tests/tools/test_mcp_server_reconnecting_predicate.py tests/tools/test_mcp_shared_connection_resolved_identity.py tests/tools/test_mcp_sse_fallback.py tests/tools/test_mcp_sse_transport.py tests/tools/test_mcp_stability.py tests/tools/test_mcp_startup_summary_names_failures.py tests/tools/test_mcp_stderr_lifecycle.py tests/tools/test_mcp_stdio_children_dead.py tests/tools/test_mcp_stdio_dead_reconnect.py tests/tools/test_mcp_stdio_encoding_handler.py tests/tools/test_mcp_stdio_fastfail_reconnect.py tests/tools/test_mcp_stdio_init_timeout.py tests/tools/test_mcp_streamable_http_arity.py tests/tools/test_mcp_structured_content.py tests/tools/test_mcp_timeout_resolution.py tests/tools/test_mcp_tool.py tests/tools/test_mcp_tool_401_handling.py tests/tools/test_mcp_tool_errors.py tests/tools/test_mcp_tool_issue_948.py tests/tools/test_mcp_tool_session_expired.py tests/tools/test_mcp_transport_group_reconnect.py tests/tools/test_mcp_trust_gating.py tests/tools/test_mcp_utility_capability_gating.py tests/tools/test_mcp_windows_orphan_fix.py tests/tools/test_refresh_agent_mcp_tools.py tests/tools/test_agent_policy_boundaries.py tests/agent/test_agent_identity.py -j 9",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 93,
+      "passed": 943,
+      "failed": 1,
+      "skipped": 1,
+      "duration_seconds": 32.2,
+      "log_sha256": "5588a1e3f2493aab2b239c12755880d10bf15bbb33c9f3c6ab7b83c968026c35",
+      "note": "1 inherited process-child snapshot failure reproduced with both exact HEAD and working helper on same seeded child; mandatory schema-pin affected cases retested in focused campaign"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/tools/test_capability_broker.py tests/agent/test_capability_dispatch.py tests/agent/test_runtime_commands.py tests/agent/test_budget_runtime.py tests/agent/test_tool_call_guardrail_runtime.py -j 9",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 5,
+      "passed": 69,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 20.5,
+      "log_sha256": "27523ae230626ae6cb984ab2f5291f84e0ce4c9c5d6927858deb7ad63454ccd5",
+      "note": "Overlapping regression campaign; counts are not additive"
+    }
+  ],
+  "checks": [
+    "Shared TypeScript workspace typecheck passed",
+    "Generated agent-identity reference and gateway contracts freshness passed",
+    "Focused Ruff and git diff --check passed"
+  ],
+  "limits": [
+    "Certified executor is Linux x86-64 stateless Python with no network, process spawning, third-party packages or nested RPC; trusted host/kernel threat model",
+    "Strict MCP Streamable HTTP only with operator schema pins; stdio/SSE/OAuth/sampling/MRTR and budgeted MCP unavailable",
+    "Strict uncertified external delivery surfaces denied before provider execution pending BE06",
+    "Promotion supports one reviewed new file without replacement; no automatic promotion or transactional multi-file edit claim",
+    "No live service/credential/hardware deployment certification",
+    "Legacy AF_UNIX creation EPERM and inherited MCP process-child visibility failure independently reproduced",
+    "Full project suite deferred to BE18; inherited BE00 project-tree failures remain open"
+  ],
+  "baseline_failure_proof": {
+    "kind": "same live seeded child, exact HEAD and working helper",
+    "log_sha256": "5d867d1988927e55d5e31b8f2fa974199f8f95bee039e345d870eb25c1494c81"
+  }
+}

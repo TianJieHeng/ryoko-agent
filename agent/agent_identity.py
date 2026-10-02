@@ -135,6 +135,14 @@ class AgentPolicy:
             "Exact MCP server names mapped to exact tool-name lists; empty grants admit nothing"
         ),
     )
+    mcp_policies: Mapping = field(
+        default_factory=dict,
+        metadata=_schema("Exact per-server HTTP endpoint, read, tool, credential and refresh contracts"),
+    )
+    recipient_plan: object | None = field(
+        default=None,
+        metadata=_schema("Versioned exact purpose/recipient egress plan; absent denies strict egress"),
+    )
     secret_refs: frozenset[str] = field(
         default_factory=frozenset,
         repr=False,
@@ -186,9 +194,21 @@ class AgentPolicy:
                 for server, tools in grants.items()
             }),
         )
+        from tools.mcp_tool_policy import parse_mcp_policies
+        object.__setattr__(self, "mcp_policies", parse_mcp_policies(self.mcp_policies))
+        for server, grant in self.mcp_policies.items():
+            operations = set(grant["tool_allowlist"]) | {op for op, targets in grant["read_scopes"].items() if targets}
+            if not operations <= self.mcp_grants.get(server, frozenset()):
+                raise IdentityPolicyError("MCP policy operations must also appear in mcp_grants")
+            if grant["secret_ref"] is not None and grant["secret_ref"] not in self.secret_refs:
+                raise IdentityPolicyError("MCP policy credential must be in secret_refs")
+        if self.recipient_plan is not None:
+            from tools.egress_policy import RecipientPlan
+            object.__setattr__(self, "recipient_plan", RecipientPlan.from_record(self.recipient_plan))
         if self.role != "primary" and (
             self.secret_refs & self.personal_secret_refs
             or self.mcp_grants.keys() & self.personal_mcp_servers
+            or self.mcp_policies.keys() & self.personal_mcp_servers
         ):
             raise IdentityPolicyError(
                 "non-primary policy cannot grant personal MCP servers or credentials"
@@ -219,6 +239,14 @@ class AgentPolicy:
             "project_grants": sorted(self.project_grants),
             "egress_purposes": sorted(self.egress_purposes),
         }
+        if self.mcp_policies:
+            from tools.mcp_tool_policy import _record
+            result["mcp_policies"] = _record(self.mcp_policies)
+            if redacted:
+                for grant in result["mcp_policies"].values():
+                    grant["secret_ref"] = "[redacted]" if grant["secret_ref"] else None
+        if self.recipient_plan is not None:
+            result["recipient_plan"] = self.recipient_plan.to_record(redacted=redacted)
         return result
 
     @property
@@ -440,6 +468,8 @@ class IdentityBinding:
 
 
 def _child_policy(parent: AgentPolicy, ceiling: AgentPolicy) -> AgentPolicy:
+    from tools.mcp_tool_policy import intersect_mcp_policies
+    from tools.egress_policy import intersect_recipient_plans
     return replace(
         ceiling,
         allowed_tools=parent.allowed_tools & ceiling.allowed_tools,
@@ -448,6 +478,8 @@ def _child_policy(parent: AgentPolicy, ceiling: AgentPolicy) -> AgentPolicy:
             for server, tools in ceiling.mcp_grants.items()
             if tools & parent.mcp_grants.get(server, frozenset())
         },
+        mcp_policies=intersect_mcp_policies(parent.mcp_policies, ceiling.mcp_policies),
+        recipient_plan=intersect_recipient_plans(parent.recipient_plan, ceiling.recipient_plan),
         secret_refs=parent.secret_refs & ceiling.secret_refs,
         project_grants=parent.project_grants & ceiling.project_grants,
         egress_purposes=parent.egress_purposes & ceiling.egress_purposes,

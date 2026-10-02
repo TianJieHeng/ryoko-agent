@@ -1,8 +1,8 @@
 """Agent-authority checks at schema, dispatch and MCP admission boundaries.
 
-The opt-in BE01 policy is an application boundary, not an OS sandbox. Until BE05
-certifies an executor and agent-keyed MCP pools, nonprimary agents can only use
-explicitly granted in-memory/session-control tools. Legacy profiles are unchanged.
+The identity policy admits only granted, certified adapters. Concrete execution,
+recipient and MCP boundaries enforce their declared scope again at dispatch;
+schema exposure is never execution authority. Legacy profiles are unchanged.
 """
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ _CURRENT = object()
 # These handlers do not execute generated code, expose the filesystem or send
 # arbitrary network requests. Bridge dispatch separately authorizes its target.
 _SESSION_ONLY_TOOLS = frozenset({"todo_list", "clarify", "tool_search", "tool_describe", "tool_call"})
-_SESSION_HANDLER_MODULES = frozenset({"tools.todo_tool", "tools.clarify_tool", "tools.tool_search"})
 
 
 def _denied(reason: str, *, unsupported: bool = False) -> str:
@@ -48,18 +47,25 @@ def authorize_tool(name: str, *, context=_CURRENT, entry=None) -> str | None:
     if entry is None:
         from tools.registry import registry
         entry = registry.get_entry(name)
-    if ctx.policy.role != "primary":
-        if name not in _SESSION_ONLY_TOOLS:
-            return _denied("This execution route requires BE05-certified agent isolation.", unsupported=True)
-        if entry is not None and getattr(entry.handler, "__module__", "") not in _SESSION_HANDLER_MODULES:
-            return _denied("Plugin execution requires BE05-certified agent isolation.", unsupported=True)
-    # Handler metadata records the raw MCP name. Never reverse a lossy normalized
-    # registry name: different raw names can normalize to the same spelling.
+    # Discovery cannot certify execution. Only concrete host-owned adapters
+    # with a declared boundary are admitted, even for the primary identity.
     if entry is not None and entry.toolset.startswith("mcp-"):
         target = getattr(entry.handler, "_agent_mcp_target", None)
         if not isinstance(target, tuple) or len(target) != 2:
             return _denied("MCP tool provenance is unavailable; rediscovery is required.")
         return authorize_mcp(*target, context=ctx)
+    module = getattr(getattr(entry, "handler", None), "__module__", "")
+    certified = {
+        "todo_list": "tools.todo_tool", "clarify": "tools.clarify_tool",
+        "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
+        "tool_call": "tools.tool_search", "execute_code": "tools.code_execution_tool",
+        "delegate_task": "tools.delegate_tool",
+    }
+    expected = certified.get(name)
+    if expected is None or (entry is not None and module != expected):
+        return _denied("This execution route has no BE05-certified isolation/egress contract.", unsupported=True)
+    if entry is None and name not in _SESSION_ONLY_TOOLS:
+        return _denied("Certified handler provenance is unavailable.", unsupported=True)
     return None
 
 
@@ -84,10 +90,18 @@ def authorize_mcp(server: str, tool: str | None = None, *, connection=None, cont
         return missing_context_denial()
     if not ctx.policy.allows_mcp(server, tool):
         return _denied("The current agent has no grant for this MCP operation.")
-    if ctx.policy.role != "primary":
-        return _denied("Nonprimary MCP connections require BE05-certified agent-owned pools.", unsupported=True)
+    if ctx.policy.role != "primary" and server in ctx.policy.personal_mcp_servers:
+        return _denied("Personal MCP access is restricted to the configured primary identity.")
+    if not ctx.policy.mcp_policies.get(server):
+        return _denied("MCP connections require BE05-certified agent-owned transport grants.", unsupported=True)
+    try:
+        from tools.mcp_tool_policy import require_operation
+        require_operation(server, tool, connection=connection)
+    except (ValueError, PermissionError) as exc:
+        from tools.mcp_tool_policy import MCPUnsupported
+        return _denied(str(exc), unsupported=isinstance(exc, MCPUnsupported))
     if connection is not None and vars(connection).get("_agent_policy_owner") != _owner(ctx):
-        return _denied("MCP connection ownership does not match this agent policy; restart the connection in its owning scope.")
+        return _denied("MCP connection ownership does not match this agent policy.")
     return None
 
 
@@ -95,6 +109,10 @@ def bind_mcp_connection(connection) -> None:
     """Called only before a fresh connection starts, never to adopt an existing one."""
     ctx = _context()
     connection._agent_policy_owner = None if ctx is None else _owner(ctx)
+    from tools.mcp_tool_policy import registry_scope
+    connection._agent_registry_scope = registry_scope(ctx)
+    connection._agent_schema_digests = None
+    connection._agent_refresh_blocked = None
 
 
 def require_mcp(server: str, tool: str | None = None, *, connection=None) -> None:
@@ -111,8 +129,15 @@ def mcp_discovery_denial() -> str | None:
     ctx = _context()
     if ctx is None:
         return missing_context_denial()
-    if ctx.policy.role != "primary":
-        return _denied("Nonprimary MCP discovery requires BE05-certified agent-owned pools.", unsupported=True)
+    try:
+        from tools.mcp_tool_policy import live_context, require_budget_support
+        live_context()
+        require_budget_support()
+    except (ValueError, PermissionError) as exc:
+        from tools.mcp_tool_policy import MCPUnsupported
+        return _denied(str(exc), unsupported=isinstance(exc, MCPUnsupported))
+    if not ctx.policy.mcp_policies:
+        return _denied("MCP discovery requires BE05-certified agent-owned transport grants.", unsupported=True)
     return None
 
 

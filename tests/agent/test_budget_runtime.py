@@ -36,14 +36,30 @@ def policy(*, attempts=8, slots=2, mode="tokens"):
                         "bounds_verified": True}]}
 
 
+def recipient_plan():
+    return {"schema_version": 1, "envelope": "declared", "grants": [
+        {"recipient_id": "fixture", "purpose": purpose, "endpoint": BASE_URL, "transport": "httpx"}
+        for purpose in ("main_model", "aux_model")]}
+
+
+def guarded_http(handler, *, purpose="main_model", async_mode=False):
+    from tools.egress_policy import prepare_recipient, wrap_httpx_transport
+    authorization = prepare_recipient(purpose, BASE_URL)
+    cls = httpx.AsyncClient if async_mode else httpx.Client
+    client = cls(transport=wrap_httpx_transport(httpx.MockTransport(handler), authorization, async_mode=async_mode),
+                 trust_env=False)
+    client._hermes_recipient_authorization = authorization
+    return client
+
+
 def config(budget=None):
     return {"runtime_budget": budget or policy(), "agent_identity": {
         "schema_version": 1, "principal_id": "owner", "profile_id": "fixture",
         "primary_agent_id": "primary", "active_agent_id": "primary",
         "agents": {"primary": {"policy_version": 1, "role": "primary", "memory_backend": "personal_mcp",
-                                "secret_refs": ["OPENAI_API_KEY"], "allowed_tools": ["todo_list", "delegate_task", "terminal"]}},
+                                "recipient_plan": recipient_plan(), "secret_refs": ["OPENAI_API_KEY"], "allowed_tools": ["todo_list", "delegate_task", "terminal"]}},
         "child_policy": {"policy_version": 1, "role": "child", "memory_backend": "builtin",
-                         "secret_refs": ["OPENAI_API_KEY"], "allowed_tools": ["todo_list"]}}}
+                         "recipient_plan": recipient_plan(), "secret_refs": ["OPENAI_API_KEY"], "allowed_tools": ["todo_list"]}}}
 
 
 def response(tool=False, usage=True):
@@ -79,8 +95,11 @@ def factory(tmp_path, monkeypatch):
         def dispatch(request):
             calls.append(json.loads(request.content))
             return handler(request) if handler else httpx.Response(200, json=response())
-        client = openai.OpenAI(api_key="fixture", base_url=BASE_URL,
-                               max_retries=7, http_client=httpx.Client(transport=httpx.MockTransport(dispatch)))
+        with agent_runtime_scope(agent.runtime_context):
+            client = openai.OpenAI(api_key="fixture", base_url=BASE_URL,
+                                  max_retries=7, http_client=guarded_http(dispatch))
+        agent._test_dispatch = dispatch
+        agent.client.close()
         clients.append(client)
         agent.client = client
         agent._cached_system_prompt = "Fixture system prompt."
@@ -140,8 +159,10 @@ def test_real_agent_main_tool_aux_share_root_and_bound_wire(factory):
     # A continuation gets its own accepted run but not another root allocation.
     with active(agent) as run:
         from agent.auxiliary_client import _relay_sync_completion
-        _relay_sync_completion(agent.client, {"model": MODEL, "messages": [{"role": "user", "content": "aux"}]},
-                               provider="openai", api_mode="chat_completions")
+        with openai.OpenAI(api_key="fixture", base_url=BASE_URL,
+                           http_client=guarded_http(agent._test_dispatch, purpose="aux_model")) as auxiliary:
+            _relay_sync_completion(auxiliary, {"model": MODEL, "messages": [{"role": "user", "content": "aux"}]},
+                                   provider="openai", api_mode="chat_completions")
         root = db.get_budget_account(status["root_id"], actor_for(agent.runtime_context))
         assert run.budget.root_id == status["root_id"]
         assert root["consumed"]["attempts"] == 3
@@ -247,13 +268,16 @@ def test_trusted_parallel_children_inherit_one_root(factory, monkeypatch):
             for index in range(2):
                 child = _build_child_agent(index, "answer", None, ["todo"], None, 2, 2, agent)
                 children.append(child)
-                child.client = agent.client
+                child.client.close()
+                with agent_runtime_scope(child.runtime_context):
+                    child.client = openai.OpenAI(api_key="fixture", base_url=BASE_URL,
+                                                http_client=guarded_http(agent._test_dispatch))
                 child._cached_system_prompt = "child"
                 child._disable_streaming = False
                 child._use_prompt_caching = False
                 child.save_trajectories = False
                 child.compression_enabled = False
-                monkeypatch.setattr(child, "_create_request_openai_client", lambda **k: agent.client)
+                monkeypatch.setattr(child, "_create_request_openai_client", lambda _client=child.client, **k: _client)
                 monkeypatch.setattr(child, "_close_request_openai_client", lambda *a, **k: None)
                 monkeypatch.setattr(child, "_cleanup_task_resources", lambda *a, **k: None)
                 monkeypatch.setattr(child, "_save_trajectory", lambda *a, **k: None)
@@ -270,7 +294,6 @@ def test_trusted_parallel_children_inherit_one_root(factory, monkeypatch):
                 invoke_budgeted_completion(agent.client, {"model": MODEL, "messages": []})
     finally:
         for child in children:
-            child.client = MagicMock()  # shared test transport belongs to fixture parent
             child.close()
 
 
@@ -324,7 +347,7 @@ def test_async_auxiliary_uses_same_adapter(factory):
     async def invoke():
         from agent.auxiliary_client import _relay_async_completion
         client = openai.AsyncOpenAI(api_key="fixture", base_url=BASE_URL, max_retries=6,
-            http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+            http_client=guarded_http(handler, purpose="aux_model", async_mode=True))
         try:
             return await _relay_async_completion(client, {"model": MODEL, "messages": []},
                 provider="openai", api_mode="chat_completions")
@@ -385,7 +408,7 @@ def test_opaque_plugin_callbacks_fail_before_execution(factory, monkeypatch, sur
         assert ran == []
 
 
-def test_opaque_event_rejection_does_not_strand_later_legacy_events(factory):
+def test_opaque_event_rejection_does_not_strand_later_legacy_events(factory, monkeypatch):
     from hermes_cli.plugins import PluginManager
     make, _, _ = factory
     agent, _ = make()
@@ -395,6 +418,11 @@ def test_opaque_event_rejection_does_not_strand_later_legacy_events(factory):
     with active(agent):
         with pytest.raises(BudgetBlocked):
             manager._dispatch_event("fixture", {"value": "blocked"})
+    # A missing context in the same strict profile is a denial, not legacy authority.
+    from tools.egress_policy import EgressDenied
+    with pytest.raises(EgressDenied):
+        manager._dispatch_event("fixture", {"value": "missing-context"})
+    monkeypatch.setattr("agent.identity_lifecycle.identity_config", lambda: {})
     assert manager._dispatch_event("fixture", {"value": "legacy"}) == 1
     assert manager._wait_for_event_dispatch(timeout=3)
     assert seen == ["legacy"]
@@ -544,7 +572,7 @@ def test_async_timeout_is_one_unknown_physical_attempt(factory):
         raise httpx.ReadTimeout("fixture timeout", request=request)
     async def invoke():
         async with openai.AsyncOpenAI(api_key="fixture", base_url=BASE_URL, max_retries=8,
-                http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))) as client:
+                http_client=guarded_http(handler, purpose="aux_model", async_mode=True)) as client:
             with pytest.raises(openai.APITimeoutError):
                 await invoke_budgeted_completion_async(client, {"model": MODEL, "messages": []})
             with pytest.raises(BudgetBlocked):

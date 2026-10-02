@@ -23,6 +23,7 @@ logger = logging.getLogger("tools.code_execution_tool")
 
 # Terminal parameters that must not be used from ephemeral sandbox scripts.
 _TERMINAL_BLOCKED_PARAMS = {"background", "pty", "notify", "notify_on_complete", "watch_patterns", "heartbeat", "persist_on_release"}
+_MAX_RPC_REQUEST_BYTES = 256 * 1024
 
 
 def _default_dispatch(task_id):
@@ -79,7 +80,7 @@ def _remote_write(env, remote_path: str, content: str, *, atomic: bool = False,
 def _rpc_token_ok(request: dict, rpc_token: str) -> bool:
     """Constant-time token check; an empty server token fails closed. Compared as bytes:
     compare_digest raises TypeError on a non-ASCII str, and the token is script-supplied JSON."""
-    return bool(rpc_token) and secrets.compare_digest(
+    return isinstance(request, dict) and bool(rpc_token) and secrets.compare_digest(
         str(request.get("token") or "").encode(), rpc_token.encode()
     )
 
@@ -89,9 +90,30 @@ def _handle_rpc_request(request: dict, *, allowed_tools: frozenset, tool_call_co
                         where: str) -> str:
     """Enforce allow-list + budget, then dispatch one authenticated request. Only a dispatched
     call consumes budget and is logged; refusals are free."""
+    if (not isinstance(request, dict) or set(request) - {"token", "tool", "args", "seq"}
+            or not isinstance(request.get("tool"), str) or not isinstance(request.get("args", {}), dict)):
+        return tool_error("Invalid RPC request scope or arguments")
+    try:
+        if len(json.dumps(request, allow_nan=False).encode()) > _MAX_RPC_REQUEST_BYTES:
+            return tool_error("RPC request exceeds the bounded payload limit")
+    except (ValueError, TypeError):
+        return tool_error("Invalid RPC request arguments")
+    from tools.capability_broker import CapabilityDenied, require_live_policy
+    from tools.agent_policy_gate import authorize_tool
+    try:
+        context = require_live_policy(require_run=True)
+    except CapabilityDenied as exc:
+        return exc.result()
+    except Exception as exc:
+        logger.warning("RPC authority validation failed (%s)", type(exc).__name__)
+        return tool_error("RPC authority could not be verified")
     tool_name = request.get("tool", "")
-    tool_args = request.get("args", {})
+    tool_args = dict(request.get("args", {}))
+    if denial := authorize_tool(tool_name):
+        return denial
     if tool_name not in allowed_tools:
+        if context is not None:
+            return tool_error("Tool is not available in this execution scope")
         return tool_error(f"Tool '{tool_name}' is not available in execute_code. "
                           f"Available: {', '.join(sorted(allowed_tools))}")
     if tool_call_counter[0] >= max_tool_calls:
@@ -167,6 +189,9 @@ def _rpc_server_loop(server_sock: socket.socket, task_id: str, tool_call_log: li
             if not chunk:
                 break
             buf += chunk
+            if len(buf) > _MAX_RPC_REQUEST_BYTES:
+                conn.sendall((tool_error("RPC request exceeds the bounded payload limit") + "\n").encode())
+                return
             while b"\n" in buf:
                 line, buf = buf.split(b"\n", 1)
                 line = line.strip()
@@ -219,7 +244,10 @@ def _rpc_poll_loop(env, rpc_dir: str, task_id: str, tool_call_log: list, tool_ca
                     break
                 call_start = time.monotonic()
                 quoted_req_file = shlex.quote(req_file)
-                read_result = env.execute(f"cat {quoted_req_file}", cwd="/", timeout=10)
+                read_result = env.execute(f"head -c {_MAX_RPC_REQUEST_BYTES + 1} -- {quoted_req_file}", cwd="/", timeout=10)
+                if len(read_result.get("output", "").encode()) > _MAX_RPC_REQUEST_BYTES:
+                    env.execute(f"rm -f {quoted_req_file}", cwd="/", timeout=5)
+                    continue
                 try:
                     request = json.loads(read_result.get("output", ""))
                 except (json.JSONDecodeError, ValueError):
@@ -231,7 +259,7 @@ def _rpc_poll_loop(env, rpc_dir: str, task_id: str, tool_call_log: list, tool_ca
                     env.execute(f"rm -f {quoted_req_file}", cwd="/", timeout=5)
                     continue
                 seq = request.get("seq", 0)
-                if not isinstance(seq, int):
+                if type(seq) is not int or not 0 <= seq <= 999999:
                     # A non-int seq cannot form the res_NNNNNN name the caller
                     # polls; formatting it after dispatch would raise, leave the
                     # request in place, and replay the tool call every cycle.

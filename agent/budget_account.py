@@ -50,7 +50,8 @@ BUDGET_CONFIG_FIELDS = {
 _DIMENSIONS = frozenset({"tokens", "attempts", "cost_micros", "wall_ms", "provider_slots", "executor_slots"})
 # These built-ins do not start an opaque billable external loop. Identity grants
 # still run first; this set is a cost-contract floor, never a capability grant.
-_LOCAL_TOOLS = {"todo_list": "tools.todo_tool", "delegate_task": "tools.delegate_tool"}
+_LOCAL_TOOLS = {"todo_list": "tools.todo_tool", "delegate_task": "tools.delegate_tool",
+                "execute_code": "tools.code_execution_tool"}
 
 
 def _integer(value, name, *, minimum=1):
@@ -329,17 +330,20 @@ def reject_opaque_callback(kind):
     Reject, rather than skip, permission middleware: skipping a guard could
     silently relax an existing capability/egress floor.
     """
+    from tools.egress_policy import reject_unsupported_route
     from agent.runtime_commands import _RUN
     run = _RUN.get()
     if run is not None:
         if run.budget is not None:
             run.budget.block(f"{kind} callback has no certified finite budget adapter")
+        reject_unsupported_route(kind)
         return
     from agent.runtime_context import current_agent_context
     if current_agent_context() is not None:
         from agent.identity_lifecycle import identity_config
         if parse_budget_policy(identity_config()) is not None:
             raise BudgetBlocked(f"{kind} callback requires a certified budget adapter and admitted run")
+    reject_unsupported_route(kind)
 
 
 def _plain_request(kwargs):
@@ -537,7 +541,9 @@ def budget_tool_scope(run, name):
     budget.check()
     # Delegation is orchestration: descendants acquire their own executor/provider
     # slots. Holding a parent executor slot while waiting would deadlock a size-1 pool.
-    if name == "delegate_task":
+    # The isolated executor reserves at its concrete launch edge, including
+    # direct registry/handler entry; a wrapper slot here would double-count.
+    if name in {"delegate_task", "execute_code"}:
         yield
         return
     maximum = min(budget.policy.record["request_timeout_ms"], max(1, int((budget.deadline - time.time()) * 1000)))

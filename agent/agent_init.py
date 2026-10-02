@@ -1911,6 +1911,12 @@ def _resolve_context_length(agent, _agent_cfg, base_url):
         from agent.context_pin import warn_once_on_pin_disagreement
         warn_once_on_pin_disagreement(agent.model, agent.base_url or "", _config_context_length)
 
+    from tools.egress_policy import policy_active
+    if policy_active():
+        # Model activation/probing is a separate outbound purpose, never implied
+        # by permission to send a bounded completion to this endpoint.
+        agent.runtime_metadata_status = "offline_declared_or_static; live probes unsupported"
+        return _config_context_length, _custom_providers, _config_context_length, _model_cfg
     _lmstudio_runtime_context_length = agent._ensure_lmstudio_runtime_loaded(_config_context_length)
     if agent._lmstudio_load_was_unverified(_lmstudio_runtime_context_length):
         _ra().logger.warning(
@@ -1932,6 +1938,8 @@ def _select_context_engine(_agent_cfg):
         _engine_name = _ctx_cfg.get("engine", "compressor") or "compressor"
     if _engine_name == "compressor":
         return None  # built-in; don't auto-activate plugins
+    from tools.egress_policy import reject_unsupported_route
+    reject_unsupported_route("context_engine")
     _selected_engine = None
     _copy_failed = False
     try:
@@ -2191,7 +2199,9 @@ def _configure_ollama_num_ctx(agent, _model_cfg, _config_context_length):
             agent._ollama_num_ctx = int(_override)
         except (TypeError, ValueError):
             _ra().logger.debug("Invalid ollama_num_ctx config value: %r", _override)
-    if agent._ollama_num_ctx is None and agent.base_url and is_local_endpoint(agent.base_url):
+    from tools.egress_policy import policy_active
+    if (not policy_active() and agent._ollama_num_ctx is None
+            and agent.base_url and is_local_endpoint(agent.base_url)):
         try:
             # api_key may be a callable (Entra token provider); detection needs a string.
             _key = agent.api_key if isinstance(agent.api_key, str) else ""

@@ -143,7 +143,14 @@ def _connect_inputs(server_name: str, config: dict) -> tuple[list, set]:
     built from one code path. Also returns the configured header names (HTTP only), captured
     before the identity header is merged in, for the strict-redirect boundary."""
     if "url" in config:
-        url, headers = _http_endpoint(server_name, config)
+        from agent.runtime_context import current_agent_context
+        if current_agent_context() is not None:
+            from tools.mcp_tool_policy import require_transport
+            require_transport(server_name, config)
+            # Managed live endpoints carry profile credentials, not per-agent authority.
+            url, headers = config["url"], dict(config.get("headers") or {})
+        else:
+            url, headers = _http_endpoint(server_name, config)
         configured_header_names = {key.lower() for key in headers}
         return [url, _apply_identity_header(server_name, config, headers)], configured_header_names
     return list(_stdio_launch(config)), set()
@@ -345,6 +352,8 @@ class MCPServerTransportMixin:
 
     async def _run_stdio(self, config: dict):
         """Run the server using stdio transport."""
+        from tools.mcp_tool_policy import require_transport
+        require_transport(self.name, config, connection=self)
         if config.get("identity_header") is not None:  # copy-pasted HTTP block: warn, don't mislead
             logger.warning("MCP server '%s': identity_header is only supported on "
                            "HTTP/SSE transports — ignored for stdio servers", self.name)
@@ -436,19 +445,25 @@ class MCPServerTransportMixin:
             ct = _content_type_base(resp)
             return _is_2xx(resp) and bool(ct) and ct not in self._MCP_CONTENT_TYPES
         probe_headers = dict(headers) if headers else {}
+        from tools.mcp_tool_policy import require_http_inputs
+        authorization = require_http_inputs(self.name, getattr(self, "_config", {}), url, probe_headers, connection=self)
         # Same route as the SDK client: TLS on an explicit transport (which also turns off httpx's own
         # env proxy auto-detection) plus the repo's proxy mounts, so the probe and the handshake agree.
         # Same redirect boundary as the transport client too: httpx strips Authorization on a
         # cross-origin hop natively, but forwards every other configured header verbatim — under
         # strict_redirect_headers those must not leave the configured origin on the probe either.
         probe_transport = _httpx.AsyncHTTPTransport(verify=ssl_verify, **_present(cert=client_cert))
+        from tools.egress_policy import wrap_httpx_transport
+        probe_transport = wrap_httpx_transport(probe_transport, authorization, async_mode=True)
         _build_client = _make_redirect_header_stripper(
             _httpx, _httpx.URL(url), strict=strict_redirect_headers,
             configured_header_names={key.lower() for key in probe_headers})
         try:
             async with _build_client(
                     follow_redirects=True, timeout=_httpx.Timeout(timeout), transport=probe_transport,
-                    **_present(mounts=_mcp_proxy_mounts(_httpx, url, ssl_verify, client_cert, self.name))) as client:
+                    trust_env=authorization is None,
+                    **_present(mounts=None if authorization else _mcp_proxy_mounts(
+                        _httpx, url, ssl_verify, client_cert, self.name))) as client:
                 resp = await client.head(url, headers=probe_headers)  # cheapest; GET on 405/501
                 if resp.status_code in (405, 501):
                     resp = await client.get(url, headers=probe_headers)
@@ -545,6 +560,9 @@ class MCPServerTransportMixin:
                                    strict_cfg_headers: bool, configured_header_names: set):
         """Streamable HTTP context manager: mcp >= 1.24.0 gets a caller-owned httpx client; on the
         deprecated API (mcp < 1.24.0) the SDK owns the client."""
+        strict = getattr(self, "_agent_policy_owner", None) is not None
+        if strict and not _core._MCP_NEW_HTTP:
+            raise PermissionError("MCP SDK-owned HTTP transport is unsupported for agent grants")
         if not _core._MCP_NEW_HTTP:
             if strict_cfg_headers:  # fail closed: without an owned client redirects can't be hooked
                 raise ImportError(f"MCP server '{self.name}' requires mcp >= 1.24.0 to "
@@ -560,22 +578,35 @@ class MCPServerTransportMixin:
         # verify/cert live on the inner transport: a custom transport= makes client-level TLS kwargs
         # inert — and suppresses httpx's own proxy auto-detection, hence the explicit mounts=.
         inner_transport = httpx.AsyncHTTPTransport(verify=ssl_verify, **_present(cert=client_cert))
-        client_kwargs: dict = {"follow_redirects": True, "timeout": httpx.Timeout(float(connect_timeout), read=300.0),
+        authorization = getattr(self, "_agent_recipient_authorization", None)
+        # The SDK can use httpx2; its own request hook is the final pre-send boundary
+        # for every redirect and retry, independent of its transport class hierarchy.
+        request_hooks = [authorization.async_request_hook] if authorization is not None else []
+        client_kwargs: dict = {"follow_redirects": True, "trust_env": not strict, "timeout": httpx.Timeout(float(connect_timeout), read=300.0),
                                **({"headers": headers} if headers else {}),
-                               "event_hooks": {"response": [_make_http_rejection_recorder(self._http_rejection)]},
+                               "event_hooks": {"request": request_hooks,
+                                               "response": [_make_http_rejection_recorder(self._http_rejection)]},
                                "transport": _make_mcp_body_cap_transport(httpx, inner_transport),
-                               **_present(mounts=_mcp_proxy_mounts(httpx, url, ssl_verify, client_cert, self.name),
+                               **_present(mounts=None if strict else _mcp_proxy_mounts(httpx, url, ssl_verify, client_cert, self.name),
                                           auth=oauth_auth)}
 
+        sdk_kwargs = {}
+        if strict:
+            import inspect
+            if "terminate_on_close" not in inspect.signature(_core.streamable_http_client).parameters:
+                raise PermissionError("MCP SDK teardown cannot suppress unauthorised remote DELETE; transport unsupported")
+            sdk_kwargs["terminate_on_close"] = False
         @asynccontextmanager
         async def _owned_client_streams():  # the SDK skips cleanup when http_client is provided
             async with _build_client(**client_kwargs) as http_client:
-                async with _core.streamable_http_client(url, http_client=http_client) as streams:
+                async with _core.streamable_http_client(url, http_client=http_client, **sdk_kwargs) as streams:
                     yield streams
         return _owned_client_streams()
 
     async def _run_http(self, config: dict):
         """Run the server using HTTP/StreamableHTTP (or SSE) transport."""
+        from tools.mcp_tool_policy import require_transport, require_http_inputs
+        require_transport(self.name, config, connection=self)
         _core._ensure_mcp_sdk()
         if not _core._MCP_HTTP_AVAILABLE:
             raise ImportError(f"MCP server '{self.name}' requires HTTP transport but "
@@ -588,6 +619,8 @@ class MCPServerTransportMixin:
         # publish another endpoint's identity alongside this session.
         self._resolved_identity = _registration._identity_digest(inputs)
         url, headers = inputs
+        self._agent_recipient_authorization = require_http_inputs(
+            self.name, config, url, headers, connection=self)
         logger.debug("MCP server '%s': connecting to %s", self.name, url)
         self._http_rejection = {}  # last 4xx/5xx the owned client saw this attempt (recorder hook)
         # Seed MCP-Protocol-Version (user override wins) from the HANDSHAKE version, not the latest: a
@@ -596,7 +629,8 @@ class MCPServerTransportMixin:
             headers["mcp-protocol-version"] = _core.LATEST_HANDSHAKE_VERSION
         connect_timeout = config.get("connect_timeout", _core._DEFAULT_CONNECT_TIMEOUT)
         common = (url, headers, connect_timeout, config.get("ssl_verify", True), _resolve_client_cert(self.name, config),
-                  self._build_oauth_auth(url, config), bool(config.get("strict_redirect_headers")))
+                  self._build_oauth_auth(url, config), bool(config.get("strict_redirect_headers"))
+                  or getattr(self, "_agent_policy_owner", None) is not None)
         if config.get("transport") == "sse":
             return await self._serve_transport(self._sse_transport(*common), "SSE", float(connect_timeout))
         if self._sse_fallback:
@@ -667,6 +701,8 @@ class MCPServerTransportMixin:
                 self._list_cache_meta = {}
                 self._tools = await _core._paginate_full_list(
                     self.session.list_tools, "tools", self.name, cache_meta_out=self._list_cache_meta)
+        from tools.mcp_tool_policy import validate_schemas
+        validate_schemas(self, self._tools)
         self._register_discovered_tools_if_needed()
 
     def _register_discovered_tools_if_needed(self) -> None:

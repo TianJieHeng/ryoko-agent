@@ -187,7 +187,13 @@ def persist_agent_tool_names(agent) -> None:
     if not db or not session_id:
         return
     try:
-        db.update_session_tool_names(session_id, {"version": tool_pin_version(), "tools": _agent_tool_defs(agent)})
+        from tools.mcp_tool_policy import registry_scope
+        pin = {"version": tool_pin_version(), "tools": _agent_tool_defs(agent)}
+        owner = registry_scope()
+        if owner is not None:
+            import hashlib
+            pin["mcp_owner"] = hashlib.sha256(owner.encode()).hexdigest()
+        db.update_session_tool_names(session_id, pin)
     except Exception:  # noqa: BLE001
         logger.debug("tool_names persist skipped", exc_info=True)
 
@@ -234,6 +240,10 @@ def restore_agent_tool_prefix(agent, saved) -> bool:
 
     def _pinned_def(item):
         name = item if isinstance(item, str) else _def_name(item)
+        if name.startswith("mcp__") and current_agent_context() is not None:
+            # Same code is insufficient: a pin may belong to a revoked schema, another
+            # credential/agent, or an earlier policy. Keep frozen bytes only if identical.
+            return fresh.get(name)
         if isinstance(item, dict) and same_code:
             return item
         if name in fresh:

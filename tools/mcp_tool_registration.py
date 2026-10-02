@@ -64,6 +64,9 @@ def _record_tool_trust_metadata(server_name: str, config: dict, tools: List[Any]
         _core._server_trust_levels[key] = _normalize_server_trust((config or {}).get("trust"))
         hints = _core._tool_read_only_hints.setdefault(key, {})
         hints.update({t.name: _annotation_read_only_hint(t) for t in tools if getattr(t, "name", None)})
+        declared = ((config or {}).get("tools") or {}).get("read_only", [])
+        _core._tool_operator_read_only[key] = set(declared) if (
+            isinstance(declared, list) and all(isinstance(name, str) and "*" not in name for name in declared)) else set()
 
 
 def _record_scope_trust(server_name: str, config: dict, scope: str) -> None:
@@ -170,6 +173,13 @@ def _select_utility_schemas(server_name: str, server: "MCPServerTask", config: d
     selected: List[dict] = []
     for entry in _build_utility_schemas(server_name):
         reason = _skip_reason(entry["handler_key"])
+        from agent.runtime_context import current_agent_context
+        if current_agent_context() is not None:
+            from tools.agent_policy_gate import authorize_mcp
+            operation = {"list_resources": "resources/list", "read_resource": "resources/read",
+                         "list_prompts": "prompts/list", "get_prompt": "prompts/get"}[entry["handler_key"]]
+            if authorize_mcp(server_name, operation, connection=server) is not None:
+                reason = "operation is outside the agent grant"
         if reason:
             logger.debug("MCP server '%s': skipping utility '%s' (%s)", server_name, entry["handler_key"], reason)
         else:
@@ -364,6 +374,8 @@ def _register_candidates(name: str, candidates: List[_Candidate], *, check_fn: C
 
 def _write_schema_cache(name: str, server: "MCPServerTask", config: dict, should_register) -> None:
     """Write-through: persist the manifest so the next startup registers this server lazily (no spawn). Never raises."""
+    if getattr(server, "_agent_policy_owner", None) is not None:
+        return  # shared profile cache has no agent/credential authorization provenance
     try:
         # Write-through (#56832): refresh the on-disk schema cache after a live connect so the next startup
         # can lazily register this server without spawning it. Cache failures never break registration.
@@ -396,7 +408,11 @@ def _register_server_tools(name: str, server: "MCPServerTask", config: dict) -> 
     """Register a connected server's tools plus utilities (initial discovery and list_changed
     refresh); returns the names. Toolset aliases derive from the live registry, not
     ``toolsets.TOOLSETS``; lossy normalization collisions (``read-file``/``read_file``) fail closed."""
-    should_register = _make_tool_filter(name, config)
+    from tools.mcp_tool_policy import validate_schemas
+    validate_schemas(server, server._tools)
+    configured_filter = _make_tool_filter(name, config)
+    from tools.agent_policy_gate import authorize_mcp
+    should_register = lambda raw: configured_filter(raw) and authorize_mcp(name, raw, connection=server) is None
     key = _server_key_for_task(server)
     _record_tool_trust_metadata(name, config, server._tools, key)
     candidates = _tool_candidates(name, server._tools, should_register, server.tool_timeout)
@@ -480,7 +496,8 @@ def _same_server_route(server: Any, config: dict, *, cross_profile: bool = False
 def register_connected_into_current_scope(servers: dict) -> int:
     """Serialize shared-scope reconciliation and registration for one discovery pass."""
     scope = _core._mcp_registry_scope()
-    if scope is None:
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None or scope is None:
         return 0
     with _SCOPE_REFRESH_LOCKS[hash(scope) % len(_SCOPE_REFRESH_LOCKS)]:
         return _register_connected_into_current_scope(servers)
@@ -589,6 +606,9 @@ def _register_from_cache_sync(name: str, config: dict, entry: dict) -> List[str]
     Lazy startup (#56832, design by Vansh5632): tools appear in the registry immediately; the first real
     call routes through ``_get_connected_server_for_call`` → ``_ensure_lazy_server_connected``.
     """
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        return []
     from tools.mcp_schema_cache import config_fingerprint, tools_from_cache_entry, utility_tools_from_cache_entry
     tool_timeout = _resolve_tool_timeout(config)
     cached_tools = _cached_tools(tools_from_cache_entry(entry))

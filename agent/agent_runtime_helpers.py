@@ -1916,6 +1916,11 @@ def _gemini_native_client(agent, client_kwargs: dict, httpx_verify, *, reason: s
 def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: bool) -> Any:
     from agent.auxiliary_client import _validate_base_url, _validate_proxy_env_urls
     from agent.ssl_verify import resolve_httpx_verify
+    from tools.egress_policy import policy_active, build_model_client, EgressDenied
+    if policy_active():
+        if agent.api_mode != "chat_completions" or agent.provider == "moa":
+            raise EgressDenied("recipient_provider_adapter_unsupported")
+        return build_model_client(client_kwargs, purpose="main_model")
     # Treat client_kwargs as read-only: callers pass agent._client_kwargs, and in-place mutation
     # leaks into later requests (a torn-down httpx transport got reused).
     # Callers pass agent._client_kwargs (or shallow copies of it) in; any in-place mutation leaks back into
@@ -3343,6 +3348,8 @@ def _iter_httpx_pools_with_owner(http_client: Any):
         for transport in transports:
             if transport is None:
                 continue
+            from tools.egress_policy import unwrap_httpx_transport
+            transport = unwrap_httpx_transport(transport)
             # Connections live under ``_pool``; a directly mounted HTTPProxy *is* a ConnectionPool,
             # so ``_connections`` may sit on the transport itself.
             pool = getattr(transport, "_pool", None)

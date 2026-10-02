@@ -772,10 +772,15 @@ def _dispatch_nonstreaming_api_request(agent, api_kwargs: dict, *, make_client):
     assert_runtime_dispatch(agent)
     from agent.budget_account import current_budget, invoke_budgeted_completion
     budget = current_budget(agent)
+    from tools.egress_policy import policy_active, assert_provider_client, EgressDenied
+    if policy_active() and (agent.api_mode != "chat_completions" or agent.provider == "moa"):
+        raise EgressDenied("recipient_provider_adapter_unsupported")
     if budget is not None:
         if agent.api_mode != "chat_completions" or agent.provider == "moa":
             budget.block("provider transport has no certified finite physical-request adapter")
-        return invoke_budgeted_completion(make_client("chat_completion_request"), api_kwargs, agent=agent)
+        request_client = make_client("chat_completion_request")
+        assert_provider_client(request_client, purpose="main_model")
+        return invoke_budgeted_completion(request_client, api_kwargs, agent=agent)
     if agent.api_mode == "codex_responses":
         return agent._run_codex_stream(api_kwargs, client=make_client("codex_stream_request"),
             on_first_delta=getattr(agent, "_codex_on_first_delta", None))
@@ -804,6 +809,7 @@ def _dispatch_nonstreaming_api_request(agent, api_kwargs: dict, *, make_client):
     # MoA facade above and the suite's stand-in clients are unaffected.
     api_kwargs = bypass_chat_sdk_request_transform(api_kwargs, request_client)
     assert_runtime_dispatch(agent)
+    assert_provider_client(request_client, purpose="main_model")
     return request_client.chat.completions.create(**api_kwargs)
 
 
@@ -3102,6 +3108,8 @@ class _StreamingCall(StreamingWaitMonitor):
         # messages/tools payload and pays the same client-side walk.
         stream_kwargs = bypass_chat_sdk_request_transform(stream_kwargs, request_client)
         assert_runtime_dispatch(self.agent)
+        from tools.egress_policy import assert_provider_client
+        assert_provider_client(request_client, purpose="main_model")
         return request_client.chat.completions.create(**stream_kwargs)
 
     def _chat_stream_created(self, raw_stream: Any) -> None:

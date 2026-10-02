@@ -8,7 +8,6 @@ import pytest
 import httpx
 from openai import OpenAI
 
-from agent.agent_identity import resolve_agent_context
 from agent.identity_lifecycle import agent_runtime_scope
 from agent.runtime_commands import (
     RuntimeCommandError, RuntimeFenceError, assert_runtime_dispatch, bind_runtime_run,
@@ -26,7 +25,9 @@ def _config():
         "primary_agent_id": "primary", "active_agent_id": "primary",
         "agents": {"primary": {"policy_version": 1, "role": "primary",
             "memory_backend": "personal_mcp", "secret_refs": ["OPENAI_API_KEY"],
-            "allowed_tools": ["runtime_fixture"]}},
+            "allowed_tools": ["todo_list"], "recipient_plan": {"schema_version": 1, "envelope": "declared",
+                "grants": [{"recipient_id": "fixture", "purpose": "main_model",
+                            "endpoint": "https://fixture.invalid/v1", "transport": "httpx"}]}}},
         "child_policy": {"policy_version": 1, "role": "child", "memory_backend": "builtin",
                          "secret_refs": [], "allowed_tools": []},
     }}
@@ -40,7 +41,7 @@ def _envelope(command_id="command", operation="submit", text="hello"):
 
 def _response(tool=False):
     calls = [SimpleNamespace(id="tool_1", type="function",
-                             function=SimpleNamespace(name="runtime_fixture", arguments='{}'))] if tool else None
+                             function=SimpleNamespace(name="todo_list", arguments='{"todos":[{"id":"1","content":"recorded work","status":"completed"}]}'))] if tool else None
     return SimpleNamespace(choices=[SimpleNamespace(finish_reason="tool_calls" if tool else "stop",
         message=SimpleNamespace(content=None if tool else "recorded answer", reasoning_content=None,
                                 reasoning=None, tool_calls=calls))], model="fixture/model", usage=None)
@@ -52,8 +53,12 @@ def _client():
     def respond(request):
         payload = json.loads(json.dumps(replies(request), default=vars))
         return httpx.Response(200, json={"id": "fixture", "object": "chat.completion", "created": 1, **payload})
+    from tools.egress_policy import prepare_recipient, wrap_httpx_transport
+    authorization = prepare_recipient("main_model", "https://fixture.invalid/v1")
+    http = httpx.Client(transport=wrap_httpx_transport(httpx.MockTransport(respond), authorization), trust_env=False)
+    http._hermes_recipient_authorization = authorization
     client = OpenAI(api_key="fixture-provider-key", base_url="https://fixture.invalid/v1",
-                    max_retries=0, http_client=httpx.Client(transport=httpx.MockTransport(respond)))
+                    max_retries=0, http_client=http)
     client._fixture_create = replies
     return client
 
@@ -63,20 +68,16 @@ def real_agent(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(json.dumps(_config()))
     (tmp_path / ".env").write_text("OPENAI_API_KEY=fixture-provider-key\n")
-    tool = {"type": "function", "function": {"name": "runtime_fixture", "description": "test",
-            "parameters": {"type": "object", "properties": {}}}}
-    from tools.registry import registry
-    monkeypatch.setattr(registry, "_tools", dict(registry._tools))
-    registry.register(name="runtime_fixture", toolset="runtime_fixture", schema=tool["function"],
-                      handler=lambda **kwargs: "ok")
+    from tools.todo_tool import TODO_SCHEMA
+    tool = {"type": "function", "function": TODO_SCHEMA}
     monkeypatch.setattr("model_tools.get_tool_definitions", lambda *a, **k: [tool])
     monkeypatch.setattr("model_tools.check_toolset_requirements", lambda *a, **k: {})
-    monkeypatch.setattr("agent.process_bootstrap.OpenAI", lambda **kwargs: _client())
+    monkeypatch.setattr("tools.egress_policy.build_model_client", lambda *a, **k: _client())
     from run_agent import AIAgent
     db = SessionDB(tmp_path / "state.db")
     agent = AIAgent(model="gpt-4.1-mini", provider="openai", api_key="fixture-provider-key", base_url="https://fixture.invalid/v1",
         session_id="session", session_db=db, quiet_mode=True, skip_context_files=True,
-        skip_memory=True, max_iterations=4, enabled_toolsets=["runtime_fixture"])
+        skip_memory=True, max_iterations=4, enabled_toolsets=["todo"])
     agent._cached_system_prompt = "Fixture system prompt."
     agent._use_prompt_caching = False
     agent._disable_streaming = True
@@ -105,14 +106,15 @@ def _run_submitted(agent, receipt, text="hello"):
 def test_existing_loop_records_provider_tool_outcomes_and_duplicate_is_read_only(real_agent, monkeypatch):
     agent = real_agent
     agent.client._fixture_create.side_effect = [_response(True), _response()]
-    tool_calls = []
-    monkeypatch.setattr("model_tools.handle_function_call", lambda *a, **k: tool_calls.append(a[0]) or '{"ok":true}')
+    write = MagicMock(wraps=agent._todo_store.write)
+    monkeypatch.setattr(agent._todo_store, "write", write)
     envelope = _envelope()
     receipt = _submit(agent, envelope)
     result = _run_submitted(agent, receipt)
     assert result["final_response"] == "recorded answer"
     assert agent.client._fixture_create.call_count == 2
-    assert tool_calls == ["runtime_fixture"]
+    assert write.call_count == 1
+    assert agent._todo_store.read()[0]["content"] == "recorded work"
     recorded = agent._session_db.read_runtime_command("session", "command")
     assert recorded["status"] == "completed"
     assert recorded["result"]["final_response"] == "recorded answer"
@@ -121,7 +123,8 @@ def test_existing_loop_records_provider_tool_outcomes_and_duplicate_is_read_only
     assert _submit(agent, envelope) == receipt
     assert _run_submitted(agent, receipt)["final_response"] == result["final_response"]
     assert agent.client._fixture_create.call_count == 2
-    assert tool_calls == ["runtime_fixture"]
+    assert write.call_count == 1
+    assert agent._todo_store.read()[0]["content"] == "recorded work"
     assert agent._session_db.get_session_turn_lease("session") is None
     assert current_agent_context() is None
 
@@ -158,11 +161,10 @@ def test_claimed_crash_stays_uncertain_and_two_holder_transfer_blocks_dispatch(r
         with pytest.raises(RuntimeFenceError):
             copied.run(assert_runtime_dispatch, agent)
         from tools.registry import registry
-        ran = []
-        registry.register(name="runtime_fixture", toolset="test", schema={"name": "runtime_fixture"},
-                          handler=lambda *_a, **_k: ran.append(True) or "ok")
-        denied = copied.run(registry.dispatch, "runtime_fixture", {})
-        assert "error" in denied and ran == []
+        before = agent._todo_store.snapshot()
+        denied = copied.run(registry.dispatch, "todo_list", {"todos": [{"id": "forbidden", "content": "stale write"}]},
+                            store=agent._todo_store)
+        assert "error" in denied and agent._todo_store.snapshot() == before
         agent._session_db.release_session_turn_lease("session", "successor")
     pending = _run_submitted(agent, receipt)
     assert pending["runtime_status"] == "outcome_uncertain"
@@ -346,7 +348,7 @@ def test_reconstructed_compression_tip_continues_original_durable_runtime(real_a
     reopened = SessionDB(db.db_path)
     restored = AIAgent(model="gpt-4.1-mini", provider="openai", api_key="fixture-provider-key",
         base_url="https://fixture.invalid/v1", session_id="physical-tip", session_db=reopened,
-        quiet_mode=True, skip_context_files=True, skip_memory=True, max_iterations=4, enabled_toolsets=["runtime_fixture"])
+        quiet_mode=True, skip_context_files=True, skip_memory=True, max_iterations=4, enabled_toolsets=["todo"])
     restored.client._fixture_create.return_value = _response()
     restored._cached_system_prompt = "Fixture system prompt."
     restored._disable_streaming = True

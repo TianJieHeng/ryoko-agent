@@ -174,14 +174,14 @@ def sandbox_mcp_invocation() -> Optional[Tuple[Tuple[str, List[str]], Dict[str, 
 
 def sanitized_cua_driver_env() -> Dict[str, str]:
     """``cua_driver_child_env()`` with Hermes provider secrets stripped — cua-driver is a third-party binary and must
-    never inherit API keys. Falls back to the unsanitized telemetry env if the sanitizer can't import."""
-    env = cua_driver_child_env()
-    with contextlib.suppress(Exception):
-        # cua-driver is a third-party binary — never hand it provider API keys via inherited env (same
-        # policy as the manifest probe and MCP spawn; #53503/#55709/#58889 lineage).
-        from tools.environments.local import _sanitize_subprocess_env
-        return _sanitize_subprocess_env(env)
-    return env
+    never inherit API keys. A missing or failed sanitizer prevents launch."""
+    try:
+        from tools.environments.local import hermes_subprocess_env
+        # This is not a terminal/skill subprocess: terminal credential passthrough
+        # cannot authorize sharing credentials with a privileged desktop driver.
+        return hermes_subprocess_env(base_env=cua_driver_child_env(), inherit_credentials=False)
+    except Exception:
+        raise RuntimeError("CUA driver launch refused: environment sanitization unavailable") from None
 
 def _run_quiet(argv: List[str], *, timeout: float, swallow: Any = (), **kw: Any) -> Any:
     """``subprocess.run`` for short probe verbs: text mode, stdin=DEVNULL unless overridden (older drivers fall into a
