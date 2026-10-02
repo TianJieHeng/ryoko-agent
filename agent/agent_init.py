@@ -1330,6 +1330,10 @@ def _init_memory(agent, _agent_cfg, skip_memory, platform, memory_manager=None):
     agent._memory_nudge_interval = 10
     agent._turns_since_memory = 0
     agent._iters_since_skill = 0
+    if getattr(agent, "runtime_context", None) is not None:
+        from agent.memory_router import initialize_routed_memory
+        initialize_routed_memory(agent, _agent_cfg, skip_memory=skip_memory, memory_manager=memory_manager)
+        return
     # skip_memory skips the external *provider*; enabled_toolsets=["memory"] still gets the
     # built-in store so the memory tool never sees store=None.
     # Flush/background agents can still pass enabled_toolsets=["memory"] so the built-in file store exists

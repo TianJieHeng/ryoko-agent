@@ -153,11 +153,9 @@ def identity_construction(function):
             session_db.claim_session_agent_identity(session_id, context.identity.to_record())
         _install_runtime_context(agent, context)
         values["session_id"] = session_id
-        # BE08 supplies isolated memory routing. Until that owning phase lands,
-        # strict construction must never load a profile-global personal store.
-        values["skip_memory"] = True
+        # Strict memory construction is selected by the immutable identity in _init_memory.
+        # The legacy background reviewer still shares its parent's store and remains disabled.
         values["skip_background_review"] = True
-        agent.runtime_memory_status = "unavailable: per-agent memory routing is not configured"
         with agent_runtime_scope(context):
             from agent.secret_scope import current_secret_scope
             provided_key = values.get("api_key")

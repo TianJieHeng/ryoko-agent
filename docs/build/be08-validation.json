@@ -1,0 +1,411 @@
+{
+  "schema_version": 1,
+  "phase": "BE08",
+  "base_sha": "580a17f10def764e228944434a1c5b4283e29abc",
+  "publication": "direct main; no PR",
+  "database_schema": 37,
+  "runtime_schema": 1,
+  "qualification": "local implementation verified; live personal harness acceptance pending exact deployed contract and secure operator setup",
+  "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tools/test_individual_memory_store.py tests/tools/test_memory_tool.py tests/tools/test_session_search_owner.py tests/tools/test_session_search.py tests/tools/test_delegated_individual_memory.py tests/tools/test_delegate_toolset_scope.py tests/tools/test_capability_broker.py tests/tools/test_mcp_agent_trust_lifecycle.py tests/agent/test_memory_routing.py tests/agent/test_memory_mcp_provider.py tests/agent/test_identity_lifecycle.py tests/agent/test_fresh_context_projection.py tests/agent/test_prompt_cache_scope.py tests/agent/test_turn_context.py tests/agent/test_runtime_commands.py tests/agent/test_budget_runtime.py tests/agent/test_inline_session_search_profile.py tests/agent/test_builtin_memory_disabled_surface.py tests/agent/test_memory_provider_init.py tests/hermes_state/test_context_projection.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_compression_watermark_commit.py tests/hermes_state/test_fts_cjk_bigram.py tests/hermes_state/test_search_or_relaxed_fallback.py tests/gateway/test_api_server_memory_sessions.py tests/tui_gateway/test_memory_rpc.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_generated.py tests/agent/test_micro_compaction.py -j 5 --file-retries 0",
+  "consolidated": {
+    "log": "be08-final.log",
+    "log_sha256": "e111e3f7f905ecf82ac15fbe3765e8a95d532898559af72e68138f067e8419ae",
+    "files": 29,
+    "passed": 470,
+    "failed": 0,
+    "seconds": 33.4,
+    "per_file": [
+      {
+        "file": "tests/agent/test_inline_session_search_profile.py",
+        "passed": 1,
+        "seconds": 0.8
+      },
+      {
+        "file": "tests/agent/test_fresh_context_projection.py",
+        "passed": 3,
+        "seconds": 1.9
+      },
+      {
+        "file": "tests/agent/test_builtin_memory_disabled_surface.py",
+        "passed": 19,
+        "seconds": 1.9
+      },
+      {
+        "file": "tests/agent/test_identity_lifecycle.py",
+        "passed": 20,
+        "seconds": 2.1
+      },
+      {
+        "file": "tests/agent/test_memory_routing.py",
+        "passed": 8,
+        "seconds": 1.2
+      },
+      {
+        "file": "tests/agent/test_memory_mcp_provider.py",
+        "passed": 8,
+        "seconds": 2.7
+      },
+      {
+        "file": "tests/agent/test_micro_compaction.py",
+        "passed": 42,
+        "seconds": 1.8
+      },
+      {
+        "file": "tests/agent/test_prompt_cache_scope.py",
+        "passed": 29,
+        "seconds": 1.1
+      },
+      {
+        "file": "tests/agent/test_memory_provider_init.py",
+        "passed": 6,
+        "seconds": 2.9
+      },
+      {
+        "file": "tests/gateway/test_api_server_memory_sessions.py",
+        "passed": 1,
+        "seconds": 0.7
+      },
+      {
+        "file": "tests/hermes_state/test_context_projection.py",
+        "passed": 8,
+        "seconds": 1.9
+      },
+      {
+        "file": "tests/agent/test_turn_context.py",
+        "passed": 26,
+        "seconds": 6.5
+      },
+      {
+        "file": "tests/hermes_state/test_runtime_store.py",
+        "passed": 13,
+        "seconds": 1.3
+      },
+      {
+        "file": "tests/hermes_state/test_search_or_relaxed_fallback.py",
+        "passed": 9,
+        "seconds": 0.8
+      },
+      {
+        "file": "tests/tools/test_capability_broker.py",
+        "passed": 3,
+        "seconds": 2.4
+      },
+      {
+        "file": "tests/hermes_state/test_fts_cjk_bigram.py",
+        "passed": 10,
+        "seconds": 9.2
+      },
+      {
+        "file": "tests/agent/test_runtime_commands.py",
+        "passed": 17,
+        "seconds": 12.8
+      },
+      {
+        "file": "tests/tools/test_delegate_toolset_scope.py",
+        "passed": 2,
+        "seconds": 1.7
+      },
+      {
+        "file": "tests/tools/test_individual_memory_store.py",
+        "passed": 11,
+        "seconds": 3.1
+      },
+      {
+        "file": "tests/agent/test_budget_runtime.py",
+        "passed": 35,
+        "seconds": 20.1
+      },
+      {
+        "file": "tests/hermes_state/test_compression_watermark_commit.py",
+        "passed": 16,
+        "seconds": 16.4
+      },
+      {
+        "file": "tests/tools/test_memory_tool.py",
+        "passed": 60,
+        "seconds": 2.2
+      },
+      {
+        "file": "tests/tools/test_delegated_individual_memory.py",
+        "passed": 3,
+        "seconds": 5.7
+      },
+      {
+        "file": "tests/tools/test_mcp_agent_trust_lifecycle.py",
+        "passed": 25,
+        "seconds": 5.3
+      },
+      {
+        "file": "tests/tools/test_session_search.py",
+        "passed": 65,
+        "seconds": 3.4
+      },
+      {
+        "file": "tests/tui_gateway/contracts/test_generated.py",
+        "passed": 2,
+        "seconds": 2.4
+      },
+      {
+        "file": "tests/tools/test_session_search_owner.py",
+        "passed": 2,
+        "seconds": 3.0
+      },
+      {
+        "file": "tests/tui_gateway/test_runtime_rpc.py",
+        "passed": 11,
+        "seconds": 7.0
+      },
+      {
+        "file": "tests/tui_gateway/test_memory_rpc.py",
+        "passed": 15,
+        "seconds": 11.6
+      }
+    ]
+  },
+  "final_settled_subset": {
+    "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tools/test_individual_memory_store.py tests/tools/test_memory_tool.py tests/agent/test_memory_routing.py tests/agent/test_fresh_context_projection.py tests/tui_gateway/test_memory_rpc.py -j 5 --file-retries 0",
+    "log": "be08-settled-final.log",
+    "log_sha256": "880b20faccc145de483c71e3d8d162f6d7eb1a1ac30ce4867e8f7db364b2a0f6",
+    "files": 5,
+    "passed": 99,
+    "failed": 0,
+    "seconds": 11.7,
+    "per_file": [
+      {
+        "file": "tests/agent/test_memory_routing.py",
+        "passed": 8,
+        "seconds": 1.3
+      },
+      {
+        "file": "tests/tools/test_memory_tool.py",
+        "passed": 60,
+        "seconds": 2.1
+      },
+      {
+        "file": "tests/agent/test_fresh_context_projection.py",
+        "passed": 3,
+        "seconds": 2.2
+      },
+      {
+        "file": "tests/tools/test_individual_memory_store.py",
+        "passed": 13,
+        "seconds": 3.6
+      },
+      {
+        "file": "tests/tui_gateway/test_memory_rpc.py",
+        "passed": 15,
+        "seconds": 11.7
+      }
+    ]
+  },
+  "checks": {
+    "changed_python_ruff": "passed",
+    "generated_contract_check": "passed",
+    "shared_typescript": "passed",
+    "git_diff_check": "passed",
+    "local_env_ignored": "verified with git check-ignore .env"
+  },
+  "other_campaigns": [
+    {
+      "log": "be08-context-final.log",
+      "log_sha256": "8aee82b24b3d5be07909fd3a664bbbef8da6800aaf01d83a8a76ee57ecfb8cea",
+      "files": 6,
+      "passed": 94,
+      "failed": 0,
+      "seconds": 16.4,
+      "per_file": [
+        {
+          "file": "tests/hermes_state/test_context_projection.py",
+          "passed": 7,
+          "seconds": 1.2
+        },
+        {
+          "file": "tests/agent/test_prompt_cache_scope.py",
+          "passed": 29,
+          "seconds": 1.2
+        },
+        {
+          "file": "tests/hermes_state/test_runtime_store.py",
+          "passed": 13,
+          "seconds": 1.5
+        },
+        {
+          "file": "tests/agent/test_fresh_context_projection.py",
+          "passed": 3,
+          "seconds": 2.2
+        },
+        {
+          "file": "tests/agent/test_turn_context.py",
+          "passed": 26,
+          "seconds": 6.4
+        },
+        {
+          "file": "tests/hermes_state/test_compression_watermark_commit.py",
+          "passed": 16,
+          "seconds": 16.4
+        }
+      ]
+    },
+    {
+      "log": "be08-memory-final.log",
+      "log_sha256": "0f530881f8b5b97ec72d7964ea111eafed4a7fb4e23805b0bf46dc3b327923bc",
+      "files": 6,
+      "passed": 64,
+      "failed": 0,
+      "seconds": 5.0,
+      "per_file": [
+        {
+          "file": "tests/gateway/test_api_server_memory_sessions.py",
+          "passed": 1,
+          "seconds": 0.9
+        },
+        {
+          "file": "tests/agent/test_memory_routing.py",
+          "passed": 8,
+          "seconds": 1.5
+        },
+        {
+          "file": "tests/agent/test_fresh_context_projection.py",
+          "passed": 2,
+          "seconds": 2.0
+        },
+        {
+          "file": "tests/agent/test_identity_lifecycle.py",
+          "passed": 20,
+          "seconds": 2.3
+        },
+        {
+          "file": "tests/agent/test_memory_mcp_provider.py",
+          "passed": 8,
+          "seconds": 2.7
+        },
+        {
+          "file": "tests/tools/test_mcp_agent_trust_lifecycle.py",
+          "passed": 25,
+          "seconds": 5.0
+        }
+      ]
+    },
+    {
+      "log": "be08-search-memory-final.log",
+      "log_sha256": "57066682731b2252e84953c571afcd4570a271e82bd49937d96e959f485acf04",
+      "files": 11,
+      "passed": 187,
+      "failed": 0,
+      "seconds": 14.3,
+      "per_file": [
+        {
+          "file": "tests/hermes_state/test_search_or_relaxed_fallback.py",
+          "passed": 9,
+          "seconds": 1.3
+        },
+        {
+          "file": "tests/agent/test_inline_session_search_profile.py",
+          "passed": 1,
+          "seconds": 1.3
+        },
+        {
+          "file": "tests/tools/test_delegate_toolset_scope.py",
+          "passed": 2,
+          "seconds": 2.2
+        },
+        {
+          "file": "tests/tools/test_capability_broker.py",
+          "passed": 3,
+          "seconds": 3.1
+        },
+        {
+          "file": "tests/tools/test_write_approval.py",
+          "passed": 20,
+          "seconds": 2.6
+        },
+        {
+          "file": "tests/tools/test_session_search_owner.py",
+          "passed": 2,
+          "seconds": 3.0
+        },
+        {
+          "file": "tests/tools/test_session_search.py",
+          "passed": 65,
+          "seconds": 4.6
+        },
+        {
+          "file": "tests/hermes_state/test_fts_index_fail_open.py",
+          "passed": 4,
+          "seconds": 5.2
+        },
+        {
+          "file": "tests/tools/test_delegated_individual_memory.py",
+          "passed": 2,
+          "seconds": 6.3
+        },
+        {
+          "file": "tests/hermes_state/test_fts_cjk_bigram.py",
+          "passed": 10,
+          "seconds": 9.7
+        },
+        {
+          "file": "tests/tools/test_delegate.py",
+          "passed": 69,
+          "seconds": 14.3
+        }
+      ]
+    },
+    {
+      "log": "be08-budgeted-memory-search.log",
+      "log_sha256": "f2d4c60c1f3ba83bbe07493bde107c3c1bac5ebf8c7cbd936bac5571fe675cdc",
+      "files": 2,
+      "passed": 5,
+      "failed": 0,
+      "seconds": 5.1,
+      "per_file": [
+        {
+          "file": "tests/tools/test_session_search_owner.py",
+          "passed": 2,
+          "seconds": 2.8
+        },
+        {
+          "file": "tests/tools/test_delegated_individual_memory.py",
+          "passed": 3,
+          "seconds": 5.1
+        }
+      ]
+    },
+    {
+      "log": "be08-memory-target-flags.log",
+      "log_sha256": "6b4ac38546cb8223198f5cfb461cba7eb1d5b56a550a4883c5e89cc31db854c9",
+      "files": 3,
+      "passed": 40,
+      "failed": 0,
+      "seconds": 3.3,
+      "per_file": [
+        {
+          "file": "tests/agent/test_memory_routing.py",
+          "passed": 8,
+          "seconds": 1.3
+        },
+        {
+          "file": "tests/agent/test_builtin_memory_disabled_surface.py",
+          "passed": 19,
+          "seconds": 1.7
+        },
+        {
+          "file": "tests/tools/test_individual_memory_store.py",
+          "passed": 13,
+          "seconds": 3.3
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "No live supplied credentials, endpoint calls, deployment, model training or remote data export",
+    "Personal recall requires actual exact pinned schemas and operator response contract; live P02/P03 not claimed",
+    "Remote remember/correction/delete/export/ingestion/invalidation unsupported absent verified semantic receipts",
+    "Budget-enabled MCP still unsupported; certified local memory/raw session reads bounded, generated-summary strict recall unsupported",
+    "Linux checked namespace store only; legacy behavior otherwise unchanged",
+    "Strict compression rotation refused; in-place atomic adapter certified",
+    "Hybrid indexing/provider federation/automatic retention deletion not enabled",
+    "Local deletion is tombstone semantics, not physical backup erasure",
+    "Full project suite remains BE18; inherited tmp project-tree/AF_UNIX/process-visibility failures retained"
+  ]
+}

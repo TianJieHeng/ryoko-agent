@@ -1081,7 +1081,8 @@ class SessionMessagesMixin:
         lock_holder: Optional[str] = None, tail_count: int = 0,
         carried_messages: Optional[List[Dict[str, Any]]] = None,
         covered_ids: Optional[List[int]] = None,
-        unresolved_held: Optional[List[Dict[str, Any]]] = None) -> int:
+        unresolved_held: Optional[List[Dict[str, Any]]] = None,
+        context_commit: Optional[Dict[str, Any]] = None) -> int:
         """Non-destructive in-place compaction under ONE session id: soft-archive the active rows (``active=0,
         compacted=1``: summarized away, still searchable) and insert *compacted_messages* as fresh active
         rows, atomically; returns the new ACTIVE count (= ``message_count``). *watermark* (compression
@@ -1108,7 +1109,19 @@ class SessionMessagesMixin:
         rows fresh ids; consumers that reference durable row ids re-resolve by content (see 3e8ab0610).
         """
         from hermes_state import SessionCompressionInProgressError
+        if context_commit is None:
+            from agent.context_projection import context_commit_for_current_run
+            context_commit = context_commit_for_current_run(self, session_id, watermark=watermark)
         def _do(conn):
+            if context_commit is not None:
+                self._validate_context_commit_on_conn(conn, session_id, context_commit)
+            else:
+                # Identity-bound compaction cannot bypass the runtime owner by
+                # invoking the transcript API without its scoped context.
+                from hermes_state_runtime import _require
+                binding = conn.execute("SELECT model_config FROM sessions WHERE id=?", (session_id,)).fetchone()
+                _require(binding is None or not json.loads(binding[0] or '{}').get('agent_identity'),
+                         "identity_required", "Strict compaction requires its admitted runtime context")
             if lock_holder is not None:
                 lock_row = conn.execute(_COMPRESSION_LOCK_ROW_SQL, (session_id,)).fetchone()
                 if lock_row is None or lock_row["holder"] != lock_holder or float(lock_row["expires_at"]) <= time.time():
@@ -1120,9 +1133,12 @@ class SessionMessagesMixin:
                 conn, session_id, model_config_patch, on_missing="raise") if patch else None
             proved = self._proved_coverage(conn, session_id, covered_ids, unresolved_held)
             if proved is not None:
-                return self._archive_named_rows(
+                inserted = self._archive_named_rows(
                     conn, session_id, compacted_messages, proved, tail_count=tail_count,
                     carried_messages=carried_messages, patched_model_config=patched_model_config, patch=patch)
+                if context_commit is not None:
+                    self._commit_context_projection_on_conn(conn, session_id, context_commit)
+                return inserted
             tail_ids, tail_tool_calls = ([], 0) if watermark is None else self._tail_rows_after_watermark(
                 conn, "SELECT id, tool_calls FROM messages WHERE session_id = ? AND active = 1 AND id > ? ORDER BY id",
                 (session_id, int(watermark)))
@@ -1159,8 +1175,11 @@ class SessionMessagesMixin:
             self._reconcile_display_orders(conn, session_id)
             conn.execute(f"{_SET_COUNTERS_SQL}{', model_config = ?' if patch else ''} WHERE id = ?",
                 (inserted, tool_calls_total, *((patched_model_config,) if patch else ()), session_id))
+            if context_commit is not None:
+                self._commit_context_projection_on_conn(conn, session_id, context_commit)
             return inserted
-        return self._execute_transcript_write(_do, compacted_messages)
+        with self.context_commit_guard(context_commit):
+            return self._execute_transcript_write(_do, compacted_messages)
 
     def _message_column_names(self, conn) -> List[str]:
         """Column names of the messages table, cached per-connection era."""

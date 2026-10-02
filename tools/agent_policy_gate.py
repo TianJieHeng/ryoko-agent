@@ -60,12 +60,16 @@ def authorize_tool(name: str, *, context=_CURRENT, entry=None) -> str | None:
         "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
         "tool_call": "tools.tool_search", "execute_code": "tools.code_execution_tool",
         "delegate_task": "tools.delegate_tool",
+        "memory": "tools.memory_tool", "session_search": "tools.session_search_tool",
     }
     expected = certified.get(name)
     if expected is None or (entry is not None and module != expected):
         return _denied("This execution route has no BE05-certified isolation/egress contract.", unsupported=True)
     if entry is None and name not in _SESSION_ONLY_TOOLS:
         return _denied("Certified handler provenance is unavailable.", unsupported=True)
+    if name in ("memory", "session_search"):
+        if ctx.policy.memory_backend != "builtin" or ctx.policy.role == "primary":
+            return _denied("Local memory and session recall require an individual built-in backend.", unsupported=True)
     return None
 
 

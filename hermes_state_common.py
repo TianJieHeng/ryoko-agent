@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 36
+SCHEMA_VERSION = 37
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -642,6 +642,18 @@ CREATE TABLE IF NOT EXISTS runtime_checkpoints (
     published_seq INTEGER NOT NULL,
     generation INTEGER NOT NULL,
     checkpoint_json TEXT NOT NULL
+);
+
+-- BE08 latest recovery context is committed with the transcript and checkpoint.
+CREATE TABLE IF NOT EXISTS runtime_context_projections (
+    session_id TEXT PRIMARY KEY,
+    projection_id TEXT NOT NULL,
+    schema_version INTEGER NOT NULL,
+    generation INTEGER NOT NULL,
+    checkpoint_id TEXT NOT NULL,
+    included_seq INTEGER NOT NULL,
+    projection_json TEXT NOT NULL,
+    created_at REAL NOT NULL
 );
 
 -- BE06 audit history is retained independently of transcript lifecycle.

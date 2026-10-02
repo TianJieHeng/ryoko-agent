@@ -130,7 +130,7 @@ completion by default; with `delegation.independent_completions` it is split int
 task reports alone as it finishes. Units of one call share ONE pool slot (`slot_key` in
 `async_delegation._dispatch`) — never count units against capacity; the executor is sized by live UNITS
 and the stall clock arms when the runner starts, so a queued unit is never judged stalled. Roles: `leaf` (default;
-no `delegate_task`, `clarify`, `memory`, `send_message`, `cronjob`; keeps `execute_code`) and
+no `delegate_task`, `clarify`, `send_message`, `cronjob`; keeps `execute_code`) and
 `orchestrator` (keeps `delegate_task`; gated by `delegation.orchestrator_enabled`, bounded by
 `delegation.max_spawn_depth`, default 2). Config knobs under `delegation:`:
 `max_concurrent_children, independent_completions, max_spawn_depth, child_timeout_seconds, orchestrator_enabled,
@@ -146,6 +146,13 @@ idle paths, TUI `session.interrupt`, ACP `cancel`, CLI `/stop` via `interrupt_al
 `async_delegation.interrupt_for_session` too. Depth>0 delegations are always synchronous
 (`_model_background_value`), so the stop recurses through the child's own `_active_children` fan-out; an
 interrupted entry's `summary` is the child's last real assistant text (`_build_result_entry`). API: `website/docs/developer-guide/subagent-lifecycle-api.md`.
+
+Legacy children also exclude `memory` to protect the shared profile files. Identity-bound
+children construct their own built-in store and may use `memory` only through the immutable
+parent/child grant intersection. Their local `session_search` filters principal, profile,
+agent and namespace before reading content; lineage never grants another agent's history.
+The primary personal MCP backend cannot use local memory or session recall. Strict background
+review remains disabled because its cache-parity fork shares the parent store.
 
 ## Tests
 

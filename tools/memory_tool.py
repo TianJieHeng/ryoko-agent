@@ -36,7 +36,16 @@ _memory_surface_flags: ContextVar[Optional[Tuple[bool, bool]]] = ContextVar("mem
 
 
 def get_memory_dir() -> Path:
-    """Profile-scoped memories dir, resolved per call (HERMES_HOME may switch after import)."""
+    """Resolve only the current actor namespace, or the legacy profile directory."""
+    from agent.runtime_context import current_agent_context
+    from tools.capability_broker import require_live_policy
+    context = current_agent_context()
+    if context is not None:
+        from agent.individual_memory_scope import IndividualMemoryScope
+        scope = IndividualMemoryScope.from_context(context)
+        scope.assert_current()
+        return scope.directory
+    require_live_policy(require_run=False)
     return get_hermes_home() / "memories"
 
 
@@ -47,7 +56,20 @@ from tools.memory_tool_store import (  # noqa: E402,F401  (re-exports)
 def load_on_disk_store() -> "MemoryStore":
     """Fresh on-disk MemoryStore with configured limits/flags for contexts with no live
     agent (gateway, Desktop, ``/memory``) so approvals enforce the SAME caps as
-    ``agent_init``. Falls back to defaults if config can't load; never raises."""
+    ``agent_init``. Legacy config failures use defaults; strict identity failures
+    propagate and can never construct a shared-store fallback."""
+    from tools.capability_broker import require_live_policy
+    context = require_live_policy(require_run=False)
+    if context is not None:
+        from tools.individual_memory_store import create_individual_memory_store
+        from agent.identity_lifecycle import identity_config
+        config = identity_config()
+        mem_cfg = get_builtin_memory_config(config)
+        flags = get_builtin_memory_store_flags(config)
+        store = create_individual_memory_store(context, int(mem_cfg.get("memory_char_limit", 2200)),
+            int(mem_cfg.get("user_char_limit", 1375)), memory_enabled=flags[0], user_profile_enabled=flags[1])
+        store.load_from_disk()
+        return store
     try:
         from hermes_cli.config import load_config
         config = load_config() or {}
@@ -83,7 +105,16 @@ def _pin_matched_entries(store: "MemoryStore", payload: Dict[str, Any]) -> Optio
 
 def _gate_or_stage(store: "MemoryStore", summary: str, detail: str, payload: Dict[str, Any]) -> Optional[str]:
     """JSON tool-result string when the write must NOT proceed (blocked or staged
-    for approval), None to proceed. Fails open if the gate module can't load."""
+    for approval), None to proceed. Only legacy mode tolerates a missing gate."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        # Strict calls are admitted by the existing tool broker. Profile-global
+        # legacy approval queues cannot safely carry identity-private contents.
+        from tools.write_approval import evaluate_gate, MEMORY
+        decision = evaluate_gate(MEMORY, inline_summary=summary, inline_detail=detail)
+        return None if decision.allow else tool_error(
+            "Individual memory approval staging is unsupported; use the owned memory correction control",
+            success=False)
     try:
         from tools import write_approval as wa
     except Exception:
@@ -173,6 +204,9 @@ def _background_delete_gate(store, action, operations, target="memory", content=
     staging failure fails closed to a plain denial."""
     from tools.skill_provenance import is_unattended_review
 
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None and is_unattended_review():
+        return tool_error("Individual background memory review is unsupported", success=False)
     if not is_unattended_review():
         return None
     payload = ({"action": "batch", "target": target, "operations": operations}
@@ -213,6 +247,13 @@ def memory_tool(action: str = None, target: str = "memory", content: str = None,
     whole matched entry is overwritten; old_text only locates it)."""
     if store is None:
         return tool_error("Memory is not available. It may be disabled in config or this environment.", success=False)
+    from tools.capability_broker import require_live_policy
+    context = require_live_policy(require_run=False)
+    if context is not None:
+        from tools.individual_memory_store import IndividualMemoryStore
+        if not isinstance(store, IndividualMemoryStore):
+            return tool_error("Strict identity requires its individual memory store", success=False)
+        store._check()
     outcome, result = _memory_tool(action, target, content, old_text, new_text, operations, store)
     from hermes_cli.observability.shared_metrics_loop import record_builtin_memory_call
     record_builtin_memory_call(action, operations, outcome=outcome)
@@ -277,6 +318,10 @@ def get_builtin_memory_store_flags(config: Optional[Dict[str, Any]] = None) -> T
 def check_memory_requirements() -> bool:
     """Snapshot store flags and report whether the built-in tool is available."""
     _memory_surface_flags.set(None)
+    from tools.capability_broker import require_live_policy
+    context = require_live_policy(require_run=False)
+    if context is not None and context.policy.memory_backend != "builtin":
+        return False
     flags = get_builtin_memory_store_flags()
     _memory_surface_flags.set(flags)
     return flags[0] or flags[1]
@@ -299,6 +344,9 @@ def apply_memory_pending(payload: Dict[str, Any], store: "MemoryStore") -> Dict[
     replace/remove applies to exactly its pinned ``matched_entry`` or is refused; a record
     staged before pinning has no verifiable target, so it is refused rather than replayed by
     old_text (which could hit a newer entry the approver never saw)."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        return {"success": False, "error": "Legacy memory approvals cannot replay into individual memory"}
     action, target = payload.get("action"), payload.get("target", "memory")
     target_error = _memory_target_error(store, target)
     if target_error is not None:

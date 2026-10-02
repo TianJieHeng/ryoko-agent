@@ -2654,6 +2654,144 @@ export interface ClientCapabilitiesResult {
   server_requests: string[]
   declines_not_shown?: boolean
 }
+export interface MemoryStatusResult {
+  capabilities: MemoryCapabilities
+  health: MemoryHealth
+}
+export interface MemoryCapabilities {
+  backend: 'builtin' | 'personal_mcp'
+  recall: boolean
+  write: boolean
+  supersede: boolean
+  delete: boolean
+  export: boolean
+  session_ingest: boolean
+}
+export interface MemoryHealth {
+  backend: 'builtin' | 'personal_mcp'
+  status: 'ready' | 'unconfigured' | 'degraded' | 'disabled'
+  reason_code: string | null
+  supported_operations: string[]
+}
+export interface MemoryRecordParams {
+  session_id: string
+  schema_version: 1
+  record_id: string
+  version?: number | null
+}
+export interface MemoryRecordResult {
+  record: MemoryRecord
+}
+export interface MemoryRecord {
+  record_id: string
+  version: number
+  revision: number
+  supersedes_version: number | null
+  owner_agent_id: string
+  owner_principal_id: string
+  owner_profile_id: string
+  namespace_id: string
+  target: 'memory' | 'user'
+  kind: 'stated_fact' | 'inference' | 'preference' | 'decision' | 'procedure_reference'
+  content: string | null
+  source_ref: string
+  author: string
+  created_at: number
+  updated_at: number
+  valid_from: number
+  valid_to: number | null
+  confidence: number | null
+  validity: 'valid' | 'uncertain' | 'invalid' | 'superseded'
+  scope: string
+  deletion_state: 'present' | 'deleted'
+  deleted_at: number | null
+  superseded_by_version?: number | null
+}
+export interface MemoryListParams {
+  session_id: string
+  schema_version: 1
+  include_deleted?: boolean
+  project_id?: string | null
+  expected_revision?: number | null
+  offset?: number
+  limit?: number
+}
+export interface MemoryListResult {
+  revision: number
+  records: MemoryRecord[]
+  offset: number
+  next_offset: number
+  total: number
+  has_more: boolean
+}
+export interface MemoryWriteParams {
+  session_id: string
+  schema_version: 1
+  content: string
+  record_id: string
+  expected_version?: number
+  target?: 'memory' | 'user'
+  kind?: 'stated_fact' | 'inference' | 'preference' | 'decision' | 'procedure_reference'
+  source_ref?: string | null
+  author?: string | null
+  valid_from?: number | null
+  valid_to?: number | null
+  confidence?: number | null
+  validity?: 'valid' | 'uncertain' | 'invalid'
+  scope?: string
+}
+export interface MemoryMutationResult {
+  outcome: MemoryWriteSuccess | MemoryWriteConflict
+}
+export interface MemoryWriteSuccess {
+  success: true
+  record: MemoryRecord
+  acknowledged_version: number
+  revision: number
+}
+export interface MemoryWriteConflict {
+  success: false
+  code: 'version_conflict'
+  conflict_id: string
+  record_id: string
+  expected_version: number
+  current_version: number
+}
+export interface MemoryDeleteParams {
+  session_id: string
+  schema_version: 1
+  record_id: string
+  expected_version: number
+}
+export interface MemoryExportParams {
+  session_id: string
+  schema_version: 1
+  include_deleted?: boolean
+  project_id?: string | null
+  expected_revision?: number | null
+  offset?: number
+  limit?: number
+}
+export interface MemoryExportResult {
+  revision: number
+  sha256: string
+  size: number
+  format: 'json'
+  deletion_semantics: 'tombstones_not_physical_erasure'
+  offset: number
+  data_base64: string
+  next_offset: number
+  eof: boolean
+}
+export interface MemoryScopeParams {
+  session_id: string
+  schema_version: 1
+  project_id: string | null
+}
+export interface MemoryScopeResult {
+  project_id: string | null
+  scope_key: string
+}
 /** ``word`` is the token under the cursor (``@`` prefix = context reference); ``cwd`` / ``session_id`` pick the directory the listing resolves against. */
 export interface CompletePathParams {
   profile?: string | null
@@ -6182,6 +6320,18 @@ export interface RpcMethods {
   'runtime.evidence.create': { params: EvidenceCreateParams; result: EvidenceResult }
   'runtime.evidence.get': { params: EvidenceParams; result: EvidenceResult }
   'runtime.evidence.list': { params: SourceListParams; result: EvidenceListResult }
+  /** Read a revision-bound local structured export in bounded chunks; no remote sharing. */
+  'runtime.memory.export': { params: MemoryExportParams; result: MemoryExportResult }
+  /** Tombstone one exact built-in record version; this is not physical erasure of backups. */
+  'runtime.memory.record.delete': { params: MemoryDeleteParams; result: MemoryMutationResult }
+  'runtime.memory.record.get': { params: MemoryRecordParams; result: MemoryRecordResult }
+  /** Compare-and-swap one owner-bound built-in record; never falls back from personal MCP. */
+  'runtime.memory.record.write': { params: MemoryWriteParams; result: MemoryMutationResult }
+  'runtime.memory.records.list': { params: MemoryListParams; result: MemoryListResult }
+  /** Select an explicitly granted project for fresh built-in memory context; never rewrites the frozen prefix. */
+  'runtime.memory.scope.set': { params: MemoryScopeParams; result: MemoryScopeResult }
+  /** Inspect the owned agent's single routed memory backend without recall or fallback. */
+  'runtime.memory.status': { params: RuntimeSessionParams; result: MemoryStatusResult }
   'runtime.project.claim': { params: RuntimeProjectRevisionParams; result: RuntimeProjectResult }
   'runtime.project.create': { params: RuntimeProjectCreateParams; result: RuntimeProjectResult }
   'runtime.project.get': { params: RuntimeProjectParams; result: RuntimeProjectResult }
@@ -6567,6 +6717,13 @@ export const RPC_METHODS = [
   'runtime.evidence.create',
   'runtime.evidence.get',
   'runtime.evidence.list',
+  'runtime.memory.export',
+  'runtime.memory.record.delete',
+  'runtime.memory.record.get',
+  'runtime.memory.record.write',
+  'runtime.memory.records.list',
+  'runtime.memory.scope.set',
+  'runtime.memory.status',
   'runtime.project.claim',
   'runtime.project.create',
   'runtime.project.get',

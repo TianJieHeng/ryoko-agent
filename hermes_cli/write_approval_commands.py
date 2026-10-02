@@ -9,6 +9,13 @@ from typing import List, Optional
 from tools import write_approval as wa
 
 
+def memory_review_denial() -> Optional[str]:
+    from agent.identity_lifecycle import strict_identity_enabled
+    if strict_identity_enabled():
+        return "Profile-wide memory review is unsupported with agent identity; use the owned memory record APIs."
+    return None
+
+
 def _fmt_state(subsystem: str) -> str:
     on = wa.write_approval_enabled(subsystem)
     return f"{subsystem}.write_approval = {'on' if on else 'off'}"
@@ -41,6 +48,8 @@ def handle_pending_subcommand(
     or None when the args are not a write-approval subcommand so the caller falls through to its
     other handling (e.g. /skills search).
     """
+    if subsystem == wa.MEMORY and (denial := memory_review_denial()):
+        return denial
     if not args:
         return f"{_fmt_state(subsystem)}\n\n" + _fmt_pending_list(subsystem)
     sub, rest = args[0].lower(), args[1:]

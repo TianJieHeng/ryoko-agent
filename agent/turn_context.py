@@ -1168,6 +1168,10 @@ def build_turn_context(
 
     _bind_interrupt_scope(agent, ra)
     ext_prefetch_cache = _memory_turn_start_and_prefetch(agent, original_user_message, turn_author)
+    from agent.context_projection import freeze_memory_updates
+    fresh_updates = freeze_memory_updates(agent, _memory_query_text(original_user_message))
+    if fresh_updates:
+        plugin_user_context = "\n\n".join(part for part in (plugin_user_context, fresh_updates) if part)
 
     # Title the session now: titling depends only on the user's ask (before any injected
     # context lands on list content), so it runs concurrently with the turn. Daemon thread,
@@ -1188,6 +1192,8 @@ def build_turn_context(
             )
 
     _persist_turn_start(agent, messages, conversation_history, pending_cli_message)
+    from agent.context_projection import acknowledge_persisted_memory_updates
+    acknowledge_persisted_memory_updates(agent, messages, current_turn_user_idx)
 
     return TurnContext(
         user_message=user_message, original_user_message=original_user_message, messages=messages,

@@ -85,6 +85,15 @@ def _stale_entry_message(entry: str) -> str:
 # silent about the loss (#117952). Same convention as _error(**extra).
 
 
+def _assert_legacy_access():
+    """A legacy store must never become a strict identity's fallback."""
+    from agent.agent_identity import IdentityPolicyError
+    from agent.runtime_context import current_agent_context
+    from agent.identity_lifecycle import strict_identity_enabled
+    if current_agent_context() is not None or strict_identity_enabled():
+        raise IdentityPolicyError("Strict identities must use their routed individual memory backend")
+
+
 class MemoryStore:
     """Bounded curated memory with file persistence; one instance per AIAgent.
     ``_system_prompt_snapshot`` is frozen at load time (prefix-cache stable);
@@ -98,6 +107,8 @@ class MemoryStore:
 
     def __init__(self, memory_char_limit: int = 2200, user_char_limit: int = 1375, *,
                  memory_enabled: bool = True, user_profile_enabled: bool = True):
+        if type(self) is MemoryStore:
+            _assert_legacy_access()
         self.memory_entries: List[str] = []
         self.user_entries: List[str] = []
         self.memory_char_limit, self.user_char_limit = memory_char_limit, user_char_limit
@@ -168,6 +179,7 @@ class MemoryStore:
     def _file_lock(path: Path):
         """Exclusive lock on a separate .lock file so the memory file itself can
         still be atomically replaced."""
+        _assert_legacy_access()
         from tools import memory_tool as _mt  # fcntl/msvcrt live (and are patched) there
         fcntl, msvcrt = _mt.fcntl, _mt.msvcrt
         lock_path = path.with_suffix(path.suffix + ".lock")
@@ -208,6 +220,7 @@ class MemoryStore:
 
     @staticmethod
     def _path_for(target: str) -> Path:
+        _assert_legacy_access()
         from tools import memory_tool  # get_memory_dir is monkeypatched there
         return memory_tool.get_memory_dir() / ("USER.md" if target == "user" else "MEMORY.md")
 
@@ -463,6 +476,8 @@ class MemoryStore:
     def format_for_system_prompt(self, target: str) -> Optional[str]:
         """Frozen load-time snapshot (NOT live state — mid-session writes don't touch
         it, preserving the prefix cache); None if empty."""
+        if type(self) is MemoryStore:
+            _assert_legacy_access()
         return self._system_prompt_snapshot.get(target, "") or None
 
     def _success_response(self, target: str, message: str = None, **extra) -> Dict[str, Any]:
@@ -493,6 +508,7 @@ class MemoryStore:
         """``(raw, read_ok)``; ``read_ok`` is False ONLY when the file EXISTS but can't be
         read. Decoding stays STRICT (``errors="replace"`` would hand callers a lossy view
         a save then persists); ``utf-8-sig`` strips a Notepad BOM off the first entry."""
+        _assert_legacy_access()
         if not path.exists():
             return "", True
         try:
@@ -522,6 +538,7 @@ class MemoryStore:
         """Atomic temp-file + rename: readers never see a truncated file. Callers
         hold ``_file_lock`` (via ``_mutate``): a bare write from an earlier snapshot
         drops concurrent entries (#119668)."""
+        _assert_legacy_access()
         try:
             atomic_write_text(path, ENTRY_DELIMITER.join(entries), tmp_prefix=".mem_")
         except OSError as e:

@@ -53,21 +53,24 @@ def _expand_parent_toolsets(parent_toolsets: set) -> set:
         )
     return expanded
 
-def _strip_blocked_tools(toolsets: List[str]) -> List[str]:
+def _strip_blocked_tools(toolsets: List[str], *, individual_memory: bool = False) -> List[str]:
     """Remove toolsets whose tools are ALL blocked (derived from DELEGATE_BLOCKED_TOOLS so the two can't drift) plus
     composite toolsets children must never get (``delegation``, ``kanban``)."""
+    blocked_tools = DELEGATE_BLOCKED_TOOLS - ({"memory"} if individual_memory else set())
     blocked_toolset_names = {"delegation", "kanban"} | {
         name
         for name in TOOLSETS
         if (resolved_tools := resolve_toolset(name, include_registry=False))
-        and all(tool in DELEGATE_BLOCKED_TOOLS for tool in resolved_tools)
+        and all(tool in blocked_tools for tool in resolved_tools)
     }
     return [t for t in toolsets if t not in blocked_toolset_names]
 
-def _blocked_toolsets_for_role(role: str) -> List[str]:
+def _blocked_toolsets_for_role(role: str, *, individual_memory: bool = False) -> List[str]:
     """One-tool deny toolsets for the role; passed as ``disabled_toolsets`` so
     blocked names inside mixed bundles are subtracted AFTER composite expansion."""
     blocked_names = set(DELEGATE_BLOCKED_TOOLS)
+    if individual_memory:
+        blocked_names.discard("memory")
     if role == "orchestrator":
         blocked_names.discard("delegate_task")
     return sorted(
@@ -107,7 +110,12 @@ def _resolve_child_toolsets(
         child_toolsets = parent_enabled
     else:
         child_toolsets = sorted(parent_toolsets) or DEFAULT_TOOLSETS
-    child_toolsets = _strip_blocked_tools(child_toolsets)
+    from agent.runtime_context import AgentContext
+    parent_context = getattr(parent_agent, "runtime_context", None)
+    individual_memory = isinstance(parent_context, AgentContext)
+    # Strict construction derives a fresh child namespace; the immutable parent
+    # and child policy intersection still decides whether memory is exposed.
+    child_toolsets = _strip_blocked_tools(child_toolsets, individual_memory=individual_memory)
 
     raw_parent_disabled = getattr(parent_agent, "disabled_toolsets", None)
     inherited_disabled = (
@@ -118,6 +126,7 @@ def _resolve_child_toolsets(
         if "delegation" not in child_toolsets:
             child_toolsets.append("delegation")
     child_disabled_toolsets = list(
-        dict.fromkeys(inherited_disabled + _blocked_toolsets_for_role(effective_role) + ["kanban"])
+        dict.fromkeys(inherited_disabled + _blocked_toolsets_for_role(
+            effective_role, individual_memory=individual_memory) + ["kanban"])
     )
     return child_toolsets, child_disabled_toolsets

@@ -214,6 +214,9 @@ def _session_left_live_context(db, session_id: str) -> bool:
 
 def _get_message_storage_state(db, message_id) -> Optional[Dict[str, Any]]:
     """Owning session and visibility flags for *message_id* (None if missing/error)."""
+    from tools.session_search_scope import OwnedSessionSearch
+    if isinstance(db, OwnedSessionSearch):
+        return db.get_message_storage_state(message_id)
     def _lookup():
         with db._lock:
             return db._conn.execute(
@@ -471,6 +474,9 @@ def _read_scoped(db, sid: str, profile: Optional[str]) -> str:
     ask properly: ``@session:<profile>/<id>`` or ``profile=``.
     """
     result = _read_session(db, sid, link_profile=profile)
+    from tools.session_search_scope import OwnedSessionSearch
+    if isinstance(db, OwnedSessionSearch):
+        return result
     if json.loads(result).get("success") is not False or profile:
         return result
     return tool_error(f"session_id not found in this profile: {sid}. If it belongs to another "
@@ -624,16 +630,31 @@ def session_search(query: str = "", role_filter: str = None, limit: int = 3, db=
     new parameters are appended after ``detail``."""
     from hermes_state import format_session_db_unavailable
     from hermes_state_registry import acquire, release_or_close
+    from tools.capability_broker import CapabilityDenied
+    from tools.session_search_scope import OwnedSessionSearch, local_recall_context
     owned_dbs: List[Any] = []
+    try:
+        context = local_recall_context()
+        if context is not None and (profile and str(profile).strip() or isinstance(session_id, str) and "/" in session_id):
+            raise CapabilityDenied("session_profile_denied", "Use an unqualified session ID in the authenticated profile")
+        if context is not None and (not isinstance(detail, str) or detail.strip().lower() not in {"adaptive", "full"}):
+            raise CapabilityDenied("session_search_mode_unsupported",
+                "Scoped session recall supports adaptive or full stored-message views; generated summaries are unsupported")
+    except (PermissionError, ValueError) as exc:
+        return exc.result() if isinstance(exc, CapabilityDenied) else tool_error(str(exc), success=False)
     if db is None:
         db = _quiet(acquire, None, "SessionDB unavailable for session_search")
         if db is None:
             return tool_error(format_session_db_unavailable(), success=False)
         owned_dbs.append(db)
     try:
+        if context is not None:
+            db = OwnedSessionSearch(db, context)
         return _dispatch(query, role_filter, limit, db, current_session_id, session_id,
                          around_message_id, window, sort, profile, detail, owned_dbs,
                          after=after, before=before, exclude_session_ids=exclude_session_ids)
+    except (PermissionError, ValueError) as exc:
+        return exc.result() if isinstance(exc, CapabilityDenied) else tool_error(str(exc), success=False)
     finally:
         for owned_db in reversed(owned_dbs):
             _quiet(lambda: release_or_close(owned_db), None, "Failed to close session_search SessionDB")

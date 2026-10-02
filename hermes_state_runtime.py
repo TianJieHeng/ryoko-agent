@@ -455,32 +455,43 @@ class SessionRuntimeMixin:
             return {"status": "ok", "events": events, "snapshot": None,
                     "last_cursor": f"{epoch}:{last_seq}", "has_more": last_seq < revision}
 
-    def publish_runtime_checkpoint(self, session_id, checkpoint, *, holder, generation, expected_revision, included_seq):
+    def _publish_runtime_checkpoint_on_conn(self, conn, session_id, checkpoint, *, holder, generation, expected_revision, included_seq):
         metadata = _checkpoint_metadata(checkpoint)
         _require(type(included_seq) is int and included_seq >= 0, "invalid_command", "Invalid checkpoint watermark")
         _require(type(expected_revision) is int, "invalid_command", "Checkpoint requires revision CAS")
-        def write(conn):
-            sid = self._runtime_session_on_conn(conn, session_id)
-            self._runtime_fence_on_conn(conn, sid, holder, generation)
-            row = self._runtime_state_on_conn(conn, sid, create=True)
-            _revision(row["revision"], expected_revision)
-            _require(included_seq == row["revision"], "revision_conflict", "Checkpoint source watermark changed")
-            checkpoint_id = uuid.uuid4().hex
-            projection = json.loads(row["snapshot_json"])
-            for key in ("outstanding_requests", "artifacts", "unresolved_effects", "unresolved_invocations"):
-                projection[key] = metadata[key]
-            conn.execute("UPDATE runtime_state SET snapshot_json=? WHERE session_id=?", (_json(projection), sid))
-            event = self._append_runtime_event_on_conn(conn, sid, "checkpoint.published",
-                {"checkpoint_id": checkpoint_id, "included_seq": included_seq}, generation)
-            saved = {**metadata, "snapshot": projection}
-            conn.execute("INSERT INTO runtime_checkpoints(session_id,checkpoint_id,schema_version,included_seq,"
-                "published_seq,generation,checkpoint_json) VALUES(?,?,?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET "
-                "checkpoint_id=excluded.checkpoint_id,schema_version=excluded.schema_version,included_seq=excluded.included_seq,"
-                "published_seq=excluded.published_seq,generation=excluded.generation,checkpoint_json=excluded.checkpoint_json",
-                (sid, checkpoint_id, 1, included_seq, event["seq"], generation, _json(saved)))
-            return {"schema_version": 1, "checkpoint_id": checkpoint_id, "included_seq": included_seq,
-                    "published_seq": event["seq"], "revision": event["seq"]}
-        return self._execute_write(write)
+        sid = self._runtime_session_on_conn(conn, session_id)
+        self._runtime_fence_on_conn(conn, sid, holder, generation)
+        row = self._runtime_state_on_conn(conn, sid, create=True)
+        _revision(row["revision"], expected_revision)
+        _require(included_seq == row["revision"], "revision_conflict", "Checkpoint source watermark changed")
+        checkpoint_id = uuid.uuid4().hex
+        projection = json.loads(row["snapshot_json"])
+        for key in ("outstanding_requests", "artifacts", "unresolved_effects", "unresolved_invocations"):
+            projection[key] = metadata[key]
+        conn.execute("UPDATE runtime_state SET snapshot_json=? WHERE session_id=?", (_json(projection), sid))
+        event = self._append_runtime_event_on_conn(conn, sid, "checkpoint.published",
+            {"checkpoint_id": checkpoint_id, "included_seq": included_seq}, generation)
+        saved = {**metadata, "snapshot": projection}
+        prior_checkpoint = conn.execute("SELECT checkpoint_json FROM runtime_checkpoints WHERE session_id=?", (sid,)).fetchone()
+        if prior_checkpoint:
+            context_ref = json.loads(prior_checkpoint[0]).get("context_projection_ref")
+            if context_ref is not None:
+                _require(isinstance(context_ref, dict) and set(context_ref) == {"projection_id", "session_id", "schema_version", "included_seq"},
+                         "unsupported_schema", "Unsupported checkpoint context reference")
+                _version(context_ref["schema_version"])
+                saved["context_projection_ref"] = context_ref
+        conn.execute("INSERT INTO runtime_checkpoints(session_id,checkpoint_id,schema_version,included_seq,"
+            "published_seq,generation,checkpoint_json) VALUES(?,?,?,?,?,?,?) ON CONFLICT(session_id) DO UPDATE SET "
+            "checkpoint_id=excluded.checkpoint_id,schema_version=excluded.schema_version,included_seq=excluded.included_seq,"
+            "published_seq=excluded.published_seq,generation=excluded.generation,checkpoint_json=excluded.checkpoint_json",
+            (sid, checkpoint_id, 1, included_seq, event["seq"], generation, _json(saved)))
+        return {"schema_version": 1, "checkpoint_id": checkpoint_id, "included_seq": included_seq,
+                "published_seq": event["seq"], "revision": event["seq"]}
+
+    def publish_runtime_checkpoint(self, session_id, checkpoint, *, holder, generation, expected_revision, included_seq):
+        return self._execute_write(lambda conn: self._publish_runtime_checkpoint_on_conn(
+            conn, session_id, checkpoint, holder=holder, generation=generation,
+            expected_revision=expected_revision, included_seq=included_seq))
 
     def prune_runtime_events(self, session_id, *, through_seq, holder, generation, limit=MAX_RUNTIME_PAGE):
         """Explicit bounded retention, only behind a committed checkpoint; dedup receipts survive."""

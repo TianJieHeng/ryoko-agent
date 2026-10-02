@@ -177,6 +177,17 @@ def tool_action(name: str, arguments: dict, *, entry=None) -> ActionSpec:
         operation, destination, purpose = "delegation", "", ""
     elif name == "execute_code" and module == "tools.code_execution_tool":
         operation, destination, purpose = "isolated_compute", "", ""
+    elif name in ("memory", "session_search") and module == {
+            "memory": "tools.memory_tool", "session_search": "tools.session_search_tool"}[name]:
+        from tools.session_search_scope import local_recall_context
+        context = local_recall_context(name)
+        if context is None:
+            raise CapabilityDenied("identity_required", "An individual memory owner is required")
+        identity = context.identity
+        operation = "builtin_memory" if name == "memory" else "session_read"
+        destination = _canonical({"principal_id": identity.principal_id, "profile_id": identity.profile_id,
+                                  "agent_id": identity.agent_id, "home": identity.profile_home_digest})
+        purpose = "individual_memory" if name == "memory" else "session_recall"
     elif entry is not None and entry.toolset.startswith("mcp-"):
         target = getattr(entry.handler, "_agent_mcp_target", None)
         if not isinstance(target, tuple) or len(target) != 2:

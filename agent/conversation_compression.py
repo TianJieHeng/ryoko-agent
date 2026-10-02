@@ -2650,6 +2650,7 @@ class _CompressionLease:
         self._lifecycle = lifecycle
         self.holder: Optional[str] = None
         self.watermark: Optional[int] = None
+        self.context_source = None
         self._refresher: Optional[_CompressionLockLeaseRefresher] = None
         self._released = False
         self._release_guard = threading.Lock()
@@ -2756,12 +2757,18 @@ def _try_acquire_durable_lock(lease: _CompressionLease, try_acquire: Any, commit
         if acquired:
             try:
                 lease.watermark = lease.db.get_active_message_watermark(lease.sid)
+                from agent.runtime_context import AgentContext
+                if isinstance(getattr(lease._agent, "runtime_context", None), AgentContext):
+                    lease.context_source = lease.db.capture_context_source(lease.sid, watermark=lease.watermark or 0)
                 # A captured watermark makes the commit safe against later rows on BOTH commit
                 # paths; tell the fence so a host may keep this attempt's admission.
                 if commit_fence is not None:
                     with contextlib.suppress(AttributeError):  # test doubles without the method
                         commit_fence.mark_commit_watermark_fenced()
             except Exception as _wm_err:
+                from agent.runtime_context import AgentContext
+                if isinstance(getattr(lease._agent, "runtime_context", None), AgentContext):
+                    raise  # Strict context cannot publish without its pre-summary source proof.
                 logger.warning(
                     "compression watermark capture failed for session=%s (%s) — concurrent appends this cycle "
                     "will be archived with the snapshot", lease.sid, _wm_err,
@@ -3773,11 +3780,16 @@ def _commit_compaction(
                     agent._session_db, agent.session_id,
                     messages_before_compression if messages_before_compression is not None else messages,
                     verbatim_tail)
+                from agent.context_projection import context_commit_for_current_run
+                context_commit = context_commit_for_current_run(agent._session_db, agent.session_id,
+                    watermark=lease.watermark, source=lease.context_source, system_prompt=new_system_prompt,
+                    fallback_state="deterministic" if getattr(agent.context_compressor, "_fallback_compression_streak", 0) else "summary")
+                context_kwargs = {"context_commit": context_commit} if context_commit is not None else {}
                 agent._session_db.archive_and_compact(
                     agent.session_id, persisted, model_config_patch={PROACTIVE_PRUNE_REARM_MODEL_CONFIG_KEY: None},
                     watermark=_held_watermark(agent, lease.watermark, messages, verbatim_tail),
                     lock_holder=lease.holder, tail_count=tail_count, carried_messages=carried_messages,
-                    covered_ids=covered_ids, unresolved_held=unresolved_held,
+                    covered_ids=covered_ids, unresolved_held=unresolved_held, **context_kwargs,
                 )
                 compressed = persisted
                 split_status = "in_place_committed"
@@ -3792,7 +3804,8 @@ def _commit_compaction(
                 # re-baseline transcript handling.
                 compacted_in_place = True
                 # In-place still updates the current row's prompt; rotation published it atomically above.
-                agent._session_db.update_system_prompt(agent.session_id, new_system_prompt)
+                if context_commit is None:
+                    agent._session_db.update_system_prompt(agent.session_id, new_system_prompt)
                 agent._last_flushed_db_idx = 0
             else:
                 # Bind old_session_id first: it is the rollback key in the handler below.
@@ -4122,6 +4135,9 @@ def compress_context(
     # In-place keeps the SAME session_id (no rotation/child/renumber/re-sync). A
     # missing attribute must default True, not rotation, which can wedge sessions.
     in_place = bool(getattr(agent, "compression_in_place", True))
+    from agent.runtime_context import AgentContext
+    if isinstance(getattr(agent, "runtime_context", None), AgentContext) and not in_place:
+        raise _checkpoint_blocked("identity-bound context projection requires atomic in-place compaction")
     # Announce BEFORE the lazy feasibility probe: its live catalog / provider lookups are
     # network-bound (connect timeouts stack up through proxies), and until this status lands
     # the Desktop working row is a bare spinner with no "Summarizing thread" label (#111294).

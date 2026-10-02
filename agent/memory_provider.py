@@ -50,6 +50,23 @@ def is_core_memory_provider(name: Optional[str]) -> bool:
 
 
 @dataclass(frozen=True)
+class MemoryCapabilities:
+    """Explicit supported operation surface; an absent capability is never inferred."""
+
+    backend: str
+    recall: bool = False
+    write: bool = False
+    supersede: bool = False
+    delete: bool = False
+    export: bool = False
+    session_ingest: bool = False
+
+    def to_record(self) -> dict:
+        from dataclasses import asdict
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class RecallStatus:
     """What the last prefetch injected, for the deterministic recall indicator
     (``MemoryManager.describe_recall``). ``count == 0`` means content without a

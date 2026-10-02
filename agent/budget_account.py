@@ -51,7 +51,8 @@ _DIMENSIONS = frozenset({"tokens", "attempts", "cost_micros", "wall_ms", "provid
 # These built-ins do not start an opaque billable external loop. Identity grants
 # still run first; this set is a cost-contract floor, never a capability grant.
 _LOCAL_TOOLS = {"todo_list": "tools.todo_tool", "delegate_task": "tools.delegate_tool",
-                "execute_code": "tools.code_execution_tool"}
+                "execute_code": "tools.code_execution_tool", "memory": "tools.memory_tool",
+                "session_search": "tools.session_search_tool"}
 
 
 def _integer(value, name, *, minimum=1):

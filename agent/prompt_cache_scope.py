@@ -11,6 +11,8 @@ walk and is hashed to ``gwk_<sha256[:24]>`` (it embeds platform/chat/user identi
 
 import hashlib
 import logging
+import json
+import uuid
 from typing import Any, Optional
 
 from utils import base_url_hostname
@@ -19,6 +21,45 @@ logger = logging.getLogger(__name__)
 
 _MEMO_ATTR = "_prompt_cache_scope_memo"
 _DECLARED_SCOPE_PREFIX = "gwk_"
+
+
+def _privacy_scope(agent: Any) -> str:
+    """Identity and actual credential/recipient boundary, never prompt content."""
+    from agent.runtime_context import AgentContext
+    context = getattr(agent, "runtime_context", None)
+    if not isinstance(context, AgentContext):
+        return ""
+    from agent.attempt_policy import authority_scope, _digest
+    owner = context.identity
+    client = getattr(agent, "client", None)
+    endpoint = str(getattr(client, "base_url", None) or getattr(agent, "base_url", "") or "")
+    credential = getattr(client, "api_key", None) or getattr(agent, "api_key", None)
+    manager_scope = getattr(getattr(agent, "_memory_manager", None), "cache_scope_digest", "")
+    return _digest((owner.principal_id, owner.profile_id, owner.agent_id, owner.lifecycle,
+                    owner.profile_home_digest, context.policy.digest, context.config_digest,
+                    authority_scope(agent), _digest(credential), endpoint,
+                    getattr(agent, "provider", ""), getattr(agent, "api_mode", ""), manager_scope))
+
+
+def _bind_private_scope(scope: str, privacy: str) -> str:
+    if not privacy:
+        return scope
+    return "agt_" + hashlib.sha256(json.dumps([privacy, scope], separators=(",", ":")).encode()).hexdigest()[:40]
+
+
+def _private_failure_scope(agent: Any) -> Optional[str]:
+    """An identity failure may go cache-cold, never fall into a shared physical bucket."""
+    from agent.runtime_context import AgentContext
+    if not isinstance(getattr(agent, "runtime_context", None), AgentContext):
+        return None
+    nonce = getattr(agent, "_failed_private_cache_scope", None)
+    if not isinstance(nonce, str):
+        nonce = "agt_" + uuid.uuid4().hex
+        try:
+            setattr(agent, "_failed_private_cache_scope", nonce)
+        except (AttributeError, TypeError):
+            pass
+    return nonce
 
 
 def _lineage_root(session_id: str, session_db: Any) -> Optional[str]:
@@ -101,7 +142,8 @@ def declared_conversation_scope(agent: Any) -> Optional[str]:
     scope; a physical lineage root stays out of the affinity header so the fork publishes
     exactly what its parent publishes (None → consumers fall back to the conversation root).
     """
-    inherited = getattr(agent, "_inherited_cache_scope", None)
+    privacy = _privacy_scope(agent)
+    inherited = getattr(agent, "_inherited_cache_scope", None) if not privacy else None
     if isinstance(inherited, str) and inherited.startswith(_DECLARED_SCOPE_PREFIX):
         return inherited
     key = str(getattr(agent, "_gateway_session_key", "") or "").strip()
@@ -138,6 +180,8 @@ def declared_conversation_scope(agent: Any) -> Optional[str]:
             return None
     # Same identity tuple the peer queries use: same key under different sources must not collapse.
     carrier = f"{source}|{key}|{generation}"
+    if privacy:
+        carrier = json.dumps([privacy, carrier], separators=(",", ":"))
     digest = hashlib.sha256(carrier.encode("utf-8", errors="replace")).hexdigest()[:24]
     return f"{_DECLARED_SCOPE_PREFIX}{digest}"
 
@@ -146,7 +190,8 @@ def resolve_prompt_cache_scope(agent: Any) -> str:
     """Rotation-stable cache-scope id: the inherited parent scope of a same-model cache-parity
     fork, else the declared scope, else the compression-lineage root of ``agent.session_id``
     (the physical id without ancestry/DB). Memoized on the agent."""
-    inherited = getattr(agent, "_inherited_cache_scope", None)
+    privacy = _privacy_scope(agent)
+    inherited = getattr(agent, "_inherited_cache_scope", None) if not privacy else None
     if isinstance(inherited, str) and inherited:
         return _apply_fork_tag(agent, inherited)
     sid = str(getattr(agent, "session_id", None) or "")
@@ -154,12 +199,13 @@ def resolve_prompt_cache_scope(agent: Any) -> str:
         return ""
     db = getattr(agent, "_session_db", None)
     # DB presence is part of the key: an agent that gains a DB handle later must re-resolve.
-    key = (sid, db is not None)
+    key = (sid, db is not None, privacy)
     memo = getattr(agent, _MEMO_ATTR, None)
     if isinstance(memo, tuple) and len(memo) == 2 and memo[0] == key:
         return _apply_fork_tag(agent, memo[1])
-    root = declared_conversation_scope(agent) or _lineage_root(sid, db)
-    scope = root or sid
+    declared = declared_conversation_scope(agent)
+    root = declared or _lineage_root(sid, db)
+    scope = declared or _bind_private_scope(root or sid, privacy)
     # Memoize on success, with no DB, or when the agent never persists a row. A failed/empty
     # walk on a persisting agent is NOT memoized: the physical id is right for now (row not
     # yet persisted) but would stay wrong for the whole segment once it lands.
@@ -223,7 +269,7 @@ def declared_conversation_scope_safe(agent: Any) -> Optional[str]:
         return declared_conversation_scope(agent)
     except Exception:
         logger.debug("declared conversation scope resolution failed", exc_info=True)
-        return None
+        return _private_failure_scope(agent)
 
 
 def resolve_prompt_cache_scope_safe(agent: Any) -> Optional[str]:
@@ -240,4 +286,4 @@ def resolve_prompt_cache_scope_safe(agent: Any) -> Optional[str]:
         return resolve_prompt_cache_scope(agent) or None
     except Exception:
         logger.debug("prompt-cache scope resolution failed", exc_info=True)
-        return None
+        return _private_failure_scope(agent)

@@ -14,6 +14,7 @@ from . import (  # noqa: F401
     groups_bot_relay,
     i18n,
     liveness,
+    memory,
     profiles_vault_complete_foreign_subagents,
     projects_pets,
     prompt_voice,

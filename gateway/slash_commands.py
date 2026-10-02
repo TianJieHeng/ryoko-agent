@@ -886,7 +886,9 @@ class GatewaySlashCommandsMixin(
     async def _handle_memory_command(self, event: MessageEvent) -> str:
         """Handle /memory — review pending memory writes + toggle the approval gate. Entries are small
         enough to review inline, so the full flow works on every platform."""
-        from hermes_cli.write_approval_commands import handle_pending_subcommand
+        from hermes_cli.write_approval_commands import handle_pending_subcommand, memory_review_denial
+        if denial := memory_review_denial():
+            return denial
         from tools import write_approval as wa
         from tools.memory_tool import load_on_disk_store
         # Apply approved writes against a fresh on-disk store (the gateway has no long-lived agent;

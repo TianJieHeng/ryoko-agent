@@ -384,6 +384,7 @@ class MicroCompactionMixin:
         publishing would leave two generations live. The commit re-checks, since a compaction can also
         land during the summary call.
         """
+        self._micro_context_source = None
         session_db, session_id = getattr(self, "_session_db", None), getattr(self, "_session_id", "")
         watermark_of = getattr(session_db, "get_active_message_watermark", None)
         if not session_id or not callable(watermark_of):
@@ -391,6 +392,9 @@ class MicroCompactionMixin:
         try:
             watermark = watermark_of(session_id)
             _cc()._archive_watermark_for(session_db, session_id, held, watermark)
+            from agent.runtime_context import current_agent_context
+            if current_agent_context() is not None:
+                self._micro_context_source = session_db.capture_context_source(session_id, watermark=watermark or 0)
         except _cc().StaleHeldHistory as exc:
             logger.info("micro-compaction: skipping this pass, %s", exc)
             return "stale_generation", None
@@ -426,9 +430,17 @@ class MicroCompactionMixin:
                 watermark = _cc()._archive_watermark_for(session_db, session_id, held, start_watermark)
                 from agent.conversation_compression_archive import coverage_for_commit
                 covered_ids, unresolved_held = coverage_for_commit(session_db, session_id, held)
+            from agent.context_projection import context_commit_for_current_run
+            from agent.runtime_context import current_agent_context
+            source = getattr(self, "_micro_context_source", None)
+            if current_agent_context() is not None and source is None:
+                return False
+            context_commit = context_commit_for_current_run(session_db, session_id,
+                watermark=watermark, source=source, fallback_state="summary")
+            context_kwargs = {"context_commit": context_commit} if context_commit is not None else {}
             session_db.archive_and_compact(
                 session_id, compacted_messages, carried_messages=carried_messages, watermark=watermark,
-                covered_ids=covered_ids, unresolved_held=unresolved_held)
+                covered_ids=covered_ids, unresolved_held=unresolved_held, **context_kwargs)
             # Shared post-commit stamp site with batch commit and proactive prune.
             # See #98450.
             _cc().stamp_db_persisted_markers(compacted_messages)
@@ -439,6 +451,10 @@ class MicroCompactionMixin:
             logger.info("Micro-compaction commit skipped, %s", exc)
             return False
         except Exception:
+            from agent.runtime_context import current_agent_context
+            if current_agent_context() is not None:
+                logger.info("Strict micro-compaction commit failed; retaining original context")
+                return False
             logger.info(
                 "Micro-compaction DB sync failed — resume will double-load "
                 "compacted messages until the next batch compression"

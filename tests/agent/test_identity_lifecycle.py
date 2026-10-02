@@ -72,7 +72,7 @@ def test_construct_persists_binding_before_body_and_rejects_legacy_history(tmp_p
     construct(agent, session_id="fresh", session_db=db)
     assert agent.seen_context.identity.agent_id == "assistant"
     assert agent.seen_secret is None
-    assert agent.memory_skipped and agent.review_skipped
+    assert not agent.memory_skipped and agent.review_skipped
     stored = db.get_session_model_config_value("fresh", "agent_identity")
     assert stored == agent.runtime_context.identity.to_record()
     resumed = SimpleNamespace()
@@ -145,7 +145,8 @@ def test_explicit_memory_toolset_cannot_load_profile_store_under_policy(tmp_path
     with agent_runtime_scope(context):
         _init_memory(agent, {"memory": {"memory_enabled": True}}, True, "cli")
     assert agent._memory_store is None
-    assert agent._memory_manager is None
+    with agent_runtime_scope(context):
+        assert agent._memory_manager.health()["status"] == "disabled"
 
 
 def test_removing_policy_cannot_downgrade_a_bound_session(tmp_path, monkeypatch):
