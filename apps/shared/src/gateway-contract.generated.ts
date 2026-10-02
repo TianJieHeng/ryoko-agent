@@ -1370,6 +1370,287 @@ export interface DisplayLeaseReleaseParams {
   viewer_id?: string | null
   force?: boolean | null
 }
+export interface RuntimeCapabilitiesParams {
+  session_id: string
+}
+export interface RuntimeCapabilities {
+  schema_versions: 1[]
+  operations: RuntimeOperationCapability[]
+  strict_identity_required: boolean
+  durable_replay: boolean
+  max_events: number
+  admission?: RuntimeAdmissionLimits | null
+  provider?: RuntimeProviderCapabilities | null
+  tool_view?: RuntimeToolView | null
+  cursor_policy: 'snapshot_required_on_expired_or_unknown_cursor'
+}
+export interface RuntimeOperationCapability {
+  operation: 'submit' | 'steer' | 'cancel' | 'approval'
+  accepts_commands: boolean
+  executes: boolean
+  effects_enabled: boolean
+  reason?: string | null
+}
+export interface RuntimeAdmissionLimits {
+  scope?: 'profile_store'
+  max_active: number
+  max_queued: number
+  max_per_principal: number
+  max_payload_bytes: number
+  max_queue_bytes: number
+  max_database_bytes: number
+  ttl_seconds: number
+  interactive_boost_seconds: number
+  launch_lease_seconds: number
+}
+/** Adapter declarations; model support and live cancellation remain separate. */
+export interface RuntimeProviderCapabilities {
+  schema_version: 1
+  api_mode: string
+  adapter: string
+  declaration_scope: 'adapter'
+  streaming: 'supported' | 'unsupported' | 'unknown'
+  parallel_tools: 'supported' | 'unsupported' | 'unknown'
+  media_inputs: string[]
+  model_capabilities: 'unverified'
+  usage: 'final_response' | 'provider_reported' | 'unknown'
+  cancellation: 'local_only' | 'provider_acknowledgment' | 'unknown'
+  cache_semantics: string
+  opaque_state_version: number | null
+  execution_owner: 'hermes' | 'provider' | 'unknown'
+  durable_execution: boolean
+  bounded_budget: 'conditional_openai_text' | 'unsupported'
+}
+/** Frozen authorized metadata only; inspection cannot refresh the prompt. */
+export interface RuntimeToolView {
+  catalog_version: string
+  session_policy_version: string
+  installed_tool_ids: string[]
+  authorized_tool_ids: string[]
+  discoverable_tool_ids: string[]
+  selected_tool_ids: string[]
+  unavailable_reasons: Record<string, string>
+}
+/** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. */
+export interface RuntimeCommandParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  idempotency_key: string
+  expected_revision: number | null
+  operation: 'submit' | 'steer' | 'cancel' | 'approval'
+  payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
+}
+export interface RuntimeTextPayload {
+  text: string
+}
+export interface RuntimeCancelPayload {
+  reason?: string
+}
+export interface RuntimeApprovalPayload {
+  approval_id: string
+  decision: 'approve' | 'deny'
+}
+export interface CommandReceipt {
+  schema_version: 1
+  command_id: string
+  status: 'accepted' | 'rejected' | 'duplicate'
+  durable_revision: number
+  run_id: string | null
+  conflict?: RuntimeConflict | null
+}
+export interface RuntimeConflict {
+  code: string
+  message: string
+}
+export interface RuntimeSessionParams {
+  session_id: string
+  schema_version: 1
+}
+export interface MissionSnapshot {
+  schema_version: 1
+  session_id: string
+  revision: number
+  state: RuntimeSnapshotState
+  outstanding_requests: RuntimeOutstandingRequest[]
+  artifacts: RuntimeArtifactReference[]
+  unresolved_effects: RuntimeUnresolvedEffect[]
+  unresolved_invocations?: RuntimeUnresolvedInvocation[]
+  reference_counts?: RuntimeReferenceCounts
+  reference_limit?: number
+  references_truncated?: boolean
+  last_cursor: string
+  compatibility_status: 'native' | 'legacy'
+  admission?: RuntimeAdmissionSnapshot | null
+}
+export interface RuntimeSnapshotState {
+  status: 'idle' | 'accepted' | 'claimed' | 'completed' | 'failed' | 'blocked' | 'cancelled'
+  run_id: string | null
+  last_command_id: string | null
+  last_operation: 'submit' | 'steer' | 'cancel' | 'approval' | null
+}
+export interface RuntimeOutstandingRequest {
+  request_id: string
+  kind: 'approval' | 'input'
+  status: 'pending'
+}
+export interface RuntimeArtifactReference {
+  artifact_id: string
+  version: string
+}
+export interface RuntimeUnresolvedEffect {
+  effect_id: string
+  status: 'prepared' | 'dispatched' | 'outcome_unknown' | 'reconciliation_required'
+}
+export interface RuntimeUnresolvedInvocation {
+  operation_id: string
+  status: 'pending' | 'outcome_uncertain'
+}
+export interface RuntimeReferenceCounts {
+  outstanding_requests?: number
+  artifacts?: number
+  unresolved_effects?: number
+  unresolved_invocations?: number
+}
+export interface RuntimeAdmissionSnapshot {
+  draining: boolean
+  jobs: RuntimeAdmissionJob[]
+}
+export interface RuntimeAdmissionJob {
+  command_id: string
+  state: 'queued' | 'running' | 'finished' | 'expired' | 'cancelled' | 'rejected'
+  enqueued_at: number
+  expires_at: number
+  reason: string | null
+}
+export interface RuntimeEventsSinceParams {
+  session_id: string
+  schema_version: 1
+  cursor?: string | null
+  limit?: number
+}
+export interface RuntimeEventsSinceResult {
+  status: 'ok' | 'snapshot_required'
+  events: RuntimeEventEnvelope[]
+  snapshot: MissionSnapshot | null
+  last_cursor: string
+  has_more: boolean
+}
+export interface RuntimeEventEnvelope {
+  schema_version: 1
+  event_id: string
+  session_id: string
+  seq: number
+  cursor: string
+  generation: number
+  mission_id: string | null
+  run_id: string | null
+  operation_id: string | null
+  effect_id: string | null
+  delivery_id: string | null
+  approval_id: string | null
+  occurred_at: number
+  type: 'command.accepted' | 'command.claimed' | 'command.completed' | 'command.failed' | 'command.blocked' | 'command.cancelled' | 'checkpoint.published' | 'runtime.output' | 'runtime.state' | 'approval.requested' | 'approval.resolved' | 'effect.recorded' | 'model.started' | 'model.completed' | 'model.failed' | 'tool.started' | 'tool.completed' | 'tool.failed'
+  payload: RuntimeEventPayload
+}
+/** Safe correlation metadata only. Raw model/tool outputs stay off this wire. */
+export interface RuntimeEventPayload {
+  command_id?: string | null
+  operation?: 'submit' | 'steer' | 'cancel' | 'approval' | null
+  effect_state?: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required' | null
+  operation_type?: 'artifact_publish' | 'unsupported' | null
+  approval_status?: 'pending' | 'approved' | 'denied' | 'consumed' | null
+  expires_at?: number | null
+  checkpoint_id?: string | null
+  included_seq?: number | null
+  cancellation?: RuntimeCancellation | null
+  physical_attempt?: RuntimePhysicalAttempt | null
+  admission_state?: 'expired' | 'cancelled' | 'rejected' | null
+  control_outcome?: 'steer_queued' | 'steer_not_queued' | 'cancel_requested' | 'cancel_not_requested' | null
+}
+export interface RuntimeCancellation {
+  request_id: string | null
+  requested_at: number | null
+  local_state: 'running' | 'requested' | 'stopped'
+  upstream_ack: boolean | null
+  pending_effect_ids: string[]
+  pending_handles: string[]
+  partial_result_available: boolean
+  remote_effects_undone: false
+}
+/** Opaque account correlation only, never credentials, endpoint or payload. */
+export interface RuntimePhysicalAttempt {
+  attempt_id: string
+  reason: 'initial' | 'auth_failure' | 'quota_exhausted' | 'throttled' | 'overloaded' | 'context_overflow' | 'unsupported_capability' | 'ambiguous_transport' | 'request_rejected'
+  provider_account_ref: string
+  reservation_id: string
+  remote_acceptance: 'unknown' | 'rejected' | 'accepted'
+  logical_request_id: string
+}
+export interface RuntimeResultGetParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  offset?: number
+  limit?: number
+}
+export interface RuntimeResultChunk {
+  command_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  size: number
+  mime: string
+  offset: number
+  data_base64: string
+  next_offset: number
+  eof: boolean
+  publication_state: 'committed' | 'published_uncommitted'
+  delivery_id: string | null
+}
+export interface RuntimeDeliveryParams {
+  session_id: string
+  schema_version: 1
+  delivery_id: string
+}
+export interface RuntimeDeliveryReceipt {
+  delivery_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  destination: RuntimeDeliveryDestination
+  state: 'pending' | 'attempting' | 'awaiting_ack' | 'partial' | 'delivered' | 'failed' | 'outcome_unknown' | 'dead_letter'
+  acknowledgment_level: 'none' | 'transport_accepted' | 'client_received'
+  components: RuntimeDeliveryComponents
+  platform_ids: string[]
+  attempt_count: number
+  max_attempts: number
+  next_attempt_at: number | null
+  deadline_at: number
+  retention_until: number
+  last_error: string | null
+  result_available: boolean
+}
+export interface RuntimeDeliveryDestination {
+  kind: 'local_runtime'
+  session_id: string
+  principal_id: string
+  profile_id: string
+  agent_id: string
+}
+export interface RuntimeDeliveryComponents {
+  text: 'not_sent' | 'client_received'
+  artifact: 'not_sent' | 'client_received'
+}
+export interface RuntimeDeliveryAckParams {
+  session_id: string
+  schema_version: 1
+  delivery_id: string
+  attempt_token: string
+  sha256: string
+  text_received?: boolean
+  artifact_received?: boolean
+}
 export interface GroupsCapabilitiesParams {
   profile?: string | null
 }
@@ -2931,204 +3212,102 @@ export interface WakeFeedResult {
   reason?: string | null
   fed: boolean
 }
-export interface RuntimeCapabilitiesParams {
-  session_id: string
-}
-export interface RuntimeCapabilities {
-  schema_versions: 1[]
-  operations: RuntimeOperationCapability[]
-  strict_identity_required: boolean
-  durable_replay: boolean
-  max_events: number
-  admission?: RuntimeAdmissionLimits | null
-  provider?: RuntimeProviderCapabilities | null
-  tool_view?: RuntimeToolView | null
-  cursor_policy: 'snapshot_required_on_expired_or_unknown_cursor'
-}
-export interface RuntimeOperationCapability {
-  operation: 'submit' | 'steer' | 'cancel' | 'approval'
-  accepts_commands: boolean
-  executes: boolean
-  effects_enabled: boolean
-  reason?: string | null
-}
-export interface RuntimeAdmissionLimits {
-  scope?: 'profile_store'
-  max_active: number
-  max_queued: number
-  max_per_principal: number
-  max_payload_bytes: number
-  max_queue_bytes: number
-  max_database_bytes: number
-  ttl_seconds: number
-  interactive_boost_seconds: number
-  launch_lease_seconds: number
-}
-/** Adapter declarations; model support and live cancellation remain separate. */
-export interface RuntimeProviderCapabilities {
-  schema_version: 1
-  api_mode: string
-  adapter: string
-  declaration_scope: 'adapter'
-  streaming: 'supported' | 'unsupported' | 'unknown'
-  parallel_tools: 'supported' | 'unsupported' | 'unknown'
-  media_inputs: string[]
-  model_capabilities: 'unverified'
-  usage: 'final_response' | 'provider_reported' | 'unknown'
-  cancellation: 'local_only' | 'provider_acknowledgment' | 'unknown'
-  cache_semantics: string
-  opaque_state_version: number | null
-  execution_owner: 'hermes' | 'provider' | 'unknown'
-  durable_execution: boolean
-  bounded_budget: 'conditional_openai_text' | 'unsupported'
-}
-/** Frozen authorized metadata only; inspection cannot refresh the prompt. */
-export interface RuntimeToolView {
-  catalog_version: string
-  session_policy_version: string
-  installed_tool_ids: string[]
-  authorized_tool_ids: string[]
-  discoverable_tool_ids: string[]
-  selected_tool_ids: string[]
-  unavailable_reasons: Record<string, string>
-}
-/** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. */
-export interface RuntimeCommandParams {
+export interface RuntimeApprovalListParams {
   session_id: string
   schema_version: 1
-  command_id: string
-  idempotency_key: string
-  expected_revision: number | null
-  operation: 'submit' | 'steer' | 'cancel' | 'approval'
-  payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
-}
-export interface RuntimeTextPayload {
-  text: string
-}
-export interface RuntimeCancelPayload {
-  reason?: string
-}
-export interface RuntimeApprovalPayload {
-  approval_id: string
-  decision: 'approve' | 'deny'
-}
-export interface CommandReceipt {
-  schema_version: 1
-  command_id: string
-  status: 'accepted' | 'rejected' | 'duplicate'
-  durable_revision: number
-  run_id: string | null
-  conflict?: RuntimeConflict | null
-}
-export interface RuntimeConflict {
-  code: string
-  message: string
-}
-export interface RuntimeSessionParams {
-  session_id: string
-  schema_version: 1
-}
-export interface MissionSnapshot {
-  schema_version: 1
-  session_id: string
-  revision: number
-  state: RuntimeSnapshotState
-  outstanding_requests: RuntimeOutstandingRequest[]
-  artifacts: RuntimeArtifactReference[]
-  unresolved_effects: RuntimeUnresolvedEffect[]
-  last_cursor: string
-  compatibility_status: 'native' | 'legacy'
-  admission?: RuntimeAdmissionSnapshot | null
-}
-export interface RuntimeSnapshotState {
-  status: 'idle' | 'accepted' | 'claimed' | 'completed' | 'failed' | 'blocked' | 'cancelled'
-  run_id: string | null
-  last_command_id: string | null
-  last_operation: 'submit' | 'steer' | 'cancel' | 'approval' | null
-}
-export interface RuntimeOutstandingRequest {
-  request_id: string
-  kind: 'approval' | 'input'
-  status: 'pending'
-}
-export interface RuntimeArtifactReference {
-  artifact_id: string
-  version: string
-}
-export interface RuntimeUnresolvedEffect {
-  effect_id: string
-  status: 'pending' | 'outcome_uncertain'
-}
-export interface RuntimeAdmissionSnapshot {
-  draining: boolean
-  jobs: RuntimeAdmissionJob[]
-}
-export interface RuntimeAdmissionJob {
-  command_id: string
-  state: 'queued' | 'running' | 'finished' | 'expired' | 'cancelled' | 'rejected'
-  enqueued_at: number
-  expires_at: number
-  reason: string | null
-}
-export interface RuntimeEventsSinceParams {
-  session_id: string
-  schema_version: 1
-  cursor?: string | null
+  run_id?: string | null
   limit?: number
 }
-export interface RuntimeEventsSinceResult {
-  status: 'ok' | 'snapshot_required'
-  events: RuntimeEventEnvelope[]
-  snapshot: MissionSnapshot | null
-  last_cursor: string
-  has_more: boolean
+export interface RuntimeApprovalListResult {
+  approvals: RuntimeApprovalRecord[]
+  limit: number
+  truncated: boolean
+  complete: false
 }
-export interface RuntimeEventEnvelope {
-  schema_version: 1
-  event_id: string
+export interface RuntimeApprovalRecord {
+  approval_id: string
+  run_id: string
+  approval_digest: string
+  action_digest: string
+  input_digest: string
+  target_digest: string
+  input_revision_digest: string
+  artifact_revision_digest: string
+  policy_version: string
+  policy_digest: string
+  status: 'pending' | 'approved' | 'denied' | 'consumed'
+  expires_at: number
+  expired: boolean
+  created_at: number
+  resolved_at: number | null
+  consumed_at: number | null
+}
+export interface RuntimeApprovalResolveParams {
   session_id: string
-  seq: number
-  cursor: string
+  schema_version: 1
+  approval_id: string
+  approval_digest: string
+  choice: 'once' | 'deny'
+}
+export interface RuntimeApprovalResolveResult {
+  approval: RuntimeApprovalRecord
+  dispatch_performed: false
+}
+export interface RuntimeEffectListParams {
+  session_id: string
+  schema_version: 1
+  run_id?: string | null
+  limit?: number
+  unresolved_only?: boolean
+}
+export interface RuntimeEffectListResult {
+  effects: RuntimeEffectRecord[]
+  limit: number
+  truncated: boolean
+  complete: false
+}
+export interface RuntimeEffectRecord {
+  effect_id: string
+  run_id: string
+  operation_id: string
+  operation_type: 'artifact_publish' | 'unsupported'
+  state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
+  action_digest: string
+  input_digest: string
+  target_digest: string
+  policy_version: string
+  policy_digest: string
   generation: number
-  mission_id: string | null
-  run_id: string | null
-  operation_id: string | null
-  effect_id: string | null
-  delivery_id: string | null
   approval_id: string | null
-  occurred_at: number
-  type: 'command.accepted' | 'command.claimed' | 'command.completed' | 'command.failed' | 'command.blocked' | 'command.cancelled' | 'checkpoint.published' | 'runtime.output' | 'runtime.state' | 'approval.requested' | 'approval.resolved' | 'effect.recorded' | 'model.started' | 'model.completed' | 'model.failed' | 'tool.started' | 'tool.completed' | 'tool.failed'
-  payload: RuntimeEventPayload
+  provider_idempotency: 'supported' | 'unsupported'
+  created_at: number
+  updated_at: number
+  exactly_once_external: false
+  replay_permitted: false
 }
-/** Safe correlation metadata only. Raw model/tool outputs stay off this wire. */
-export interface RuntimeEventPayload {
-  command_id?: string | null
-  operation?: 'submit' | 'steer' | 'cancel' | 'approval' | null
-  checkpoint_id?: string | null
-  included_seq?: number | null
-  cancellation?: RuntimeCancellation | null
-  physical_attempt?: RuntimePhysicalAttempt | null
-  admission_state?: 'expired' | 'cancelled' | 'rejected' | null
-  control_outcome?: 'steer_queued' | 'steer_not_queued' | 'cancel_requested' | 'cancel_not_requested' | null
+export interface RuntimeEffectParams {
+  session_id: string
+  schema_version: 1
+  effect_id: string
 }
-export interface RuntimeCancellation {
-  request_id: string | null
-  requested_at: number | null
-  local_state: 'running' | 'requested' | 'stopped'
-  upstream_ack: boolean | null
-  pending_effect_ids: string[]
-  pending_handles: string[]
-  partial_result_available: boolean
-  remote_effects_undone: false
+export interface RuntimeEffectGetResult {
+  effect: RuntimeEffectRecord
+  evidence: RuntimeEffectEvidence[]
 }
-/** Opaque account correlation only, never credentials, endpoint or payload. */
-export interface RuntimePhysicalAttempt {
-  attempt_id: string
-  reason: 'initial' | 'auth_failure' | 'quota_exhausted' | 'throttled' | 'overloaded' | 'context_overflow' | 'unsupported_capability' | 'ambiguous_transport' | 'request_rejected'
-  provider_account_ref: string
-  reservation_id: string
-  remote_acceptance: 'unknown' | 'rejected' | 'accepted'
-  logical_request_id: string
+export interface RuntimeEffectEvidence {
+  sequence: number
+  generation: number
+  from_state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
+  state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
+  created_at: number
+  receipt_available: boolean
+  receipt_sha256: string | null
+}
+export interface RuntimeEffectReconcileResult {
+  effect: RuntimeEffectRecord
+  evidence: RuntimeEffectEvidence[]
+  inspection_only: true
+  dispatch_performed: false
 }
 export interface SessionCreateParams {
   profile?: string | null
@@ -5070,6 +5249,16 @@ export interface PetHatchProgressPayload {
 }
 /** ``change_watcher._CHANGE_WATCHES`` payload fn — ``{}`` for every watch except pet.changed. */
 export type ChangeSignalPayload = Record<string, unknown>
+export interface RuntimeResultAvailablePayload {
+  delivery_id: string
+  command_id: string
+  artifact_id: string
+  version: number
+  sha256: string
+  size: number
+  mime: string
+  attempt_token: string
+}
 export type ConnectorErrorReason = 'INVALID_PARAMS' | 'NOT_OWNER' | 'UNSUPPORTED_RUNTIME' | 'CONNECTOR_REQUEST_FAILED' | 'INVALID_CONNECTOR_RESPONSE' | 'UNKNOWN_TARGET' | 'LINK_STILL_VALID' | 'REISSUE_REFUSED' | 'UNKNOWN_OPERATION' | 'INVALID_ANSWER' | 'NEEDS_NOUS_AUTH' | 'CONNECTOR_NOT_FOUND' | 'TOOLS_UNAVAILABLE' | 'CONNECTORS_UNAVAILABLE' | 'CATALOG_UNAVAILABLE' | 'ACCOUNTS_UNAVAILABLE' | 'CONNECTION_NOT_FOUND' | 'POLICY_UNAVAILABLE' | 'POLICY_CONFLICT' | 'FORBIDDEN_SCOPE' | 'ORG_REQUIRED' | 'ORG_ACCESS_DENIED' | 'INVALID_POLICY'
 
 // ── Client→server methods ──
@@ -5406,12 +5595,30 @@ export interface RpcMethods {
   'rollback.list': { params: RollbackListParams; result: RollbackListResult }
   /** Restore the working tree (or one file) to a checkpoint by hash or 1-based index. */
   'rollback.restore': { params: RollbackRestoreParams; result: RollbackRestoreResult }
+  /** Record one exact human decision for the owned live run. Repeated answers are rejected; this never dispatches. */
+  'runtime.approval.resolve': { params: RuntimeApprovalResolveParams; result: RuntimeApprovalResolveResult }
+  /** Read an owned oldest-first bounded approval snapshot. This is not complete history or permission to act. */
+  'runtime.approvals.list': { params: RuntimeApprovalListParams; result: RuntimeApprovalListResult }
   /** Negotiate the owned session's durable runtime API and executable operations. */
   'runtime.capabilities': { params: RuntimeCapabilitiesParams; result: RuntimeCapabilities }
   /** Accept one idempotent command. Retries return the original durable receipt. */
   'runtime.command': { params: RuntimeCommandParams; result: CommandReceipt }
+  /** Record exact attempt/digest-bound client component receipt, not human read confirmation. */
+  'runtime.delivery.ack': { params: RuntimeDeliveryAckParams; result: RuntimeDeliveryReceipt }
+  /** Explicitly retry only a result notification on the owned local transport; never rerun inference. */
+  'runtime.delivery.retry': { params: RuntimeDeliveryParams; result: RuntimeDeliveryReceipt }
+  /** Read delivery truth without creating a delivery attempt. */
+  'runtime.delivery.status': { params: RuntimeDeliveryParams; result: RuntimeDeliveryReceipt }
+  /** Inspect one owned effect and its bounded receipt metadata without exposing private input or paths. */
+  'runtime.effect.get': { params: RuntimeEffectParams; result: RuntimeEffectGetResult }
+  /** Inspect local artifact state under a bounded server-owned lease and record evidence. Never replay a mutation. */
+  'runtime.effect.reconcile': { params: RuntimeEffectParams; result: RuntimeEffectReconcileResult }
+  /** Read an owned oldest-first bounded effect snapshot, never a claim of complete history. */
+  'runtime.effects.list': { params: RuntimeEffectListParams; result: RuntimeEffectListResult }
   /** Read bounded durable transitions, or an explicit snapshot_required with a consistent snapshot. */
   'runtime.events.since': { params: RuntimeEventsSinceParams; result: RuntimeEventsSinceResult }
+  /** Read bounded digest-checked immutable result bytes without executing or delivering work. */
+  'runtime.result.get': { params: RuntimeResultGetParams; result: RuntimeResultChunk }
   /** Read a consistent durable mission projection and its restart-stable cursor. */
   'runtime.snapshot': { params: RuntimeSessionParams; result: MissionSnapshot }
   /** Attach the frontend to a live session without closing the previously focused one. */
@@ -5753,9 +5960,18 @@ export const RPC_METHODS = [
   'rollback.diff',
   'rollback.list',
   'rollback.restore',
+  'runtime.approval.resolve',
+  'runtime.approvals.list',
   'runtime.capabilities',
   'runtime.command',
+  'runtime.delivery.ack',
+  'runtime.delivery.retry',
+  'runtime.delivery.status',
+  'runtime.effect.get',
+  'runtime.effect.reconcile',
+  'runtime.effects.list',
   'runtime.events.since',
+  'runtime.result.get',
   'runtime.snapshot',
   'session.activate',
   'session.active_list',
@@ -5986,6 +6202,7 @@ export interface BackendGatewayEventMap {
   'request.cancel': RequestCancelPayload
   /** Background review of the last turn finished. */
   'review.summary': ReviewSummaryPayload
+  'runtime.result.available': RuntimeResultAvailablePayload
   /** Persisted goal / loop / heartbeat state changed. */
   'session.control.update': SessionControlUpdatePayload
   /** Live session settings snapshot (``server._session_info``); also the ``info`` of create/resume/activate. */
@@ -6092,6 +6309,7 @@ export const GATEWAY_EVENT_TYPES = [
   'reasoning.delta',
   'request.cancel',
   'review.summary',
+  'runtime.result.available',
   'session.control.update',
   'session.info',
   'session.reclaimed',

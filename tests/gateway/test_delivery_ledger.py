@@ -3,8 +3,7 @@
 State machine, dead-owner claiming, attempts cap, stale cutoff, retention,
 id stability, and the startup redelivery sweep's contract:
 - pending rows redeliver plainly (send never started, no dup risk)
-- attempting/failed rows carry the recovered-reply marker (honest
-  at-least-once; ambiguity is labeled, never silently resent)
+- ambiguous attempting/failed rows remain held without automatic replay
 - rows owned by a LIVE process are never claimed
 - poison rows abandon at the attempts cap / stale cutoff
 """
@@ -183,33 +182,16 @@ class TestRuntimeFailedSweep:
         assert _row("ob-1")["state"] == "failed"
         assert _row("ob-1")["attempts"] == 0
 
-    def test_other_rejection_is_claimed_only_after_its_backoff(self):
+    def test_ambiguous_rejection_is_held_across_runtime_and_restart(self):
         _record(platform="telegram")
         dl.mark_failed("ob-1", "503 Service Unavailable")
-        with dl._connect() as conn:
-            conn.execute("UPDATE delivery_obligations SET attempts=1, updated_at=1000.0 WHERE obligation_id='ob-1'")
-
-        assert dl.sweep_failed_for_runtime("telegram", now=1000.0 + 60) == []
-        assert dl.pending_retries(now=1000.0 + 60) == [
-            {"platform": "telegram", "profile": "default", "not_before": 1000.0 + 120}]
-        claimed = dl.sweep_failed_for_runtime("telegram", now=1000.0 + 121)
-        assert [row["obligation_id"] for row in claimed] == ["ob-1"]
-        assert claimed[0]["needs_marker"] is True
-        assert _row("ob-1")["state"] == "attempting"
-
-    def test_other_rejection_keeps_the_last_attempt_for_a_restart(self):
-        """The in-process timer never spends the final budgeted attempt: an outage can outlast any
-        backoff, and a row the timer abandoned would be lost for good (review on #91655)."""
-        _record(platform="telegram")
-        dl.mark_failed("ob-1", "503 Service Unavailable")
-        with dl._connect() as conn:
-            conn.execute("UPDATE delivery_obligations SET attempts=?, updated_at=1000.0 WHERE obligation_id='ob-1'",
-                         (dl.MAX_ATTEMPTS - 1,))
-
-        assert dl.sweep_failed_for_runtime("telegram", now=1000.0 + 10_000) == []
-        assert dl.pending_retries(now=1000.0 + 10_000) == []
-        assert _row("ob-1")["state"] == "failed"
-        assert _row("ob-1")["attempts"] == dl.MAX_ATTEMPTS - 1
+        assert dl.sweep_failed_for_runtime("telegram", now=time.time() + 10_000) == []
+        assert dl.pending_retries(now=time.time() + 10_000) == []
+        _orphan("ob-1")
+        assert dl.sweep_recoverable(now=time.time() + 10_000) == []
+        assert _row("ob-1")["state"] == "outcome_unknown"
+        assert _row("ob-1")["attempts"] == 0
+        assert _row("ob-1")["content"] == "the final answer"
 
     def test_reconnect_only_row_is_never_timer_driven(self):
         """A claim released because the adapter was gone comes back as `send_path_degraded` with a
@@ -469,7 +451,7 @@ class TestGatewayRedeliverySweep:
         assert _row("ob-1")["attempts"] == 0
 
     @pytest.mark.asyncio
-    async def test_attempting_redelivers_with_marker(self):
+    async def test_attempting_is_held_without_external_replay(self):
         _record()
         dl.mark_attempting("ob-1")
         _orphan("ob-1")
@@ -478,14 +460,41 @@ class TestGatewayRedeliverySweep:
 
         await runner._redeliver_pending_obligations()
 
-        sent = adapter.send.call_args.kwargs
-        assert sent["content"].startswith(dl.RECOVERED_MARKER)
-        assert sent["content"].endswith("the final answer")
+        adapter.send.assert_not_awaited()
+        assert _row("ob-1")["state"] == "outcome_unknown"
+        assert _row("ob-1")["content"] == "the final answer"
+
+    @pytest.mark.asyncio
+    async def test_held_delivery_cannot_resume_inference_when_flag_clear_fails(self):
+        from types import SimpleNamespace
+        _record()
+        dl.mark_attempting("ob-1")
+        _orphan("ob-1")
+        adapter = self._adapter()
+        runner = self._runner(adapter)
+        runner._async_session_store.clear_resume_pending.side_effect = OSError("unavailable routing writer")
+        runner.session_store = SimpleNamespace(_lock=threading.RLock(), _ensure_loaded_locked=lambda: None,
+            _entries={"held": SimpleNamespace(resume_pending=True, session_key="agent:main:slack:channel:C1")})
+        assert await runner._redeliver_pending_obligations() == 0
+        assert runner._resume_pending_candidates() == []
+        adapter.send.assert_not_awaited()
+        assert _row("ob-1")["state"] == "outcome_unknown"
+        # No trustworthy old turn token exists: a newer marker cannot silently
+        # release the hold. An operator must reconcile the external receipt.
+        entry = runner.session_store._entries["held"]
+        entry.active_turn_token = "later-unrelated-turn"
+        entry.last_resume_marked_at = time.time() + 500
+        await runner._refresh_delivery_resume_holds(clear_flags=False)
+        assert runner._resume_pending_candidates() == []
+        dl.mark_delivered("ob-1")  # stand-in for verified manual receipt settlement
+        await runner._refresh_delivery_resume_holds(clear_flags=False)
+        assert runner._delivery_resume_hold_keys == set()
+        assert _row("ob-1")["content"] == "the final answer"
 
     @pytest.mark.parametrize("earlier_boot", ["killed_inside_send", "older_build_left_pending"])
     @pytest.mark.asyncio
-    async def test_redelivery_after_an_earlier_boot_claim_is_marked(self, earlier_boot):
-        """Once a boot has claimed a row it may have sent it: every later copy carries the marker."""
+    async def test_interrupted_prior_claim_requires_reconciliation(self, earlier_boot):
+        """A lost receipt cannot authorize another non-idempotent send."""
         import asyncio
 
         _record()
@@ -505,9 +514,9 @@ class TestGatewayRedeliverySweep:
 
         await self._runner(second)._redeliver_pending_obligations()
 
-        sent = second.send.call_args.kwargs["content"]
-        assert sent == dl.RECOVERED_MARKER + "the final answer"
-        assert _row("ob-1")["state"] == "delivered"
+        second.send.assert_not_awaited()
+        assert _row("ob-1")["state"] == "outcome_unknown"
+        assert _row("ob-1")["content"] == "the final answer"
 
     def test_boot_claimed_row_is_not_reclaimed_by_runtime_sweep_mid_send(self):
         """A boot claim is exclusive while its send is in flight: the reconnect sweep must not resend it."""
@@ -706,7 +715,7 @@ class TestAttemptsOnlySpentOnRealSends:
                 "WHERE obligation_id=?", ("ob-1",),
             ).fetchone()
         assert attempts == 0, "an unsendable boot must not spend the budget"
-        assert state == "attempting"
+        assert state == "outcome_unknown"
 
     def test_row_still_delivers_once_its_platform_returns(self):
         _record(platform="telegram")

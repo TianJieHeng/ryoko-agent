@@ -1,13 +1,9 @@
-"""Durable delivery-obligation ledger for gateway final responses (rows in the shared ``state.db``;
-WAL, owner pid + process-start liveness, bounded retention) so a crash between finalize and
-platform ACK cannot lose a response silently. Checkpoints: record_obligation() 'pending' before
-any send | mark_attempting() 'attempting' right before the await | mark_delivered() 'delivered'
-only on SendResult.success | mark_failed() 'failed' on a definitive rejection. Crash semantics
-(never silently resend an ambiguous send): pending = never started, redeliver plainly; attempting
-= crashed mid-await, platform MAY have it, redeliver WITH a visible recovered marker; failed =
-rejected once, restart is a retry boundary, also marked; delivered = prune. Attempts are capped
-and stale rows expire, both -> 'abandoned' (kept briefly, then pruned). Everything is
-best-effort: ledger failures must never block a send; callers wrap every call in try/except.
+"""Legacy gateway delivery rows in the shared authoritative delivery table.
+
+Runtime outbox rows have their own SessionDB writer and are explicitly excluded.
+An interrupted or ambiguous non-idempotent external send is held for review,
+never automatically repeated with a cosmetic duplicate marker. Confirmed unsent
+rows can retry; unknown outcomes and their content survive retention pressure.
 """
 
 from __future__ import annotations
@@ -49,15 +45,9 @@ RECONNECTED_MARKER = ("♻️ Recovered reply — the messaging platform reconne
 FLOOD_MARKER = ("♻️ Recovered reply — the messaging platform's rate limit refused the original, so part of "
                 "it may already have arrived above:\n\n")
 
-# Errors whose send contract proves the platform never saw the request: retried as soon as the adapter
-# is back, no backoff. Every other rejection is retried too (#91653: a 5xx or a transient parse error
-# used to strand the reply in ``failed`` until the next restart), but only after a backoff that grows
-# with the attempts already spent, so a platform-side outage is not hammered by the redelivery timer.
-# A whole-chat death (blocked bot, deleted group, deactivated user) is never retried: the target is gone.
+# This code proves the adapter never dispatched the request. All other errors
+# may hide a lost receipt or partial chunks and must remain held.
 _RUNTIME_RETRYABLE_ERRORS = frozenset({"send_path_degraded"})
-# One tier per in-process retry; the last budgeted attempt is left to the boot sweep (retry_not_before).
-_RETRY_BACKOFF_SECONDS = (30.0, 120.0)
-assert len(_RETRY_BACKOFF_SECONDS) == MAX_ATTEMPTS - 1
 
 # A final send the platform refused with flood control is the other transient case: a 429 means the
 # refused request was never accepted, and the platform said how long to wait. Adapters fail such sends
@@ -149,23 +139,12 @@ def flood_not_before(updated_at: Any, last_error: Any) -> float:
 
 
 def retry_not_before(updated_at: Any, last_error: Any, attempts: Any) -> Optional[float]:
-    """Earliest moment a failed row may be resent, or ``None`` for a row the runtime must leave alone:
-    a flood refusal keeps the platform's own wait, an allowlisted reconnect error is due at once, a
-    whole-chat death is final, and any other rejection backs off by the attempts already spent — but
-    never spends the LAST budgeted attempt. An unclassified outage can outlast any timer, and a row
-    the timer abandoned would be lost for good; leaving one attempt keeps it recoverable by the boot
-    sweep after a restart, which is a real recovery signal."""
-    if is_flood_error(last_error):
-        return flood_not_before(updated_at, last_error)
-    text = str(last_error or "").strip().lower()
-    if is_reconnect_only(text):
+    """Only a proven never-dispatched request is eligible for automatic replay."""
+    if is_reconnect_only(last_error):
         return _failed_stamp(updated_at)
-    if classify_dead_error(text):
-        return None
-    spent = int(attempts or 0)
-    if spent >= MAX_ATTEMPTS - 1:
-        return None
-    return _failed_stamp(updated_at) + _RETRY_BACKOFF_SECONDS[spent]
+    # Chunked sends can partially succeed before flood control or any other
+    # error. Only the adapter's explicit never-dispatched code permits replay.
+    return None
 
 
 def _db_path():
@@ -204,8 +183,11 @@ def _initialize_schema(conn: sqlite3.Connection) -> None:
             adapter_profile TEXT
         )"""
     )
-    if "adapter_profile" not in {row[1] for row in conn.execute("PRAGMA table_info(delivery_obligations)")}:
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(delivery_obligations)")}
+    if "adapter_profile" not in columns:
         add_column_if_missing(conn, "delivery_obligations", "adapter_profile", "adapter_profile TEXT")
+    if "authority" not in columns:
+        add_column_if_missing(conn, "delivery_obligations", "authority", "authority TEXT NOT NULL DEFAULT 'legacy'")
 
 
 def _transaction():
@@ -273,13 +255,19 @@ def record_obligation(*, obligation_id: str, session_key: str, platform: str, ch
     now, (pid, started) = time.time(), _owner_stamp()
     with _DB_LOCK, _transaction() as conn:
         conn.execute(
-            """INSERT OR REPLACE INTO delivery_obligations
+            """INSERT OR IGNORE INTO delivery_obligations
                (obligation_id, session_key, platform, chat_id, thread_id,
                 content, state, attempts, created_at, updated_at,
                 owner_pid, owner_started_at, adapter_profile)
                VALUES (?, ?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?, ?, ?)""",
             (obligation_id, session_key, platform, str(chat_id), str(thread_id) if thread_id else None,
              content, now, now, pid, started, str(adapter_profile).strip() if adapter_profile else "default"))
+        existing = conn.execute("SELECT session_key,platform,chat_id,thread_id,content,adapter_profile,authority "
+                                "FROM delivery_obligations WHERE obligation_id=?", (obligation_id,)).fetchone()
+        expected = (session_key, platform, str(chat_id), str(thread_id) if thread_id else None,
+                    content, str(adapter_profile).strip() if adapter_profile else "default", "legacy")
+        if tuple(existing) != expected:
+            raise ValueError("Delivery identity cannot be rebound to another payload or recipient")
         # Same transaction, same connection: the cron ledgers prune this way too
         # (cron/delivery_queue._prune_terminal_unlocked, cron/executions._prune_unlocked).
         _prune_unlocked(conn, now)
@@ -288,10 +276,11 @@ def record_obligation(*, obligation_id: str, session_key: str, platform: str, ch
 def record_crash_left_reply(*, obligation_id: str, session_key: str, platform: str, chat_id: str,
                             thread_id: Optional[str], content: str, since: float,
                             adapter_profile: Optional[str] = None) -> None:
-    """Adopt a reply a killed process persisted but never ledgered. Unowned, so this boot's sweep
-    claims it, and 'attempting', because a streamed reply may already be on screen: it is
-    redelivered once, with the recovered marker. A no-op when the same reply was already ledgered
-    since *since* (the turn start), and idempotent across boots that die before their sweep."""
+    """Retain an unledgered crash-left reply as uncertain, without replay permission.
+
+    Streamed chunks may already have reached the external recipient. Existing
+    records remain the authority, so repeated adoption does not reset state.
+    """
     now = time.time()
     with _DB_LOCK, _transaction() as conn:
         conn.execute(
@@ -299,7 +288,7 @@ def record_crash_left_reply(*, obligation_id: str, session_key: str, platform: s
                (obligation_id, session_key, platform, chat_id, thread_id,
                 content, state, attempts, created_at, updated_at,
                 owner_pid, owner_started_at, adapter_profile)
-               SELECT ?, ?, ?, ?, ?, ?, 'attempting', 0, ?, ?, NULL, NULL, ?
+               SELECT ?, ?, ?, ?, ?, ?, 'outcome_unknown', 0, ?, ?, NULL, NULL, ?
                WHERE NOT EXISTS (SELECT 1 FROM delivery_obligations
                                  WHERE session_key = ? AND content = ? AND created_at >= ?)""",
             (obligation_id, session_key, platform, str(chat_id), str(thread_id) if thread_id else None,
@@ -316,7 +305,10 @@ def mark_delivered(obligation_id: str) -> None:
 
 
 def mark_failed(obligation_id: str, error: str = "") -> None:
-    _update_state(obligation_id, "failed", error=error)
+    state = "failed" if is_reconnect_only(error) or classify_dead_error(error) else "outcome_unknown"
+    _update_state(obligation_id, state, error=error)
+    if state == "outcome_unknown":
+        logger.warning("Delivery %s has an unknown external outcome; output retained, automatic replay held", obligation_id)
 
 
 def release_runtime_claim(obligation_id: str, error: str = "") -> bool:
@@ -334,7 +326,7 @@ def release_runtime_claim(obligation_id: str, error: str = "") -> bool:
                SET state='failed', attempts=CASE
                        WHEN attempts > 0 THEN attempts - 1 ELSE 0 END,
                    updated_at=?, last_error=?
-               WHERE obligation_id=? AND state='attempting'
+               WHERE obligation_id=? AND authority='legacy' AND state='attempting'
                  AND owner_pid IS ? AND owner_started_at IS ?""",
             (time.time(), error[:500] if error else None, obligation_id, pid, started))
     return bool(cursor.rowcount)
@@ -345,7 +337,7 @@ def _update_state(obligation_id: str, state: str, error: str = "") -> None:
         conn.execute(
             """UPDATE delivery_obligations
                SET state=?, updated_at=?, last_error=?
-               WHERE obligation_id=?""",
+               WHERE obligation_id=? AND authority='legacy'""",
             (state, time.time(), error[:500] if error else None, obligation_id))
 
 
@@ -379,12 +371,9 @@ def sweep_recoverable(now: Optional[float] = None, *, deliverable_platforms: Opt
     ``deliverable_targets`` further scopes multiplexed gateways by exact ``(platform, adapter_profile)``
     so one connected bot cannot spend another disconnected bot's retry budget.
 
-    A flood-refused row still inside its wait is adopted (owner re-stamped, no attempt spent) and
-    returned flagged ``adopted`` with its ``not_before``: the caller clears its session's resume flag
-    like any other claimed row, since the answer is in the ledger, but must not send it; the flood
-    timer does once the wait has passed. A legacy row without ``adapter_profile`` is normalised to
-    ``'default'`` on claim or adoption (the caller only accepts such rows when it is not multiplexed),
-    because the runtime sweep matches profiles exactly and could otherwise never claim it."""
+    Ambiguous sends are mapped to outcome_unknown and retained for explicit review.
+    Only never-attempted pending or proven never-dispatched failed rows are sent.
+    """
     now, (pid, started) = now if now is not None else time.time(), _owner_stamp()
     claimed: List[Dict[str, Any]] = []
     with _DB_LOCK, _transaction() as conn:
@@ -393,12 +382,18 @@ def sweep_recoverable(now: Optional[float] = None, *, deliverable_platforms: Opt
                       content, state, attempts, created_at,
                       owner_pid, owner_started_at, adapter_profile, last_error, updated_at
                FROM delivery_obligations
-               WHERE state IN ('pending', 'attempting', 'failed')"""
+               WHERE authority='legacy' AND state IN ('pending', 'attempting', 'failed')"""
         ).fetchall()
         for (oid, session_key, platform, chat_id, thread_id, content, state, attempts, created_at,
              owner_pid, owner_started_at, adapter_profile, last_error, updated_at) in rows:
             if _owner_alive(owner_pid, owner_started_at):
                 continue  # a live gateway still owns this row
+            if (state == "attempting" or (state == "pending" and attempts > 0)
+                    or (state == "failed" and not is_reconnect_only(last_error))):
+                conn.execute("UPDATE delivery_obligations SET state='outcome_unknown',updated_at=? "
+                             "WHERE obligation_id=? AND authority='legacy'", (now, oid))
+                logger.warning("Delivery %s held after interrupted external send; output retained for review", oid)
+                continue
             if attempts >= MAX_ATTEMPTS or (now - created_at) > STALE_AFTER_SECONDS:  # exhausted -> abandoned
                 conn.execute(
                     """UPDATE delivery_obligations
@@ -407,42 +402,19 @@ def sweep_recoverable(now: Optional[float] = None, *, deliverable_platforms: Opt
             if ((deliverable_platforms is not None and platform not in deliverable_platforms)
                     or (deliverable_targets is not None and (platform, adapter_profile) not in deliverable_targets)):
                 continue  # no adapter this boot — claiming would spend an attempt on a no-op
-            flood_row = state == "failed" and is_flood_error(last_error)
-            if flood_row and now < flood_not_before(updated_at, last_error):
-                # Still inside the platform's wait: adopt the dead owner's row without spending an attempt
-                # (state and error kept) so this process's flood timer can claim it once the wait passes.
-                cursor = conn.execute(
-                    """UPDATE delivery_obligations
-                       SET owner_pid=?, owner_started_at=?,
-                           adapter_profile=COALESCE(adapter_profile, 'default')
-                       WHERE obligation_id=? AND (owner_pid IS ? OR owner_pid=?)""",
-                    (pid, started, oid, owner_pid, owner_pid))
-                if cursor.rowcount:
-                    claimed.append({
-                        "obligation_id": oid, "session_key": session_key, "platform": platform,
-                        "chat_id": chat_id, "thread_id": thread_id, "content": content,
-                        "profile": adapter_profile or "default", "attempts": attempts,
-                        "adopted": True, "not_before": flood_not_before(updated_at, last_error)})
-                continue
-            # Every claim starts a send, so the row leaves 'pending'/'failed' for 'attempting' in the same
-            # CAS: a boot killed inside the redelivery then leaves proof the platform may have it (next boot
-            # marks it), and the runtime sweep, which only takes 'failed', cannot re-claim it mid-send. A
-            # claimed flood row also drops its stale refusal, so an interrupted resend has no error.
+            # Atomically claim safe rows. Interrupted sends are held on the next sweep.
             cursor = conn.execute(
                 """UPDATE delivery_obligations
                    SET owner_pid=?, owner_started_at=?, attempts=attempts+1, updated_at=?,
                        adapter_profile=COALESCE(adapter_profile, 'default'), state='attempting',
-                       last_error=CASE WHEN ? THEN NULL ELSE last_error END
+                       last_error=NULL
                    WHERE obligation_id=? AND (owner_pid IS ? OR owner_pid=?)""",
-                (pid, started, now, 1 if flood_row else 0, oid, owner_pid, owner_pid))
+                (pid, started, now, oid, owner_pid, owner_pid))
             if cursor.rowcount:
-                # A never-claimed pending row was never sent: redeliver plainly. Anything else (crashed
-                # mid-await, other rejection, a flood refusal whose earlier chunks the platform may have
-                # accepted, or a pending row an older build already claimed and may have sent) carries
-                # the marker.
+                # Adapter-defined never-dispatched reconnect rows keep the old display marker.
                 claimed.append(_claimed_row(oid, session_key, platform, chat_id, thread_id, content, attempts,
                                             adapter_profile or "default",
-                                            needs_marker=state != "pending" or attempts > 0, flood=flood_row))
+                                            needs_marker=state != "pending" or attempts > 0))
     return claimed
 
 
@@ -456,8 +428,8 @@ def sweep_failed_for_runtime(platform: str, now: Optional[float] = None, *,
     rejected with ``send_path_degraded`` would stay stranded when only the adapter reconnects; this closes
     that gap without weakening ownership: only rows stamped to this exact process instance, only rows
     past their ``retry_not_before`` deadline, same attempts/staleness bounds, every update guarded by the
-    prior owner stamp and ``failed`` state. Claimed rows always carry a marker (the failed send's ack is not safe to
-    infer): the reconnect one, or the rate-limit one for a flood-refused row."""
+    prior owner stamp and ``failed`` state. Unclassified inherited failed rows are held,
+    never retried simply because the process reconnected."""
     now, (pid, started) = now if now is not None else time.time(), _owner_stamp()
     if started is None:  # PID alone cannot distinguish this process from a stale row left after PID
         return []        # reuse; runtime replay is optional, so fail closed (startup recovery remains).
@@ -469,7 +441,7 @@ def sweep_failed_for_runtime(platform: str, now: Optional[float] = None, *,
                       content, attempts, created_at, owner_pid,
                       owner_started_at, last_error, adapter_profile, updated_at
                FROM delivery_obligations
-               WHERE state='failed' AND platform=?""", (platform,)).fetchall()
+               WHERE authority='legacy' AND state='failed' AND platform=?""", (platform,)).fetchall()
         for (oid, session_key, row_platform, chat_id, thread_id, content, attempts, created_at,
              owner_pid, owner_started_at, last_error, adapter_profile, updated_at) in rows:
             # Exact process-start matching prevents PID reuse from stealing work.
@@ -477,6 +449,10 @@ def sweep_failed_for_runtime(platform: str, now: Optional[float] = None, *,
                 continue
             due = retry_not_before(updated_at, last_error, attempts)
             if due is None:
+                if not classify_dead_error(last_error):
+                    conn.execute("UPDATE delivery_obligations SET state='outcome_unknown',updated_at=? "
+                                 "WHERE obligation_id=? AND authority='legacy' AND state='failed'",
+                                 (now, oid))
                 continue
             owner_guard = (now, oid, owner_pid, owner_started_at)
             if attempts >= MAX_ATTEMPTS or (now - created_at) > STALE_AFTER_SECONDS:  # exhausted -> abandoned
@@ -505,6 +481,14 @@ def sweep_failed_for_runtime(platform: str, now: Optional[float] = None, *,
     return claimed
 
 
+def retained_output_sessions() -> set[str]:
+    """Delivery-only work must never become an automatic inference/effect rerun."""
+    with _DB_LOCK, _transaction() as conn:
+        return {row[0] for row in conn.execute(
+            "SELECT DISTINCT session_key FROM delivery_obligations WHERE authority='legacy' "
+            "AND state IN ('pending','attempting','failed','outcome_unknown','abandoned')")}
+
+
 def pending_retries(now: Optional[float] = None) -> List[Dict[str, Any]]:
     """This process's failed rows that still await redelivery, one entry per adapter identity with the
     earliest deadline (``not_before``). The runner arms one redelivery timer per entry, so a row adopted
@@ -517,7 +501,7 @@ def pending_retries(now: Optional[float] = None) -> List[Dict[str, Any]]:
         rows = conn.execute(
             """SELECT platform, adapter_profile, updated_at, last_error, attempts, created_at
                FROM delivery_obligations
-               WHERE state='failed' AND owner_pid IS ? AND owner_started_at IS ?""", (pid, started)).fetchall()
+               WHERE authority='legacy' AND state='failed' AND owner_pid IS ? AND owner_started_at IS ?""", (pid, started)).fetchall()
     earliest: Dict[tuple, float] = {}
     for platform, adapter_profile, updated_at, last_error, attempts, created_at in rows:
         # Reconnect-only rows (a claim released because the adapter was gone) are re-claimed by the
@@ -538,12 +522,13 @@ def _prune_unlocked(conn, now: float) -> None:
     """Retention DELETEs on the caller's open connection — must run inside the caller's transaction."""
     conn.execute(
         """DELETE FROM delivery_obligations
-           WHERE state IN ('delivered', 'abandoned') AND updated_at < ?""", (now - _RETENTION_SECONDS,))
-    total = conn.execute("SELECT COUNT(*) FROM delivery_obligations").fetchone()[0]
+           WHERE authority='legacy' AND state IN ('delivered', 'abandoned') AND updated_at < ?""", (now - _RETENTION_SECONDS,))
+    total = conn.execute("SELECT COUNT(*) FROM delivery_obligations WHERE authority='legacy' ").fetchone()[0]
     if total > _MAX_ROWS:
         conn.execute(
             """DELETE FROM delivery_obligations WHERE obligation_id IN (
                  SELECT obligation_id FROM delivery_obligations
+                 WHERE authority='legacy' AND state IN ('delivered','abandoned')
                  ORDER BY CASE state
                             WHEN 'delivered' THEN 0
                             WHEN 'abandoned' THEN 1

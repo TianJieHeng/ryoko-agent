@@ -1178,6 +1178,15 @@ def _run_prompt_submit(
                 sid, session, st, text, display_kind, display_metadata)
             payload, raw, status = _complete_turn_payload(session, st, status_note, cols)
             _emit("message.complete", sid, payload)
+            if strict_runtime and isinstance(st.result.get("runtime_result"), dict):
+                from gateway.durable_outbox import deliver_result
+                # Losing the notification does not undo execution: the committed
+                # result remains recoverable through authenticated result.get.
+                try:
+                    deliver_result(agent, st.result["runtime_result"]["delivery_id"],
+                                   sid, session.get("transport"))
+                except Exception:
+                    logger.warning("Runtime result notification remains unresolved", exc_info=True)
             goal_followup = _goal_followup_after_turn(sid, session, st.result, status, raw)
             if status == "complete":
                 _after_complete_turn(sid, session, st, raw)

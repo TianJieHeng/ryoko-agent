@@ -1,4 +1,4 @@
-"""Exact BE05 approval contracts rendered through the existing human surfaces.
+"""Durable exact approval contracts rendered through the existing human surfaces.
 
 No smart classifier, yolo setting, session cache or unavailable UI can grant an
 exact approval. Broad answers from older clients remain fail-closed.
@@ -42,15 +42,22 @@ def request_exact_approval(action):
                 "command": display, "description": description, "pattern_key": key, "pattern_keys": [key],
                 "allow_session": False, "allow_permanent": False, "approval_id": preview.approval_id,
                 "approval_digest": preview.approval_digest, "expires_at": preview.expires_at,
+                "action_digest": action.digest, "run_id": preview.authority.run_id,
+                "policy_version": preview.authority.policy_version,
             })
-            choice = decision.get("choice") if decision.get("resolved") and not decision.get("notify_failed") else None
+            choice = (decision.get("choice") if decision.get("resolved")
+                      and not decision.get("notify_failed") and not decision.get("cancelled") else None)
         elif is_cli and (callback is not None or sys.stdin.isatty()):
             choice = prompt_dangerous_approval(display, description, timeout_seconds=300,
                 approval_callback=callback, allow_session=False, allow_permanent=False, title="Approve exact action")
         else:
             raise CapabilityDenied("approval_surface_unavailable", "Exact approval is pending because its human surface is unavailable", pending=True)
+    if choice in (None, "timeout", "cancelled"):
+        # Withdrawal/timeout is not a human denial. The request remains durable
+        # and pending; expired or cancelled runs still cannot resolve/consume it.
+        raise CapabilityDenied("exact_approval_pending", "The exact action has no authenticated human decision", pending=True)
     if choice != "once":
         resolve_approval(preview, preview.approval_digest, "deny")
-        raise CapabilityDenied("exact_approval_denied", "The exact action was not approved once", pending=choice in (None, "timeout", "cancelled"))
+        raise CapabilityDenied("exact_approval_denied", "The exact action was not approved once")
     resolve_approval(preview, preview.approval_digest, choice)
     return preview

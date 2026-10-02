@@ -675,13 +675,16 @@ class SessionGatewayMixin:
             counts["sessions_origin_json"] = origin_count
 
             if "delivery_obligations" in existing:
+                # Runtime destinations are immutable accepted intent, not legacy profile routing.
+                legacy_only = (" AND authority='legacy'"
+                               if "authority" in topic_columns.get("delivery_obligations", set()) else "")
                 if "adapter_profile" in topic_columns.get("delivery_obligations", set()):
                     counts["delivery_obligations_adapter_profile"] = conn.execute(
-                        "UPDATE delivery_obligations SET adapter_profile = ? WHERE adapter_profile = ?",
+                        "UPDATE delivery_obligations SET adapter_profile = ? WHERE adapter_profile = ?" + legacy_only,
                         (new, old)).rowcount
                 counts["delivery_obligations_session_key"] = conn.execute(
                     "UPDATE delivery_obligations SET session_key = ? || substr(session_key, ?) "
-                    "WHERE substr(session_key, 1, ?) = ?",
+                    "WHERE substr(session_key, 1, ?) = ?" + legacy_only,
                     (new_ns, ns_len + 1, ns_len, old_ns)).rowcount
             for table in ("telegram_dm_topic_mode", "telegram_dm_topic_bindings"):
                 if "profile_name" in topic_columns.get(table, set()):
@@ -771,10 +774,12 @@ class SessionGatewayMixin:
                               if "adapter_profile" in topic_columns.get("delivery_obligations", set())
                               else "")
                 params = (time.time(), name, ns_len, ns) if by_profile else (time.time(), ns_len, ns)
+                legacy_only = (" AND authority='legacy'"
+                               if "authority" in topic_columns.get("delivery_obligations", set()) else "")
                 counts["delivery_obligations"] = conn.execute(
                     "UPDATE delivery_obligations SET state='abandoned', updated_at=? "
                     f"WHERE ({by_profile}substr(session_key, 1, ?) = ?) "
-                    "AND state NOT IN ('delivered', 'abandoned')", params).rowcount
+                    "AND state NOT IN ('delivered', 'abandoned')" + legacy_only, params).rowcount
             if "profile_name" in topic_columns.get("telegram_dm_topic_mode", set()):
                 counts["telegram_dm_topic_mode"] = conn.execute(
                     "DELETE FROM telegram_dm_topic_mode WHERE profile_name = ?", (name,)).rowcount

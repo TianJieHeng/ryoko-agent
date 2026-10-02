@@ -2995,6 +2995,42 @@
       }
     },
     {
+      "name": "runtime.approval.resolve",
+      "summary": "Record one exact human decision for the owned live run. Repeated answers are rejected; this never dispatches.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeApprovalResolveParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeApprovalResolveResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.approvals.list",
+      "summary": "Read an owned oldest-first bounded approval snapshot. This is not complete history or permission to act.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeApprovalListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeApprovalListResult"
+        }
+      }
+    },
+    {
       "name": "runtime.capabilities",
       "summary": "Negotiate the owned session's durable runtime API and executable operations.",
       "params": [
@@ -3031,6 +3067,114 @@
       }
     },
     {
+      "name": "runtime.delivery.ack",
+      "summary": "Record exact attempt/digest-bound client component receipt, not human read confirmation.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeDeliveryAckParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeDeliveryReceipt"
+        }
+      }
+    },
+    {
+      "name": "runtime.delivery.retry",
+      "summary": "Explicitly retry only a result notification on the owned local transport; never rerun inference.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeDeliveryParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeDeliveryReceipt"
+        }
+      }
+    },
+    {
+      "name": "runtime.delivery.status",
+      "summary": "Read delivery truth without creating a delivery attempt.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeDeliveryParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeDeliveryReceipt"
+        }
+      }
+    },
+    {
+      "name": "runtime.effect.get",
+      "summary": "Inspect one owned effect and its bounded receipt metadata without exposing private input or paths.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeEffectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeEffectGetResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.effect.reconcile",
+      "summary": "Inspect local artifact state under a bounded server-owned lease and record evidence. Never replay a mutation.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeEffectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeEffectReconcileResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.effects.list",
+      "summary": "Read an owned oldest-first bounded effect snapshot, never a claim of complete history.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeEffectListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeEffectListResult"
+        }
+      }
+    },
+    {
       "name": "runtime.events.since",
       "summary": "Read bounded durable transitions, or an explicit snapshot_required with a consistent snapshot.",
       "params": [
@@ -3045,6 +3189,24 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/RuntimeEventsSinceResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.result.get",
+      "summary": "Read bounded digest-checked immutable result bytes without executing or delivering work.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeResultGetParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeResultChunk"
         }
       }
     },
@@ -18885,6 +19047,26 @@
             "title": "Unresolved Effects",
             "type": "array"
           },
+          "unresolved_invocations": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeUnresolvedInvocation"
+            },
+            "title": "Unresolved Invocations",
+            "type": "array"
+          },
+          "reference_counts": {
+            "$ref": "#/components/schemas/RuntimeReferenceCounts"
+          },
+          "reference_limit": {
+            "default": 100,
+            "title": "Reference Limit",
+            "type": "integer"
+          },
+          "references_truncated": {
+            "default": false,
+            "title": "References Truncated",
+            "type": "boolean"
+          },
           "last_cursor": {
             "title": "Last Cursor",
             "type": "string"
@@ -28420,6 +28602,82 @@
         "title": "RuntimeAdmissionSnapshot",
         "type": "object"
       },
+      "RuntimeApprovalListParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "RuntimeApprovalListParams",
+        "type": "object"
+      },
+      "RuntimeApprovalListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "approvals": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeApprovalRecord"
+            },
+            "title": "Approvals",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approvals",
+          "limit",
+          "truncated",
+          "complete"
+        ],
+        "title": "RuntimeApprovalListResult",
+        "type": "object"
+      },
       "RuntimeApprovalPayload": {
         "additionalProperties": false,
         "properties": {
@@ -28443,6 +28701,178 @@
           "decision"
         ],
         "title": "RuntimeApprovalPayload",
+        "type": "object"
+      },
+      "RuntimeApprovalRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "action_digest": {
+            "title": "Action Digest",
+            "type": "string"
+          },
+          "input_digest": {
+            "title": "Input Digest",
+            "type": "string"
+          },
+          "target_digest": {
+            "title": "Target Digest",
+            "type": "string"
+          },
+          "input_revision_digest": {
+            "title": "Input Revision Digest",
+            "type": "string"
+          },
+          "artifact_revision_digest": {
+            "title": "Artifact Revision Digest",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "policy_digest": {
+            "title": "Policy Digest",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "denied",
+              "consumed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          },
+          "expired": {
+            "title": "Expired",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "consumed_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumed At"
+          }
+        },
+        "required": [
+          "approval_id",
+          "run_id",
+          "approval_digest",
+          "action_digest",
+          "input_digest",
+          "target_digest",
+          "input_revision_digest",
+          "artifact_revision_digest",
+          "policy_version",
+          "policy_digest",
+          "status",
+          "expires_at",
+          "expired",
+          "created_at",
+          "resolved_at",
+          "consumed_at"
+        ],
+        "title": "RuntimeApprovalRecord",
+        "type": "object"
+      },
+      "RuntimeApprovalResolveParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "choice": {
+            "enum": [
+              "once",
+              "deny"
+            ],
+            "title": "Choice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "approval_id",
+          "approval_digest",
+          "choice"
+        ],
+        "title": "RuntimeApprovalResolveParams",
+        "type": "object"
+      },
+      "RuntimeApprovalResolveResult": {
+        "additionalProperties": false,
+        "properties": {
+          "approval": {
+            "$ref": "#/components/schemas/RuntimeApprovalRecord"
+          },
+          "dispatch_performed": {
+            "const": false,
+            "title": "Dispatch Performed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approval",
+          "dispatch_performed"
+        ],
+        "title": "RuntimeApprovalResolveResult",
         "type": "object"
       },
       "RuntimeArtifactReference": {
@@ -28750,6 +29180,619 @@
         "title": "RuntimeConflict",
         "type": "object"
       },
+      "RuntimeDeliveryAckParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "delivery_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Delivery Id",
+            "type": "string"
+          },
+          "attempt_token": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Attempt Token",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "text_received": {
+            "default": false,
+            "title": "Text Received",
+            "type": "boolean"
+          },
+          "artifact_received": {
+            "default": false,
+            "title": "Artifact Received",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "delivery_id",
+          "attempt_token",
+          "sha256"
+        ],
+        "title": "RuntimeDeliveryAckParams",
+        "type": "object"
+      },
+      "RuntimeDeliveryComponents": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "enum": [
+              "not_sent",
+              "client_received"
+            ],
+            "title": "Text",
+            "type": "string"
+          },
+          "artifact": {
+            "enum": [
+              "not_sent",
+              "client_received"
+            ],
+            "title": "Artifact",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "artifact"
+        ],
+        "title": "RuntimeDeliveryComponents",
+        "type": "object"
+      },
+      "RuntimeDeliveryDestination": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "local_runtime",
+            "title": "Kind",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "principal_id": {
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "profile_id": {
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "session_id",
+          "principal_id",
+          "profile_id",
+          "agent_id"
+        ],
+        "title": "RuntimeDeliveryDestination",
+        "type": "object"
+      },
+      "RuntimeDeliveryParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "delivery_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Delivery Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "delivery_id"
+        ],
+        "title": "RuntimeDeliveryParams",
+        "type": "object"
+      },
+      "RuntimeDeliveryReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_id": {
+            "title": "Delivery Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/RuntimeDeliveryDestination"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "attempting",
+              "awaiting_ack",
+              "partial",
+              "delivered",
+              "failed",
+              "outcome_unknown",
+              "dead_letter"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "acknowledgment_level": {
+            "enum": [
+              "none",
+              "transport_accepted",
+              "client_received"
+            ],
+            "title": "Acknowledgment Level",
+            "type": "string"
+          },
+          "components": {
+            "$ref": "#/components/schemas/RuntimeDeliveryComponents"
+          },
+          "platform_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Platform Ids",
+            "type": "array"
+          },
+          "attempt_count": {
+            "title": "Attempt Count",
+            "type": "integer"
+          },
+          "max_attempts": {
+            "title": "Max Attempts",
+            "type": "integer"
+          },
+          "next_attempt_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Attempt At"
+          },
+          "deadline_at": {
+            "title": "Deadline At",
+            "type": "number"
+          },
+          "retention_until": {
+            "title": "Retention Until",
+            "type": "number"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "result_available": {
+            "title": "Result Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "delivery_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "destination",
+          "state",
+          "acknowledgment_level",
+          "components",
+          "platform_ids",
+          "attempt_count",
+          "max_attempts",
+          "next_attempt_at",
+          "deadline_at",
+          "retention_until",
+          "last_error",
+          "result_available"
+        ],
+        "title": "RuntimeDeliveryReceipt",
+        "type": "object"
+      },
+      "RuntimeEffectEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "generation": {
+            "title": "Generation",
+            "type": "integer"
+          },
+          "from_state": {
+            "enum": [
+              "prepared",
+              "dispatched",
+              "confirmed",
+              "failed",
+              "outcome_unknown",
+              "reconciliation_required"
+            ],
+            "title": "From State",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "prepared",
+              "dispatched",
+              "confirmed",
+              "failed",
+              "outcome_unknown",
+              "reconciliation_required"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          },
+          "receipt_available": {
+            "title": "Receipt Available",
+            "type": "boolean"
+          },
+          "receipt_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Sha256"
+          }
+        },
+        "required": [
+          "sequence",
+          "generation",
+          "from_state",
+          "state",
+          "created_at",
+          "receipt_available",
+          "receipt_sha256"
+        ],
+        "title": "RuntimeEffectEvidence",
+        "type": "object"
+      },
+      "RuntimeEffectGetResult": {
+        "additionalProperties": false,
+        "properties": {
+          "effect": {
+            "$ref": "#/components/schemas/RuntimeEffectRecord"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeEffectEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          }
+        },
+        "required": [
+          "effect",
+          "evidence"
+        ],
+        "title": "RuntimeEffectGetResult",
+        "type": "object"
+      },
+      "RuntimeEffectListParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Run Id"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "unresolved_only": {
+            "default": false,
+            "title": "Unresolved Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "RuntimeEffectListParams",
+        "type": "object"
+      },
+      "RuntimeEffectListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeEffectRecord"
+            },
+            "title": "Effects",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "effects",
+          "limit",
+          "truncated",
+          "complete"
+        ],
+        "title": "RuntimeEffectListResult",
+        "type": "object"
+      },
+      "RuntimeEffectParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "effect_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Effect Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "effect_id"
+        ],
+        "title": "RuntimeEffectParams",
+        "type": "object"
+      },
+      "RuntimeEffectReconcileResult": {
+        "additionalProperties": false,
+        "properties": {
+          "effect": {
+            "$ref": "#/components/schemas/RuntimeEffectRecord"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeEffectEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "inspection_only": {
+            "const": true,
+            "title": "Inspection Only",
+            "type": "boolean"
+          },
+          "dispatch_performed": {
+            "const": false,
+            "title": "Dispatch Performed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "effect",
+          "evidence",
+          "inspection_only",
+          "dispatch_performed"
+        ],
+        "title": "RuntimeEffectReconcileResult",
+        "type": "object"
+      },
+      "RuntimeEffectRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "effect_id": {
+            "title": "Effect Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "operation_type": {
+            "enum": [
+              "artifact_publish",
+              "unsupported"
+            ],
+            "title": "Operation Type",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "prepared",
+              "dispatched",
+              "confirmed",
+              "failed",
+              "outcome_unknown",
+              "reconciliation_required"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "action_digest": {
+            "title": "Action Digest",
+            "type": "string"
+          },
+          "input_digest": {
+            "title": "Input Digest",
+            "type": "string"
+          },
+          "target_digest": {
+            "title": "Target Digest",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "policy_digest": {
+            "title": "Policy Digest",
+            "type": "string"
+          },
+          "generation": {
+            "title": "Generation",
+            "type": "integer"
+          },
+          "approval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Id"
+          },
+          "provider_idempotency": {
+            "enum": [
+              "supported",
+              "unsupported"
+            ],
+            "title": "Provider Idempotency",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "number"
+          },
+          "exactly_once_external": {
+            "const": false,
+            "title": "Exactly Once External",
+            "type": "boolean"
+          },
+          "replay_permitted": {
+            "const": false,
+            "title": "Replay Permitted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "effect_id",
+          "run_id",
+          "operation_id",
+          "operation_type",
+          "state",
+          "action_digest",
+          "input_digest",
+          "target_digest",
+          "policy_version",
+          "policy_digest",
+          "generation",
+          "approval_id",
+          "provider_idempotency",
+          "created_at",
+          "updated_at",
+          "exactly_once_external",
+          "replay_permitted"
+        ],
+        "title": "RuntimeEffectRecord",
+        "type": "object"
+      },
       "RuntimeEventEnvelope": {
         "additionalProperties": false,
         "properties": {
@@ -28929,6 +29972,72 @@
             ],
             "default": null,
             "title": "Operation"
+          },
+          "effect_state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "prepared",
+                  "dispatched",
+                  "confirmed",
+                  "failed",
+                  "outcome_unknown",
+                  "reconciliation_required"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Effect State"
+          },
+          "operation_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "artifact_publish",
+                  "unsupported"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Type"
+          },
+          "approval_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "approved",
+                  "denied",
+                  "consumed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Approval Status"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expires At"
           },
           "checkpoint_id": {
             "anyOf": [
@@ -29372,6 +30481,210 @@
         "title": "RuntimeProviderCapabilities",
         "type": "object"
       },
+      "RuntimeReferenceCounts": {
+        "additionalProperties": false,
+        "properties": {
+          "outstanding_requests": {
+            "default": 0,
+            "title": "Outstanding Requests",
+            "type": "integer"
+          },
+          "artifacts": {
+            "default": 0,
+            "title": "Artifacts",
+            "type": "integer"
+          },
+          "unresolved_effects": {
+            "default": 0,
+            "title": "Unresolved Effects",
+            "type": "integer"
+          },
+          "unresolved_invocations": {
+            "default": 0,
+            "title": "Unresolved Invocations",
+            "type": "integer"
+          }
+        },
+        "title": "RuntimeReferenceCounts",
+        "type": "object"
+      },
+      "RuntimeResultAvailablePayload": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_id": {
+            "title": "Delivery Id",
+            "type": "string"
+          },
+          "command_id": {
+            "title": "Command Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "minimum": 0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "attempt_token": {
+            "title": "Attempt Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "delivery_id",
+          "command_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "attempt_token"
+        ],
+        "title": "RuntimeResultAvailablePayload",
+        "type": "object"
+      },
+      "RuntimeResultChunk": {
+        "additionalProperties": false,
+        "properties": {
+          "command_id": {
+            "title": "Command Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "minimum": 0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "data_base64": {
+            "title": "Data Base64",
+            "type": "string"
+          },
+          "next_offset": {
+            "title": "Next Offset",
+            "type": "integer"
+          },
+          "eof": {
+            "title": "Eof",
+            "type": "boolean"
+          },
+          "publication_state": {
+            "enum": [
+              "committed",
+              "published_uncommitted"
+            ],
+            "title": "Publication State",
+            "type": "string"
+          },
+          "delivery_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Id"
+          }
+        },
+        "required": [
+          "command_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "offset",
+          "data_base64",
+          "next_offset",
+          "eof",
+          "publication_state",
+          "delivery_id"
+        ],
+        "title": "RuntimeResultChunk",
+        "type": "object"
+      },
+      "RuntimeResultGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 65536,
+            "maximum": 65536,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id"
+        ],
+        "title": "RuntimeResultGetParams",
+        "type": "object"
+      },
       "RuntimeSessionParams": {
         "additionalProperties": false,
         "properties": {
@@ -29544,8 +30857,10 @@
           },
           "status": {
             "enum": [
-              "pending",
-              "outcome_uncertain"
+              "prepared",
+              "dispatched",
+              "outcome_unknown",
+              "reconciliation_required"
             ],
             "title": "Status",
             "type": "string"
@@ -29556,6 +30871,29 @@
           "status"
         ],
         "title": "RuntimeUnresolvedEffect",
+        "type": "object"
+      },
+      "RuntimeUnresolvedInvocation": {
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "outcome_uncertain"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status"
+        ],
+        "title": "RuntimeUnresolvedInvocation",
         "type": "object"
       },
       "SecretRequestParams": {
@@ -41350,6 +42688,18 @@
           "name": "payload",
           "schema": {
             "$ref": "#/components/schemas/ReviewSummaryPayload"
+          }
+        }
+      ]
+    },
+    {
+      "name": "runtime.result.available",
+      "summary": "",
+      "params": [
+        {
+          "name": "payload",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeResultAvailablePayload"
           }
         }
       ]

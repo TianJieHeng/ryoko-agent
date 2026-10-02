@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "phase": "BE06",
+  "base_sha": "c701f27d4e46e7bbb0f1f90f91e1442acadb5015",
+  "publication": "direct main; no PR",
+  "database_schema": 35,
+  "runtime_schema": 1,
+  "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/hermes_state/test_effect_records.py tests/hermes_state/test_delivery_outbox.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_purge_profile_state.py tests/hermes_state/test_rekey_profile_state.py tests/tools/test_capability_approvals_durable.py tests/tools/test_capability_broker.py tests/tools/test_mcp_agent_trust_lifecycle.py tests/agent/test_effect_reconciler.py tests/agent/test_runtime_commands.py tests/agent/test_capability_dispatch.py tests/agent/test_budget_runtime.py tests/gateway/test_delivery_ledger.py tests/gateway/test_delivery_ledger_process_home.py tests/gateway/test_delivery_ledger_producer.py tests/gateway/test_delivery_flood_invariants.py tests/gateway/test_restart_resume_pending.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/test_runtime_effects_rpc.py tests/tui_gateway/contracts/test_runtime_v1.py tests/tui_gateway/contracts/test_generated.py -j 5 --file-retries 0",
+  "consolidated": {
+    "log": "be06-final.log",
+    "log_sha256": "b49aafd8e945e6140d64e1d939bb215e92113e0496a139d7ee344ae6b4073651",
+    "files": 21,
+    "passed": 301,
+    "failed": 0,
+    "seconds": 25.4,
+    "per_file": [
+      {
+        "file": "tests/gateway/test_delivery_flood_invariants.py",
+        "passed": 2,
+        "seconds": 0.8
+      },
+      {
+        "file": "tests/agent/test_capability_dispatch.py",
+        "passed": 2,
+        "seconds": 2.5
+      },
+      {
+        "file": "tests/gateway/test_delivery_ledger.py",
+        "passed": 43,
+        "seconds": 2.4
+      },
+      {
+        "file": "tests/agent/test_effect_reconciler.py",
+        "passed": 12,
+        "seconds": 3.8
+      },
+      {
+        "file": "tests/gateway/test_delivery_ledger_process_home.py",
+        "passed": 2,
+        "seconds": 1.3
+      },
+      {
+        "file": "tests/hermes_state/test_delivery_outbox.py",
+        "passed": 2,
+        "seconds": 0.8
+      },
+      {
+        "file": "tests/hermes_state/test_effect_records.py",
+        "passed": 25,
+        "seconds": 2.9
+      },
+      {
+        "file": "tests/hermes_state/test_purge_profile_state.py",
+        "passed": 7,
+        "seconds": 0.8
+      },
+      {
+        "file": "tests/hermes_state/test_rekey_profile_state.py",
+        "passed": 7,
+        "seconds": 0.8
+      },
+      {
+        "file": "tests/hermes_state/test_runtime_store.py",
+        "passed": 13,
+        "seconds": 1.2
+      },
+      {
+        "file": "tests/gateway/test_delivery_ledger_producer.py",
+        "passed": 6,
+        "seconds": 8.6
+      },
+      {
+        "file": "tests/agent/test_runtime_commands.py",
+        "passed": 17,
+        "seconds": 12.5
+      },
+      {
+        "file": "tests/gateway/test_restart_resume_pending.py",
+        "passed": 40,
+        "seconds": 9.8
+      },
+      {
+        "file": "tests/tools/test_capability_broker.py",
+        "passed": 3,
+        "seconds": 2.4
+      },
+      {
+        "file": "tests/tools/test_capability_approvals_durable.py",
+        "passed": 28,
+        "seconds": 4.5
+      },
+      {
+        "file": "tests/tui_gateway/contracts/test_runtime_v1.py",
+        "passed": 2,
+        "seconds": 1.3
+      },
+      {
+        "file": "tests/tui_gateway/contracts/test_generated.py",
+        "passed": 2,
+        "seconds": 2.3
+      },
+      {
+        "file": "tests/tools/test_mcp_agent_trust_lifecycle.py",
+        "passed": 25,
+        "seconds": 5.0
+      },
+      {
+        "file": "tests/agent/test_budget_runtime.py",
+        "passed": 35,
+        "seconds": 20.3
+      },
+      {
+        "file": "tests/tui_gateway/test_runtime_rpc.py",
+        "passed": 11,
+        "seconds": 7.4
+      },
+      {
+        "file": "tests/tui_gateway/test_runtime_effects_rpc.py",
+        "passed": 17,
+        "seconds": 10.5
+      }
+    ]
+  },
+  "final_settled_subset": {
+    "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/test_runtime_effects_rpc.py tests/gateway/test_delivery_ledger.py tests/tui_gateway/contracts/test_generated.py -j 4 --file-retries 0",
+    "log": "be06-settled-final.log",
+    "log_sha256": "069a8d5fb3926c622353861435b6cc7bd56d881cedf1bef9ee8929af0caf6f16",
+    "files": 4,
+    "passed": 73,
+    "failed": 0,
+    "seconds": 10.3,
+    "per_file": [
+      {
+        "file": "tests/gateway/test_delivery_ledger.py",
+        "passed": 43,
+        "seconds": 2.4
+      },
+      {
+        "file": "tests/tui_gateway/contracts/test_generated.py",
+        "passed": 2,
+        "seconds": 2.5
+      },
+      {
+        "file": "tests/tui_gateway/test_runtime_rpc.py",
+        "passed": 11,
+        "seconds": 7.7
+      },
+      {
+        "file": "tests/tui_gateway/test_runtime_effects_rpc.py",
+        "passed": 17,
+        "seconds": 10.3
+      }
+    ]
+  },
+  "checks": {
+    "changed_python_ruff": "passed",
+    "generated_contract_check": "passed",
+    "shared_typescript": "passed",
+    "git_diff_check": "passed"
+  },
+  "other_campaigns": [
+    {
+      "log": "be06-snapshot-final.log",
+      "log_sha256": "00baae228bd5fc82dcc2c6afac38bd69063ef9463c76ed554eb6a757031fcd1c",
+      "files": 4,
+      "passed": 51,
+      "failed": 0,
+      "seconds": 7.2,
+      "per_file": [
+        {
+          "file": "tests/hermes_state/test_runtime_store.py",
+          "passed": 13,
+          "seconds": 1.1
+        },
+        {
+          "file": "tests/tui_gateway/contracts/test_runtime_v1.py",
+          "passed": 2,
+          "seconds": 1.1
+        },
+        {
+          "file": "tests/hermes_state/test_effect_records.py",
+          "passed": 25,
+          "seconds": 3.0
+        },
+        {
+          "file": "tests/tui_gateway/test_runtime_rpc.py",
+          "passed": 11,
+          "seconds": 7.2
+        }
+      ]
+    },
+    {
+      "log": "be06-outbox-freeze.log",
+      "log_sha256": "40e4c69d9c0f2e32837fd91918b23283d2f2f897db27ab58a9a175393b206a8e",
+      "files": 7,
+      "passed": 118,
+      "failed": 0,
+      "seconds": 11.8,
+      "per_file": [
+        {
+          "file": "tests/hermes_state/test_delivery_outbox.py",
+          "passed": 2,
+          "seconds": 1.0
+        },
+        {
+          "file": "tests/gateway/test_delivery_ledger_process_home.py",
+          "passed": 2,
+          "seconds": 1.5
+        },
+        {
+          "file": "tests/gateway/test_restart_notice_replay.py",
+          "passed": 3,
+          "seconds": 2.1
+        },
+        {
+          "file": "tests/gateway/test_delivery_ledger.py",
+          "passed": 43,
+          "seconds": 2.4
+        },
+        {
+          "file": "tests/tui_gateway/test_runtime_rpc.py",
+          "passed": 11,
+          "seconds": 7.5
+        },
+        {
+          "file": "tests/gateway/test_restart_resume_pending.py",
+          "passed": 40,
+          "seconds": 9.7
+        },
+        {
+          "file": "tests/agent/test_runtime_commands.py",
+          "passed": 17,
+          "seconds": 11.8
+        }
+      ]
+    },
+    {
+      "log": "be06-effect-adapter-final.log",
+      "log_sha256": "c1f697e83081417496030030c83ff31669340d1cbbfbe3ad47ca5a41308ac460",
+      "files": 3,
+      "passed": 40,
+      "failed": 0,
+      "seconds": 5.2,
+      "per_file": [
+        {
+          "file": "tests/tools/test_capability_broker.py",
+          "passed": 3,
+          "seconds": 2.4
+        },
+        {
+          "file": "tests/agent/test_effect_reconciler.py",
+          "passed": 12,
+          "seconds": 3.8
+        },
+        {
+          "file": "tests/tools/test_mcp_agent_trust_lifecycle.py",
+          "passed": 25,
+          "seconds": 5.2
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Only local Linux immutable publication and owned local JSON-RPC notification certified",
+    "Full project regression deferred to BE18; inherited BE00 project-tree and BE05 AF_UNIX/process-visibility limitations retained",
+    "No live remote API/model/harness/deployment certification",
+    "Legacy uncertain delivery without exact turn identity holds automatic conversation resume until operator settlement; explicit inbound remains available",
+    "Frontend client ACK UX deferred; transport acceptance is not client receipt or human read",
+    "8 MiB immutable result limit; 65536-byte raw chunk reads; no automatic unresolved history/blob GC"
+  ]
+}

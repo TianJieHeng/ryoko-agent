@@ -224,6 +224,11 @@ def prepare_turn_command(agent, user_message: Any) -> dict | None:
 def recorded_turn_result(agent, record: dict) -> dict:
     if isinstance(record.get("result"), dict) and record["status"] in {"completed", "failed", "cancelled", "blocked"}:
         result = dict(record["result"])
+        if result.get("runtime_result"):
+            from gateway.durable_outbox import load_committed_result
+            loaded = load_committed_result(agent, record["receipt"]["command_id"])
+            loaded["runtime_result"] = result["runtime_result"]
+            result = loaded
         if result.get("output_omitted"):
             return {"completed": False, "final_response": "", "messages": [],
                     "runtime_status": "recorded_output_unavailable",
@@ -284,13 +289,35 @@ def _check_run(run):
         run.task_scope.check_cancelled()
     if run.dispatch_blocked.is_set():
         raise RuntimeFenceError("Runtime outcome was not committed; further dispatch is blocked")
+    _assert_run_ownership(run)
+
+
+def _assert_run_ownership(run):
     lease = run.db.get_session_turn_lease(run.session_id)
     if (lease is None or lease["holder"] != run.holder or lease["generation"] != run.generation
             or lease["expires_at"] <= time.time()):
         raise RuntimeFenceError("Runtime owner generation is no longer current")
     record = run.db.read_runtime_command(run.session_id, run.command_id)
-    if record is None or record["status"] != "claimed":
+    if (record is None or record["status"] != "claimed"
+            or record["receipt"]["run_id"] != run.run_id):
         raise RuntimeFenceError("Runtime command no longer owns dispatch")
+
+
+def assert_runtime_finalization(run):
+    """Authorize bounded private result persistence, never model/tool dispatch.
+
+    Cancellation/exhausted budgets stop new work, but must not erase output
+    already produced. Identity, policy, command ownership and generation still
+    apply; no stale or revoked owner may use this finalization-only path.
+    """
+    if (not isinstance(run, RuntimeRun) or _RUN.get() is not run
+            or current_agent_context() != run.context
+            or getattr(run.agent, "_active_runtime_run", None) is not run):
+        raise RuntimeFenceError("Finalization requires its exact bound runtime owner")
+    from tools.capability_broker import require_live_policy
+    require_live_policy(require_run=False)
+    _assert_run_ownership(run)
+    return run
 
 
 def assert_runtime_dispatch(agent=None):
@@ -395,14 +422,15 @@ def finish_turn_command(run, result=None, error=None):
     # The caller's partial response/artifacts remain usable with explicit budget status.
     if isinstance(original_result, dict):
         original_result.update(result)
-    stored = _bounded_outcome(result)
-    run.db.finish_runtime_command(run.session_id, run.command_id, holder=run.holder,
-                                  generation=run.generation, status=status, result=stored)
+    from gateway.durable_outbox import commit_result
+    reference = commit_result(run, result, status)
+    if isinstance(original_result, dict):
+        original_result["runtime_result"] = reference
     snapshot = run.db.read_runtime_snapshot(run.session_id)
     run.db.publish_runtime_checkpoint(run.session_id, {
         "schema_version": 1, "config_version": run.context.config_digest,
-        "policy_version": run.context.policy.digest, "runtime_version": "be02.v1",
+        "policy_version": run.context.policy.digest, "runtime_version": "be06.v1",
         "prompt_projection_version": "1",
-        **{key: snapshot[key] for key in ("outstanding_requests", "artifacts", "unresolved_effects")},
+        **{key: snapshot[key] for key in ("outstanding_requests", "artifacts", "unresolved_effects", "unresolved_invocations")},
     }, holder=run.holder, generation=run.generation, expected_revision=snapshot["revision"],
         included_seq=snapshot["revision"])

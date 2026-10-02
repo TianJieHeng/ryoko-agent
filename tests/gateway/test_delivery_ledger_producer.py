@@ -113,7 +113,7 @@ class TestProducerHook:
         assert rows[0][2] == "final answer"
 
     @pytest.mark.asyncio
-    async def test_send_failure_leaves_failed_row(self):
+    async def test_ambiguous_send_failure_leaves_held_row(self):
         adapter = _Adapter()
         adapter.send = AsyncMock(
             return_value=SendResult(success=False, error="chat_not_found")
@@ -122,7 +122,7 @@ class TestProducerHook:
 
         rows = _rows()
         assert len(rows) == 1
-        assert rows[0][1] == "failed"
+        assert rows[0][1] == "outcome_unknown"
 
     @pytest.mark.asyncio
     async def test_late_transient_failure_signals_reconnected_runner(self):
@@ -183,9 +183,8 @@ class TestProducerHook:
         assert adapter.sent == ["final answer"]
 
     @pytest.mark.asyncio
-    async def test_crash_between_attempting_and_ack_is_recoverable(self):
-        """The core scenario (#58818): process dies mid-send. The row must
-        be claimable by a later process and carry the ambiguity marker."""
+    async def test_crash_between_attempting_and_ack_is_held(self):
+        """A lost external receipt preserves output without repeating the send."""
         adapter = _Adapter()
 
         async def _dies_mid_send(chat_id, content, reply_to=None, metadata=None):
@@ -201,13 +200,13 @@ class TestProducerHook:
 
         rows = _rows()
         assert len(rows) == 1
-        # Row is stuck in 'attempting' (or failed if retry wrapper caught it):
-        # either way it is non-delivered and recoverable.
-        assert rows[0][1] in ("attempting", "failed")
+        # The original output remains retained while its external receipt is unknown.
+        assert rows[0][1] in ("attempting", "outcome_unknown")
         with dl._connect() as conn:
             conn.execute(
                 "UPDATE delivery_obligations SET owner_pid=999999999, owner_started_at=1"
             )
         claimed = dl.sweep_recoverable()
-        assert len(claimed) == 1
-        assert claimed[0]["needs_marker"] is True
+        assert claimed == []
+        assert _rows()[0][1] == "outcome_unknown"
+        assert _rows()[0][2] == "final answer"

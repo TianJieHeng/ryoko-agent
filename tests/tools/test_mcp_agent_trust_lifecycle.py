@@ -284,7 +284,7 @@ def test_invalid_or_unenforced_sampling_limits_are_not_accepted():
         parse_agent_identity_config(cfg)
 
 
-def test_real_mcp_mutation_approval_binds_exact_args_and_has_no_ui_bypass(fixture, monkeypatch):
+def test_real_mcp_mutation_requires_semantic_adapter_before_any_approval(fixture, monkeypatch):
     from tools import capability_broker as broker, capability_approval, approval
     # Restore the real UI request function, overridden only for ordinary fixture calls.
     import importlib
@@ -297,21 +297,20 @@ def test_real_mcp_mutation_approval_binds_exact_args_and_has_no_ui_bypass(fixtur
         raw = registry.get_entry("mcp__public__write").handler
         monkeypatch.setattr(approval, "_presence", lambda: (None, False, False, False))
         denied = json.loads(raw({"target": "first"}))
-        assert denied["status"] == "pending"
+        assert denied["status"] == "denied"
+        assert denied["error"] == "effect_adapter_unsupported"
         live.session.call_tool.assert_not_awaited()
         shown = []
         def human(command, description, **kw):
             shown.append(command)
             return "once"
         monkeypatch.setattr(approval, "_presence", lambda: (human, True, False, False))
-        assert "error" not in json.loads(registry.dispatch("mcp__public__write", {"target": "first"}))
-        assert len(shown) == 1 and "https://fixture.invalid/mcp" in shown[0]
-        live.session.call_tool.assert_awaited_once_with("write", arguments={"target": "first"})
-        cap = broker.prepare_tool_capability("mcp__public__write", {"target": "first"})
-        with pytest.raises(broker.CapabilityDenied):
-            with broker.dispatch_capability(cap, "mcp__public__write", {"target": "changed"}):
-                raw({"target": "changed"})
-        assert live.session.call_tool.await_count == 1
+        denied = json.loads(registry.dispatch("mcp__public__write", {"target": "first"}))
+        assert denied["error"] == "effect_adapter_unsupported"
+        assert shown == []
+        live.session.call_tool.assert_not_awaited()
+        with pytest.raises(broker.CapabilityDenied, match="no durable semantic"):
+            broker.prepare_tool_capability("mcp__public__write", {"target": "first"})
         # A copied old handler cannot borrow a freshly registered schema's authority.
         _register_server_tools("public", live, live._config)
         assert json.loads(raw({"target": "first"}))["error"] == "handler_changed"

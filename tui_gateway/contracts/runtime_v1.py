@@ -196,7 +196,19 @@ class RuntimeArtifactReference(Result):
 
 class RuntimeUnresolvedEffect(Result):
     effect_id: str
+    status: Literal["prepared", "dispatched", "outcome_unknown", "reconciliation_required"]
+
+
+class RuntimeUnresolvedInvocation(Result):
+    operation_id: str
     status: Literal["pending", "outcome_uncertain"]
+
+
+class RuntimeReferenceCounts(Result):
+    outstanding_requests: int = 0
+    artifacts: int = 0
+    unresolved_effects: int = 0
+    unresolved_invocations: int = 0
 
 
 class RuntimeAdmissionJob(Result):
@@ -231,6 +243,10 @@ class MissionSnapshot(Result):
     outstanding_requests: list[RuntimeOutstandingRequest]
     artifacts: list[RuntimeArtifactReference]
     unresolved_effects: list[RuntimeUnresolvedEffect]
+    unresolved_invocations: list[RuntimeUnresolvedInvocation] = Field(default_factory=list)
+    reference_counts: RuntimeReferenceCounts = Field(default_factory=RuntimeReferenceCounts)
+    reference_limit: int = 100
+    references_truncated: bool = False
     last_cursor: str
     compatibility_status: Literal["native", "legacy"]
     admission: RuntimeAdmissionSnapshot | None = None
@@ -241,6 +257,10 @@ class RuntimeEventPayload(Result):
 
     command_id: str | None = None
     operation: RuntimeOperation | None = None
+    effect_state: Literal["prepared", "dispatched", "confirmed", "failed", "outcome_unknown", "reconciliation_required"] | None = None
+    operation_type: Literal["artifact_publish", "unsupported"] | None = None
+    approval_status: Literal["pending", "approved", "denied", "consumed"] | None = None
+    expires_at: float | None = None
     checkpoint_id: str | None = None
     included_seq: int | None = None
     cancellation: RuntimeCancellation | None = None

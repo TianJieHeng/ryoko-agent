@@ -46,6 +46,7 @@ def _create_legacy_v2_topic_tables(db):
 
 def _create_legacy_ledger_without_adapter_profile(db):
     """The delivery_obligations shape before ``adapter_profile`` was added (ledger never reopened)."""
+    db._write_sql("DROP TABLE delivery_obligations")
     db._write_sql("""
         CREATE TABLE delivery_obligations (
             obligation_id TEXT PRIMARY KEY, session_key TEXT NOT NULL,

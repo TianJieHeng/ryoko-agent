@@ -39,6 +39,7 @@ _EMIT_HELPERS = ("_emit", "_broadcast_global_event", "_voice_emit", "_pet_emit",
 _LITERAL_EMIT = re.compile(r"\b(?:%s)\(\s*\"([a-z_][a-z0-9_.]*)\"" % "|".join(_EMIT_HELPERS))
 _REQUEST_HELPERS = ("server_requests\\.send", "server_requests\\.send_async", "_ask", "_read_block")
 _LITERAL_REQUEST = re.compile(r"\b(?:%s)\(\s*\"([a-z_][a-z0-9_.]*)\"" % "|".join(_REQUEST_HELPERS))
+_LITERAL_EVENT_FRAME = re.compile(r'\b_event_frame\(\s*"([a-z_][a-z0-9_.]*)"')
 _LITERAL_FRAME = re.compile(r"\"method\":\s*\"event\".{0,120}?\"type\":\s*\"([a-z_][a-z0-9_.]*)\"", re.S)
 _SIDE_AGENT = re.compile(r"_spawn_side_agent\((?:[^()]|\([^()]*\))*?\"([a-z_][a-z0-9_.]*\.complete)\"", re.S)
 _SUBAGENT_RELAY = re.compile(r"\"(subagent\.[a-z_]+)\"")
@@ -70,6 +71,8 @@ def emitted_event_names() -> set[str]:
 
     for src in _tool_module_candidates(REPO / "tools"):
         names.update(_DESKTOP_UI_EMIT.findall(_read(src)))
+    # The durable outbox writes the validated frame to one owned transport.
+    names.update(_LITERAL_EVENT_FRAME.findall(_read(REPO / "gateway" / "durable_outbox.py")))
     names.update(_BROKER_FRAME.findall(_read(REPO / "gateway" / "browser_control_broker.py")))
     names.update(_SETUP_READY.findall(_read(REPO / "hermes_cli" / "free_tier_bootstrap.py")))
     return names

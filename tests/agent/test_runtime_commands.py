@@ -246,7 +246,7 @@ def test_unwind_after_base_exception_records_failure_and_cleans_scope(real_agent
     assert current_agent_context() is None
 
 
-def test_omitted_large_result_is_explicitly_unavailable_without_rerun(real_agent):
+def test_large_result_is_recoverable_from_immutable_artifact_without_rerun(real_agent):
     agent = real_agent
     response = _response()
     import random
@@ -255,8 +255,24 @@ def test_omitted_large_result_is_explicitly_unavailable_without_rerun(real_agent
     receipt = _submit(agent, _envelope())
     assert len(_run_submitted(agent, receipt)["final_response"]) == 250000
     replay = _run_submitted(agent, receipt)
-    assert replay["runtime_status"] == "recorded_output_unavailable"
-    assert replay["completed"] is False
+    assert replay["final_response"] == response.choices[0].message.content
+    assert replay["runtime_result"]["size"] > 240000
+    from gateway.durable_outbox import read_result
+    import base64
+    pieces, offset = [], 0
+    restarted_store = SessionDB(agent._session_db.db_path)
+    restarted = SimpleNamespace(runtime_context=agent.runtime_context,
+                                _session_db=restarted_store, session_id=agent.session_id)
+    try:
+        while True:
+            chunk = read_result(restarted, "command", offset, 64000)
+            pieces.append(base64.b64decode(chunk["data_base64"]))
+            offset = chunk["next_offset"]
+            if chunk["eof"]:
+                break
+    finally:
+        restarted_store.close()
+    assert json.loads(b"".join(pieces))["final_response"] == replay["final_response"]
     assert agent.client._fixture_create.call_count == 1
 
 
@@ -318,8 +334,12 @@ def test_recovered_control_cannot_target_a_successor_run(real_agent, monkeypatch
         from agent.runtime_commands import _envelope as trusted_envelope
         db, sid, actor, command = trusted_envelope(agent, _envelope("late-steer", "steer"))
         receipt = db.submit_runtime_command(sid, actor=actor, command=command)
-        finish_turn_command(first_run, {"final_response": "done"})
-        admission.lease.release()
+        first_token = bind_runtime_run(first_run)
+        try:
+            finish_turn_command(first_run, {"final_response": "done"})
+        finally:
+            reset_runtime_run(first_token, first_run)
+            admission.lease.release()
         second = prepare_turn_command(agent, "second")
         admission = admit_durable_turn_lease(agent, session_id="session", relay_turn_id="second",
             task_context={"session_id": "session", "platform": "cli"}, conversation_history=[])
@@ -387,3 +407,105 @@ def test_future_protocol_state_refuses_dispatch_even_with_empty_resume_history(r
     assert agent.client._fixture_create.call_count == 0
     assert db.get_session_turn_lease("session") is None
     assert db._read_one("SELECT provider_sidecar FROM messages WHERE session_id = ?", ("session",))[0] == future
+
+
+def test_owned_local_transport_receipts_partial_ack_and_retry_never_rerun(real_agent, monkeypatch):
+    import io
+    import threading
+    from gateway.durable_outbox import (
+        acknowledge_delivery, deliver_result, delivery_status, retry_delivery,
+    )
+    from tui_gateway import server
+    from tui_gateway.transport import StdioTransport
+    from hermes_state_runtime import RuntimeStoreError
+
+    agent = real_agent
+    result = _run_submitted(agent, _submit(agent, _envelope()))
+    delivery_id = result["runtime_result"]["delivery_id"]
+    output = io.StringIO()
+    transport = StdioTransport(lambda: output, threading.Lock())
+    session = {"agent": agent, "transport": transport}
+    monkeypatch.setitem(server._sessions, "outbox-ui", session)
+    with pytest.raises(RuntimeStoreError, match="attached transport"):
+        deliver_result(agent, delivery_id, "outbox-ui", StdioTransport(lambda: io.StringIO(), threading.Lock()))
+    receipt = deliver_result(agent, delivery_id, "outbox-ui", transport)
+    frame = json.loads(output.getvalue())
+    payload = frame["params"]["payload"]
+    assert frame["params"]["type"] == "runtime.result.available"
+    assert receipt["state"] == "awaiting_ack"
+    assert receipt["acknowledgment_level"] == "transport_accepted"
+    assert receipt["components"] == {"text": "not_sent", "artifact": "not_sent"}
+    with pytest.raises(RuntimeStoreError, match="Receipt is not bound"):
+        acknowledge_delivery(agent, delivery_id, "forged", payload["sha256"], text_received=True)
+    partial = acknowledge_delivery(agent, delivery_id, payload["attempt_token"], payload["sha256"], text_received=True)
+    assert partial["state"] == "partial" and partial["components"]["artifact"] == "not_sent"
+    # Replay addresses exactly the committed actor and artifact after bounded backoff.
+    import hermes_state_delivery
+    actual_now = hermes_state_delivery.time.time()
+    monkeypatch.setattr(hermes_state_delivery.time, "time", lambda: actual_now + 30)
+    replay = retry_delivery(agent, delivery_id, "outbox-ui", transport)
+    latest = json.loads(output.getvalue().splitlines()[-1])["params"]["payload"]
+    assert latest["artifact_id"] == payload["artifact_id"]
+    assert latest["sha256"] == payload["sha256"] and replay["destination"] == receipt["destination"]
+    with pytest.raises(RuntimeStoreError, match="Receipt is not bound"):
+        acknowledge_delivery(agent, delivery_id, payload["attempt_token"], payload["sha256"], artifact_received=True)
+    delivered = acknowledge_delivery(agent, delivery_id, latest["attempt_token"], latest["sha256"], artifact_received=True)
+    assert delivered["state"] == "delivered" and delivered["acknowledgment_level"] == "client_received"
+    assert delivery_status(agent, delivery_id)["state"] == "delivered"
+    assert agent.client._fixture_create.call_count == 1
+
+
+def test_local_pipe_loss_keeps_result_and_never_implicitly_resends(real_agent, monkeypatch):
+    import io
+    import threading
+    from gateway.durable_outbox import deliver_result, delivery_status, read_result, retry_delivery
+    from tui_gateway import server
+    from tui_gateway.transport import StdioTransport
+
+    agent = real_agent
+    result = _run_submitted(agent, _submit(agent, _envelope()))
+    delivery_id = result["runtime_result"]["delivery_id"]
+    class LostReceiptStream(io.StringIO):
+        def write(self, value):
+            super().write(value[:20])
+            raise BrokenPipeError("connection dropped after partial write")
+    output = LostReceiptStream()
+    lost = StdioTransport(lambda: output, threading.Lock())
+    session = {"agent": agent, "transport": lost}
+    monkeypatch.setitem(server._sessions, "lost-ui", session)
+    assert deliver_result(agent, delivery_id, "lost-ui", lost)["state"] == "outcome_unknown"
+    written = output.getvalue()
+    assert deliver_result(agent, delivery_id, "lost-ui", lost)["state"] == "outcome_unknown"
+    assert output.getvalue() == written
+    assert read_result(agent, "command")["artifact_id"] == result["runtime_result"]["artifact_id"]
+    assert delivery_status(agent, delivery_id)["attempt_count"] == 1
+    recovered_output = io.StringIO()
+    replacement = StdioTransport(lambda: recovered_output, threading.Lock())
+    session["transport"] = replacement
+    receipt = retry_delivery(agent, delivery_id, "lost-ui", replacement)
+    assert receipt["state"] == "awaiting_ack" and receipt["attempt_count"] == 2
+    assert json.loads(recovered_output.getvalue())["params"]["payload"]["delivery_id"] == delivery_id
+    assert agent.client._fixture_create.call_count == 1
+
+
+def test_published_result_survives_crash_before_final_commit_without_claiming_completion(real_agent, monkeypatch):
+    import base64
+    from gateway.durable_outbox import read_result
+    agent = real_agent
+    receipt = _submit(agent, _envelope())
+    def crash(*args, **kwargs):
+        raise OSError("crash after file publication, before atomic final transaction")
+    monkeypatch.setattr(agent._session_db, "commit_runtime_result", crash)
+    with pytest.raises(OSError, match="before atomic final"):
+        _run_submitted(agent, receipt)
+    record = agent._session_db.read_runtime_command("session", "command")
+    assert record["status"] == "claimed"
+    recovered = read_result(agent, "command")
+    assert recovered["publication_state"] == "published_uncommitted"
+    assert recovered["delivery_id"] is None
+    assert json.loads(base64.b64decode(recovered["data_base64"]))["final_response"] == "recorded answer"
+    with agent._session_db._runtime_read() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM runtime_artifact_versions").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM delivery_obligations WHERE authority='runtime.v1'").fetchone()[0] == 0
+    assert _run_submitted(agent, receipt)["runtime_status"] == "outcome_uncertain"
+    assert agent.client._fixture_create.call_count == 1

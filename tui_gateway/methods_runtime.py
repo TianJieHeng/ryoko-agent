@@ -85,7 +85,7 @@ def _runtime_store_error(rid, exc):
 def _runtime_snapshot_projection(snapshot):
     from tui_gateway.contracts.runtime_v1 import (
         MissionSnapshot, RuntimeArtifactReference, RuntimeOutstandingRequest,
-        RuntimeSnapshotState, RuntimeUnresolvedEffect,
+        RuntimeSnapshotState, RuntimeUnresolvedEffect, RuntimeUnresolvedInvocation, RuntimeReferenceCounts,
     )
 
     projection = {key: snapshot.get(key) for key in MissionSnapshot.model_fields}
@@ -94,9 +94,14 @@ def _runtime_snapshot_projection(snapshot):
         "outstanding_requests": RuntimeOutstandingRequest,
         "artifacts": RuntimeArtifactReference,
         "unresolved_effects": RuntimeUnresolvedEffect,
+        "unresolved_invocations": RuntimeUnresolvedInvocation,
     }
     for key, model in references.items():
-        projection[key] = [{field: value[field] for field in model.model_fields} for value in snapshot[key]]
+        projection[key] = [{field: value[field] for field in model.model_fields} for value in snapshot.get(key, [])]
+    projection["reference_counts"] = {
+        key: snapshot.get("reference_counts", {}).get(key, 0) for key in RuntimeReferenceCounts.model_fields}
+    projection["reference_limit"] = snapshot.get("reference_limit", 100)
+    projection["references_truncated"] = snapshot.get("references_truncated", False)
     return projection
 
 
@@ -116,6 +121,19 @@ def _runtime_event_projection(event):
             except ValidationError:
                 # Unknown/malformed private metadata is never forwarded wholesale.
                 pass
+    if event["type"] == "effect.recorded":
+        state = event["payload"].get("state")
+        if isinstance(state, str) and state in {"prepared", "dispatched", "confirmed", "failed", "outcome_unknown", "reconciliation_required"}:
+            projection["payload"]["effect_state"] = state
+        projection["payload"]["operation_type"] = (
+            "artifact_publish" if event["payload"].get("operation_type") == "artifact_publish" else "unsupported")
+    if event["type"] in {"approval.requested", "approval.resolved"}:
+        status = event["payload"].get("status")
+        if isinstance(status, str) and status in {"pending", "approved", "denied", "consumed"}:
+            projection["payload"]["approval_status"] = status
+        expiry = event["payload"].get("expires_at")
+        if type(expiry) in (int, float) and 0 < expiry <= 253402300799:
+            projection["payload"]["expires_at"] = expiry
     result = event["payload"].get("result")
     if (event["type"] == "command.completed" and isinstance(result, dict)
             and result.get("outcome") in ("steer_queued", "steer_not_queued", "cancel_requested", "cancel_not_requested")):
@@ -162,7 +180,7 @@ def _runtime_capabilities(rid, params):
                    "effects_enabled": False, "reason": reason if executable else denial}
                   for operation, reason in descriptions.items()]
     operations.append({"operation": "approval", "accepts_commands": False, "executes": False,
-                       "effects_enabled": False, "reason": "approval and effect authorization pending BE05/BE06"})
+                       "effects_enabled": False, "reason": "use runtime.approval.resolve for an exact durable request"})
     return _ok(rid, {"schema_versions": [1], "operations": operations, "strict_identity_required": True,
                      "durable_replay": True, "max_events": 200,
                      "admission": {"scope": "profile_store", **asdict(AdmissionPolicy())} if executable else None,

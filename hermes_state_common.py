@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 34
+SCHEMA_VERSION = 35
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -642,6 +642,116 @@ CREATE TABLE IF NOT EXISTS runtime_checkpoints (
     published_seq INTEGER NOT NULL,
     generation INTEGER NOT NULL,
     checkpoint_json TEXT NOT NULL
+);
+
+-- BE06 audit history is retained independently of transcript lifecycle.
+-- All transitions share the existing SessionDB writer and session_turn_leases.
+CREATE TABLE IF NOT EXISTS runtime_effects (
+    effect_id TEXT PRIMARY KEY,
+    schema_version INTEGER NOT NULL,
+    session_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    holder TEXT NOT NULL,
+    generation INTEGER NOT NULL,
+    prepared_generation INTEGER NOT NULL,
+    operation_id TEXT NOT NULL,
+    intent_key TEXT NOT NULL,
+    operation_type TEXT NOT NULL,
+    action_digest TEXT NOT NULL,
+    input_digest TEXT NOT NULL,
+    target_ref TEXT NOT NULL,
+    policy_version TEXT NOT NULL,
+    policy_digest TEXT NOT NULL,
+    input_revision TEXT NOT NULL,
+    artifact_revision TEXT NOT NULL,
+    intent_json TEXT NOT NULL,
+    intent_digest TEXT NOT NULL,
+    input_ref_json TEXT NOT NULL,
+    provider_idempotency TEXT NOT NULL,
+    idempotency_key TEXT,
+    approval_id TEXT,
+    state TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    updated_at REAL NOT NULL,
+    dispatched_at REAL,
+    UNIQUE(session_id,run_id,intent_key),
+    UNIQUE(session_id,run_id,operation_id)
+);
+CREATE INDEX IF NOT EXISTS idx_runtime_effects_actor ON runtime_effects(session_id,principal_id,profile_id,agent_id,state);
+CREATE TABLE IF NOT EXISTS runtime_effect_evidence (
+    evidence_id TEXT PRIMARY KEY,
+    effect_id TEXT NOT NULL REFERENCES runtime_effects(effect_id),
+    sequence INTEGER NOT NULL,
+    generation INTEGER NOT NULL,
+    from_state TEXT NOT NULL,
+    state TEXT NOT NULL,
+    receipt_json TEXT,
+    evidence_json TEXT,
+    created_at REAL NOT NULL,
+    UNIQUE(effect_id,sequence)
+);
+CREATE INDEX IF NOT EXISTS idx_runtime_effect_evidence_effect ON runtime_effect_evidence(effect_id,created_at);
+CREATE TABLE IF NOT EXISTS runtime_effect_approvals (
+    approval_id TEXT PRIMARY KEY,
+    schema_version INTEGER NOT NULL,
+    session_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    binding_json TEXT NOT NULL,
+    approval_digest TEXT NOT NULL,
+    expires_at REAL NOT NULL,
+    status TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    resolved_at REAL,
+    consumed_at REAL,
+    consumer_id TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_runtime_effect_approvals_actor ON runtime_effect_approvals(session_id,principal_id,profile_id,agent_id,status);
+
+-- Runtime artifact finalization and delivery intent share one writer commit.
+CREATE TABLE IF NOT EXISTS runtime_artifact_versions (
+    artifact_id TEXT NOT NULL,
+    version INTEGER NOT NULL,
+    session_id TEXT NOT NULL,
+    command_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    principal_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
+    descriptor_json TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY(artifact_id,version),
+    UNIQUE(session_id,command_id)
+);
+-- One table, explicit disjoint authorities. Legacy sweeps cannot claim runtime.v1.
+CREATE TABLE IF NOT EXISTS delivery_obligations (
+    obligation_id TEXT PRIMARY KEY,
+    session_key TEXT NOT NULL,
+    platform TEXT NOT NULL,
+    chat_id TEXT NOT NULL,
+    thread_id TEXT,
+    content TEXT NOT NULL,
+    state TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    created_at REAL NOT NULL,
+    updated_at REAL NOT NULL,
+    owner_pid INTEGER,
+    owner_started_at INTEGER,
+    last_error TEXT,
+    adapter_profile TEXT,
+    authority TEXT NOT NULL DEFAULT 'legacy',
+    metadata_json TEXT,
+    deadline_at REAL,
+    retention_until REAL,
+    next_attempt_at REAL,
+    max_attempts INTEGER NOT NULL DEFAULT 3,
+    attempt_token TEXT,
+    acknowledgement_json TEXT NOT NULL DEFAULT '{}'
 );
 
 -- BE03 shares SessionDB transactions and the existing fenced turn owner.

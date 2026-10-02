@@ -288,8 +288,11 @@ def test_controls_and_checkpoints_preserve_safe_outcomes_and_retention(runtime):
     db.publish_runtime_checkpoint(sid, checkpoint, holder="active-worker", generation=generation,
                                   expected_revision=revision, included_seq=revision)
     snapshot = runtime.call("runtime.snapshot")["result"]
+    # Checkpoints retain legacy invocation uncertainty but cannot invent BE06
+    # approvals, published artifact versions or external effect records.
     for field in ("outstanding_requests", "artifacts", "unresolved_effects"):
-        assert snapshot[field] == checkpoint[field]
+        assert snapshot[field] == []
+    assert snapshot["unresolved_invocations"] == [{"operation_id": "effect-1", "status": "outcome_uncertain"}]
     db.prune_runtime_events(sid, through_seq=revision, holder="active-worker", generation=generation)
     expired = runtime.call("runtime.events.since", cursor=old_cursor)["result"]
     assert expired["status"] == "snapshot_required"
@@ -387,3 +390,118 @@ def test_real_shutdown_fences_launch_and_leaves_terminal_queue_receipts(runtime,
     assert record["result"]["outcome"] == "shutdown_before_launch"
     denied = runtime.call("runtime.command", **envelope("after-shutdown", expected_revision=None))["result"]
     assert denied["status"] == "rejected" and denied["conflict"]["code"] == "admission_draining"
+
+
+def _install_result_worker(runtime, monkeypatch):
+    """Real finalizer/effect store/files/outbox; no external model invocation."""
+    from agent.identity_lifecycle import agent_runtime_scope
+    from agent.runtime_commands import RuntimeRun, bind_runtime_run, finish_turn_command, reset_runtime_run
+
+    def publish_worker(_rid, sid, session, _text, *, image_paths, runtime_command_receipt):
+        agent = session["agent"]
+        db = agent._session_db
+        holder = "result-worker"
+        with agent_runtime_scope(agent.runtime_context):
+            assert db.try_acquire_session_turn_lease(agent.session_id, holder, ttl_seconds=60)
+            generation = db.get_session_turn_lease(agent.session_id)["generation"]
+            assert db.claim_runtime_command(agent.session_id, runtime_command_receipt["command_id"],
+                                            holder=holder, generation=generation)
+            run = RuntimeRun(agent, db, agent.session_id, runtime_command_receipt["command_id"],
+                             runtime_command_receipt["run_id"], holder, generation, agent.runtime_context)
+            token = bind_runtime_run(run)
+            try:
+                finish_turn_command(run, {"final_response": f"private result for {sid}", "completed": True,
+                                          "provider_debug": "must never become an artifact"})
+            finally:
+                reset_runtime_run(token, run)
+                db.release_session_turn_lease(agent.session_id, holder, generation=generation)
+        runtime.dispatched.append(runtime_command_receipt["command_id"])
+        session["running"] = False
+        return True
+    monkeypatch.setattr(runtime.server, "_run_prompt_submit", publish_worker)
+
+
+def test_result_rpc_real_transport_ack_and_read_only_two_profile_recovery(runtime, monkeypatch):
+    import base64
+    import io
+    from tui_gateway.transport import StdioTransport
+
+    _install_result_worker(runtime, monkeypatch)
+    outputs = {}
+    for label in ("a", "b"):
+        output = io.StringIO()
+        outputs[label] = output
+        peer = StdioTransport(lambda output=output: output, threading.Lock())
+        runtime.peers[label] = peer
+        runtime.sessions[f"live-{label}"]["transport"] = peer
+        assert runtime.call("runtime.command", label, **envelope("result-command"))["result"]["status"] == "accepted"
+    before_environment = dict(os.environ)
+    results = {}
+    for label in ("a", "b", "a"):
+        result = runtime.call("runtime.result.get", label, command_id="result-command")["result"]
+        assert result["publication_state"] == "committed" and result["delivery_id"]
+        assert json.loads(base64.b64decode(result["data_base64"]))["final_response"] == f"private result for live-{label}"
+        assert "provider_debug" not in base64.b64decode(result["data_base64"]).decode()
+        results[label] = result
+        status = runtime.call("runtime.delivery.status", label, delivery_id=result["delivery_id"])["result"]
+        assert status["state"] == "pending" and status["attempt_count"] == 0
+        assert outputs[label].getvalue() == ""
+        foreign = "b" if label == "a" else "a"
+        for method, params in (
+            ("runtime.result.get", {"command_id": "result-command"}),
+            ("runtime.delivery.status", {"delivery_id": result["delivery_id"]}),
+            ("runtime.delivery.retry", {"delivery_id": result["delivery_id"]}),
+            ("runtime.delivery.ack", {"delivery_id": result["delivery_id"], "attempt_token": "forged",
+                                      "sha256": result["sha256"], "text_received": True}),
+        ):
+            assert runtime.call(method, label, via=runtime.peers[foreign], **params)["error"]["code"] == 4001
+    assert dict(os.environ) == before_environment
+    assert results["a"]["artifact_id"] != results["b"]["artifact_id"]
+    for invalid in ({"offset": True}, {"limit": 65537}, {"limit": "1"}, {"profile": "b"}):
+        assert runtime.call("runtime.result.get", command_id="result-command", **invalid)["error"]["code"] == 4000
+    result = results["a"]
+    delivery_id = result["delivery_id"]
+    sent = runtime.call("runtime.delivery.retry", delivery_id=delivery_id)["result"]
+    assert sent["state"] == "awaiting_ack" and sent["acknowledgment_level"] == "transport_accepted"
+    assert sent["components"] == {"text": "not_sent", "artifact": "not_sent"}
+    frame = json.loads(outputs["a"].getvalue())
+    assert frame["method"] == "event" and frame["params"]["type"] == "runtime.result.available"
+    payload = frame["params"]["payload"]
+    assert payload["delivery_id"] == delivery_id and payload["artifact_id"] == result["artifact_id"]
+    before = outputs["a"].getvalue()
+    runtime.call("runtime.result.get", command_id="result-command", limit=10)
+    assert runtime.call("runtime.delivery.status", delivery_id=delivery_id)["result"] == sent
+    assert outputs["a"].getvalue() == before
+    bad = runtime.call("runtime.delivery.ack", delivery_id=delivery_id, attempt_token=payload["attempt_token"],
+                       sha256="0" * 64, text_received=True)
+    assert bad["error"]["data"]["code"] == "invalid_delivery_receipt"
+    partial = runtime.call("runtime.delivery.ack", delivery_id=delivery_id,
+        attempt_token=payload["attempt_token"], sha256=payload["sha256"], text_received=True)["result"]
+    assert partial["state"] == "partial" and partial["components"]["artifact"] == "not_sent"
+    delivered = runtime.call("runtime.delivery.ack", delivery_id=delivery_id,
+        attempt_token=payload["attempt_token"], sha256=payload["sha256"], artifact_received=True)["result"]
+    assert delivered["state"] == "delivered" and delivered["acknowledgment_level"] == "client_received"
+    assert runtime.call("runtime.delivery.retry", delivery_id=delivery_id)["result"] == delivered
+    assert outputs["a"].getvalue() == before and outputs["b"].getvalue() == ""
+    assert runtime.dispatched == ["result-command", "result-command"]
+
+
+def test_result_rpc_recovers_confirmed_orphan_without_effect_or_command_replay(runtime, monkeypatch):
+    import base64
+    _install_result_worker(runtime, monkeypatch)
+    agent = runtime.agents["a"]
+    def crash(*args, **kwargs):
+        raise OSError("injected final-transaction crash")
+    monkeypatch.setattr(agent._session_db, "commit_runtime_result", crash)
+    # The worker can fail; the durable command remains claimed and non-replayable.
+    with pytest.raises(OSError, match="final-transaction crash"):
+        runtime.call("runtime.command", **envelope("orphan-command"))
+    before = agent._session_db.read_runtime_snapshot(agent.session_id)
+    recovered = runtime.call("runtime.result.get", command_id="orphan-command")["result"]
+    assert recovered["publication_state"] == "published_uncommitted" and recovered["delivery_id"] is None
+    assert json.loads(base64.b64decode(recovered["data_base64"]))["final_response"] == "private result for live-a"
+    assert agent._session_db.read_runtime_snapshot(agent.session_id) == before
+    assert agent._session_db.read_runtime_command(agent.session_id, "orphan-command")["status"] == "claimed"
+    duplicate = runtime.call("runtime.command", **envelope("orphan-command"))
+    assert duplicate["result"]["status"] == "accepted"
+    assert runtime.dispatched == []

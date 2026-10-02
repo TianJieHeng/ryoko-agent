@@ -137,7 +137,9 @@ def test_checkpoint_cas_retention_and_restart_cursor(stores):
         expected_revision=before["revision"], included_seq=before["revision"]))
     first.prune_runtime_events("session", through_seq=before["revision"], holder="worker", generation=generation)
     expected = second.read_runtime_snapshot("session")
-    assert expected["unresolved_effects"] == checkpoint()["unresolved_effects"]
+    assert expected["unresolved_effects"] == []
+    assert expected["unresolved_invocations"] == [{"operation_id": "effect", "status": "outcome_uncertain"}]
+    assert expected["artifacts"] == []  # A checkpoint reference alone is not a committed BE06 artifact.
     first.close()
     second.close()
     restarted = SessionDB(first.db_path)
@@ -295,9 +297,10 @@ def test_inflight_operation_refs_survive_failed_recording_restart_and_checkpoint
     event("tool.failed", "tool-call", {"error_type": "TimeoutError"})
     event("tool.started", "interrupted-call")
     before = observer.read_runtime_snapshot("session")
-    assert before["unresolved_effects"] == [
-        {"effect_id": "tool-call", "status": "outcome_uncertain"},
-        {"effect_id": "interrupted-call", "status": "pending"},
+    assert before["unresolved_effects"] == []
+    assert before["unresolved_invocations"] == [
+        {"operation_id": "tool-call", "status": "outcome_uncertain"},
+        {"operation_id": "interrupted-call", "status": "pending"},
     ]
     append = db._append_runtime_event_on_conn
 
@@ -310,7 +313,8 @@ def test_inflight_operation_refs_survive_failed_recording_restart_and_checkpoint
         event("tool.completed", "interrupted-call", {"result": {"recorded": True}})
     assert observer.read_runtime_snapshot("session") == before
     monkeypatch.setattr(db, "_append_runtime_event_on_conn", append)
-    saved = {**checkpoint(), "unresolved_effects": before["unresolved_effects"]}
+    saved = {**checkpoint(), "unresolved_effects": before["unresolved_effects"],
+             "unresolved_invocations": before["unresolved_invocations"]}
     db.publish_runtime_checkpoint("session", saved, holder="worker", generation=generation,
                                   expected_revision=before["revision"], included_seq=before["revision"])
     db.prune_runtime_events("session", through_seq=before["revision"], holder="worker", generation=generation)
@@ -319,10 +323,10 @@ def test_inflight_operation_refs_survive_failed_recording_restart_and_checkpoint
     reopened = SessionDB(db.db_path)
     try:
         snapshot = reopened.read_runtime_snapshot("session")
-        assert snapshot["unresolved_effects"] == before["unresolved_effects"]
+        assert snapshot["unresolved_invocations"] == before["unresolved_invocations"]
         replay = reopened.replay_runtime_events("session", "expired:99")
         assert replay["status"] == "snapshot_required"
-        assert replay["snapshot"]["unresolved_effects"] == before["unresolved_effects"]
+        assert replay["snapshot"]["unresolved_invocations"] == before["unresolved_invocations"]
     finally:
         reopened.close()
 

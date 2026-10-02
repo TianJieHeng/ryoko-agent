@@ -750,3 +750,8 @@ __all__ = [
     "TurnStatus", "VoiceStatusPayload",
     "VoiceTranscriptPayload", "WakeDetectedPayload",
 ]
+
+
+from .runtime_results import RuntimeResultAvailablePayload
+
+event("runtime.result.available", RuntimeResultAvailablePayload)

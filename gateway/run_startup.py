@@ -310,12 +310,27 @@ class GatewayStartupMixin:
             sendable.append(row)
         return sendable
 
+    async def _refresh_delivery_resume_holds(self, *, clear_flags=True) -> None:
+        """Keep retained results out of automatic turn recovery, even after a flag-write failure."""
+        from gateway.delivery_ledger import retained_output_sessions
+        try:
+            keys = await asyncio.to_thread(retained_output_sessions)
+        except Exception:
+            self._delivery_resume_check_failed = True
+            logger.warning("Delivery recovery state unavailable; automatic turn recovery held", exc_info=True)
+            return
+        self._delivery_resume_hold_keys = keys
+        self._delivery_resume_check_failed = False
+        if clear_flags:
+            await self._clear_resume_pending_for_claimed_obligations(
+                [{"session_key": key} for key in sorted(keys)])
+
     async def _claim_pending_obligations(self) -> list:
         """Claim recoverable delivery-ledger rows and clear their ``resume_pending`` flags (pure DB
         work, no sends). Must run INLINE BEFORE ``_schedule_resume_pending_sessions`` and the
         abandonable boot-send task: these sessions already produced their answer, so the resume path
-        must not re-run (re-pay for) the turn however long the sends take. Mid-send / rejected rows
-        carry a visible recovered-reply marker (gateway/delivery_ledger.py). Returns the rows.
+        must not re-run the turn however long the sends take. Ambiguous external delivery
+        is held independently from execution. Returns only safe delivery claims.
 
         A session with a recoverable obligation already produced its answer — the turn completed and only
         delivery is owed — so clearing ``resume_pending`` here prevents the resume path from re-running (and
@@ -326,6 +341,7 @@ class GatewayStartupMixin:
         try:
             from gateway.delivery_ledger import ledger_enabled, sweep_recoverable
             if not await asyncio.to_thread(ledger_enabled):
+                await self._refresh_delivery_resume_holds()
                 return []
             # Claim only rows whose exact transport owner is connected: platform-only filtering would spend
             # a disconnected bot's retry budget because another bot on that platform is online.
@@ -344,13 +360,14 @@ class GatewayStartupMixin:
             )
         except Exception:
             logger.debug("delivery ledger sweep failed", exc_info=True)
+            self._delivery_resume_check_failed = True
             return []
+        await self._refresh_delivery_resume_holds()
         if not claimed:
             return []
         # Clear resume_pending for EVERY claimed row before any send: the answer is in the ledger.
         # Claiming already spent one of the row's redelivery attempts — the answer is in the ledger, so the
         # resume path must never re-run these turns (#91969).
-        await self._clear_resume_pending_for_claimed_obligations(claimed)
         return claimed
 
     @staticmethod
@@ -507,6 +524,7 @@ class GatewayStartupMixin:
         the next restart. Best-effort; reuses the startup redelivery contract."""
         try:
             from gateway.delivery_ledger import ledger_enabled, sweep_failed_for_runtime
+            await self._refresh_delivery_resume_holds(clear_flags=False)
             if not await asyncio.to_thread(ledger_enabled):
                 return 0
             claimed = await asyncio.to_thread(sweep_failed_for_runtime, platform.value, profile=profile)
@@ -531,12 +549,16 @@ class GatewayStartupMixin:
     def _resume_pending_candidates(self, platform=None) -> Optional[list]:
         """Snapshot resume-pending entries (optionally scoped to ``platform``); None when
         enumeration failed or the restart-loop breaker tripped for this boot."""
+        if getattr(self, "_delivery_resume_check_failed", False):
+            return None
+        held = getattr(self, "_delivery_resume_hold_keys", set())
         try:
             with self.session_store._lock:  # noqa: SLF001 — snapshot under lock
                 self.session_store._ensure_loaded_locked()  # noqa: SLF001
                 candidates = [
                     entry for entry in self.session_store._entries.values()  # noqa: SLF001
                     if entry.resume_pending
+                    and entry.session_key not in held
                     and not entry.suspended
                     and entry.origin is not None
                     and entry.resume_reason in self._AUTO_RESUME_REASONS

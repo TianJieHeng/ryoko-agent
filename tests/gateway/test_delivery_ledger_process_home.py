@@ -80,7 +80,7 @@ def _runner(adapter):
 
 
 @pytest.mark.asyncio
-async def test_boot_sweep_redelivers_a_reply_recorded_under_a_served_profile_scope(launch_home):
+async def test_boot_sweep_holds_ambiguous_reply_in_its_own_launch_store(launch_home):
     from gateway.run import _profile_runtime_scope
 
     adapter = _ServedAdapter()
@@ -98,6 +98,9 @@ async def test_boot_sweep_redelivers_a_reply_recorded_under_a_served_profile_sco
         conn.execute("UPDATE delivery_obligations SET owner_pid=999999999, owner_started_at=1")
 
     runner = _runner(adapter)
-    assert await runner._redeliver_pending_obligations() == 1
-    assert adapter.sent == [dl.RECOVERED_MARKER + ANSWER]
+    assert await runner._redeliver_pending_obligations() == 0
+    assert adapter.sent == []
+    with dl._connect() as conn:
+        row = conn.execute("SELECT state,content,session_key,adapter_profile FROM delivery_obligations").fetchone()
+    assert row == ("outcome_unknown", ANSWER, SESSION_KEY, "research")
     runner._async_session_store.clear_resume_pending.assert_awaited_once_with(SESSION_KEY)

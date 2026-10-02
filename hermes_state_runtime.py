@@ -16,6 +16,7 @@ from collections.abc import Mapping
 RUNTIME_SCHEMA_VERSION = 1
 MAX_RUNTIME_PAYLOAD_BYTES = 256 * 1024
 MAX_RUNTIME_PAGE = 500
+MAX_SNAPSHOT_REFERENCES = 100
 _OPERATIONS = frozenset({"submit", "steer", "cancel", "approval"})
 _FINISH_STATES = frozenset({"completed", "failed", "blocked", "cancelled"})
 _RECORDED_TYPES = frozenset({"runtime.output", "runtime.state", "approval.requested",
@@ -67,7 +68,7 @@ def _revision(actual, expected):
 
 def _empty_projection():
     return {"state": {"status": "idle", "run_id": None, "last_command_id": None, "last_operation": None},
-            "outstanding_requests": [], "artifacts": [], "unresolved_effects": []}
+            "outstanding_requests": [], "artifacts": [], "unresolved_effects": [], "unresolved_invocations": []}
 
 
 def _validated_command(actor, command):
@@ -102,12 +103,23 @@ def _checkpoint_metadata(checkpoint):
         _identifier(metadata.get(field), field)
     specifications = {
         "artifacts": ({"artifact_id", "version"}, {}),
-        "unresolved_effects": ({"effect_id", "status"}, {"status": {"pending", "outcome_uncertain"}}),
+        "unresolved_effects": ({"effect_id", "status"}, {"status": {
+            "pending", "outcome_uncertain", "prepared", "dispatched", "outcome_unknown", "reconciliation_required"}}),
+        "unresolved_invocations": ({"operation_id", "status"}, {"status": {"pending", "outcome_uncertain"}}),
         "outstanding_requests": ({"request_id", "kind", "status"},
                                  {"kind": {"approval", "input"}, "status": {"pending"}}),
     }
     _require(set(metadata) <= set(specifications) | {"schema_version", "config_version", "policy_version",
              "runtime_version", "prompt_projection_version"}, "invalid_command", "Unsupported checkpoint fields")
+    # Schema34 checkpoints called missing invocation outputs "effects". Retain
+    # those references without promoting them into BE06 external-effect receipts.
+    if "unresolved_invocations" not in metadata:
+        legacy = metadata.get("unresolved_effects", [])
+        if isinstance(legacy, list):
+            metadata["unresolved_invocations"] = [
+                {"operation_id": item.get("effect_id"), "status": item.get("status")}
+                for item in legacy if isinstance(item, dict) and isinstance(item.get("status"), str)
+                and item["status"] in {"pending", "outcome_uncertain"}]
     for name, (fields, enums) in specifications.items():
         rows = metadata.setdefault(name, [])
         _require(isinstance(rows, list) and len(rows) <= 100, "invalid_command", "Checkpoint reference bound exceeded")
@@ -120,13 +132,23 @@ def _checkpoint_metadata(checkpoint):
     return metadata
 
 
+def _normalize_invocation_projection(projection):
+    if "unresolved_invocations" not in projection:
+        projection["unresolved_invocations"] = [
+            {"operation_id": item["effect_id"], "status": item["status"]}
+            for item in projection.get("unresolved_effects", [])
+            if item.get("status") in {"pending", "outcome_uncertain"}]
+    return projection
+
+
 def _project_runtime_operation(projection, event):
     """Track recorded invocation outcomes, not external-effect success or exactly-once delivery."""
     kind, _, phase = event["type"].partition(".")
     if kind not in {"model", "tool"}:
         return
     operation_id = _identifier(event["operation_id"], "operation_id")
-    unresolved = {item["effect_id"]: item for item in projection["unresolved_effects"]}
+    _normalize_invocation_projection(projection)
+    unresolved = {item["operation_id"]: item for item in projection["unresolved_invocations"]}
     result = event["payload"].get("result")
     uncertain = phase == "failed" or (isinstance(result, dict) and (
         result.get("outcome_uncertain") is True or result.get("output_omitted") is True
@@ -136,10 +158,10 @@ def _project_runtime_operation(projection, event):
         # delivery confirmation and safe retry remain separate BE06 responsibilities.
         unresolved.pop(operation_id, None)
     else:
-        unresolved[operation_id] = {"effect_id": operation_id,
+        unresolved[operation_id] = {"operation_id": operation_id,
                                    "status": "outcome_uncertain" if uncertain else "pending"}
     _require(len(unresolved) <= 100, "unresolved_limit", "Reconcile outstanding operations before dispatch")
-    projection["unresolved_effects"] = list(unresolved.values())
+    projection["unresolved_invocations"] = list(unresolved.values())
 
 
 class SessionRuntimeMixin:
@@ -182,11 +204,58 @@ class SessionRuntimeMixin:
 
     def _runtime_snapshot_on_conn(self, conn, session_id):
         row = self._runtime_state_on_conn(conn, session_id)
-        projection = json.loads(row["snapshot_json"]) if row else _empty_projection()
+        projection = _normalize_invocation_projection(json.loads(row["snapshot_json"]) if row else _empty_projection())
+        projection.update(self._runtime_references_on_conn(conn, session_id, row, projection))
         return {"schema_version": RUNTIME_SCHEMA_VERSION, "session_id": session_id,
                 "revision": row["revision"] if row else 0, **projection,
                 "last_cursor": f'{row["epoch"]}:{row["revision"]}' if row else "legacy:0",
                 "compatibility_status": "native" if row else "legacy"}
+
+    def _runtime_references_on_conn(self, conn, session_id, state, projection):
+        """Safe bounded windows from authoritative rows in the caller's read transaction."""
+        actor = tuple(state[key] for key in ("principal_id", "profile_id", "agent_id")) if state else (None,) * 3
+        params = (session_id, *actor)
+        scope = "session_id=? AND principal_id=? AND profile_id=? AND agent_id=?"
+        effect_from = "runtime_effects WHERE " + scope + " AND state NOT IN ('confirmed','failed')"
+        effect_count = conn.execute("SELECT COUNT(*),MIN(schema_version),MAX(schema_version) FROM " + effect_from, params).fetchone()
+        _require(not effect_count[0] or effect_count[1] == effect_count[2] == 1,
+                 "unsupported_schema", "Unsupported effect projection schema")
+        effects = [{"effect_id": item["effect_id"], "status": item["state"]} for item in conn.execute(
+            "SELECT effect_id,state FROM " + effect_from + " ORDER BY created_at,effect_id LIMIT ?",
+            (*params, MAX_SNAPSHOT_REFERENCES))]
+        artifact_from = "runtime_artifact_versions WHERE " + scope
+        artifact_count = conn.execute("SELECT COUNT(*) FROM " + artifact_from, params).fetchone()[0]
+        artifacts = [{"artifact_id": item["artifact_id"], "version": str(item["version"])} for item in conn.execute(
+            "SELECT artifact_id,version FROM " + artifact_from + " ORDER BY created_at DESC,artifact_id,version DESC LIMIT ?",
+            (*params, MAX_SNAPSHOT_REFERENCES))]
+        now = time.time()
+        approval_from = (
+            "runtime_effect_approvals a JOIN session_turn_leases l ON l.conversation_id=a.session_id "
+            "AND l.holder=json_extract(a.binding_json,'$.holder') AND l.generation=json_extract(a.binding_json,'$.generation') "
+            "JOIN runtime_commands c ON c.session_id=a.session_id AND c.run_id=a.run_id AND c.principal_id=a.principal_id "
+            "AND c.status='claimed' AND c.claimed_holder=l.holder AND c.claimed_generation=l.generation "
+            "WHERE a.session_id=? AND a.principal_id=? AND a.profile_id=? AND a.agent_id=? "
+            "AND a.status='pending' AND a.expires_at>? AND l.expires_at>? "
+            "AND json_extract(c.command_json,'$.operation')='submit' "
+            "AND NOT EXISTS (SELECT 1 FROM runtime_commands stop WHERE stop.session_id=a.session_id "
+            "AND stop.run_id=a.run_id AND json_extract(stop.command_json,'$.operation')='cancel')")
+        approval_params = (*params, now, now)
+        approval_count = conn.execute("SELECT COUNT(*),MIN(a.schema_version),MAX(a.schema_version) FROM " + approval_from,
+                                      approval_params).fetchone()
+        _require(not approval_count[0] or approval_count[1] == approval_count[2] == 1,
+                 "unsupported_schema", "Unsupported approval projection schema")
+        approvals = [{"request_id": item[0], "kind": "approval", "status": "pending"} for item in conn.execute(
+            "SELECT a.approval_id FROM " + approval_from + " ORDER BY a.created_at,a.approval_id LIMIT ?",
+            (*approval_params, MAX_SNAPSHOT_REFERENCES))]
+        inputs = [{key: item[key] for key in ("request_id", "kind", "status")} for item in projection["outstanding_requests"]
+                  if item.get("kind") == "input"]
+        invocations = projection["unresolved_invocations"]
+        counts = {"outstanding_requests": approval_count[0] + len(inputs), "artifacts": artifact_count,
+                  "unresolved_effects": effect_count[0], "unresolved_invocations": len(invocations)}
+        return {"outstanding_requests": (approvals + inputs)[:MAX_SNAPSHOT_REFERENCES], "artifacts": artifacts,
+                "unresolved_effects": effects, "unresolved_invocations": invocations[:MAX_SNAPSHOT_REFERENCES],
+                "reference_counts": counts, "reference_limit": MAX_SNAPSHOT_REFERENCES,
+                "references_truncated": any(count > MAX_SNAPSHOT_REFERENCES for count in counts.values())}
 
     def _append_runtime_event_on_conn(self, conn, session_id, event_type, payload, generation, **correlations):
         _require(isinstance(event_type, str) and event_type in _EVENT_TYPES, "invalid_command", "Unknown runtime event type")
@@ -398,7 +467,7 @@ class SessionRuntimeMixin:
             _require(included_seq == row["revision"], "revision_conflict", "Checkpoint source watermark changed")
             checkpoint_id = uuid.uuid4().hex
             projection = json.loads(row["snapshot_json"])
-            for key in ("outstanding_requests", "artifacts", "unresolved_effects"):
+            for key in ("outstanding_requests", "artifacts", "unresolved_effects", "unresolved_invocations"):
                 projection[key] = metadata[key]
             conn.execute("UPDATE runtime_state SET snapshot_json=? WHERE session_id=?", (_json(projection), sid))
             event = self._append_runtime_event_on_conn(conn, sid, "checkpoint.published",

@@ -1,7 +1,7 @@
 """Short-lived dispatch authority, minted only from the live trusted runtime.
 
 These process-local one-use tickets are not effect receipts or recovery records.
-Restart drops them; BE06 owns durable intent and outcome reconciliation. Scope
+Restart drops them; SQLite owns exact approvals, intent and outcome records. Scope
 strings describe a request, never grant access. Certified adapters still enforce
 filesystem, recipient and transport boundaries at their actual effect edge.
 """
@@ -15,7 +15,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -166,6 +166,9 @@ def tool_action(name: str, arguments: dict, *, entry=None) -> ActionSpec:
             raise CapabilityDenied("mcp_scope_denied", "MCP transport policy is required")
         # Explicit operator read grants classify; remote readOnlyHint never does.
         read_only = target[1] in grant["read_only_tools"] or target[1] in grant["read_scopes"]
+        if not read_only:
+            raise CapabilityDenied("effect_adapter_unsupported",
+                "This MCP mutation has no durable semantic effect adapter; approval alone cannot certify its outcome")
         operation = "mcp_read" if read_only else "mcp_call"
         destination = _canonical({"server": target[0], "tool": target[1], "endpoint": grant["endpoint"]})
         purpose = "mcp"
@@ -219,26 +222,17 @@ class Capability:
                 "expires_at": self.expires_at}
 
 
-@dataclass
-class _ApprovalState:
-    preview: ApprovalPreview
-    status: str = "pending"
-
-
 _LOCK = threading.Lock()
-_APPROVALS: dict[str, _ApprovalState] = {}
 _CAPABILITIES: dict[str, Capability] = {}
 _MAX_OUTSTANDING = 4096
 
 
 def _prune(now):
-    for mapping in (_APPROVALS, _CAPABILITIES):
-        for key, value in list(mapping.items()):
-            record = value.preview if isinstance(value, _ApprovalState) else value
-            if record.expires_at <= now:
-                del mapping[key]
-    if len(_APPROVALS) + len(_CAPABILITIES) >= _MAX_OUTSTANDING:
-        raise CapabilityDenied("capability_capacity", "Outstanding capability/approval limit reached")
+    for key, capability in list(_CAPABILITIES.items()):
+        if capability.expires_at <= now:
+            del _CAPABILITIES[key]
+    if len(_CAPABILITIES) >= _MAX_OUTSTANDING:
+        raise CapabilityDenied("capability_capacity", "Outstanding capability limit reached")
 
 
 def _expiry(ttl, maximum):
@@ -247,51 +241,99 @@ def _expiry(ttl, maximum):
     return time.time() + ttl
 
 
+def _approval_binding(authority, action):
+    # Inline input bytes are the revision. Persist only digests/references, never
+    # private tool arguments or bearer credentials from destination URLs.
+    input_digest = hashlib.sha256(action.input_json.encode()).hexdigest()
+    target_ref = _digest({"destination": action.destination, "purpose": action.destination_purpose,
+                          "resource_roots": list(action.resource_roots)})
+    return {"session_id": authority.session_id, "run_id": authority.run_id,
+            "holder": authority.holder, "generation": authority.generation,
+            "action_digest": action.digest, "input_digest": input_digest, "target_ref": target_ref,
+            "policy_version": str(authority.policy_version), "policy_digest": authority.policy_digest,
+            "input_revision": "inline:" + input_digest, "artifact_revision": "none"}
+
+
+def _approval_store(authority):
+    from agent.runtime_commands import assert_runtime_dispatch
+    run = assert_runtime_dispatch()
+    actor = {"principal_id": authority.principal_id, "profile_id": authority.profile_id,
+             "agent_id": authority.agent_id}
+    return run.db, actor
+
+
+def _approval_record(preview, authority, action):
+    from hermes_state_runtime import RuntimeStoreError
+    if (not isinstance(preview, ApprovalPreview) or preview.authority != authority
+            or preview.action != action or preview.expires_at <= time.time()):
+        raise CapabilityDenied("approval_mismatch", "Approval expired, changed, or belongs to another runtime owner")
+    db, actor = _approval_store(authority)
+    try:
+        record = db.get_effect_approval(preview.approval_id, actor)
+    except RuntimeStoreError as exc:
+        raise CapabilityDenied(exc.code, str(exc)) from exc
+    if (record["approval_digest"] != preview.approval_digest
+            or record["expires_at"] != preview.expires_at
+            or record["binding"] != _approval_binding(authority, action)):
+        raise CapabilityDenied("approval_mismatch", "Approval does not match its durable exact-action record")
+    return db, actor, record
+
+
 def preview_action(action: ActionSpec, *, ttl_seconds=300) -> ApprovalPreview:
+    from hermes_state_runtime import RuntimeStoreError
     authority = _authority()
     _authorize_action(action)
     expires = _expiry(ttl_seconds, 300)
-    identifier = uuid.uuid4().hex
-    digest = _digest({"approval_id": identifier, "authority": asdict(authority),
-                      "action": action.to_record(), "expires_at": expires})
-    preview = ApprovalPreview(identifier, authority, action, digest, expires)
-    with _LOCK:
-        _prune(time.time())
-        _APPROVALS[identifier] = _ApprovalState(preview)
-    return preview
+    db, actor = _approval_store(authority)
+    try:
+        record = db.request_effect_approval(actor=actor, expires_at=expires,
+                                            **_approval_binding(authority, action))
+    except RuntimeStoreError as exc:
+        raise CapabilityDenied(exc.code, str(exc)) from exc
+    return ApprovalPreview(record["approval_id"], authority, action,
+                           record["approval_digest"], record["expires_at"])
 
 
-def resolve_approval(preview: ApprovalPreview, digest: str, choice: str) -> None:
-    """Called by the bound human surface, never by model input or a tool argument."""
+def resolve_approval(preview: ApprovalPreview, digest: str, choice: str) -> dict:
+    """Only the bound human surface supplies a decision; SQLite owns its status."""
+    from hermes_state_runtime import RuntimeStoreError
     authority = _authority()
+    if not isinstance(preview, ApprovalPreview) or digest != preview.approval_digest:
+        raise CapabilityDenied("approval_mismatch", "The answer does not name the exact approval digest")
     _authorize_action(preview.action)
-    with _LOCK:
-        state = _APPROVALS.get(preview.approval_id)
-        if (state is None or state.preview is not preview or preview.authority != authority
-                or preview.expires_at <= time.time() or digest != preview.approval_digest
-                or state.status != "pending"):
-            raise CapabilityDenied("approval_mismatch", "Approval expired, changed, or no longer belongs to this action")
+    db, actor, _record = _approval_record(preview, authority, preview.action)
+    try:
         # Older surfaces returning broad choices cannot create standing authority.
-        state.status = "approved" if choice == "once" else "denied"
+        return db.resolve_effect_approval(preview.approval_id, actor, holder=authority.holder,
+            generation=authority.generation, approval_digest=digest, choice="once" if choice == "once" else "deny")
+    except RuntimeStoreError as exc:
+        raise CapabilityDenied(exc.code, str(exc)) from exc
 
 
 def issue_capability(action: ActionSpec, *, approval: ApprovalPreview | None = None,
                      ttl_seconds=60) -> Capability:
+    from hermes_state_runtime import RuntimeStoreError
     authority = _authority()
     _authorize_action(action)
     expires = _expiry(ttl_seconds, 60)
-    digest = None
+    identifier, digest = uuid.uuid4().hex, None
     with _LOCK:
         _prune(time.time())
         if action.operation_class == "mcp_call" or approval is not None:
-            state = _APPROVALS.get(approval.approval_id) if approval is not None else None
-            if (state is None or state.preview is not approval or state.status != "approved"
-                    or approval.authority != authority or approval.action != action
-                    or approval.expires_at <= time.time()):
+            if approval is None:
                 raise CapabilityDenied("exact_approval_required", "This exact action requires a current one-use approval", pending=True)
+            db, actor, record = _approval_record(approval, authority, action)
+            if record["status"] != "approved":
+                raise CapabilityDenied("exact_approval_required", "This exact action requires a current one-use approval",
+                                       pending=record["status"] == "pending")
+            try:
+                db.consume_effect_approval(approval.approval_id, actor, consumer_id=identifier,
+                                           **_approval_binding(authority, action))
+            except RuntimeStoreError as exc:
+                raise CapabilityDenied(exc.code, str(exc)) from exc
             digest = approval.approval_digest
-            del _APPROVALS[approval.approval_id]
-        capability = Capability(uuid.uuid4().hex, authority, action, digest, expires)
+            expires = min(expires, approval.expires_at)
+        capability = Capability(identifier, authority, action, digest, expires)
         _CAPABILITIES[capability.capability_id] = capability
     return capability
 
@@ -418,3 +460,16 @@ def invoke_bound_handler(name, arguments, callback, *, handler):
             continuation.used = True
         return callback()
     return invoke_tool_dispatch(name, arguments, callback, entry=entry)
+
+
+def invoke_effect_dispatch(operation_type, *, run, input_ref, payload, operation_id, intent_key):
+    """Internal durable mutation edge, separate from model-facing tool tickets.
+
+    Only host-certified adapters may classify an effect. Immutable result storage
+    is a finalization duty: cancellation stops new work but does not discard partial
+    output. The adapter rechecks owner/policy and commits intent before any write.
+    Opaque tool callbacks cannot acquire this authority by supplying a class name.
+    """
+    from agent.effect_reconciler import dispatch_certified_effect
+    return dispatch_certified_effect(operation_type, run=run, input_ref=input_ref,
+        payload=payload, operation_id=operation_id, intent_key=intent_key)
