@@ -14,6 +14,9 @@ def build_config_parser(subparsers, *, cmd_config: Callable) -> None:
         description="Manage Hermes Agent configuration")
     config_subparsers = config_parser.add_subparsers(dest="config_command")
 
+    identity = config_subparsers.add_parser("identity", help="Inspect redacted effective agent identity and policy")
+    identity.add_argument("--agent", help="Configured stable agent ID to inspect")
+    identity.add_argument("--session", help="Existing session whose binding should be checked")
     config_subparsers.add_parser("show", help="Show current configuration")
     config_subparsers.add_parser("edit", help="Open config file in editor")
 

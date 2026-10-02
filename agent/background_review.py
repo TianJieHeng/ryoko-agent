@@ -993,6 +993,9 @@ def build_cache_parity_fork(
     ``(fork_agent, runtime_dict, routed)``; ``routed`` means a different model (cache cold —
     replay a digest). The caller owns registration, whitelisting, running, usage attribution and
     teardown."""
+    if getattr(agent, "runtime_context", None) is not None:
+        from agent.agent_identity import IdentityPolicyError
+        raise IdentityPolicyError("Cache-parity review forks require isolated per-agent memory support")
     from run_agent import AIAgent  # local: avoids a circular import at load
     # Inherit the parent's live runtime: AIAgent.__init__'s env auto-resolution fails for
     # OAuth-only providers, session-scoped creds and credential pools.

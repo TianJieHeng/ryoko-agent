@@ -7,6 +7,8 @@ import json
 import threading
 from typing import Optional
 from tools.mcp_tool_common import _core
+from agent.identity_lifecycle import bound_agent_lifecycle
+from agent.runtime_context import current_agent_context
 
 logger = logging.getLogger("tools.mcp_tool")
 
@@ -77,6 +79,10 @@ def _publish_tool_snapshot(
         if prefix_registered is not None:
             new_defs, new_names = _merge_preserving_prefix(current_defs, new_defs, prefix_registered)
         new_defs, new_names = _drop_side_agent_tools(agent, new_defs, new_names)
+        from tools.agent_policy_gate import filter_tool_definitions
+        new_defs = filter_tool_definitions(new_defs, context=current_agent_context())
+        new_names = {_def_name(t) for t in new_defs}
+        staged_engine_names &= new_names
         # Record the generation even when unchanged so an in-flight older caller can't clobber.
         agent._tool_snapshot_generation = max(published_gen, snapshot_generation)
         # Same NAME set: no change for MCP-reload callers. Content-aware callers
@@ -93,6 +99,7 @@ def _publish_tool_snapshot(
         return new_names - current
 
 
+@bound_agent_lifecycle
 def refresh_agent_mcp_tools(
     agent, *, enabled_override=None, disabled_override=None, quiet_mode: bool = True,
     content_aware: bool = False, preserve_prefix: bool = False) -> set:
@@ -191,6 +198,7 @@ def _drop_gated_carried_tools(merged: list, carried: set) -> list:
             or _DYNAMIC_SCHEMA_REWRITERS[_def_name(t)](t, available) is not None]
 
 
+@bound_agent_lifecycle
 def restore_agent_tool_prefix(agent, saved) -> bool:
     """Fold a freshly built agent's ``tools`` onto the session's pin; True if changed.
     A fresh AIAgent (gateway cache eviction, ``--resume`` in a new process, a surface hop) has no
@@ -228,6 +236,9 @@ def restore_agent_tool_prefix(agent, saved) -> bool:
     merged_names = {_def_name(t) for t in merged}
     _reinject_authorized_dynamic_tools(agent, merged, merged_names)
     merged, merged_names = _drop_side_agent_tools(agent, merged, merged_names)
+    from tools.agent_policy_gate import filter_tool_definitions
+    merged = filter_tool_definitions(merged, context=current_agent_context())
+    merged_names = {_def_name(t) for t in merged}
     changed = merged != fresh_defs
     if changed:
         with _agent_tools_lock:

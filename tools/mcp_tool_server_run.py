@@ -331,12 +331,22 @@ class MCPServerRunMixin:
         and transport errors charge a rapid-drop budget with jittered backoff; exhausting it (or
         a permanent error) parks via :meth:`_park` rather than exiting, so the server stays
         revivable. Branch helpers return True to keep looping, False to exit."""
+        from tools.agent_policy_gate import authorize_mcp
+        denied = authorize_mcp(self.name, connection=self)
+        if denied is not None:
+            self._publish_error(PermissionError("MCP agent policy denied connection"))
+            return
         if not await self._prepare_run(config):
             return
         self._reconnect_retries = 0
         budget = _RetryBudget()
         rebuild = False
         while True:
+            denied = authorize_mcp(self.name, connection=self)
+            if denied is not None:
+                self._publish_error(PermissionError("MCP agent policy denied reconnect"))
+                self._deregister_tools()
+                return
             try:
                 if rebuild:
                     # Under the owner's FRESH scope: the run task's copied one is the connect-time

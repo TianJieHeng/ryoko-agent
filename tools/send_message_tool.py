@@ -431,14 +431,14 @@ def _mirror_sent_message(platform_name, chat_id, mirror_text, thread_id):
 
 def _weixin_env_pconfig():
     """Synthesize a Weixin PlatformConfig from .env secrets, or None."""
-    wx_token = get_secret("WEIXIN_TOKEN", "").strip()
-    wx_account = get_secret("WEIXIN_ACCOUNT_ID", "").strip()
+    wx_token = (get_secret("WEIXIN_TOKEN") or "").strip()
+    wx_account = (get_secret("WEIXIN_ACCOUNT_ID") or "").strip()
     if not (wx_token and wx_account):
         return None
     from gateway.config import PlatformConfig
     return PlatformConfig(enabled=True, token=wx_token, extra={
-        "account_id": wx_account, "base_url": get_secret("WEIXIN_BASE_URL", "").strip(),
-        "cdn_base_url": get_secret("WEIXIN_CDN_BASE_URL", "").strip()})
+        "account_id": wx_account, "base_url": (get_secret("WEIXIN_BASE_URL") or "").strip(),
+        "cdn_base_url": (get_secret("WEIXIN_CDN_BASE_URL") or "").strip()})
 
 
 def _describe_media_for_mirror(media_files):

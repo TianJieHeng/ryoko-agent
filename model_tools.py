@@ -220,11 +220,16 @@ def get_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disabled_
     skip_tool_search_assembly returns raw schemas for every enabled tool — only
     the tool_search bridge should use it (it reads the real, uncollapsed catalog).
     """
+    from tools.agent_policy_gate import filter_tool_definitions
+    from agent.runtime_context import current_agent_context
+
     def compute():
         return _compute_tool_definitions(enabled_toolsets, disabled_toolsets, quiet_mode,
                                          skip_tool_search_assembly=skip_tool_search_assembly)
-    if not quiet_mode:
-        return compute()
+    # The shared memo is profile keyed, not agent keyed. A strict policy gets a
+    # fresh catalog; filtering happens before tool-search builds its descriptions.
+    if current_agent_context() is not None or not quiet_mode:
+        return filter_tool_definitions(compute())
     cache_key = _tool_defs_cache_key(enabled_toolsets, disabled_toolsets, skip_tool_search_assembly)
     # Cache the freshly-computed list, but hand callers a shallow copy so downstream mutations (e.g.
     # run_agent appending memory/LCM tool schemas to self.tools) don't poison the cache. Without this, a
@@ -250,7 +255,7 @@ def get_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disabled_
         _last_resolved_tool_names = [t["function"]["name"] for t in cached]
     # Always a shallow copy: run_agent appends memory/LCM schemas to its list; a
     # shared list would accumulate duplicate names (HTTP 400 from DeepSeek/Kimi/MiMo).
-    return list(cached)
+    return filter_tool_definitions(list(cached))
 
 
 def _tool_defs_cache_key(
@@ -512,6 +517,8 @@ def _compute_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disa
     from tools.kanban_toolset_context import scoped_kanban_toolset_selection
     with scoped_kanban_toolset_selection(enabled_toolsets):
         filtered_tools = _apply_dynamic_schemas(registry.get_definitions(tools_to_include, quiet=quiet_mode))
+    from tools.agent_policy_gate import filter_tool_definitions
+    filtered_tools = filter_tool_definitions(filtered_tools)
     global _last_resolved_tool_names
     _last_resolved_tool_names = [t["function"]["name"] for t in filtered_tools]
 
@@ -836,6 +843,10 @@ def _execute_tool(function_name: str, function_args: Dict[str, Any], original_ar
         dispatch_kwargs["user_task"] = user_task
 
     def _dispatch(next_args: Dict[str, Any]) -> Any:
+        from tools.agent_policy_gate import authorize_tool
+        denied = authorize_tool(function_name)
+        if denied is not None:
+            return denied
         from tools.connectors import dispatch_connector_call, is_connector_name
         if is_connector_name(function_name):
             return dispatch_connector_call(function_name, next_args, ids.tool_call_id)
@@ -902,6 +913,11 @@ def handle_function_call(
         _emit_post_tool_call_hook(function_name=function_name, function_args=function_args, result=result,
                                   **asdict(ids), middleware_trace=list(trace), **extra)
         return result
+
+    from tools.agent_policy_gate import authorize_tool
+    denied = authorize_tool(function_name)
+    if denied is not None:
+        return _emit(denied, status="blocked", error_type="agent_policy_denied")
 
     # Tool Search bridge: tool_search / tool_describe are catalog reads handled
     # inline; tool_call is unwrapped so every downstream hook (pre/post, edit

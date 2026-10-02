@@ -846,9 +846,12 @@ class ToolRegistry:
         result = []
         check_results: Dict[Callable, bool] = {}
         entries_by_name = {entry.name: entry for entry in self._snapshot_entries()}
+        from tools.agent_policy_gate import authorize_tool
         for name in sorted(tool_names):
             entry = entries_by_name.get(name)
             if not entry:
+                continue
+            if authorize_tool(name, entry=entry) is not None:
                 continue
             if entry.check_fn and not _memo_check(entry.check_fn, check_results):
                 if not quiet:
@@ -895,6 +898,10 @@ class ToolRegistry:
         """Execute a tool handler by name: async handlers bridged via ``_run_async()``,
         results normalized, every exception returned as ``{"error": ...}``."""
         entry = self.get_entry(name, scope=scope)
+        from tools.agent_policy_gate import authorize_tool
+        denied = authorize_tool(name, entry=entry)
+        if denied is not None:
+            return denied
         if not entry:
             return tool_error(f"Unknown tool: {name}")
         try:

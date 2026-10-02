@@ -495,6 +495,7 @@ class TurnContext:
     should_review_memory: bool = False  # post-turn memory review should fire
     plugin_user_context: str = ""  # ``pre_llm_call`` context (appended to user message)
     ext_prefetch_cache: str = ""  # external-memory prefetch, reused across iterations
+    runtime_context: Any = None  # immutable identity/policy; not a competing turn payload
     preflight_compression_blocked: bool = False  # immediate retry proved ineffective
 
 
@@ -1195,6 +1196,7 @@ def build_turn_context(
         current_turn_user_idx=current_turn_user_idx, should_review_memory=should_review_memory,
         plugin_user_context=plugin_user_context, ext_prefetch_cache=ext_prefetch_cache,
         preflight_compression_blocked=compaction.blocked,
+        runtime_context=getattr(agent, "runtime_context", None),
     )
 
 

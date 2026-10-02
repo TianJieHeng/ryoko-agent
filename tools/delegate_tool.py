@@ -231,7 +231,8 @@ def _build_child_agent(
         request_overrides = {} if override_provider else dict(getattr(parent_agent, "request_overrides", {}) or {})
     parent_sid = getattr(parent_agent, "session_id", None)
     child_session_db = _open_child_session_db(parent_agent)
-    with delegated_child_context():
+    from agent.identity_lifecycle import agent_runtime_scope
+    with agent_runtime_scope(getattr(parent_agent, "runtime_context", None)), delegated_child_context():
         try:
             child = AIAgent(
                 **rt, max_iterations=max_iterations, prefill_messages=getattr(parent_agent, "prefill_messages", None),

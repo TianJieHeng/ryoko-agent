@@ -139,7 +139,14 @@ def resolve_passthrough_value(name: str, fallback: str | None = None) -> str | N
     raises the fail-closed ``UnscopedSecretError``. Outside multiplexing an installed
     scope keeps overlay semantics and an unscoped caller keeps its fallback."""
     from agent.secret_scope import (
-        _is_global_env, current_secret_scope, get_secret, is_multiplex_active)
+        _agent_global_env, _is_global_env, current_secret_scope, get_secret, is_multiplex_active)
+    from agent.runtime_context import current_agent_context
+    context = current_agent_context()
+    if context is not None:
+        # An explicit value is not a credential grant. Resolve before the public
+        # setting override so missing/mismatched identity scopes still fail closed.
+        value = get_secret(name)
+        return fallback if _agent_global_env(name, context) and fallback is not None else value
     # Global terminal/runtime settings are not profile secrets; ``fallback`` is
     # already the caller's effective value (incl. an explicit per-call override).
     if _is_global_env(name) and fallback is not None:

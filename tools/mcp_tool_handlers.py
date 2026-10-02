@@ -22,6 +22,8 @@ from tools.mcp_tool_content import (
     _render_mcp_dropped_block_notice, _render_mcp_resource_block, _strip_reserved_meta_keys,
     _truncate_mcp_text_result)
 from tools.mcp_tool_errors import _is_auth_error, _is_session_expired_error
+from tools.agent_policy_gate import authorize_mcp, authorize_tool, require_mcp
+from tools.mcp_tool_schema import mcp_prefixed_tool_name
 
 logger = logging.getLogger("tools.mcp_tool")
 _MISSING = object()
@@ -109,7 +111,17 @@ def _acquire_call_server(server_name: str, tool_timeout: float):
     """``(server, None)`` when a call may be dispatched, else ``(None, error)``. No session: a
     reconnect may be completing, so wait briefly before a breaker strike; still down -> ask the
     server task to rebuild (probing a dead transport would re-arm the breaker forever)."""
+    denied = authorize_mcp(server_name)
+    if denied is not None:
+        return None, denied
     from tools import mcp_tool_discovery as _discovery  # lazy: discovery -> registration -> handlers cycle
+    from tools.mcp_tool_scope import _resolve_server_key
+    with _core._lock:
+        existing = _core._servers.get(_resolve_server_key(server_name))
+    if existing is not None:
+        denied = authorize_mcp(server_name, connection=existing)
+        if denied is not None:
+            return None, denied
     not_connected = tool_error(f"MCP server '{server_name}' is not connected")
     from tools.mcp_liveness import unavailable_details
     details = unavailable_details(server_name)
@@ -172,6 +184,8 @@ def _lookup_reconnectable_server(server_name: str, require_loop: bool = False):
     from tools.mcp_tool_scope import _resolve_server_key
     with _core._lock:
         srv = _core._servers.get(_resolve_server_key(server_name))
+    if authorize_mcp(server_name, connection=srv) is not None:
+        return None
     ok = srv is not None and hasattr(srv, "_reconnect_event") and (_mcp_loop_running() or not require_loop)
     return srv if ok else None
 
@@ -328,10 +342,16 @@ def _dispatch(server_name: str, server: Any, op: str, call, tool_timeout: float,
     on the MCP loop and, on failure, walk ``recoverers`` (``(server_name, exc, retry_call, op) -> Optional[str]``,
     None = not its kind; order matters). Unrecovered exceptions go through ``on_final_failure`` and become the
     generic call-failed error. ``record_outcome`` applies breaker bookkeeping to the FIRST attempt only."""
+    denied = authorize_mcp(server_name, connection=server)
+    if denied is not None:
+        return denied
     if callable(getattr(server, "mark_tool_call", None)):
         server.mark_tool_call()
 
     def call_once():
+        denied = authorize_mcp(server_name, connection=server)
+        if denied is not None:
+            return denied
         return _loop._run_on_mcp_loop(call, timeout=tool_timeout)
 
     try:
@@ -341,6 +361,9 @@ def _dispatch(server_name: str, server: Any, op: str, call, tool_timeout: float,
         return tool_error("MCP call interrupted: user sent a new message")
     except Exception as exc:
         for recover in recoverers:
+            denied = authorize_mcp(server_name, connection=server)
+            if denied is not None:
+                return denied
             recovered = recover(server_name, exc, call_once, op)
             if recovered is not None:
                 return recovered
@@ -555,10 +578,12 @@ def _render_call_tool_result(result, server_name: str) -> str:
 def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
     """Sync registry handler (``handler(args_dict, **kwargs) -> str``) calling an MCP tool via the background loop."""
     op = f"tools/call {tool_name}"
+    registry_name = mcp_prefixed_tool_name(server_name, tool_name)
 
     def _handler(args: dict, **kwargs) -> str:
         # Security boundary: untrusted-server write tools need approval before ANY transport work (incl. lazy spawn).
-        error = _trust_gate_check(server_name, tool_name) or _check_circuit_breaker(server_name)
+        error = (authorize_tool(registry_name) or authorize_mcp(server_name, tool_name)
+                 or _trust_gate_check(server_name, tool_name) or _check_circuit_breaker(server_name))
         if error is not None:
             return error
         server, error = _acquire_call_server(server_name, tool_timeout)
@@ -570,6 +595,7 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
 
         async def _call():
             async with server._rpc_lock, _track_inflight_rpc(server, server_name, op, retry_safe=read_only):
+                require_mcp(server_name, tool_name, connection=server)
                 server._pending_call_context = contextvars.copy_context()  # for the elicitation callback
                 try:
                     result = await _call_tool_racing_stdio_death(server, server_name, tool_name, args)
@@ -587,6 +613,7 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
             server_name, server, op, _call, tool_timeout,
             (_handle_stdio_child_exited_and_retry, _handle_auth_error_and_retry, session_expired),
             _on_failure, record_outcome=True)
+    _handler._agent_mcp_target = (server_name, tool_name)
     return _handler
 
 
@@ -596,21 +623,26 @@ def _make_utility_handler(op: str, log_label: str, rpc, render, required: Option
     payload, ``required`` validated before any transport work."""
     def _factory(server_name: str, tool_timeout: float):
         def _handler(args: dict, **kwargs) -> str:
-            from tools import mcp_tool_discovery as _discovery  # lazy: import cycle
-            server = _discovery._get_connected_server_for_call(server_name)
-            if not server or not server.session:
-                return tool_error(f"MCP server '{server_name}' is not connected")
+            denied = (authorize_tool(mcp_prefixed_tool_name(server_name, log_label))
+                      or authorize_mcp(server_name, op))
+            if denied is not None:
+                return denied
+            server, denied = _acquire_call_server(server_name, tool_timeout)
+            if server is None:
+                return denied
             if required and not args.get(required):
                 return tool_error(f"Missing required parameter '{required}'")
 
             async def _call():
                 async with server._rpc_lock:
+                    require_mcp(server_name, op, connection=server)
                     result = await rpc(server.session, args, server_name)
                 return json.dumps(render(result, server_name), ensure_ascii=False)
             return _dispatch(
                 server_name, server, op, _call, tool_timeout,
                 (_handle_auth_error_and_retry, _handle_session_expired_and_retry),
                 lambda exc: logger.error("MCP %s/%s failed: %s", server_name, log_label, exc))
+        _handler._agent_mcp_target = (server_name, op)
         return _handler
     return _factory
 

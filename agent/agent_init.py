@@ -23,6 +23,7 @@ from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse, urlunparse
 
 from agent.context_compressor import ContextCompressor
+from agent.identity_lifecycle import identity_construction
 from agent.agent_runtime_helpers import _ra
 from agent.iteration_budget import IterationBudget, normalize_budget_warning_ratio
 from agent.memory_manager import StreamingContextScrubber
@@ -1336,7 +1337,8 @@ def _init_memory(agent, _agent_cfg, skip_memory, platform, memory_manager=None):
     # MEMORY.md loaded by an enabled-only check. (Cron agents now run with skip_memory=False and take the
     # normal path here.)
     _memory_toolset_requested = (
-        "memory" in (agent.enabled_toolsets or [])
+        getattr(agent, "runtime_context", None) is None
+        and "memory" in (agent.enabled_toolsets or [])
         and "memory" not in (agent.disabled_toolsets or [])
     )
     if not skip_memory or _memory_toolset_requested:
@@ -2385,6 +2387,7 @@ _CALLBACK_PARAMS = (
 )
 
 
+@identity_construction
 def init_agent(
     agent, base_url: str = None, api_key: str = None, provider: str = None, api_mode: str = None,
     acp_command: str = None, acp_args: list[str] | None = None, command: str = None,

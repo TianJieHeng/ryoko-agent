@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "phase": "BE01",
+  "base_sha": "91498070a98f40975a76822e86c8076e30ffb918",
+  "python": "3.14.7",
+  "pytest": "9.1.1",
+  "command": "HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/agent/test_agent_secret_grants.py tests/agent/test_agent_identity.py tests/agent/test_background_review_memory_scope.py tests/agent/test_runtime_context.py tests/agent/test_identity_lifecycle.py tests/agent/test_memory_provider_init.py tests/agent/test_turn_facade_lease.py tests/hermes_cli/test_config_effective.py tests/hermes_cli/test_config_identity.py tests/agent/test_secret_scope.py tests/hermes_state/test_session_agent_identity.py tests/tools/test_agent_subprocess_secret_grants.py tests/tools/test_agent_policy_boundaries.py tests/tools/test_mcp_connect_secret_scope.py tests/tools/test_mcp_stdio_fastfail_reconnect.py tests/tools/test_mcp_trust_gating.py tests/tools/test_mcp_tool_session_expired.py tests/tools/test_refresh_agent_mcp_tools.py tests/tools/test_mcp_circuit_breaker.py -j 3",
+  "results": [
+    {
+      "file": "tests/agent/test_agent_secret_grants.py",
+      "passed": 2,
+      "failed": 0,
+      "duration_seconds": 0.8
+    },
+    {
+      "file": "tests/agent/test_agent_identity.py",
+      "passed": 49,
+      "failed": 0,
+      "duration_seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_background_review_memory_scope.py",
+      "passed": 10,
+      "failed": 0,
+      "duration_seconds": 2.0
+    },
+    {
+      "file": "tests/agent/test_runtime_context.py",
+      "passed": 4,
+      "failed": 0,
+      "duration_seconds": 0.7
+    },
+    {
+      "file": "tests/agent/test_identity_lifecycle.py",
+      "passed": 18,
+      "failed": 0,
+      "duration_seconds": 2.1
+    },
+    {
+      "file": "tests/agent/test_memory_provider_init.py",
+      "passed": 6,
+      "failed": 0,
+      "duration_seconds": 2.6
+    },
+    {
+      "file": "tests/agent/test_turn_facade_lease.py",
+      "passed": 4,
+      "failed": 0,
+      "duration_seconds": 0.6
+    },
+    {
+      "file": "tests/hermes_cli/test_config_effective.py",
+      "passed": 3,
+      "failed": 0,
+      "duration_seconds": 0.9
+    },
+    {
+      "file": "tests/hermes_cli/test_config_identity.py",
+      "passed": 2,
+      "failed": 0,
+      "duration_seconds": 0.9
+    },
+    {
+      "file": "tests/agent/test_secret_scope.py",
+      "passed": 37,
+      "failed": 0,
+      "duration_seconds": 2.1
+    },
+    {
+      "file": "tests/hermes_state/test_session_agent_identity.py",
+      "passed": 2,
+      "failed": 0,
+      "duration_seconds": 0.8
+    },
+    {
+      "file": "tests/tools/test_agent_subprocess_secret_grants.py",
+      "passed": 3,
+      "failed": 0,
+      "duration_seconds": 2.2
+    },
+    {
+      "file": "tests/tools/test_agent_policy_boundaries.py",
+      "passed": 27,
+      "failed": 0,
+      "duration_seconds": 3.1
+    },
+    {
+      "file": "tests/tools/test_mcp_connect_secret_scope.py",
+      "passed": 7,
+      "failed": 0,
+      "duration_seconds": 2.2
+    },
+    {
+      "file": "tests/tools/test_mcp_stdio_fastfail_reconnect.py",
+      "passed": 5,
+      "failed": 0,
+      "duration_seconds": 3.4
+    },
+    {
+      "file": "tests/tools/test_mcp_trust_gating.py",
+      "passed": 15,
+      "failed": 0,
+      "duration_seconds": 2.1
+    },
+    {
+      "file": "tests/tools/test_mcp_tool_session_expired.py",
+      "passed": 19,
+      "failed": 0,
+      "duration_seconds": 4.8
+    },
+    {
+      "file": "tests/tools/test_refresh_agent_mcp_tools.py",
+      "passed": 19,
+      "failed": 0,
+      "duration_seconds": 2.7
+    },
+    {
+      "file": "tests/tools/test_mcp_circuit_breaker.py",
+      "passed": 8,
+      "failed": 0,
+      "duration_seconds": 11.5
+    }
+  ],
+  "passed": 240,
+  "failed": 0,
+  "duration_seconds": 16.7,
+  "log_sha256": "370dca7c6a59b1993f044f70b349c042c371b22c838aca8066a36e2d6fdedb44",
+  "additional_checks": [
+    "Ruff focused changed modules/tests passed",
+    "generated identity reference --check passed",
+    "git diff --check passed"
+  ],
+  "limits": [
+    "Full repository suite not run at phase boundary",
+    "No live provider/MCP server/executor or deployment configured",
+    "Strict automatic memory and nonprimary unconfined execution unavailable until BE08/BE05",
+    "Two existing execute_code AF_UNIX socket tests blocked by host permissions even on escalated retry; five platform tests skipped in wider worker campaign",
+    "BE00 project-tree inherited failures remain unresolved; not part of BE01 regression claim"
+  ]
+}

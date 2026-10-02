@@ -1091,6 +1091,10 @@ def _run_llm_review(prompt: str) -> Dict[str, Any]:
     except Exception as e:
         result_meta["error"] = result_meta["summary"] = f"AIAgent import failed: {e}"
         return result_meta
+    from agent.identity_lifecycle import strict_identity_enabled
+    if strict_identity_enabled():
+        result_meta["error"] = result_meta["summary"] = "Curator requires a configured isolated background identity"
+        return result_meta
     rp, model_name, provider, request_overrides = _resolve_review_provider()
     result_meta["model"], result_meta["provider"] = model_name, provider or ""
     review_agent = None

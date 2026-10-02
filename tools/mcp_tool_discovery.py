@@ -19,6 +19,9 @@ from tools import mcp_tool_loop as _loop
 from tools import mcp_tool_registration as _registration
 from tools.mcp_tool_schema import MCP_TOOL_NAME_PREFIX
 from tools.mcp_tool_scope import _key_name, _key_scope, _key_visible_in_scope, _resolve_server_key, _server_key
+from tools.agent_policy_gate import (
+    authorize_mcp, bind_mcp_connection, filter_mcp_servers, mcp_discovery_denial, require_mcp,
+)
 
 logger = logging.getLogger("tools.mcp_tool")
 
@@ -146,7 +149,9 @@ def _owner_secret_scope():
 async def _connect_server(name: str, config: dict) -> _core.MCPServerTask:
     """Create an MCPServerTask, start it, return once ready (tear down with ``server.shutdown()``
     on the same loop). Raises on bad config, missing HTTP support or connect failure."""
+    require_mcp(name)
     server = _core.MCPServerTask(name)
+    bind_mcp_connection(server)
     claim = _core._connect_server_claim.get()
     if claim is not None:
         claim(server)
@@ -181,6 +186,8 @@ async def _connect_server(name: str, config: dict) -> _core.MCPServerTask:
 
 def _request_lazy_reconnect(server_name: str, server: _core.MCPServerTask) -> bool:
     """Wake a recycled stdio server and wait briefly for a fresh session."""
+    if authorize_mcp(server_name, connection=server) is not None:
+        return False
     loop = _loop._running_loop() if server._is_recycled_stdio() else None
     if loop is None:
         return False
@@ -237,6 +244,7 @@ def _note_connect_success(name: str) -> None:
 
 def _adopt_server(name: str, server: _core.MCPServerTask) -> None:
     """Publish *server* into ``_servers`` under the connecting scope's key (under ``_lock``)."""
+    require_mcp(name, connection=server)
     with _core._lock:
         key = _server_key(name)
         _core._servers[key] = server
@@ -250,9 +258,13 @@ def _ensure_lazy_server_connected(server_name: str) -> bool:
 
     See #50394.
     """
+    if authorize_mcp(server_name) is not None:
+        return False
     with _core._lock:
         key = _resolve_server_key(server_name)
         server = _core._servers.get(key)
+        if server is not None and authorize_mcp(server_name, connection=server) is not None:
+            return False
         if server is not None and server.session is not None:
             return True
         config = _core._lazy_server_configs.get(key)
@@ -294,9 +306,13 @@ def _get_connected_server_for_call(server_name: str) -> Optional[_core.MCPServer
     Also the single first-use connect point for lazy (schema-cache registered) servers, so raw tool calls
     AND the resource/prompt utility handlers all trigger the deferred spawn (#56832).
     """
+    if authorize_mcp(server_name) is not None:
+        return None
     with _core._lock:
         key = _resolve_server_key(server_name)
         server = _core._servers.get(key)
+        if server is not None and authorize_mcp(server_name, connection=server) is not None:
+            return None
         is_lazy = key in _core._lazy_server_configs
     if is_lazy and (server is None or server.session is None):
         _ensure_lazy_server_connected(server_name)
@@ -305,7 +321,8 @@ def _get_connected_server_for_call(server_name: str) -> Optional[_core.MCPServer
     else:
         return server
     with _core._lock:
-        return _core._servers.get(key)
+        server = _core._servers.get(key)
+        return server if server is not None and authorize_mcp(server_name, connection=server) is None else None
 
 
 async def _discover_and_register_server(name: str, config: dict) -> List[str]:
@@ -345,6 +362,7 @@ def _select_new_servers(servers: Dict[str, dict]) -> Dict[str, dict]:
     """Pick connect candidates (enabled, not connected/connecting/lazy, not in backoff) and
     refresh per-server bookkeeping. Known servers without a live session are parked or
     mid-reconnect with tools deregistered, so nothing else can nudge them: signal a reconnect."""
+    servers = filter_mcp_servers(servers)
     with _core._lock:
         current_scope = _core._mcp_registry_scope()
         # This scope's own connections OR shared ones it adopted (``register_connected_into_current_scope``
@@ -376,7 +394,8 @@ def _select_new_servers(servers: Dict[str, dict]) -> Dict[str, dict]:
             else:
                 _core._parallel_safe_servers.discard(own_key)
     for srv in stale_cached:
-        _loop._signal_reconnect(srv)
+        if authorize_mcp(srv.name, connection=srv) is None:
+            _loop._signal_reconnect(srv)
     return new_servers
 
 
@@ -519,6 +538,9 @@ def _log_summary(prefix: str, names, **lazy) -> None:
 def register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
     """Connect ``{name: config}`` servers and register their tools; idempotent for connected
     names, ``enabled: false`` skipped without disconnecting. Returns every MCP tool name."""
+    if mcp_discovery_denial() is not None:
+        return []
+    servers = filter_mcp_servers(servers)
     if not _core._ensure_mcp_sdk():
         logger.debug("MCP SDK not available -- skipping explicit MCP registration")
         return []
@@ -532,6 +554,7 @@ def register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
 
 
 def _register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
+    servers = filter_mcp_servers(servers)
     scoped_healed = _registration.register_connected_into_current_scope(servers)
     if not servers:
         logger.debug("No explicit MCP servers provided")
@@ -584,8 +607,12 @@ def discover_mcp_tools(allowed_mcp_names: Optional[List[str]] = None) -> List[st
     list simply don't match); ``None`` spawns every configured server. Used by
     ``hermes -z -t <toolsets>`` to skip cold-starting servers the caller doesn't need (10-60s
     each); it only affects which servers start, not which names ``-t`` validation can see."""
+    denial = mcp_discovery_denial()
+    if denial is not None:
+        logger.info("MCP discovery unavailable under the current agent policy")
+        return []
     with _owner_secret_scope():
-        servers = _config._load_mcp_config()
+        servers = filter_mcp_servers(_config._load_mcp_config())
     if not servers:
         logger.debug("No MCP servers configured")
         return []

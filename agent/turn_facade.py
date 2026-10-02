@@ -11,6 +11,7 @@ from contextlib import suppress
 from typing import Any, Dict, List, Optional
 
 from agent.lazy_forward import forward as _forward
+from agent.identity_lifecycle import bound_agent_lifecycle
 
 # Same logger name as the origin module so log records / caplog filters are unchanged.
 logger = logging.getLogger("run_agent")
@@ -19,6 +20,7 @@ logger = logging.getLogger("run_agent")
 class TurnFacadeMixin:
     """run_conversation()/chat() (see module docstring)."""
 
+    @bound_agent_lifecycle
     def run_conversation(
         self, user_message: Any, system_message: str=None,
         conversation_history: List[Dict[str, Any]]=None, task_id: str=None,

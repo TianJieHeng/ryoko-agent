@@ -37,6 +37,7 @@ from datetime import datetime
 from pathlib import Path
 
 from hermes_constants import get_hermes_home
+from agent.identity_lifecycle import bound_agent_lifecycle
 
 
 def _launch_cwd_for_session(source: str) -> Optional[str]:
@@ -310,6 +311,11 @@ class AIAgent(
                           "no longer sleep between executions.", DeprecationWarning, stacklevel=2)
         from agent.agent_init import init_agent
         init_agent(self, **init_kwargs)
+
+    @property
+    def runtime_context(self):
+        """Immutable authority installed by trusted construction, never by model/hooks."""
+        return getattr(self, "_runtime_context", None)
 
     def _get_session_db_for_recall(self):
         """SessionDB for recall, opening the default state DB when no ``session_db`` was passed so the
@@ -899,6 +905,7 @@ class AIAgent(
             },
         )
 
+    @bound_agent_lifecycle
     def shutdown_memory_provider(self, messages: list = None) -> None:
         """Shut down the memory provider and context engine at session end (idempotent: gateway cleanup and
         ``close()`` may both call it)."""
@@ -913,6 +920,7 @@ class AIAgent(
             _quietly(lambda: self._memory_manager.shutdown_all())
         _notify_context_engine_session_end(self, messages)
 
+    @bound_agent_lifecycle
     def commit_memory_session(self, messages: list = None) -> None:
         """Flush end-of-session extraction on session_id rotation (/new, compression) without tearing providers
         down."""
@@ -920,6 +928,7 @@ class AIAgent(
             _quietly(lambda: self._memory_manager.on_session_end(messages or []))
         _notify_context_engine_session_end(self, messages)
 
+    @bound_agent_lifecycle
     def _sync_external_memory_for_turn(self, *, original_user_message: Any, final_response: Any, interrupted: bool,
                                        messages: list | None = None) -> None:
         """Mirror a completed turn into external memory providers (``sync_all`` + ``queue_prefetch_all``).
@@ -953,6 +962,7 @@ class AIAgent(
         except Exception:
             pass
 
+    @bound_agent_lifecycle
     def release_clients(self) -> None:
         """Release LLM clients and child agents WITHOUT tearing down session tool state (gateway cache
         eviction: the session may resume on the same task_id, so processes, sandbox, browser, computer-use and
@@ -966,6 +976,7 @@ class AIAgent(
         # from the cache and a rebuilt agent spawns its own child, so an unclosed one leaks for the gateway's life.
         _quietly(self._close_codex_session)
 
+    @bound_agent_lifecycle
     def close(self) -> None:
         """Release every resource this agent holds (idempotent); each phase is guarded so one failure never
         blocks the rest."""

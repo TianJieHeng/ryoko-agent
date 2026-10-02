@@ -31,6 +31,8 @@ def _aux(timeout, *, reasoning_effort=True, **extra):
 
 
 DEFAULT_CONFIG = {
+    # Empty preserves legacy profiles. Nonempty versioned policy is validated before agent setup.
+    "agent_identity": {},
     "model": "",
     "providers": {},
     "fallback_providers": [],

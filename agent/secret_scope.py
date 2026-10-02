@@ -156,8 +156,14 @@ def reset_secret_scope(token: Token) -> None:
 
 
 def current_secret_scope() -> Optional[Mapping[str, str]]:
-    """The active secret mapping, or None when no scope is installed."""
+    """The active mapping, intersected with the current agent's credential grants."""
     bound = _SECRET_SCOPE.get()
+    from agent.runtime_context import current_agent_context
+    context = current_agent_context()
+    if context is not None:
+        bound = _agent_bound_scope(context)
+        return {name: value for name, value in bound.mapping.items()
+                if _agent_global_env(name, context) or context.policy.allows_secret(name)}
     return bound.mapping if bound is not None else None
 
 
@@ -216,16 +222,103 @@ def _environ_or(name: str, default: Optional[str]) -> Optional[str]:
     return val if val is not None else default
 
 
+# Broad matching is intentional only for opt-in agent identities. Legacy operator
+# shells retain their existing policy; an identity cannot inherit an unknown SDK's
+# credential simply because Hermes has not registered that provider yet.
+_CREDENTIAL_ENV_NAME = re.compile(
+    r"(?:^|_)(?:KEY|APIKEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIALS?|AUTHORIZATION|AUTH)(?:_|$)",
+    re.IGNORECASE,
+)
+
+
+class AgentSecretScopeError(PermissionError):
+    """An enabled identity attempted to use a missing or foreign credential scope."""
+
+
+def _agent_global_env(name: str, context) -> bool:
+    """Deployment settings stay public; broad prefixes cannot disguise credentials."""
+    refs = context.policy.all_secret_refs | context.policy.personal_secret_refs
+    return (_is_global_env(name) and not _CREDENTIAL_ENV_NAME.search(name)
+            and name.upper() not in {ref.upper() for ref in refs})
+
+
+def _agent_bound_scope(context, *, target_home=None) -> _BoundScope:
+    from hermes_constants import hermes_home_key
+
+    bound = _SECRET_SCOPE.get()
+    expected = hermes_home_key(context.profile_home)
+    if (bound is None or not bound.profile_home
+            or hermes_home_key(bound.profile_home) != expected
+            or (target_home is not None and hermes_home_key(target_home) != expected)):
+        raise AgentSecretScopeError(
+            "The agent identity requires a credential scope bound to its own profile."
+        )
+    return bound
+
+
+def filter_agent_secret_env(env: Dict[str, str], *, target_home=None) -> Dict[str, str]:
+    """Constrain a final child env to the bound identity without granting new secrets.
+
+    Values for credential names come only from the matching scope, never a raw
+    base, caller override, force prefix, or managed-env restoration. This is an
+    application credential boundary, not a filesystem or network sandbox.
+    """
+    from agent.runtime_context import current_agent_context
+
+    context = current_agent_context()
+    if context is None:
+        return env
+    bound = _agent_bound_scope(context, target_home=target_home)
+    from tools.environments.local_env_policy import (
+        _ALWAYS_STRIP_FOLDED, _plugin_terminal_env_strip_keys, _registered_adapter_secret_env,
+    )
+    refs = {name.upper() for name in (
+        context.policy.all_secret_refs | context.policy.personal_secret_refs
+        | context.policy.secret_refs)}
+    refs.update(name.upper() for name in (
+        _ALWAYS_STRIP_FOLDED | _plugin_terminal_env_strip_keys() | _registered_adapter_secret_env()))
+    refs.update(name.upper() for name in bound.mapping if not _agent_global_env(name, context))
+    # A removed/rotated dotenv or source name may still be present in the process
+    # environment. Its disappearance from today's scope cannot make it public.
+    from hermes_cli.env_loader import launch_dotenv_keys, managed_dotenv_keys, source_supplied_names
+    refs.update(name.upper() for name in (
+        launch_dotenv_keys() | managed_dotenv_keys() | set(source_supplied_names()))
+                if not _agent_global_env(name, context))
+    for name in list(env):
+        if name.upper().startswith("_HERMES_FORCE_"):
+            del env[name]
+        elif name.upper() in refs or _CREDENTIAL_ENV_NAME.search(name):
+            value = bound.mapping.get(name) if context.policy.allows_secret(name) else None
+            if value is None:
+                del env[name]
+            else:
+                env[name] = value
+    return env
+
+
 def get_secret(name: str, default: Optional[str] = None) -> Optional[str]:
     """Resolve a credential by env-var name, honoring the active profile scope.
 
-    Global vars always read ``os.environ``. With a scope installed, a miss returns
+    An enabled agent identity requires a matching stamped scope, permits only
+    granted credentials, and returns None on denial/miss. Caller defaults are not
+    credential authority: they may themselves contain an ambient secret.
+    Otherwise, global vars read ``os.environ``. With a scope installed, a miss returns
     ``default`` under multiplexing (never another profile's ``os.environ`` value)
     but falls through to ``os.environ`` otherwise — single-profile deployments
     inject credentials via the process env (systemd, ``op run``), so the scope
     must stay a ``.env`` overlay, not a blindfold (otherwise cron 401s). With no
     scope: multiplex INACTIVE reads ``os.environ``; ACTIVE raises (fail closed).
     """
+    from agent.runtime_context import current_agent_context
+
+    context = current_agent_context()
+    if context is not None:
+        bound = _agent_bound_scope(context)
+        if _agent_global_env(name, context):
+            return _environ_or(name, default)
+        if not context.policy.allows_secret(name):
+            return None
+        return bound.mapping.get(name)
     if _is_global_env(name):
         return _environ_or(name, default)
     bound = _SECRET_SCOPE.get()
@@ -248,10 +341,15 @@ def get_secret(name: str, default: Optional[str] = None) -> Optional[str]:
 
 
 def get_secret_str(name: str, default: str = "") -> str:
-    """``get_secret`` for callers that want a ``str``: ``default`` only when the secret is genuinely
-    unset. Still raises ``UnscopedSecretError`` — swallowing it hides a spawn-site bug."""
+    """String reader; strict identity denials/misses are empty, never caller defaults.
+
+    Legacy unset values retain ``default``. Scope errors still propagate.
+    """
     val = get_secret(name, default)
-    return default if val is None else val
+    if val is not None:
+        return val
+    from agent.runtime_context import current_agent_context
+    return "" if current_agent_context() is not None else default
 
 
 def _strip_inline_comment(value: str) -> str:
@@ -438,7 +536,11 @@ def refresh_installed_secret_scope(hermes_home: Path) -> bool:
     reload that follows is hydrate-only (never ``os.environ``), so nothing else would carry those
     values into the scope this fire already holds. The caller names the home the installed scope
     was built for. True when a scope was updated; False when none is installed."""
-    bound = _SECRET_SCOPE.get()
+    from agent.runtime_context import current_agent_context
+
+    context = current_agent_context()
+    bound = (_agent_bound_scope(context, target_home=hermes_home)
+             if context is not None else _SECRET_SCOPE.get())
     scope = bound.mapping if bound is not None else None
     if not isinstance(scope, dict):
         return False

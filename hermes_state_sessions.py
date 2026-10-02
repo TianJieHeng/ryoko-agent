@@ -775,6 +775,29 @@ class SessionSessionsMixin:
             return
         self._write_model_config_patch(session_id, patch)
 
+    def claim_session_agent_identity(self, session_id: str, binding: Dict[str, Any]) -> None:
+        """Bind a new empty session once; refuse legacy transcript adoption or identity swaps."""
+        if not session_id or not isinstance(binding, dict) or not binding:
+            raise ValueError("A session and validated identity binding are required")
+
+        def _claim(conn):
+            row = conn.execute("SELECT model_config FROM sessions WHERE id = ?", (session_id,)).fetchone()
+            if row is None:
+                raise ValueError("Session does not exist")
+            config = _parse_model_config(row[0])
+            current = config.get("agent_identity")
+            if current is not None:
+                if current != binding:
+                    raise ValueError("Session identity binding conflict")
+                return
+            if conn.execute("SELECT 1 FROM messages WHERE session_id = ? LIMIT 1", (session_id,)).fetchone():
+                raise ValueError("Legacy session history requires explicit identity migration")
+            config["agent_identity"] = binding
+            conn.execute("UPDATE sessions SET model_config = ? WHERE id = ?",
+                         (json.dumps(config), session_id))
+
+        self._execute_write(_claim)
+
     def get_session_model_config_value(self, session_id: str, key: str, default: Any = None) -> Any:
         """Read one key out of a session's model_config JSON (tolerant parse)."""
         session = self.get_session(session_id) or {}

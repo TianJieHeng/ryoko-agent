@@ -495,7 +495,9 @@ def _register_connected_into_current_scope(servers: dict) -> int:
     Missing or changed config entries remove only this profile's overlay.
     """
     from tools.registry import registry
+    from tools.agent_policy_gate import authorize_mcp, filter_mcp_servers
 
+    servers = filter_mcp_servers(servers)
     scope = _core._mcp_registry_scope()
     if scope is None:
         return 0
@@ -517,7 +519,7 @@ def _register_connected_into_current_scope(servers: dict) -> int:
     # would refuse a share whose values are equal.
     from tools.mcp_tool_discovery import _owner_secret_scope
     with _owner_secret_scope():
-        profile_servers = _config._load_mcp_config() if omitted else {}
+        profile_servers = filter_mcp_servers(_config._load_mcp_config()) if omitted else {}
         judged = {**{name: profile_servers.get(name) for name in omitted}, **servers}
         resolved_ids = {name: _adopter_identity_digest(name, config)
                         for name, config in judged.items()
@@ -535,6 +537,7 @@ def _register_connected_into_current_scope(servers: dict) -> int:
             config = judged[name]
             cross_profile = _key_scope(key) != scope
             if (config is None or not mcp_server_enabled(config) or server is None
+                    or authorize_mcp(name, connection=server) is not None
                     or getattr(server, "session", None) is None
                     or not _same_server_route(server, config, cross_profile=cross_profile,
                                               resolved_identity=resolved_ids.get(name))):
@@ -552,6 +555,7 @@ def _register_connected_into_current_scope(servers: dict) -> int:
             # Any other profile's live connection with the same route AND credentials is shareable.
             shared = [(key, live) for key, live in _core._servers.items()
                       if _key_name(key) == name and getattr(live, "session", None) is not None
+                      and authorize_mcp(name, connection=live) is None
                       and _same_server_route(live, config, cross_profile=True,
                                              resolved_identity=resolved_ids.get(name))]
         if not shared:

@@ -445,7 +445,11 @@ def _load_mcp_config() -> Dict[str, dict]:
         from utils import env_var_enabled as _env_enabled
         if _env_enabled("HERMES_SAFE_MODE"):
             return {}
+        from tools.agent_policy_gate import filter_mcp_servers, mcp_discovery_denial
+        if mcp_discovery_denial() is not None:
+            return {}
         servers = load_config().get("mcp_servers")
+        servers = filter_mcp_servers(servers if isinstance(servers, dict) else {})
         try:  # ensure .env vars are available for interpolation
             from hermes_cli.env_loader import load_hermes_dotenv
             load_hermes_dotenv()
@@ -458,7 +462,7 @@ def _load_mcp_config() -> Dict[str, dict]:
                 _warn_hidden_whitespace(name, interpolated)
                 safe_servers[name] = interpolated
         _portable_mcp_servers(safe_servers)
-        return safe_servers
+        return filter_mcp_servers(safe_servers)
     except Exception as exc:
         logger.debug("Failed to load MCP config: %s", exc)
         return {}

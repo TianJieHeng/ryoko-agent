@@ -3209,7 +3209,7 @@ _SCHEMA_DEFINED_DICT_KEYS = frozenset({
     "matrix", "feishu", "wecom", "weixin", "bluebubbles", "qqbot", "yuanbao",
     "email", "sms", "dingtalk",
     # MCP server template / dynamic auth dicts
-    "sessions", "checkpoints",
+    "sessions", "checkpoints", "agent_identity",
     # Plugin enable/disable lists + per-plugin entries; absent from DEFAULT_CONFIG.
     "plugins"})
 
@@ -4000,10 +4000,16 @@ def _cmd_config_check(args):
     print()
 
 
+def _cmd_config_identity(args):
+    from hermes_cli.config_identity import config_identity_command
+    config_identity_command(args)
+
+
 _CONFIG_SUBCOMMANDS = {
     None: lambda args: show_config(),
     "show": lambda args: show_config(),
     "edit": lambda args: edit_config(),
+    "identity": _cmd_config_identity,
     "get": _cmd_config_get,
     "set": _cmd_config_set,
     "unset": _cmd_config_unset,
@@ -4014,6 +4020,7 @@ _CONFIG_SUBCOMMANDS = {
 
 _CONFIG_USAGE = """Available commands:
   hermes config           Show current configuration
+  hermes config identity  Inspect redacted effective agent policy
   hermes config edit      Open config in editor
   hermes config get <key>          Print a resolved config value
   hermes config set <key> <value>   Set a config value

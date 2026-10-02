@@ -282,7 +282,9 @@ def _finalize_child_env(env: dict) -> dict:
     _strip_hermes_owned_pythonpath_and_runtime_markers(env)
     _apply_windows_msys_bash_env_defaults(env)
     from agent.delegation_context import delegated_child_subprocess_env
-    return delegated_child_subprocess_env(env)
+    from agent.secret_scope import filter_agent_secret_env
+    env = delegated_child_subprocess_env(env)
+    return filter_agent_secret_env(env, target_home=env.get("HERMES_HOME"))
 
 
 def _scrubbed_env(parts, plugin_strip: frozenset, fix_path) -> dict:
@@ -354,7 +356,8 @@ def build_subprocess_env(
     """Single factory for child-process envs. ``base=None`` snapshots ``os.environ``.
     ``scrub_secrets=True`` -> :func:`_sanitize_subprocess_env` (profile home inherent,
     ``inherit_profile_home`` ignored). ``scrub_secrets=False`` keeps the base
-    byte-for-byte (git credential flows, ``bws``/``op``); ``inherit_profile_home``
+    byte-for-byte for legacy callers (git credential flows, ``bws``/``op``); an
+    enabled agent identity still enforces its credential grants. ``inherit_profile_home``
     bridges HERMES_HOME + HOME and ``extra`` is applied last so caller overrides win.
     ``strip_launch_profile`` drops the LAUNCH profile's ``.env`` residue from the base first
     (:func:`strip_launch_profile_env`; a no-op unless a routed home is active) so a child that
@@ -380,7 +383,9 @@ def build_subprocess_env(
     if extra:
         env.update(extra)
     from agent.delegation_context import delegated_child_subprocess_env
-    return delegated_child_subprocess_env(env)
+    from agent.secret_scope import filter_agent_secret_env
+    env = delegated_child_subprocess_env(env)
+    return filter_agent_secret_env(env, target_home=env.get("HERMES_HOME"))
 
 
 def served_profile_child_env(
@@ -403,10 +408,17 @@ def served_profile_child_env(
     ``get_secret``. ``target_home`` defaults to the active override; ``base`` replaces the
     ``hermes_subprocess_env`` snapshot."""
     from agent.secret_scope import (
-        UnscopedSecretError, build_profile_secret_scope, current_secret_scope, is_multiplex_active)
+        UnscopedSecretError, build_profile_secret_scope, current_secret_scope,
+        filter_agent_secret_env, is_multiplex_active)
+    from agent.runtime_context import current_agent_context
     from hermes_constants import apply_scratch_tmp_env, get_hermes_home_override
     env = dict(base) if base is not None else hermes_subprocess_env(inherit_credentials=inherit_credentials)
-    target = str(target_home or get_hermes_home_override() or "")
+    context = current_agent_context()
+    target = str(target_home or get_hermes_home_override()
+                 or (context.profile_home if context is not None else ""))
+    # Validate BEFORE reading a requested target's secrets. A spawn helper cannot
+    # switch profiles while retaining another agent's identity and grants.
+    filter_agent_secret_env(env, target_home=target or None)
     if target:
         env["HERMES_HOME"] = target
         apply_scratch_tmp_env(env)  # TMPDIR follows the served home, like HOME does
@@ -414,7 +426,9 @@ def served_profile_child_env(
             strip_launch_profile_env(env, target)
             _scrub_credentials(env, inherit_credentials=False)
     if inherit_credentials:
-        if target:
+        if context is not None:
+            secrets = current_secret_scope()
+        elif target:
             secrets = build_profile_secret_scope(Path(target))
         else:
             secrets = current_secret_scope()
@@ -424,7 +438,7 @@ def served_profile_child_env(
                     "no profile secret scope bound while multiplexing is on; the child would inherit the "
                     "launch profile's credentials. Bind the profile scope (or pass target_home) at the spawn site.")
         env.update((k, v) for k, v in (secrets or {}).items() if v is not None)
-    return env
+    return filter_agent_secret_env(env, target_home=env.get("HERMES_HOME"))
 
 
 def host_gateway_child_env(
@@ -508,7 +522,8 @@ def restore_managed_env(env: dict) -> dict:
     for key in managed_dotenv_keys():
         if key in os.environ:
             env[key] = os.environ[key]
-    return env
+    from agent.secret_scope import filter_agent_secret_env
+    return filter_agent_secret_env(env)
 
 
 # --- Shell discovery ---
@@ -738,7 +753,8 @@ def _make_run_env(env: dict) -> dict:
     if published:
         run_env.update(published)
         run_env.pop("WAYLAND_DISPLAY", None)  # X11 desktop; a leaked Wayland socket flips GTK/Chromium backends
-    return run_env
+    from agent.secret_scope import filter_agent_secret_env
+    return filter_agent_secret_env(run_env, target_home=run_env.get("HERMES_HOME"))
 
 
 # --- Hermes venv / repo-root detection (module-level, computed once) ---

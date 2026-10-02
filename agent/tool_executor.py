@@ -30,6 +30,7 @@ from agent.display import (
     redact_tool_args_for_display as _redact_tool_args_for_display,
     _detect_tool_failure,
 )
+from agent.identity_lifecycle import bound_agent_lifecycle
 from agent.compression_marker import _COMPRESSION_MARKER_PREFIX
 from agent.message_sanitization import coalesce_tool_call_id
 from agent.inline_tool_executors import (
@@ -691,6 +692,7 @@ def _dispatch_authorized_once(
     display_index: int | None,
     begin_execution,
     authorization_gate: _ConcurrentToolAuthorizationGate | None,
+    trusted_context,
 ) -> Any:
     """Hermes policy (scope → plugin pre-hooks → pruned-arg check → guardrails) then the one real dispatch.
 
@@ -704,7 +706,11 @@ def _dispatch_authorized_once(
         elif callback is not None:
             callback()
 
+    from tools.agent_policy_gate import authorize_tool
+    denied = authorize_tool(ref.name, context=trusted_context)
     block_message, block_error_type = scope_block, "tool_scope_block"
+    if denied is not None:
+        block_message, block_error_type = json.loads(denied)["message"], "agent_policy_denied"
     if block_message is None:
         block_error_type = "plugin_block"
         resolve = lambda: _pre_tool_block(agent, ref)  # noqa: E731
@@ -739,6 +745,14 @@ def _dispatch_authorized_once(
             block_body=block_body, block_error_type=block_error_type, guardrail_decision=guardrail_decision,
         )
 
+    # Check again after every argument-transforming hook, immediately before any
+    # inline/plugin/registry execution. A hook cannot replace the authority.
+    denied = authorize_tool(ref.name, context=trusted_context)
+    if denied is not None:
+        _advance_start_order()
+        state.blocked = True
+        return denied
+
     if ref.name == "memory":
         agent._turns_since_memory = 0
     elif ref.name == "skill_manage":
@@ -747,9 +761,12 @@ def _dispatch_authorized_once(
     from agent.terminal_approval_batch import prepare_current_terminal
     prepare_current_terminal(ref)
     _advance_start_order(lambda: _begin_tool_execution(agent, ref, display_index))
-    return _run_with_activity_heartbeat(agent, ref.name, lambda: execute(ref.args))
+    from agent.runtime_context import bind_agent_context
+    with bind_agent_context(trusted_context):
+        return _run_with_activity_heartbeat(agent, ref.name, lambda: execute(ref.args))
 
 
+@bound_agent_lifecycle
 def _run_agent_tool_execution_middleware(
     agent,
     *,
@@ -772,6 +789,15 @@ def _run_agent_tool_execution_middleware(
     )
 
     trace = middleware_trace if middleware_trace is not None else []
+    from tools.agent_policy_gate import authorize_tool
+    from agent.runtime_context import current_agent_context
+    trusted_context = current_agent_context()
+    denied = authorize_tool(function_name, context=trusted_context)
+    if denied is not None:
+        if begin_execution is not None:
+            begin_execution()
+        return _ManagedToolResult(result=denied, args=function_args, middleware_trace=trace,
+                                  blocked=True, dispatched=False)
     state = _ManagedToolResult(result=None, args=function_args, middleware_trace=trace, blocked=False, dispatched=False)
     dispatch_lock = threading.Lock()
 
@@ -791,6 +817,7 @@ def _run_agent_tool_execution_middleware(
             display_index=display_index,
             begin_execution=begin_execution,
             authorization_gate=authorization_gate,
+            trusted_context=trusted_context,
         )
 
     from agent.terminal_approval_batch import bind_prepared_dispatch
