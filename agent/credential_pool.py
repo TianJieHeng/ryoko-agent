@@ -3068,6 +3068,11 @@ def _seed_custom_pool(pool_key: str, entries: List[PooledCredential]) -> Tuple[b
 
 
 def load_pool(provider: str) -> CredentialPool:
+    # Pool files and OAuth heal/refresh routines predate per-agent authority.
+    # A profile-local file is not a grant to every identity in that profile.
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        raise PermissionError("opaque credential pools require identity-aware account grants")
     provider = (provider or "").strip().lower()
     if provider in SINGLE_USE_REFRESH_POOL_PROVIDERS:
         # One-time heal for installs that forked this grant across profiles

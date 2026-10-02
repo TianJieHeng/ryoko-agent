@@ -1137,7 +1137,7 @@ def _load_tools(agent, enabled_toolsets, disabled_toolsets):
     except Exception:
         agent._tool_snapshot_generation = 0
     import model_tools
-    agent.tools = model_tools.get_tool_definitions(
+    agent.tools, agent.tool_view = model_tools.get_tool_definitions_with_view(
         enabled_toolsets=enabled_toolsets, disabled_toolsets=disabled_toolsets,
         quiet_mode=agent.quiet_mode,
     )
@@ -1149,6 +1149,7 @@ def _load_tools(agent, enabled_toolsets, disabled_toolsets):
     if drops:
         agent.tools = [t for t in agent.tools if t["function"]["name"] not in drops]
 
+    agent.tool_view = agent.tool_view.with_selection(agent.tools or [])
     agent.valid_tool_names = {tool["function"]["name"] for tool in agent.tools} if agent.tools else set()
     # Kanban guidance is session-static for the dispatcher-owned worker only. Profiles may
     # expose kanban_show interactively, and children/cron runs inherit the env var, without
@@ -2517,6 +2518,14 @@ def init_agent(
     _enforce_minimum_context(agent)
     _warn_nonagentic_hermes_model(agent)
     _inject_context_engine_tools(agent)
+    # Memory/context-engine schemas are injected after the registry snapshot.
+    # Freeze the actual authorized final set once, before this session's prefix
+    # is built; inspection must never rebuild or broaden it mid-conversation.
+    from tools.agent_policy_gate import filter_tool_definitions
+    from agent.tool_view import finalize_tool_view
+    agent.tools = filter_tool_definitions(agent.tools or [])
+    agent.valid_tool_names = {tool["function"]["name"] for tool in agent.tools}
+    agent.tool_view = finalize_tool_view(agent.tool_view, agent.tools)
     _init_usage_state(agent)
     _clamp_compressor_to_ollama_num_ctx(agent)
     _emit_compression_summary(agent, cs)

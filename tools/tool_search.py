@@ -352,9 +352,15 @@ def assemble_tool_defs(tool_defs: List[Dict[str, Any]], *, context_length: Optio
                        config: Optional[ToolSearchConfig] = None) -> AssemblyResult:
     """Tool-defs the model should see: passthrough when inactive, else deferrable tools
     replaced by the three bridge tools. Idempotent — existing bridge tools are stripped first."""
+    from tools.agent_policy_gate import authorize_tool, filter_tool_definitions
+    tool_defs = filter_tool_definitions(tool_defs)
     config = config or load_config()
     incoming = [td for td, name in zip(tool_defs, _tool_def_names(tool_defs))
                 if name not in BRIDGE_TOOL_NAMES]
+    if any(authorize_tool(name) is not None for name in BRIDGE_TOOL_NAMES):
+        # Deferral must never strand an authorized tool behind an ungranted
+        # bridge. Keep the existing direct schema when the escape path is denied.
+        return AssemblyResult(tool_defs=incoming, activated=False)
     visible, deferrable = classify_tools(incoming, config.effective_defer_tools)
     connections_granted = connections_in_scope(incoming)
     if not deferrable:
@@ -446,6 +452,8 @@ def _string_list_arg(args: Dict[str, Any], key: str, *, dedupe: bool, max_items:
 def dispatch_tool_search(args: Dict[str, Any], *, current_tool_defs: List[Dict[str, Any]],
                          config: Optional[ToolSearchConfig] = None,
                          connector_search: Optional[Any] = None) -> str:
+    from tools.agent_policy_gate import authorize_tool, filter_tool_definitions
+    current_tool_defs = filter_tool_definitions(current_tool_defs)
     config = config or load_config()
     queries, err = _string_list_arg(args, "queries", dedupe=False, max_items=_MAX_QUERIES_PER_CALL,
                                     retry_hint="Retry with fewer, more targeted queries.")
@@ -464,7 +472,8 @@ def dispatch_tool_search(args: Dict[str, Any], *, current_tool_defs: List[Dict[s
     tools_map: Dict[str, Dict[str, Any]] = {}
     available_sources = _available_source_summary(catalog)
     for position, query in enumerate(queries):
-        corpus = catalog + remote_entries[position]
+        corpus = catalog + [entry for entry in remote_entries[position]
+                            if authorize_tool(entry.name) is None]
         hits = search_catalog(corpus, query, limit=limit)
         for h in hits:
             tools_map.setdefault(h.name, _shared_tool_record(h))
@@ -489,6 +498,8 @@ def dispatch_tool_search(args: Dict[str, Any], *, current_tool_defs: List[Dict[s
 def dispatch_tool_describe(args: Dict[str, Any], *, current_tool_defs: List[Dict[str, Any]],
                            config: Optional[ToolSearchConfig] = None,
                            connector_describe: Optional[Any] = None) -> str:
+    from tools.agent_policy_gate import authorize_tool, filter_tool_definitions
+    current_tool_defs = filter_tool_definitions(current_tool_defs)
     config = config or load_config_readonly()
     names, err = _string_list_arg(
         args, "names", dedupe=True, max_items=_MAX_DESCRIBE_NAMES_PER_CALL,
@@ -497,7 +508,8 @@ def dispatch_tool_describe(args: Dict[str, Any], *, current_tool_defs: List[Dict
         return err
     deferrable = _deferrable_in(current_tool_defs)
     by_name = {name: _fn(td) for td, name in zip(deferrable, _tool_def_names(deferrable)) if name}
-    remote_schemas, hosted_failure = remote_schemas_for(names, current_tool_defs, connector_describe)
+    permitted_names = [name for name in names if authorize_tool(name) is None]
+    remote_schemas, hosted_failure = remote_schemas_for(permitted_names, current_tool_defs, connector_describe)
 
     tools: Dict[str, Dict[str, Any]] = {}
     not_found: List[str] = []
@@ -505,7 +517,7 @@ def dispatch_tool_describe(args: Dict[str, Any], *, current_tool_defs: List[Dict
     errors: Dict[str, str] = {}
     for name in names:
         fn = by_name.get(name)
-        remote_fn = remote_schemas.get(name)
+        remote_fn = remote_schemas.get(name) if name in permitted_names else None
         if fn is not None:
             tools[name] = {"description": fn.get("description", ""),
                            "parameters": fn.get("parameters", {})}
@@ -514,7 +526,7 @@ def dispatch_tool_describe(args: Dict[str, Any], *, current_tool_defs: List[Dict
                            "parameters": remote_fn.get("parameters", {})}
         elif is_connector_name(name):
             (undescribed if hosted_failure else not_found).append(name)
-        elif _registry_entry(name) is not None and not is_deferrable_tool_name(
+        elif authorize_tool(name) is None and _registry_entry(name) is not None and not is_deferrable_tool_name(
             name, load_config_readonly().effective_defer_tools):
             # Registered but bridge/core/GUI-surface: a real name, wrong door.
             errors[name] = not_deferrable_error(name)
@@ -535,8 +547,9 @@ def scoped_deferrable_names(tool_defs: List[Dict[str, Any]]) -> frozenset[str]:
     """Deferrable names in the *pre-assembly* ``tool_defs`` of the session scope — the
     universe ``tool_call`` may reach. Gates bridge dispatch AND the executor unwrap so a
     restricted session cannot invoke an out-of-scope tool via the bridge."""
+    from tools.agent_policy_gate import filter_tool_definitions
     defer_tools = load_config_readonly().effective_defer_tools
-    return frozenset(n for n in _tool_def_names(tool_defs)
+    return frozenset(n for n in _tool_def_names(filter_tool_definitions(tool_defs))
                      if n and is_deferrable_tool_name(n, defer_tools))
 
 
@@ -547,6 +560,9 @@ def out_of_scope_reason(name: str) -> Optional[str]:
     session's catalog at all. Name the missing surface instead. None for anything else
     (the generic message still applies). Fail-open: never raises."""
     try:
+        from tools.agent_policy_gate import authorize_tool
+        if authorize_tool(name) is not None:
+            return None
         if _registry_toolset(name) in _DIRECT_SURFACE_TOOLSETS:
             return (f"'{name}' needs a desktop-app session with a GUI surface (preview/terminal panes). "
                     "This session has none: use it only from the Hermes desktop app, not via tool_search.")
@@ -574,6 +590,12 @@ def resolve_underlying_call(args: Dict[str, Any]) -> Tuple[Optional[str], Dict[s
     entries, err = normalize_tool_call_entries(args)
     if err:
         return None, {}, err
+
+    from tools.agent_policy_gate import authorize_tool
+    for entry in entries:
+        denied = authorize_tool(entry["name"])
+        if denied is not None:
+            return None, {}, json.loads(denied)["message"]
 
     if len(entries) > 1 and any(not is_connector_name(e["name"]) for e in entries):
         return None, {}, local_batch_error(entries)

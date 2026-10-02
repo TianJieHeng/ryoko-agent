@@ -1020,6 +1020,10 @@ def _to_openai_base_url(base_url: str) -> str:
 
 def _load_pool_with_credentials(provider: str, note: str = "") -> Optional[Any]:
     """``load_pool(provider)`` when it has credentials, else None (never raises)."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None
+
     try:
         pool = load_pool(provider)
     except Exception as exc:
@@ -1045,6 +1049,12 @@ def _peek_pool_entry(provider: str, pool: Any = None) -> Optional[Any]:
 
     ``pool`` skips the disk re-read when the caller already loaded it.
     """
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        if pool is not None:
+            raise PermissionError("strict identity cannot adopt an opaque credential pool")
+        return None
+
     if pool is None:
         pool = _load_pool_with_credentials(provider, " (peek)")
     if pool is None:
@@ -3732,6 +3742,10 @@ def _recover_provider_pool(provider: str, exc: Exception, *, failed_api_key: str
     ``failed_api_key`` lets mark_exhausted_and_rotate identify the right pool entry even if
     another process already rotated (current() would be None).
     """
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return False
+
     normalized = _normalize_aux_provider(provider)
     try:
         pool = load_pool(normalized)
@@ -3901,6 +3915,10 @@ _CREDENTIAL_REFRESHERS: Dict[str, Callable[..., bool]] = {
 
 def _refresh_provider_credentials(provider: str, *, failed_api_key: str = "") -> bool:
     """Refresh short-lived credentials for OAuth-backed auxiliary providers."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return False
+
     normalized = _normalize_aux_provider(provider)
     refresher = _CREDENTIAL_REFRESHERS.get(normalized)
     if refresher is None:
@@ -4251,6 +4269,10 @@ def _try_payment_fallback(
 ) -> Tuple[Optional[Any], Optional[str], str]:
     """Try the auto-detection chain after a payment/credit or connection error, skipping the failed
     provider (and the main-provider path when it maps to the same backend). Returns (client, model, label) or (None, None, "")."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, None, ""
+
     skip = failed_provider.lower().strip()
     # The SESSION's provider decides whether discovery is allowed: a live `/model xai-oauth` session
     # over a persisted ``provider: auto`` is a selection, so the disk value alone is not the answer.
@@ -4311,6 +4333,10 @@ def _try_main_agent_model_fallback(
     """Last-resort fallback to the main agent provider + model after the configured chain is exhausted.
     ``failed_model`` scoping per ``_failed_backend_skip``; same-URL custom endpoints serve many models,
     so a hung aux model says nothing about the main model's health. Returns (client, model, label) or (None, None, "")."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, None, ""
+
     main_provider = (_read_main_provider() or "").strip()
     main_model = (_read_main_model() or "").strip()
     if main_provider.lower() == "moa":
@@ -4407,6 +4433,10 @@ def _try_configured_fallback_chain(
     """Try auxiliary.<task>.fallback_chain entries in order (each needs ``provider``; model/base_url/api_key optional).
     ``failed_model`` scoping per ``_failed_backend_skip`` (sibling models on the same provider still
     run after a model-scoped failure). Returns (client, model, provider_label) or (None, None, "")."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, None, ""
+
     if not task:
         return None, None, ""
     chain = _get_auxiliary_task_config(task).get("fallback_chain")
@@ -4471,6 +4501,10 @@ def _fallback_entry_api_key(entry: Dict[str, Any]) -> Optional[str]:
 
 def _resolve_fallback_entry(entry: Dict[str, Any]) -> Tuple[Optional[Any], Optional[str]]:
     """Resolve one fallback entry through the central provider router."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, None
+
     provider = str(entry.get("provider") or "").strip()
     model = str(entry.get("model") or "").strip() or None
     if not provider or not model:
@@ -4493,6 +4527,10 @@ def _try_main_fallback_chain(
     """Top-level main-agent fallback chain for a ``provider: auto`` auxiliary call: auto tasks honour the
     user's main fallback policy before the built-in discovery chain; read via ``get_fallback_chain`` so
     ``fallback_providers`` and legacy ``fallback_model`` keep the main agent's order."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, None, ""
+
     try:
         from hermes_cli.config import load_config_readonly
         from hermes_cli.fallback_config import get_fallback_chain
@@ -4654,6 +4692,10 @@ def _discovery_chain_allowed(main_provider: str, task: Optional[str] = None) -> 
 
 def _try_discovery_chain() -> Tuple[Optional[OpenAI], Optional[str], str]:
     """Step 3: hardcoded aggregator/fallback chain, skipping unhealthy providers."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, None, ""
+
     tried = []
     for label, try_fn in _get_provider_chain():
         candidate_base_url = _custom_health_base_url(label)
@@ -5811,7 +5853,9 @@ def _client_cache_key(
     api_key_key = _runtime_cache_discriminator("api_key", api_key or "")
     # Profile home leads the key: callers that omit api_key (pool / Nous auth.json paths) would
     # otherwise share one client across multiplex profiles holding different credentials.
-    return (hermes_home_key(), provider, async_mode, base_url or "", api_key_key, api_mode or "", runtime_key, is_vision, task_key, pool_hint, model_key)
+    from agent.attempt_policy import auxiliary_cache_scope
+    scope_key = auxiliary_cache_scope(base_url or runtime.get("base_url", ""))
+    return (hermes_home_key(), provider, async_mode, base_url or "", api_key_key, api_mode or "", runtime_key, is_vision, task_key, pool_hint, model_key, scope_key)
 
 
 def _current_event_loop() -> Any:
@@ -7599,6 +7643,10 @@ def _ladder_nous_rungs(
 ):
     """Nous-only rungs: stale-model self-heal, paid-account refresh, 401 refresh.
     Returns ``(response, None)`` or ``(None, first_err)`` to fall through."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, first_err
+
     client, task, tag = route.client, route.task, route.tag
     # A long-lived process can pin a Portal model since dropped from the catalog (every call
     # 404s); force a fresh Portal fetch and retry once.
@@ -7639,6 +7687,10 @@ def _ladder_credential_rungs(
 ):
     """OAuth credential refresh + same-provider retry, then credential-pool rotation.
     Returns ``(response, None)`` or ``(None, first_err)`` to fall through."""
+    from agent.attempt_policy import strict_failover_refusal
+    if strict_failover_refusal(None) is not None:
+        return None, first_err
+
     client, task, tag, resolved_provider = route.client, route.task, route.tag, route.resolved_provider
     auth_refresh_provider = _auth_refresh_provider_for_route(
         resolved_provider, route.base_info, _effective_provider_for_client(client, ""))
@@ -7828,6 +7880,13 @@ def _aux_recovery_ladder(
     strips → Nous heal/refresh → credential refresh/pool rotation → provider fallback.
     Each rung returns a response, narrows ``first_err`` and falls through, or re-raises.
     Raises the narrowed ``first_err`` when exhausted (after evicting a connection-poisoned client)."""
+    from agent.runtime_commands import _RUN
+    run = _RUN.get()
+    if run is not None and run.budget is not None:
+        # The physical controller has already classified and fenced this
+        # attempt. Legacy repair/refresh side operations cannot earn a retry.
+        raise first_err
+
     tag = " (async)" if async_mode else ""
     route = _LadderRoute(
         client, task, tag, async_mode, base_info, resolved_provider, resolved_model,

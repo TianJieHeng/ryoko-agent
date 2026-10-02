@@ -64,7 +64,8 @@ def _drop_side_agent_tools(agent, new_defs: list, new_names: set) -> tuple:
 
 def _publish_tool_snapshot(
     agent, new_defs: list, new_names: set, *, snapshot_generation: int,
-    staged_engine_names: set, content_aware: bool, prefix_registered: Optional[set]) -> Optional[set]:
+    staged_engine_names: set, content_aware: bool, prefix_registered: Optional[set],
+    tool_view=None) -> Optional[set]:
     """Single atomic read-diff-publish under ``_agent_tools_lock`` so ``added`` matches what
     was published and a stale (older-generation) rebuild can't overwrite a newer one. Returns
     the added names, or None when nothing was published (unchanged, or a newer snapshot won)."""
@@ -88,9 +89,15 @@ def _publish_tool_snapshot(
         # Same NAME set: no change for MCP-reload callers. Content-aware callers
         # (compaction boundary) also diff serialized bytes.
         if new_names == current and not (content_aware and _tool_defs_content_changed(agent, new_defs)):
+            if tool_view is not None:
+                from agent.tool_view import finalize_tool_view
+                agent.tool_view = finalize_tool_view(tool_view, current_defs)
             return None
         agent.tools = new_defs
         agent.valid_tool_names = new_names
+        if tool_view is not None:
+            from agent.tool_view import finalize_tool_view
+            agent.tool_view = finalize_tool_view(tool_view, new_defs)
         # Publish context-engine routing names atomically with the snapshot.
         engine_names = getattr(agent, "_context_engine_tool_names", None)
         if isinstance(engine_names, set):
@@ -117,13 +124,20 @@ def refresh_agent_mcp_tools(
     slot (schemas still refresh), a still-registered tool whose ``check_fn`` merely flapped is
     carried forward (``check_fn`` gates exposure, never invocation), a deregistered tool is
     dropped, new tools append at the tail. The caller owns the prompt-cache contract."""
-    from model_tools import get_tool_definitions
+    from model_tools import get_tool_definitions, get_tool_definitions_with_view
     from tools.registry import registry
     enabled, disabled = _resolve_refresh_toolsets(agent, enabled_override, disabled_override)
     # Generation captured BEFORE the slow get_tool_definitions call (a slower caller holding an
     # OLDER set must not clobber a newer one); definitions computed OUTSIDE the lock.
     snapshot_generation = registry._generation
-    new_defs = list(get_tool_definitions(enabled_toolsets=enabled, disabled_toolsets=disabled, quiet_mode=quiet_mode) or [])
+    tool_view = None
+    if getattr(agent, "tool_view", None) is not None:
+        new_defs, tool_view = get_tool_definitions_with_view(
+            enabled_toolsets=enabled, disabled_toolsets=disabled, quiet_mode=quiet_mode)
+        new_defs = list(new_defs)
+    else:
+        # Existing legacy sessions without a stored view retain their resolver.
+        new_defs = list(get_tool_definitions(enabled_toolsets=enabled, disabled_toolsets=disabled, quiet_mode=quiet_mode) or [])
     new_names = {_def_name(t) for t in new_defs}
     # Post-build families re-appended on LOCALS only; live attributes untouched until publish.
     staged_engine_names = _reinject_post_build_tools(agent, new_defs, new_names)
@@ -138,7 +152,8 @@ def refresh_agent_mcp_tools(
             pass  # fail open to the plain rebuild
     added = _publish_tool_snapshot(
         agent, new_defs, new_names, snapshot_generation=snapshot_generation,
-        staged_engine_names=staged_engine_names, content_aware=content_aware, prefix_registered=prefix_registered)
+        staged_engine_names=staged_engine_names, content_aware=content_aware, prefix_registered=prefix_registered,
+        tool_view=tool_view)
     if added is None:
         return set()
     persist_agent_tool_names(agent)  # re-pin so a rebuild after agent-cache eviction restores this order
@@ -244,6 +259,9 @@ def restore_agent_tool_prefix(agent, saved) -> bool:
         with _agent_tools_lock:
             agent.tools = merged
             agent.valid_tool_names = merged_names
+            view = getattr(agent, "tool_view", None)
+            if view is not None:
+                agent.tool_view = view.with_selection(merged)
     if not same_code or merged != list(pinned):
         persist_agent_tool_names(agent)
     return changed

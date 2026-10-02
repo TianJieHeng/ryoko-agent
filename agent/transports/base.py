@@ -17,6 +17,12 @@ class ProviderTransport(ABC):
     _STOP_REASON_MAP: Optional[Dict[str, str]] = None
 
     @property
+    def capabilities(self):
+        """Implemented format features; concrete execution is resolved separately."""
+        from agent.provider_capabilities import capabilities_for_api_mode
+        return capabilities_for_api_mode(self.api_mode)
+
+    @property
     @abstractmethod
     def api_mode(self) -> str:
         """The api_mode string this transport handles (e.g. 'anthropic_messages')."""

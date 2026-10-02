@@ -32,6 +32,7 @@ _IMPORT_MESSAGE_TEXT_FIELDS = (
 )
 _IMPORT_MESSAGE_JSON_FIELDS = (
     "reasoning_details", "codex_reasoning_items", "codex_message_items", "absorbed_message_uids", "tool_call_uids",
+    "provider_sidecar",
 )
 _IMPORT_SESSION_INSERT_SQL = """INSERT INTO sessions (
                            id, source, user_id, model, model_config, system_prompt,
@@ -282,7 +283,8 @@ class SessionPortabilityMixin:
 
     def _with_messages(self, session: Dict[str, Any], include_compacted: bool = False,
                        include_inactive: bool = False) -> Dict[str, Any]:
-        messages = self.get_messages(session["id"], include_inactive=include_inactive, include_compacted=include_compacted)
+        messages = self.get_messages(session["id"], include_inactive=include_inactive,
+                                     include_compacted=include_compacted, include_provider_state=True)
         return {**session, "messages": messages, "timings": _export_timings(messages, session["id"])}
 
     def export_session(self, session_id: str, include_compacted: bool = False,
@@ -334,7 +336,7 @@ class SessionPortabilityMixin:
             )
             for row in rows:
                 messages_by_session[row["session_id"]].append(
-                    self._row_to_message_dict(row, warn_context="get_messages", summary_flag=True)
+                    self._row_to_message_dict(row, warn_context="get_messages", summary_flag=True, include_provider_state=True)
                 )
         return [{**session, "messages": messages_by_session[session["id"]],
                  "timings": _export_timings(messages_by_session[session["id"]], session["id"])} for session in sessions]
@@ -475,6 +477,8 @@ class SessionPortabilityMixin:
                 raise ValueError(f"messages[{message_index}].role must be a non-empty string")
             for field in _IMPORT_MESSAGE_TEXT_FIELDS:
                 clean_message[field] = self._import_text_or_none(clean_message.get(field), field)
+            from agent.provider_capabilities import decode_protocol_sidecar
+            decode_protocol_sidecar(clean_message.get("provider_sidecar"))
             clean_message["token_count"] = self._import_int_or_none(clean_message.get("token_count"), "token_count")
             clean_messages.append(clean_message)
         return {"session": clean_session, "messages": clean_messages}

@@ -100,12 +100,21 @@ def _runtime_snapshot_projection(snapshot):
 
 
 def _runtime_event_projection(event):
-    from tui_gateway.contracts.runtime_v1 import RuntimeEventEnvelope
+    from pydantic import ValidationError
+    from tui_gateway.contracts.runtime_v1 import RuntimeEventEnvelope, RuntimePhysicalAttempt
 
     projection = {key: event[key] for key in RuntimeEventEnvelope.model_fields}
     projection["payload"] = {key: event["payload"][key]
                              for key in _RUNTIME_EVENT_PAYLOAD_FIELDS.get(event["type"], ())
                              if key in event["payload"]}
+    if event["type"] in {"model.started", "model.completed", "model.failed"}:
+        attempt = event["payload"].get("physical_attempt")
+        if isinstance(attempt, dict):
+            try:
+                projection["payload"]["physical_attempt"] = RuntimePhysicalAttempt.model_validate(attempt).model_dump()
+            except ValidationError:
+                # Unknown/malformed private metadata is never forwarded wholesale.
+                pass
     result = event["payload"].get("result")
     if (event["type"] == "command.completed" and isinstance(result, dict)
             and result.get("outcome") in ("steer_queued", "steer_not_queued", "cancel_requested", "cancel_not_requested")):
@@ -125,6 +134,8 @@ def _runtime_event_projection(event):
 @_profile_scoped
 def _runtime_capabilities(rid, params):
     from agent.runtime_commands import supports_runtime_execution
+    from agent.provider_capabilities import provider_capabilities_for
+    from agent.tool_view import ToolView
     from tui_gateway.contracts.runtime_v1 import RuntimeCapabilitiesParams
 
     request, error = _runtime_validate(rid, params, RuntimeCapabilitiesParams)
@@ -136,6 +147,10 @@ def _runtime_capabilities(rid, params):
     from dataclasses import asdict
     from agent.admission import AdmissionPolicy
     executable = supports_runtime_execution(agent)
+    tool_view = getattr(agent, "tool_view", None)
+    if (not isinstance(tool_view, ToolView)
+            or tool_view.session_policy_version != agent.runtime_context.policy.digest):
+        tool_view = None
     descriptions = {
         "submit": "existing agent turn pipeline; acceptance is not completion",
         "steer": "queues a correction for an active local run; application is not guaranteed",
@@ -149,6 +164,8 @@ def _runtime_capabilities(rid, params):
     return _ok(rid, {"schema_versions": [1], "operations": operations, "strict_identity_required": True,
                      "durable_replay": True, "max_events": 200,
                      "admission": {"scope": "profile_store", **asdict(AdmissionPolicy())} if executable else None,
+                     "provider": provider_capabilities_for(agent).to_record(),
+                     "tool_view": tool_view.to_record() if tool_view is not None else None,
                      "cursor_policy": "snapshot_required_on_expired_or_unknown_cursor"})
 
 

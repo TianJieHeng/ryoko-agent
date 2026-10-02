@@ -2941,6 +2941,8 @@ export interface RuntimeCapabilities {
   durable_replay: boolean
   max_events: number
   admission?: RuntimeAdmissionLimits | null
+  provider?: RuntimeProviderCapabilities | null
+  tool_view?: RuntimeToolView | null
   cursor_policy: 'snapshot_required_on_expired_or_unknown_cursor'
 }
 export interface RuntimeOperationCapability {
@@ -2961,6 +2963,34 @@ export interface RuntimeAdmissionLimits {
   ttl_seconds: number
   interactive_boost_seconds: number
   launch_lease_seconds: number
+}
+/** Adapter declarations; model support and live cancellation remain separate. */
+export interface RuntimeProviderCapabilities {
+  schema_version: 1
+  api_mode: string
+  adapter: string
+  declaration_scope: 'adapter'
+  streaming: 'supported' | 'unsupported' | 'unknown'
+  parallel_tools: 'supported' | 'unsupported' | 'unknown'
+  media_inputs: string[]
+  model_capabilities: 'unverified'
+  usage: 'final_response' | 'provider_reported' | 'unknown'
+  cancellation: 'local_only' | 'provider_acknowledgment' | 'unknown'
+  cache_semantics: string
+  opaque_state_version: number | null
+  execution_owner: 'hermes' | 'provider' | 'unknown'
+  durable_execution: boolean
+  bounded_budget: 'conditional_openai_text' | 'unsupported'
+}
+/** Frozen authorized metadata only; inspection cannot refresh the prompt. */
+export interface RuntimeToolView {
+  catalog_version: string
+  session_policy_version: string
+  installed_tool_ids: string[]
+  authorized_tool_ids: string[]
+  discoverable_tool_ids: string[]
+  selected_tool_ids: string[]
+  unavailable_reasons: Record<string, string>
 }
 /** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. */
 export interface RuntimeCommandParams {
@@ -3077,6 +3107,7 @@ export interface RuntimeEventPayload {
   checkpoint_id?: string | null
   included_seq?: number | null
   cancellation?: RuntimeCancellation | null
+  physical_attempt?: RuntimePhysicalAttempt | null
   admission_state?: 'expired' | 'cancelled' | 'rejected' | null
   control_outcome?: 'steer_queued' | 'steer_not_queued' | 'cancel_requested' | 'cancel_not_requested' | null
 }
@@ -3089,6 +3120,15 @@ export interface RuntimeCancellation {
   pending_handles: string[]
   partial_result_available: boolean
   remote_effects_undone: false
+}
+/** Opaque account correlation only, never credentials, endpoint or payload. */
+export interface RuntimePhysicalAttempt {
+  attempt_id: string
+  reason: 'initial' | 'auth_failure' | 'quota_exhausted' | 'throttled' | 'overloaded' | 'context_overflow' | 'unsupported_capability' | 'ambiguous_transport' | 'request_rejected'
+  provider_account_ref: string
+  reservation_id: string
+  remote_acceptance: 'unknown' | 'rejected' | 'accepted'
+  logical_request_id: string
 }
 export interface SessionCreateParams {
   profile?: string | null

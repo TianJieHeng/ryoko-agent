@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "phase": "BE04",
+  "base_sha": "8e3a567b94152a4c7a5ece992f001acf6698cf68",
+  "publication": "direct main; no PR",
+  "database_schema": 34,
+  "runtime_schema": 1,
+  "provider_sidecar_schema": 1,
+  "python": "3.14.7",
+  "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/agent/test_attempt_policy.py tests/agent/test_provider_capabilities.py tests/agent/test_tool_view.py tests/agent/test_tool_view_construction.py tests/agent/test_runtime_commands.py tests/agent/test_budget_runtime.py tests/agent/test_identity_lifecycle.py tests/agent/test_tool_call_incremental_persistence.py tests/hermes_state/test_provider_protocol_state.py tests/hermes_state/test_schema_read_probe.py tests/gateway/test_provider_protocol_roundtrip.py tests/gateway/test_replay_entry_fields.py tests/hermes_cli/test_branch_command.py tests/tui_gateway/test_branch_system_prompt.py tests/tui_gateway/test_history_inline_images.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_generated.py tests/tools/test_agent_policy_boundaries.py tests/tools/test_refresh_agent_mcp_tools.py -j 5 --file-retries 0",
+  "results": [
+    {
+      "file": "tests/agent/test_provider_capabilities.py",
+      "passed": 6,
+      "duration_seconds": 1.5
+    },
+    {
+      "file": "tests/agent/test_identity_lifecycle.py",
+      "passed": 20,
+      "duration_seconds": 2.3
+    },
+    {
+      "file": "tests/agent/test_attempt_policy.py",
+      "passed": 19,
+      "duration_seconds": 3.4
+    },
+    {
+      "file": "tests/agent/test_tool_view.py",
+      "passed": 15,
+      "duration_seconds": 3.5
+    },
+    {
+      "file": "tests/agent/test_tool_view_construction.py",
+      "passed": 2,
+      "duration_seconds": 3.0
+    },
+    {
+      "file": "tests/gateway/test_replay_entry_fields.py",
+      "passed": 11,
+      "duration_seconds": 1.2
+    },
+    {
+      "file": "tests/gateway/test_provider_protocol_roundtrip.py",
+      "passed": 7,
+      "duration_seconds": 3.0
+    },
+    {
+      "file": "tests/hermes_state/test_provider_protocol_state.py",
+      "passed": 4,
+      "duration_seconds": 1.2
+    },
+    {
+      "file": "tests/hermes_state/test_schema_read_probe.py",
+      "passed": 4,
+      "duration_seconds": 0.7
+    },
+    {
+      "file": "tests/hermes_cli/test_branch_command.py",
+      "passed": 8,
+      "duration_seconds": 3.3
+    },
+    {
+      "file": "tests/agent/test_runtime_commands.py",
+      "passed": 14,
+      "duration_seconds": 10.9
+    },
+    {
+      "file": "tests/tui_gateway/contracts/test_generated.py",
+      "passed": 2,
+      "duration_seconds": 2.3
+    },
+    {
+      "file": "tests/tools/test_refresh_agent_mcp_tools.py",
+      "passed": 19,
+      "duration_seconds": 2.8
+    },
+    {
+      "file": "tests/agent/test_tool_call_incremental_persistence.py",
+      "passed": 21,
+      "duration_seconds": 12.7
+    },
+    {
+      "file": "tests/tools/test_agent_policy_boundaries.py",
+      "passed": 27,
+      "duration_seconds": 3.8
+    },
+    {
+      "file": "tests/tui_gateway/test_branch_system_prompt.py",
+      "passed": 1,
+      "duration_seconds": 1.6
+    },
+    {
+      "file": "tests/tui_gateway/test_history_inline_images.py",
+      "passed": 5,
+      "duration_seconds": 1.9
+    },
+    {
+      "file": "tests/agent/test_budget_runtime.py",
+      "passed": 35,
+      "duration_seconds": 18.1
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_rpc.py",
+      "passed": 9,
+      "duration_seconds": 6.3
+    }
+  ],
+  "passed": 229,
+  "failed": 0,
+  "skipped": 0,
+  "duration_seconds": 20.5,
+  "log_sha256": "0892e34d2059edea2f1d6150a734593d58e5bd2d47636fd4849fe3f22f948d7a",
+  "other_campaigns": [
+    {
+      "command": "scripts/run_tests.sh tests/agent/test_budget_runtime.py tests/agent/test_credential_pool.py tests/agent/test_auxiliary_client.py -j 2",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 3,
+      "passed": 308,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 16.9,
+      "log_sha256": "559fb9e1d6d811e49e915ceb165dfbc7caaf1e33543593fd6ca1814a42848a22",
+      "note": "Overlapping regression campaign; counts are not additive"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/agent/test_tool_view.py tests/agent/test_provider_parity.py tests/tools/test_agent_policy_boundaries.py tests/tools/test_tool_search.py tests/tools/test_tool_search_multiquery.py tests/tools/test_tool_search_context_provider.py tests/tools/test_refresh_agent_mcp_tools.py tests/test_get_tool_definitions_cache_isolation.py tests/tools/test_registry.py tests/tools/test_connector_dispatch_policy.py tests/agent/test_identity_lifecycle.py -j 2",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 11,
+      "passed": 240,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 18.3,
+      "log_sha256": "ed6874f3f433a44c60fce849da593c2e9bc3bd1ea86ec6082d94eedc5724d7a1",
+      "note": "Overlapping regression campaign; counts are not additive"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/hermes_state/test_append_messages_batch.py tests/hermes_state/test_unaddressed_rewrite_identity.py tests/hermes_state/test_hermes_state.py tests/agent/test_api_content_row_addressed_backfill.py tests/agent/test_tool_call_incremental_persistence.py tests/tui_gateway/test_history_inline_images.py -j 9",
+      "command_source": "Selected paths/concurrency from canonical runner header",
+      "files": 6,
+      "passed": 335,
+      "failed": 1,
+      "skipped": 0,
+      "duration_seconds": 21.6,
+      "log_sha256": "dbae1c47bb84f5368a50a524781d7b7f5b55ea2b88e3ce8bb4720fbe89665701",
+      "note": "Overlapping regression campaign. Storage campaign had intentional multipart expectation mismatch; corrected incremental file passed on final source above."
+    }
+  ],
+  "checks": [
+    "Shared TypeScript workspace typecheck passed",
+    "Generated gateway-contract freshness passed",
+    "Focused Ruff and git diff --check passed"
+  ],
+  "limits": [
+    "Provider calls are deterministic SDK/HTTP fixtures, not live provider or billing certification",
+    "Physical attempt certification limited to the BE03 bounded text adapter; process-local circuits are not persistent cross-worker cooldowns",
+    "Strict automatic fallback and opaque credential pools unsupported until recipient/purpose/protocol authority can be enforced",
+    "Model-specific capabilities unverified; local cancellation is not upstream acknowledgment",
+    "Full project suite deferred to BE18; inherited BE00 project-tree failures and prior AF_UNIX limitation remain open"
+  ]
+}

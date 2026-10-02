@@ -33,8 +33,8 @@ _INSERT_MESSAGE_SQL = """INSERT INTO messages (session_id, role, content, tool_c
                    reasoning, reasoning_content, reasoning_details, codex_reasoning_items,
                    codex_message_items, platform_message_id, observed, _compressed_summary, active, api_content, display_kind,
                    display_metadata, display_identity, message_uid, absorbed_message_uids, tool_call_uids,
-                   tool_call_uid)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+                   tool_call_uid, provider_sidecar)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 # Every column this module knows how to read: the ones it writes plus the three SQLite/compaction
 # owns. `_row_to_message_dict` drops raw bytes ONLY outside this set — a schema column keeps its
 # key (and its typed decoder) even when a row holds a BLOB, so no reader ever loses msg["content"].
@@ -260,6 +260,8 @@ class SessionMessagesMixin:
         """Bind values for ``_INSERT_MESSAGE_SQL`` from one message dict (*tool_calls* already parsed;
         *keep_reasoning* False NULLs every reasoning column). ``platform_message_id`` falls back to
         ``message_id`` (yuanbao's message-dict convention)."""
+        from agent.provider_capabilities import encode_protocol_sidecar
+        provider_sidecar = encode_protocol_sidecar(msg)
         _str_or_none = lambda v: _scrub_surrogates(v) if isinstance(v, str) else None  # noqa: E731
         _reasoning = lambda key: msg.get(key) if keep_reasoning else None  # noqa: E731
         encoded_content = self._encode_content(msg.get("content"))
@@ -283,7 +285,7 @@ class SessionMessagesMixin:
             _str_or_none(msg.get("api_content")), _str_or_none(msg.get("display_kind")),
             display_metadata, self._display_identity(self._display_dedupe_key(identity_row)),
             message_uid_or_none(msg), _absorbed_uids_json(msg),
-            _tool_call_uids_json(msg), _tool_call_uid_or_none(msg))
+            _tool_call_uids_json(msg), _tool_call_uid_or_none(msg), provider_sidecar)
 
     @staticmethod
     def _stamp_tool_call_uids(msg: Dict[str, Any], tool_calls: Any, batch_index: Dict[str, str]) -> None:
@@ -362,6 +364,9 @@ class SessionMessagesMixin:
                     msg[column] = _json_or(
                         row[column], None, f"Failed to deserialize repaired {column}, falling back to None"
                     )
+        from agent.provider_capabilities import restore_protocol_sidecar
+        msg["provider_sidecar"] = row["provider_sidecar"]
+        restore_protocol_sidecar(msg)
         return msg
 
     @staticmethod
@@ -386,7 +391,7 @@ class SessionMessagesMixin:
         api_content: Optional[str] = None, display_kind: Optional[str] = None,
         display_metadata: Optional[Dict[str, Any]] = None, compression_lock_holder: Optional[str] = None,
         turn_lease_holder: Optional[str] = None, turn_lease_ttl_seconds: float = 300.0,
-        message_uid: Optional[str] = None) -> int:
+        message_uid: Optional[str] = None, provider_sidecar: Any = None) -> int:
         """Append one message; returns the row id and bumps the session counters. ``platform_message_id``:
         the platform's own id. ``api_content``: byte-fidelity sidecar, the exact string sent to the API when
         it differed from ``content``, stored as sent except lone surrogates. ``message_uid``: the id a caller
@@ -1404,10 +1409,12 @@ class SessionMessagesMixin:
                 if conn.in_transaction:
                     conn.execute("ROLLBACK")
 
-    def _row_to_message_dict(self, row, *, warn_context: str, summary_flag: bool) -> Dict[str, Any]:
+    def _row_to_message_dict(self, row, *, warn_context: str, summary_flag: bool, include_provider_state: bool = False) -> Dict[str, Any]:
         """``dict(row)`` with content/tool_calls/display_metadata decoded; *summary_flag* keeps
         ``_compressed_summary`` only as ``True``."""
         msg = dict(row)
+        if not include_provider_state:
+            msg.pop("provider_sidecar", None)
         msg.pop("display_identity", None)
         msg.pop("display_order", None)
         if summary_flag and msg.pop("_compressed_summary", 0):
@@ -1479,7 +1486,8 @@ class SessionMessagesMixin:
 
     def get_messages(self, session_id: str, include_inactive: bool = False, include_compacted: bool = False,
                      limit: Optional[int] = None, offset: int = 0, latest: bool = False,
-                     after_id: Optional[int] = None, include_ancestors: bool = False) -> List[Dict[str, Any]]:
+                     after_id: Optional[int] = None, include_ancestors: bool = False,
+                     include_provider_state: bool = False) -> List[Dict[str, Any]]:
         """Load messages in insertion order (id, never timestamp: clocks regress). ``include_inactive``:
         rewind rows too; ``include_compacted``: compaction-archived display history (not rewind rows).
         ``latest`` pages back from the newest but returns chronological order; ``after_id``: keyset paging.
@@ -1524,7 +1532,8 @@ class SessionMessagesMixin:
             rows = self._read_all(sql, params)
             if latest:
                 rows.reverse()
-        return [self._row_to_message_dict(row, warn_context="get_messages", summary_flag=True) for row in rows]
+        return [self._row_to_message_dict(row, warn_context="get_messages", summary_flag=True,
+                                          include_provider_state=include_provider_state) for row in rows]
 
     def find_pr_url_messages(self, session_ids: List[str]) -> List[Dict[str, Any]]:
         """Tool results containing ``/pull/``: a deliberately loose scan, oldest-first so the caller takes the last."""
@@ -1721,6 +1730,9 @@ class SessionMessagesMixin:
                 unindexed_tool_owners.clear()
                 if tool_uid := resolve_tool_call_uid(tool_uid_index, row["tool_call_id"]):
                     msg[TOOL_CALL_UID] = tool_uid
+            from agent.provider_capabilities import restore_protocol_sidecar
+            msg["provider_sidecar"] = row["provider_sidecar"]
+            restore_protocol_sidecar(msg)
             if include_ancestors:
                 skip, exact_clone_key = self._dedupe_replayed_user(messages, msg, exact_user_clones)
                 if skip:
@@ -1802,6 +1814,32 @@ class SessionMessagesMixin:
         return int(self._read_one(
             f"SELECT COUNT(*) FROM messages WHERE session_id IN ({_placeholders(session_ids)}) AND {active_clause}",
             tuple(session_ids))[0])
+
+    def assert_provider_state_compatible(self, session_id: str) -> None:
+        """Refuse unsupported active state even if a surface swallowed a resume error.
+
+        Run under the existing admitted turn lease. SQLite inspects only sidecar
+        metadata and returns at most one row; no prompt is loaded or rewritten.
+        Archived/deactivated state cannot re-enter the provider's live replay.
+        """
+        from agent.provider_capabilities import UnsupportedProviderState
+        tip = self.get_compression_tip(session_id) or session_id
+        session_ids = self._resume_lineage_ids(tip)
+        incompatible = self._read_one(
+            f"SELECT 1 FROM messages WHERE session_id IN ({_placeholders(session_ids)}) "
+            "AND active = 1 AND provider_sidecar IS NOT NULL AND CASE "
+            "WHEN NOT json_valid(provider_sidecar) THEN 1 ELSE "
+            "json_type(provider_sidecar) IS NOT 'object' OR "
+            "json_type(provider_sidecar, '$.schema_version') IS NOT 'integer' OR "
+            "json_extract(provider_sidecar, '$.schema_version') IS NOT 1 OR "
+            "json_type(provider_sidecar, '$.fields') IS NOT 'object' OR "
+            "EXISTS (SELECT 1 FROM json_each(provider_sidecar) "
+            "WHERE key NOT IN ('schema_version', 'fields')) OR "
+            "EXISTS (SELECT 1 FROM json_each(provider_sidecar, '$.fields') "
+            "WHERE key NOT IN ('anthropic_content_blocks', 'bedrock_content_blocks') OR type != 'array') "
+            "END LIMIT 1", tuple(session_ids))
+        if incompatible is not None:
+            raise UnsupportedProviderState("unsupported private provider state; compatible reader required before dispatch")
 
     def assert_resume_safe(self, session_id: str, max_messages: Optional[int] = None, *, tip_only: bool = False) -> int:
         """Resume row count, or raise ``SessionResumeTooLargeError``. ``max_messages=None`` reads config; 0

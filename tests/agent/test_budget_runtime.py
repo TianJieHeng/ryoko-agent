@@ -447,3 +447,177 @@ def test_budget_metadata_column_migrates_old_unbudgeted_command(tmp_path):
         assert "budget_policy_json" in columns
     finally:
         migrated.close()
+
+
+def test_bounded_retry_refusals_are_physical_and_no_sdk_amplification(factory, monkeypatch):
+    make, db, _ = factory
+    replies = iter([httpx.Response(429, headers={"Retry-After": "0"}, json={"error": {"message": "rate limit"}}),
+                    httpx.Response(200, json=response())])
+    agent, calls = make(handler=lambda r: next(replies))
+    monkeypatch.setattr("agent.attempt_policy.jittered_backoff", lambda *a, **k: 0)
+    result = agent.run_conversation("hello")
+    assert result["final_response"] == "bounded answer"
+    assert len(calls) == 2
+    events = db.replay_runtime_events(agent.session_id)["events"]
+    physical = [e for e in events if "physical_attempt" in e["payload"]]
+    starts = [e for e in physical if e["type"] == "model.started"]
+    finishes = [e for e in physical if e["type"] != "model.started"]
+    assert len(starts) == len(finishes) == 2
+    for event in physical:
+        item = event["payload"]["physical_attempt"]
+        assert event["operation_id"] == item["reservation_id"] == item["attempt_id"]
+        assert "fixture" not in item["provider_account_ref"]
+    assert finishes[0]["payload"]["physical_attempt"]["remote_acceptance"] == "rejected"
+    assert finishes[1]["payload"]["physical_attempt"]["remote_acceptance"] == "accepted"
+    assert result["runtime_budget"]["consumed"]["attempts"] + result["runtime_budget"]["reserved"]["attempts"] == 2
+    assert result["runtime_budget"]["unknown_usage"]
+    assert result["runtime_budget"]["reserved"]["tokens"] > 0
+    assert result["runtime_budget"]["pending_provider_requests"] == 0
+
+
+@pytest.mark.parametrize("status,message,expected", [
+    (401, "invalid API key", "auth_failure"),
+    (429, "insufficient_quota", "quota_exhausted"),
+    (400, "maximum context length exceeded", "context_overflow"),
+    (404, "model does not exist", "unsupported_capability"),
+    (500, "upstream reset after possible acceptance", "ambiguous_transport"),
+    (503, "server overloaded", "overloaded"),
+])
+def test_bounded_terminal_failure_cannot_enter_legacy_recovery(factory, monkeypatch, status, message, expected):
+    make, db, _ = factory
+    agent, calls = make(handler=lambda r: httpx.Response(status, json={"error": {"message": message}}))
+    def forbidden(*args, **kwargs):
+        pytest.fail("bounded failure entered legacy recovery")
+    monkeypatch.setattr("agent.turn_api_error.recover_before_classification", forbidden)
+    monkeypatch.setattr(agent, "_try_activate_fallback", forbidden)
+    result = agent.run_conversation("hello")
+    assert len(calls) == 1 and result["failure_reason"] == expected
+    if status in (500, 503):
+        assert result["outcome_uncertain"]
+        assert result["runtime_budget"]["unknown_usage"]
+        assert result["runtime_budget"]["pending_provider_requests"] == 1
+
+
+def test_strict_unbudgeted_fallback_and_aux_discovery_do_not_resolve(factory, monkeypatch):
+    make, _, _ = factory
+    agent, _ = make()
+    agent._runtime_budget_policy = None  # identity enforcement is independent of budget opt-in
+    agent._fallback_chain = [{"provider": "custom", "model": "private", "base_url": "https://foreign.invalid/v1"}]
+    from agent.chat_completion_helpers import try_activate_fallback
+    from agent import auxiliary_client as aux
+    def forbidden(*a, **k):
+        pytest.fail("unauthorized fallback tried to resolve credentials or a provider")
+    monkeypatch.setattr(aux, "resolve_provider_client", forbidden)
+    monkeypatch.setattr(aux, "_get_provider_chain", forbidden)
+    with agent_runtime_scope(agent.runtime_context):
+        assert not try_activate_fallback(agent)
+        assert "recipient_purpose" in agent._fallback_refusal_reason
+        assert aux._try_configured_fallback_chain("compression", "openai") == (None, None, "")
+        assert aux._try_main_fallback_chain("compression") == (None, None, "")
+        assert aux._try_payment_fallback("openai") == (None, None, "")
+        assert aux._try_main_agent_model_fallback("openai") == (None, None, "")
+        assert aux._try_discovery_chain() == (None, None, "")
+
+
+def test_three_refusals_are_total_ceiling_even_with_large_legacy_retries(factory, monkeypatch):
+    make, _, _ = factory
+    agent, calls = make(handler=lambda r: httpx.Response(429, headers={"Retry-After": "0"},
+                                                        json={"error": {"message": "rate limit"}}))
+    agent._api_max_retries = 99
+    agent._auto_recovery_cycles = 99
+    monkeypatch.setattr("agent.attempt_policy.jittered_backoff", lambda *a, **k: 0)
+    result = agent.run_conversation("hello")
+    assert len(calls) == 3
+    assert result["failure_reason"] == "throttled"
+    assert result["runtime_budget"]["consumed"]["attempts"] + result["runtime_budget"]["reserved"]["attempts"] == 3
+    assert result["runtime_budget"]["pending_provider_requests"] == 0
+
+
+def test_async_timeout_is_one_unknown_physical_attempt(factory):
+    import asyncio
+    from agent.budget_account import invoke_budgeted_completion_async
+    make, db, _ = factory
+    agent, _ = make()
+    requests = []
+    def handler(request):
+        requests.append(request)
+        raise httpx.ReadTimeout("fixture timeout", request=request)
+    async def invoke():
+        async with openai.AsyncOpenAI(api_key="fixture", base_url=BASE_URL, max_retries=8,
+                http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))) as client:
+            with pytest.raises(openai.APITimeoutError):
+                await invoke_budgeted_completion_async(client, {"model": MODEL, "messages": []})
+            with pytest.raises(BudgetBlocked):
+                await invoke_budgeted_completion_async(client, {"model": MODEL, "messages": []})
+    with active(agent) as run:
+        asyncio.run(invoke())
+        status = run.budget.status()
+        assert len(requests) == 1 and status["unknown_usage"]
+        assert status["pending_provider_requests"] == 1
+    physical = [e["payload"]["physical_attempt"] for e in db.replay_runtime_events(agent.session_id)["events"]
+                if e["type"] == "model.failed" and "physical_attempt" in e["payload"]]
+    assert len(physical) == 1
+    assert physical[0]["reason"] == "ambiguous_transport" and physical[0]["remote_acceptance"] == "unknown"
+
+
+def test_strict_auxiliary_pool_refresh_and_healing_refuse_before_callbacks(factory, monkeypatch):
+    make, _, _ = factory
+    agent, _ = make()
+    agent._runtime_budget_policy = None
+    from agent import auxiliary_client as aux
+    def forbidden(*a, **k):
+        pytest.fail("strict auxiliary recovery touched an opaque credential pool or OAuth network")
+    monkeypatch.setattr(aux, "load_pool", forbidden)
+    monkeypatch.setattr(aux, "_refresh_nous_recommended_model", forbidden)
+    monkeypatch.setattr(aux, "_CREDENTIAL_REFRESHERS", {"anthropic": forbidden})
+    error = RuntimeError("fixture rejection")
+    with agent_runtime_scope(agent.runtime_context):
+        assert aux._load_pool_with_credentials("anthropic") is None
+        assert aux._peek_pool_entry("anthropic") is None
+        with pytest.raises(PermissionError, match="opaque credential pool"):
+            aux._peek_pool_entry("anthropic", SimpleNamespace(current=forbidden, peek=forbidden))
+        assert aux._recover_provider_pool("anthropic", error) is False
+        assert aux._refresh_provider_credentials("anthropic", failed_api_key="fixture") is False
+        for rung in (aux._ladder_nous_rungs, aux._ladder_credential_rungs):
+            iterator = rung(error, SimpleNamespace(), {}, True)
+            with pytest.raises(StopIteration) as stopped:
+                next(iterator)
+            assert stopped.value.value == (None, error)
+
+
+def test_budgeted_auxiliary_recovery_refuses_before_parameter_or_auth_ladders(factory, monkeypatch):
+    make, _, _ = factory
+    agent, _ = make()
+    from agent import auxiliary_client as aux
+    def forbidden(*a, **k):
+        pytest.fail("bounded auxiliary failure entered an independent recovery ladder")
+    for name in ("_ladder_parameter_rungs", "_ladder_nous_rungs", "_ladder_credential_rungs"):
+        monkeypatch.setattr(aux, name, forbidden)
+    error = RuntimeError("fixture refusal")
+    with active(agent):
+        iterator = aux._aux_recovery_ladder(error, client=object(), kwargs={}, task="compression",
+            async_mode=False, base_info=BASE_URL, resolved_provider="openai", resolved_model=MODEL,
+            resolved_base_url=BASE_URL, resolved_api_key="fixture", resolved_api_mode="chat_completions",
+            final_model=MODEL, max_tokens=64, main_runtime=None, route_info=None)
+        with pytest.raises(RuntimeError, match="fixture refusal") as caught:
+            next(iterator)
+        assert caught.value is error
+
+
+def test_strict_pool_entry_denies_before_disk_oauth_or_named_custom_lookup(factory, monkeypatch):
+    make, _, _ = factory
+    agent, _ = make()
+    from agent import credential_pool as pools, auxiliary_client as aux
+    def forbidden(*a, **k):
+        pytest.fail("strict identity loaded or healed an ambient credential pool")
+    monkeypatch.setattr(pools, "read_credential_pool", forbidden)
+    monkeypatch.setattr(pools.auth_mod, "heal_forked_single_use_oauth_grants", forbidden)
+    monkeypatch.setattr(pools, "custom_provider_pool_key_candidates", lambda *a: ["custom:https://private.invalid"])
+    with agent_runtime_scope(agent.runtime_context):
+        for provider in ("anthropic", "openai", "custom:https://private.invalid"):
+            with pytest.raises(PermissionError, match="identity-aware account grants"):
+                pools.load_pool(provider)
+        # Optional named-custom lookup may be unavailable, but cannot bypass the
+        # shared gate or borrow a pool; an explicitly scoped key stays usable.
+        assert aux._named_custom_api_key({}, "custom:private", "https://private.invalid") == "no-key-required"
+        assert aux._named_custom_api_key({"key_env": "OPENAI_API_KEY"}, "custom:private", BASE_URL) == "fixture-provider-key"

@@ -8,6 +8,7 @@ hooks/middleware) plus registry pass-throughs.
 
 import os
 import json
+import copy
 import re
 import asyncio
 from contextlib import contextmanager
@@ -195,6 +196,8 @@ _LEGACY_TOOLSET_MAP = {
 # includes registry._generation (bumped on register/deregister/alias) so
 # invalidation is transparent; check_fn drift is handled by registry.py's 30 s TTL.
 _tool_defs_cache: Dict[tuple, List[Dict[str, Any]]] = {}
+# Immutable inspection companions, sharing the same keys/eviction as schemas.
+_tool_views_cache: Dict[tuple, Any] = {}
 _tool_defs_cache_lock = threading.Lock()
 # FIFO cap: 8 covers a long-lived gateway's warm set of platform/toolset combos.
 # Hard cap on memoized get_tool_definitions() results. A long-lived Gateway process sees many distinct
@@ -209,6 +212,7 @@ def _clear_tool_defs_cache() -> None:
     """Drop memoized results when a dynamic-schema dependency changes (discord caps, sandbox mode)."""
     with _tool_defs_cache_lock:
         _tool_defs_cache.clear()
+        _tool_views_cache.clear()
 
 
 def get_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disabled_toolsets: Optional[List[str]] = None,
@@ -229,7 +233,7 @@ def get_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disabled_
     # The shared memo is profile keyed, not agent keyed. A strict policy gets a
     # fresh catalog; filtering happens before tool-search builds its descriptions.
     if current_agent_context() is not None or not quiet_mode:
-        return filter_tool_definitions(compute())
+        return copy.deepcopy(filter_tool_definitions(compute()))
     cache_key = _tool_defs_cache_key(enabled_toolsets, disabled_toolsets, skip_tool_search_assembly)
     # Cache the freshly-computed list, but hand callers a shallow copy so downstream mutations (e.g.
     # run_agent appending memory/LCM tool schemas to self.tools) don't poison the cache. Without this, a
@@ -243,19 +247,51 @@ def get_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disabled_
     if cached is None:
         result = compute()
         if cache_key is None:
-            return list(result)
+            return copy.deepcopy(result)
         with _tool_defs_cache_lock:
             cached = _tool_defs_cache.get(cache_key)  # another thread may have filled it meanwhile
             if cached is None:
                 if len(_tool_defs_cache) >= _TOOL_DEFS_CACHE_MAX:
-                    _tool_defs_cache.pop(next(iter(_tool_defs_cache)))
+                    oldest = next(iter(_tool_defs_cache))
+                    _tool_defs_cache.pop(oldest)
+                    _tool_views_cache.pop(oldest, None)
                 _tool_defs_cache[cache_key] = cached = result
     else:
         global _last_resolved_tool_names
         _last_resolved_tool_names = [t["function"]["name"] for t in cached]
-    # Always a shallow copy: run_agent appends memory/LCM schemas to its list; a
-    # shared list would accumulate duplicate names (HTTP 400 from DeepSeek/Kimi/MiMo).
-    return filter_tool_definitions(list(cached))
+    # Deep copy also protects nested schemas and registry catalog metadata from
+    # per-session provider rewrites, in addition to duplicate-list contamination.
+    return copy.deepcopy(filter_tool_definitions(cached))
+
+
+def get_tool_definitions_with_view(enabled_toolsets=None, disabled_toolsets=None, quiet_mode=False):
+    """Resolve schemas and immutable exposure together at an existing context boundary.
+
+    Legacy construction shares the existing profile/toolset memo and eviction;
+    strict identities bypass it, as get_tool_definitions already does. Inspection
+    uses the saved view and never invokes this resolver mid-turn.
+    """
+    from agent.runtime_context import current_agent_context
+    key = (_tool_defs_cache_key(enabled_toolsets, disabled_toolsets, False)
+           if quiet_mode and current_agent_context() is None else None)
+    with _tool_defs_cache_lock:
+        cached = _tool_defs_cache.get(key) if key is not None else None
+        view = _tool_views_cache.get(key) if cached is not None else None
+    if view is not None:
+        global _last_resolved_tool_names
+        _last_resolved_tool_names = [td["function"]["name"] for td in cached]
+        return copy.deepcopy(cached), view
+    definitions, view = _compute_tool_definitions(
+        enabled_toolsets, disabled_toolsets, quiet_mode, _with_view=True)
+    if key is not None:
+        with _tool_defs_cache_lock:
+            if key not in _tool_defs_cache and len(_tool_defs_cache) >= _TOOL_DEFS_CACHE_MAX:
+                oldest = next(iter(_tool_defs_cache))
+                _tool_defs_cache.pop(oldest)
+                _tool_views_cache.pop(oldest, None)
+            _tool_defs_cache[key] = definitions
+            _tool_views_cache[key] = view
+    return copy.deepcopy(definitions), view
 
 
 def _tool_defs_cache_key(
@@ -509,14 +545,16 @@ _TOOL_SEARCH_LISTING_FORMS = {
 
 
 def _compute_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disabled_toolsets: Optional[List[str]] = None,
-                              quiet_mode: bool = False, skip_tool_search_assembly: bool = False) -> List[Dict[str, Any]]:
+                              quiet_mode: bool = False, skip_tool_search_assembly: bool = False,
+                              _with_view: bool = False):
     """Uncached implementation of :func:`get_tool_definitions`."""
     tools_to_include = _select_tool_names(enabled_toolsets, disabled_toolsets, quiet_mode)
     # Selection is per schema, not per process/profile. Kanban's local checks
     # are uncached; the outer definitions cache already keys on this selection.
     from tools.kanban_toolset_context import scoped_kanban_toolset_selection
     with scoped_kanban_toolset_selection(enabled_toolsets):
-        filtered_tools = _apply_dynamic_schemas(registry.get_definitions(tools_to_include, quiet=quiet_mode))
+        reachable_tools = registry.get_definitions(tools_to_include, quiet=quiet_mode)
+        filtered_tools = _apply_dynamic_schemas(reachable_tools)
     from tools.agent_policy_gate import filter_tool_definitions
     filtered_tools = filter_tool_definitions(filtered_tools)
     global _last_resolved_tool_names
@@ -532,6 +570,14 @@ def _compute_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disa
         filtered_tools = sanitize_tool_schemas(filtered_tools)
     except Exception as e:  # pragma: no cover — defensive
         logger.warning("Schema sanitization skipped: %s", e)
+
+    # Capture the uncollapsed discovery set before existing progressive disclosure.
+    # The view never changes what schemas the current assembly would have selected.
+    if _with_view:
+        from agent.tool_view import derive_tool_view
+        view = derive_tool_view(registry=registry, requested_tool_ids=tools_to_include,
+                                available_definitions=filtered_tools,
+                                reachable_tool_ids=[td["function"]["name"] for td in reachable_tools])
 
     # Tool Search (progressive disclosure): replace MCP/plugin tools with the
     # tool_search/describe/call bridge when the deferrable surface exceeds the
@@ -551,6 +597,9 @@ def _compute_tool_definitions(enabled_toolsets: Optional[List[str]] = None, disa
     except Exception as e:  # pragma: no cover — never break tool loading
         logger.warning("Tool search assembly skipped: %s", e)
 
+    filtered_tools = filter_tool_definitions(filtered_tools)
+    if _with_view:
+        return filtered_tools, view.with_selection(filtered_tools)
     return filtered_tools
 
 

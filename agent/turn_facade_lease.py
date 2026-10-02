@@ -341,6 +341,8 @@ def admit_durable_turn_lease(
                     and "_row_id" not in m
                 )
                 admission.conversation_history = reloaded
+        if durable:
+            db.assert_provider_state_compatible(agent.session_id)
         lease.build_threads()
     except BaseException:
         # The façade never saw this lease; release here so an admitted row is not leaked.

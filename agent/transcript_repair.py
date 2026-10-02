@@ -35,7 +35,7 @@ _OWNED_COLUMNS = tuple(c for c in _REPAIR_COLUMNS if c not in _METADATA_COLUMNS)
 # Presentation-only metadata a matched (ours) row may hand to a live dict that lacks it.
 _LIVE_MISSING_METADATA = ("display_kind", "display_metadata")
 # ``message_id`` is identity the flush derived from the live dict (int there, TEXT in SQLite): never synced.
-_SYNC_FIELDS = ("role",) + _REPAIR_COLUMNS
+_SYNC_FIELDS = ("role",) + _REPAIR_COLUMNS + ("anthropic_content_blocks", "bedrock_content_blocks")
 # Canonical-row markers: a matched row hands over only missing presentation metadata; a legacy (no-digest)
 # dict over a filled assistant row adopts only its content.
 _METADATA_ONLY = "_metadata_only"

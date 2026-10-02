@@ -453,15 +453,15 @@ class ClientLifecycleMixin:
         if is_copilot and self._api_kwargs_have_image_parts(api_kwargs or {}):
             from hermes_cli.copilot_auth import copilot_request_headers
             request_kwargs["default_headers"] = copilot_request_headers(is_agent_turn=True, is_vision=True)
-        cached, stale = self._checkout_request_slot(_OPENAI_SLOT, request_kwargs)
+        from agent.attempt_policy import client_scope_key
+        cache_key = client_scope_key(self, request_kwargs)
+        cached, stale = self._checkout_request_slot(_OPENAI_SLOT, cache_key)
         if cached is not None:
             return cached
         if stale is not None:
             self._close_openai_client(stale, reason=f"reuse_evict:{reason}", shared=False)
         client = self._create_openai_client(request_kwargs, reason=reason, shared=False)
-        # Snapshot nested dicts (default_headers) so an aliased inner object can't mutate the cache key.
-        snapshot = {k: dict(v) if isinstance(v, dict) else v for k, v in request_kwargs.items()}
-        self._store_request_slot(_OPENAI_SLOT, client, snapshot)
+        self._store_request_slot(_OPENAI_SLOT, client, cache_key)
         return client
 
     def _close_request_openai_client(self, client: Any, *, reason: str) -> None:
@@ -517,14 +517,16 @@ class ClientLifecycleMixin:
         if self.api_mode == "anthropic_messages":
             self._try_refresh_anthropic_client_credentials()
         key = self._request_anthropic_client_key()
-        cached, stale = self._checkout_request_slot(_ANTHROPIC_SLOT, key)
+        from agent.attempt_policy import client_scope_key
+        cache_key = client_scope_key(self, {"base_url": getattr(self, "_anthropic_base_url", ""), "settings": key})
+        cached, stale = self._checkout_request_slot(_ANTHROPIC_SLOT, cache_key)
         if cached is not None:
             return cached
         if stale is not None:
             self._close_request_anthropic_client(stale, reason=f"reuse_evict:{reason}")
         client = self._build_anthropic_client_for_key(key)
         logger.debug("Anthropic request client created (%s, shared=False) %s", reason, self._anthropic_log_context())
-        self._store_request_slot(_ANTHROPIC_SLOT, client, key)
+        self._store_request_slot(_ANTHROPIC_SLOT, client, cache_key)
         return client
 
     def _close_request_anthropic_client(self, client: Any, *, reason: str) -> None:
@@ -763,6 +765,10 @@ class ClientLifecycleMixin:
             return False
         from hermes_cli.route_identity import normalize_route_base_url
         route_changed = normalize_route_base_url(self.base_url) != normalize_route_base_url(base_url)
+        from agent.attempt_policy import strict_failover_refusal
+        if route_changed and strict_failover_refusal(self) is not None:
+            self._fallback_refusal_reason = "automatic_endpoint_refresh_requires_recipient_grant"
+            return False
         prior_api_key, prior_base_url = self.api_key, self.base_url
         prior_client_kwargs = dict(self._client_kwargs)
         self.api_key, self.base_url = api_key, base_url

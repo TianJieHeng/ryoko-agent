@@ -443,13 +443,20 @@ def invoke_budgeted_completion(client, kwargs, *, agent=None):
     budget = current_budget(agent)
     if budget is None:
         return client.chat.completions.create(**kwargs)
+    from agent.attempt_policy import (controller_for, provider_account_ref,
+                                      record_attempt, classify_attempt_failure)
+    controller = controller_for(budget)
     try:
         bounded, request, route, maxima = _prepare_request(budget, client, kwargs)
     except BudgetBlocked as exc:
         budget.block(str(exc))
+    account = provider_account_ref(budget, client)
+    controller.check(account)
     operation_id = budget.reserve(maxima)
     started = time.monotonic()
     try:
+        attempt = controller.begin(account, operation_id)
+        record_attempt(budget, attempt, phase="started")
         budget.dispatched(operation_id)
     except BaseException:
         budget.db.release_budget_reservation(budget.account_id, budget.actor, operation_id, **budget.fence)
@@ -457,11 +464,19 @@ def invoke_budgeted_completion(client, kwargs, *, agent=None):
     try:
         with _request_deadline(budget, operation_id, maxima["wall_ms"]):
             response = bounded.chat.completions.create(**request)
-    except BaseException:
-        budget.settle(operation_id, {"attempts": 1, "wall_ms": math.ceil((time.monotonic() - started) * 1000)}, unknown=True, slots_released=False)
+    except BaseException as exc:
+        failure = classify_attempt_failure(exc)
+        actual = {"attempts": 1, "wall_ms": math.ceil((time.monotonic() - started) * 1000)}
+        # A completed refusal frees concurrency, but status alone does not prove
+        # zero billing on an arbitrary configured compatible endpoint.
+        budget.settle(operation_id, actual, unknown=True, slots_released=failure.rejected)
+        controller.failed(attempt, failure, error=exc)
+        record_attempt(budget, attempt, phase="failed", failure=failure)
         raise
     actual, unknown = _actual(response, route, math.ceil((time.monotonic() - started) * 1000), budget.policy.cost_tracking)
     budget.settle(operation_id, actual, unknown=unknown)
+    controller.succeeded(attempt)
+    record_attempt(budget, attempt, phase="completed")
     budget.check()
     return response
 
@@ -470,13 +485,20 @@ async def invoke_budgeted_completion_async(client, kwargs):
     budget = current_budget()
     if budget is None:
         return await client.chat.completions.create(**kwargs)
+    from agent.attempt_policy import (controller_for, provider_account_ref,
+                                      record_attempt, classify_attempt_failure)
+    controller = controller_for(budget)
     try:
         bounded, request, route, maxima = _prepare_request(budget, client, kwargs)
     except BudgetBlocked as exc:
         budget.block(str(exc))
+    account = provider_account_ref(budget, client)
+    controller.check(account)
     operation_id = budget.reserve(maxima)
     started = time.monotonic()
     try:
+        attempt = controller.begin(account, operation_id)
+        record_attempt(budget, attempt, phase="started")
         budget.dispatched(operation_id)
     except BaseException:
         budget.db.release_budget_reservation(budget.account_id, budget.actor, operation_id, **budget.fence)
@@ -484,11 +506,19 @@ async def invoke_budgeted_completion_async(client, kwargs):
     try:
         with _request_deadline(budget, operation_id, maxima["wall_ms"]):
             response = await bounded.chat.completions.create(**request)
-    except BaseException:
-        budget.settle(operation_id, {"attempts": 1, "wall_ms": math.ceil((time.monotonic() - started) * 1000)}, unknown=True, slots_released=False)
+    except BaseException as exc:
+        failure = classify_attempt_failure(exc)
+        actual = {"attempts": 1, "wall_ms": math.ceil((time.monotonic() - started) * 1000)}
+        # A completed refusal frees concurrency, but status alone does not prove
+        # zero billing on an arbitrary configured compatible endpoint.
+        budget.settle(operation_id, actual, unknown=True, slots_released=failure.rejected)
+        controller.failed(attempt, failure, error=exc)
+        record_attempt(budget, attempt, phase="failed", failure=failure)
         raise
     actual, unknown = _actual(response, route, math.ceil((time.monotonic() - started) * 1000), budget.policy.cost_tracking)
     budget.settle(operation_id, actual, unknown=unknown)
+    controller.succeeded(attempt)
+    record_attempt(budget, attempt, phase="completed")
     budget.check()
     return response
 

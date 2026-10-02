@@ -21,7 +21,6 @@ from agent.context_compressor import (
 from agent.lazy_forward import forward as _forward, forward_static as _forward_static
 from agent.memory_manager import sanitize_context
 
-from agent.tool_dispatch_helpers import _is_multimodal_tool_result, _multimodal_text_summary
 from agent.trajectory import save_trajectory as _save_trajectory_to_file
 from agent.message_metadata import (
     DB_ROW_SNAPSHOT, MERGED_TURN_PREFIX, REPAIR_BOOKKEEPING_FIELDS, TOOL_CALL_UID, copy_identity_fields,
@@ -43,7 +42,6 @@ _EPHEMERAL_SCAFFOLDING_FLAGS = (
     "_dropped_toolcall_nudge",  # internal retry instruction; must not replay as user context
 )
 
-_IMAGE_PART_TYPES = {"image", "image_url", "input_image"}
 # Reasoning/codex fields are role-gated (assistant-only) inside _insert_message_rows.
 _ROW_REASONING_KEYS = ("reasoning", "reasoning_content", "reasoning_details", "codex_reasoning_items", "codex_message_items")
 _PERSIST_AFTER_ADMISSION_INTERRUPT = "_persist_after_admission_interrupt"
@@ -117,20 +115,6 @@ def _summary_display_kind(msg: Dict) -> Any:
     ):
         return "hidden"
     return msg.get("display_kind")
-
-
-def _durable_content(content: Any) -> Any:
-    """Text-only DB projection: multimodal envelopes → summary; part lists keep text, images → ``[screenshot]``."""
-    if _is_multimodal_tool_result(content):
-        return _multimodal_text_summary(content)
-    if not isinstance(content, list):
-        return content
-    txt = [
-        str(p.get("text", "")) if p.get("type") == "text" else "[screenshot]"
-        for p in content
-        if isinstance(p, dict) and (p.get("type") == "text" or p.get("type") in _IMAGE_PART_TYPES)
-    ]
-    return "\n".join(txt) if txt else None
 
 
 def _persist_lock(agent):
@@ -223,7 +207,7 @@ def _db_flush_row(agent, msg: Dict, is_current_turn_user: bool) -> Dict[str, Any
         api_content = content
     # Key order is the divert-JSONL wire order (divert_session_transcript_jsonl).
     row = {
-        "role": role, "content": _durable_content(content),
+        "role": role, "content": content,
         "tool_name": msg.get("tool_name") or (msg.get("name") if role == "tool" else None),
         "tool_calls": msg["tool_calls"] if isinstance(msg.get("tool_calls"), list) else None,
         "tool_call_id": msg.get("tool_call_id"), "effect_disposition": msg.get("effect_disposition"),
@@ -236,6 +220,8 @@ def _db_flush_row(agent, msg: Dict, is_current_turn_user: bool) -> Dict[str, Any
         "platform_message_id": msg.get("platform_message_id") or msg.get("message_id"),
         "observed": bool(msg.get("observed")),
     }
+    from agent.provider_capabilities import encode_protocol_sidecar
+    row["provider_sidecar"] = encode_protocol_sidecar(msg)
     if isinstance(msg.get("_row_id"), int):
         row["_row_id"] = msg["_row_id"]
     # The merge witness rides on the survivor's row (an owned column: a row-addressed rewrite of the

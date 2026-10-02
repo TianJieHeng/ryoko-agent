@@ -79,6 +79,29 @@ def handle_api_error(
     if agent.thinking_callback:
         agent.thinking_callback("")
 
+    # The finite adapter owns every retry in a budgeted run. It cannot enter
+    # credential refresh, context repair, fallback or post-exhaustion ladders
+    # which independently reset the legacy retry counter.
+    from agent.budget_account import budget_enabled
+    if budget_enabled(agent):
+        from agent.attempt_policy import AttemptController, bounded_error_result, RetryDecision
+        bounded = bounded_error_result(agent, api_error, messages=messages, api_call_count=api_call_count)
+        if not isinstance(bounded, RetryDecision):
+            return _verdict("return", bounded)
+        retry_count += 1
+        max_retries = AttemptController.MAX_ATTEMPTS
+        aborted = interruptible_backoff_sleep(
+            agent, bounded.delay_seconds, _retry, messages=messages,
+            conversation_history=conversation_history, api_call_count=api_call_count,
+            abort_message="Bounded provider retry interrupted.", interrupt_text="Operation interrupted.",
+            activity_label="Bounded provider retry",
+        )
+        if aborted is not None:
+            return _verdict("return", aborted)
+        if _retry.restart_with_redirected_messages:
+            return _verdict("break")
+        return _verdict("continue")
+
     _recovered, active_system_prompt = recover_before_classification(
         agent, api_error, messages=messages, api_messages=api_messages, api_kwargs=api_kwargs,
         active_system_prompt=active_system_prompt,

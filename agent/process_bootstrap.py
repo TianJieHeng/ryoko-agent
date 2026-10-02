@@ -239,7 +239,9 @@ def _shared_transport_key(base_url: str, verify: Any, proxy: Optional[str]) -> t
         verify_key = ("path", verify)
     else:
         verify_key = ("id", id(verify))  # SSLContext / custom object: share by identity only
-    return (verify_key, proxy, _uses_codex_cloud_transport(base_url))
+    from agent.attempt_policy import authority_scope
+    return (verify_key, proxy, _uses_codex_cloud_transport(base_url),
+            authority_scope(), str(base_url).rstrip("/"))
 
 
 def _get_shared_transport(key: tuple, build) -> Any:

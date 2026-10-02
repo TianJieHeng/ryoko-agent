@@ -497,6 +497,7 @@ def _workdir_reraise_disk_full(exc: BaseException, log_msg: str) -> None:
 # Seed row fields copied from the parent transcript. display_kind/metadata: timeline markers ride as role=user;
 # dropping the tag re-plants them as bare user turns after a restart and corrupts the truncate ordinal address space.
 _WORKDIR_SEED_FIELDS = (
+    "anthropic_content_blocks", "bedrock_content_blocks", "provider_sidecar",
     "content", "reasoning", "reasoning_content", "reasoning_details", "codex_reasoning_items",
     "codex_message_items", "display_kind", "display_metadata", "timestamp")
 

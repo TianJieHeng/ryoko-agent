@@ -178,6 +178,18 @@ def _save_discovery_cache(cache: Dict[str, list]) -> None:
         logger.debug("Could not write tool discovery cache %s: %s", path, e)
 
 
+@dataclass(frozen=True, slots=True)
+class ToolCatalogMetadata:
+    """Immutable descriptive snapshot, without handlers, credentials or live probes.
+
+    JSON text prevents callers from mutating nested schema dictionaries shared by
+    another session. The registry remains the sole registration/dispatch owner.
+    """
+    name: str
+    toolset: str
+    schema_json: str
+
+
 @dataclass(eq=False, slots=True)
 class ToolEntry:
     """Metadata for one registered tool (identity semantics: restore/CAS paths compare ``is``)."""
@@ -267,6 +279,11 @@ def check_fn_cache_scope() -> Optional[str]:
     sentinel) — one Browser session's live tools must not leak into another. Single-profile
     processes keep the process-wide cache; a multiplex gateway installs a Hermes-home override
     per profile turn, so the canonical profile key is the boundary."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        # Secret reads are grant-bound even within one profile. Never let one
+        # identity's cached success/grace period answer another's probe.
+        return CHECK_FN_CACHE_BYPASS
     try:
         from gateway.session_context import get_session_env
         if all(str(get_session_env(k, "") or "").strip() for k in _BROWSER_IDENTITY_KEYS):
@@ -442,6 +459,7 @@ class ToolRegistry:
         self._lock = threading.RLock()
         # Bumped on every mutation; get_tool_definitions memoizes against it.
         self._generation: int = 0
+        self._catalog_metadata_cache: dict[tuple, tuple[ToolCatalogMetadata, ...]] = {}
 
     @staticmethod
     def current_scope_key() -> str:
@@ -519,6 +537,26 @@ class ToolRegistry:
 
     def get_all_entries(self) -> List[ToolEntry]:
         return self._snapshot_entries()
+
+    def catalog_metadata(self) -> tuple[ToolCatalogMetadata, ...]:
+        """Shared immutable metadata for the active profile, bounded by generation.
+
+        Internal inventory, not an exposed catalog: callers must derive a ToolView
+        before showing any names or reasons to an agent.
+        """
+        with self._lock:
+            key = (self.current_scope_key(), self._generation)
+            cached = self._catalog_metadata_cache.get(key)
+            if cached is None:
+                cached = tuple(ToolCatalogMetadata(
+                    entry.name, entry.toolset,
+                    json.dumps({**entry.schema, "name": entry.name}, sort_keys=True,
+                               separators=(",", ":"), default=str))
+                    for entry in sorted(self._merged_tools().values(), key=lambda entry: entry.name))
+                if len(self._catalog_metadata_cache) >= 8:
+                    self._catalog_metadata_cache.pop(next(iter(self._catalog_metadata_cache)))
+                self._catalog_metadata_cache[key] = cached
+            return cached
 
     def get_tool_names_for_toolset(self, toolset: str) -> List[str]:
         return sorted(e.name for e in self._grouped(self._snapshot_entries()).get(toolset, []))

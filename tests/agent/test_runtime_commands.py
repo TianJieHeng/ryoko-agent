@@ -5,6 +5,8 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+import httpx
+from openai import OpenAI
 
 from agent.agent_identity import resolve_agent_context
 from agent.identity_lifecycle import agent_runtime_scope
@@ -44,6 +46,18 @@ def _response(tool=False):
                                 reasoning=None, tool_calls=calls))], model="fixture/model", usage=None)
 
 
+def _client():
+    # Exercise the real SDK and HTTP serialization without live provider access.
+    replies = MagicMock(return_value=_response())
+    def respond(request):
+        payload = json.loads(json.dumps(replies(request), default=vars))
+        return httpx.Response(200, json={"id": "fixture", "object": "chat.completion", "created": 1, **payload})
+    client = OpenAI(api_key="fixture-provider-key", base_url="https://fixture.invalid/v1",
+                    max_retries=0, http_client=httpx.Client(transport=httpx.MockTransport(respond)))
+    client._fixture_create = replies
+    return client
+
+
 @pytest.fixture
 def real_agent(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
@@ -51,15 +65,18 @@ def real_agent(tmp_path, monkeypatch):
     (tmp_path / ".env").write_text("OPENAI_API_KEY=fixture-provider-key\n")
     tool = {"type": "function", "function": {"name": "runtime_fixture", "description": "test",
             "parameters": {"type": "object", "properties": {}}}}
+    from tools.registry import registry
+    monkeypatch.setattr(registry, "_tools", dict(registry._tools))
+    registry.register(name="runtime_fixture", toolset="runtime_fixture", schema=tool["function"],
+                      handler=lambda **kwargs: "ok")
     monkeypatch.setattr("model_tools.get_tool_definitions", lambda *a, **k: [tool])
     monkeypatch.setattr("model_tools.check_toolset_requirements", lambda *a, **k: {})
-    monkeypatch.setattr("agent.process_bootstrap.OpenAI", MagicMock())
+    monkeypatch.setattr("agent.process_bootstrap.OpenAI", lambda **kwargs: _client())
     from run_agent import AIAgent
     db = SessionDB(tmp_path / "state.db")
     agent = AIAgent(model="gpt-4.1-mini", provider="openai", api_key="fixture-provider-key", base_url="https://fixture.invalid/v1",
         session_id="session", session_db=db, quiet_mode=True, skip_context_files=True,
-        skip_memory=True, max_iterations=4)
-    agent.client = MagicMock()
+        skip_memory=True, max_iterations=4, enabled_toolsets=["runtime_fixture"])
     agent._cached_system_prompt = "Fixture system prompt."
     agent._use_prompt_caching = False
     agent._disable_streaming = True
@@ -87,14 +104,14 @@ def _run_submitted(agent, receipt, text="hello"):
 
 def test_existing_loop_records_provider_tool_outcomes_and_duplicate_is_read_only(real_agent, monkeypatch):
     agent = real_agent
-    agent.client.chat.completions.create.side_effect = [_response(True), _response()]
+    agent.client._fixture_create.side_effect = [_response(True), _response()]
     tool_calls = []
     monkeypatch.setattr("model_tools.handle_function_call", lambda *a, **k: tool_calls.append(a[0]) or '{"ok":true}')
     envelope = _envelope()
     receipt = _submit(agent, envelope)
     result = _run_submitted(agent, receipt)
     assert result["final_response"] == "recorded answer"
-    assert agent.client.chat.completions.create.call_count == 2
+    assert agent.client._fixture_create.call_count == 2
     assert tool_calls == ["runtime_fixture"]
     recorded = agent._session_db.read_runtime_command("session", "command")
     assert recorded["status"] == "completed"
@@ -103,7 +120,7 @@ def test_existing_loop_records_provider_tool_outcomes_and_duplicate_is_read_only
     assert {"model.completed", "tool.completed", "checkpoint.published"} <= {event["type"] for event in page["events"]}
     assert _submit(agent, envelope) == receipt
     assert _run_submitted(agent, receipt)["final_response"] == result["final_response"]
-    assert agent.client.chat.completions.create.call_count == 2
+    assert agent.client._fixture_create.call_count == 2
     assert tool_calls == ["runtime_fixture"]
     assert agent._session_db.get_session_turn_lease("session") is None
     assert current_agent_context() is None
@@ -111,7 +128,7 @@ def test_existing_loop_records_provider_tool_outcomes_and_duplicate_is_read_only
 
 def test_distinct_normal_turns_and_consumed_submission_do_not_reuse_task_id(real_agent):
     agent = real_agent
-    agent.client.chat.completions.create.side_effect = [_response(), _response(), _response()]
+    agent.client._fixture_create.side_effect = [_response(), _response(), _response()]
     receipt = _submit(agent, _envelope())
     with bind_submitted_command(agent, receipt):
         agent.run_conversation("first", task_id="stable-session-task")
@@ -120,7 +137,7 @@ def test_distinct_normal_turns_and_consumed_submission_do_not_reuse_task_id(real
     events = agent._session_db.replay_runtime_events("session")["events"]
     ids = [event["payload"]["command_id"] for event in events if event["type"] == "command.accepted"]
     assert len(ids) == len(set(ids)) == 3
-    assert agent.client.chat.completions.create.call_count == 3
+    assert agent.client._fixture_create.call_count == 3
 
 
 def test_claimed_crash_stays_uncertain_and_two_holder_transfer_blocks_dispatch(real_agent):
@@ -149,7 +166,7 @@ def test_claimed_crash_stays_uncertain_and_two_holder_transfer_blocks_dispatch(r
         agent._session_db.release_session_turn_lease("session", "successor")
     pending = _run_submitted(agent, receipt)
     assert pending["runtime_status"] == "outcome_uncertain"
-    assert agent.client.chat.completions.create.call_count == 0
+    assert agent.client._fixture_create.call_count == 0
 
 
 def test_journal_failure_and_oversized_input_never_invoke_provider(real_agent, monkeypatch):
@@ -161,13 +178,13 @@ def test_journal_failure_and_oversized_input_never_invoke_provider(real_agent, m
     monkeypatch.setattr(agent._session_db, "submit_runtime_command", failed_accept)
     with pytest.raises(OSError, match="journal unavailable"):
         agent.run_conversation("hi")
-    assert agent.client.chat.completions.create.call_count == 0
+    assert agent.client._fixture_create.call_count == 0
     assert agent._session_db.get_session_turn_lease("session") is None
 
 
 def test_failed_outcome_journal_blocks_retry_and_exception_cleanup(real_agent, monkeypatch):
     agent = real_agent
-    agent.client.chat.completions.create.return_value = _response()
+    agent.client._fixture_create.return_value = _response()
     append = agent._session_db.append_runtime_event
     def fail_output(sid, event_type, payload, **kwargs):
         if event_type == "model.completed":
@@ -176,7 +193,7 @@ def test_failed_outcome_journal_blocks_retry_and_exception_cleanup(real_agent, m
     monkeypatch.setattr(agent._session_db, "append_runtime_event", fail_output)
     receipt = _submit(agent, _envelope())
     result = _run_submitted(agent, receipt)
-    assert agent.client.chat.completions.create.call_count == 1
+    assert agent.client._fixture_create.call_count == 1
     record = agent._session_db.read_runtime_command("session", "command")
     assert record["result"]["outcome_uncertain"] is True
     assert agent._session_db.get_session_turn_lease("session") is None
@@ -211,7 +228,7 @@ def test_unfenced_transport_rejected_before_acceptance(real_agent, mode):
     with pytest.raises(RuntimeCommandError, match="runtime_transport_unsupported"):
         real_agent.run_conversation("hello")
     assert real_agent._session_db.read_runtime_snapshot("session")["revision"] == 0
-    assert real_agent.client.chat.completions.create.call_count == 0
+    assert real_agent.client._fixture_create.call_count == 0
 
 
 def test_unwind_after_base_exception_records_failure_and_cleans_scope(real_agent, monkeypatch):
@@ -232,13 +249,13 @@ def test_omitted_large_result_is_explicitly_unavailable_without_rerun(real_agent
     response = _response()
     import random
     response.choices[0].message.content = "".join(random.Random(0).choices("abcdefghijklmnopqrstuvwxyz0123456789 ", k=250000))
-    agent.client.chat.completions.create.return_value = response
+    agent.client._fixture_create.return_value = response
     receipt = _submit(agent, _envelope())
     assert len(_run_submitted(agent, receipt)["final_response"]) == 250000
     replay = _run_submitted(agent, receipt)
     assert replay["runtime_status"] == "recorded_output_unavailable"
     assert replay["completed"] is False
-    assert agent.client.chat.completions.create.call_count == 1
+    assert agent.client._fixture_create.call_count == 1
 
 
 def test_tui_worker_explicitly_binds_receipt_without_context_inheritance(real_agent, monkeypatch):
@@ -247,7 +264,7 @@ def test_tui_worker_explicitly_binds_receipt_without_context_inheritance(real_ag
     from contextlib import nullcontext
     from tui_gateway import server
     agent = real_agent
-    agent.client.chat.completions.create.return_value = _response()
+    agent.client._fixture_create.return_value = _response()
     receipt = _submit(agent, _envelope("tui-command"))
     session = {"agent": agent, "session_key": "session", "history": [],
                "history_lock": threading.Lock(), "running": True, "profile_home": agent.runtime_context.profile_home,
@@ -286,7 +303,7 @@ def test_tui_worker_explicitly_binds_receipt_without_context_inheritance(real_ag
     assert record["status"] == "completed"
     events = agent._session_db.replay_runtime_events("session")["events"]
     assert sum(event["type"] == "command.accepted" for event in events) == 1
-    assert agent.client.chat.completions.create.call_count == 1
+    assert agent.client._fixture_create.call_count == 1
 
 
 def test_recovered_control_cannot_target_a_successor_run(real_agent, monkeypatch):
@@ -318,7 +335,7 @@ def test_recovered_control_cannot_target_a_successor_run(real_agent, monkeypatch
 def test_reconstructed_compression_tip_continues_original_durable_runtime(real_agent, monkeypatch):
     from run_agent import AIAgent
     original = real_agent
-    original.client.chat.completions.create.return_value = _response()
+    original.client._fixture_create.return_value = _response()
     original.run_conversation("before compression")
     db = original._session_db
     before = db.read_runtime_snapshot("session")
@@ -329,9 +346,8 @@ def test_reconstructed_compression_tip_continues_original_durable_runtime(real_a
     reopened = SessionDB(db.db_path)
     restored = AIAgent(model="gpt-4.1-mini", provider="openai", api_key="fixture-provider-key",
         base_url="https://fixture.invalid/v1", session_id="physical-tip", session_db=reopened,
-        quiet_mode=True, skip_context_files=True, skip_memory=True, max_iterations=4)
-    restored.client = MagicMock()
-    restored.client.chat.completions.create.return_value = _response()
+        quiet_mode=True, skip_context_files=True, skip_memory=True, max_iterations=4, enabled_toolsets=["runtime_fixture"])
+    restored.client._fixture_create.return_value = _response()
     restored._cached_system_prompt = "Fixture system prompt."
     restored._disable_streaming = True
     restored.compression_enabled = False
@@ -344,7 +360,7 @@ def test_reconstructed_compression_tip_continues_original_durable_runtime(real_a
         result = restored.run_conversation("after restart", conversation_history=
             reopened.get_messages_as_conversation("physical-tip", include_row_ids=True))
         assert result["final_response"] == "recorded answer"
-        assert restored.client.chat.completions.create.call_count == 1
+        assert restored.client._fixture_create.call_count == 1
         snapshot = reopened.read_runtime_snapshot("physical-tip")
         assert snapshot["session_id"] == "session" and snapshot["revision"] > before["revision"]
         assert snapshot["state"]["status"] == "completed"
@@ -352,3 +368,20 @@ def test_reconstructed_compression_tip_continues_original_durable_runtime(real_a
     finally:
         restored.close()
         reopened.close()
+
+
+def test_future_protocol_state_refuses_dispatch_even_with_empty_resume_history(real_agent):
+    from agent.provider_capabilities import UnsupportedProviderState
+    agent = real_agent
+    db = agent._session_db
+    db.append_message("session", "assistant", "existing answer")
+    future = json.dumps({"schema_version": 99, "fields": {"future": ["opaque"]}})
+    db._execute_write(lambda conn: conn.execute(
+        "UPDATE messages SET provider_sidecar = ? WHERE session_id = ?", (future, "session")))
+    # A caller catching a resume error and supplying [] must not erase protocol
+    # requirements or acquire permission to send a fresh request.
+    with pytest.raises(UnsupportedProviderState, match="compatible reader"):
+        agent.run_conversation("continue", conversation_history=[])
+    assert agent.client._fixture_create.call_count == 0
+    assert db.get_session_turn_lease("session") is None
+    assert db._read_one("SELECT provider_sidecar FROM messages WHERE session_id = ?", ("session",))[0] == future

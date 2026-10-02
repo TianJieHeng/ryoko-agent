@@ -370,6 +370,7 @@ class SessionTranscriptMixin:
             # into the ambient store.
             raise RuntimeError(
                 f"no owning session store for {session_id}; deferring transcript write")
+        from agent.provider_capabilities import encode_protocol_sidecar
         is_assistant = message.get("role") == "assistant"
         _db.append_message(
             session_id=session_id,
@@ -385,6 +386,7 @@ class SessionTranscriptMixin:
             # Exact bytes sent to the API (prompt-cache-stable replay); must survive every
             # persistence path or the next replay diverges.
             api_content=extract_api_content_sidecar(message),
+            provider_sidecar=encode_protocol_sidecar(message) if is_assistant else None,
             # Presentation typing (e.g. "internal_notification"); DB-only.
             # "internal_notification" for self-injected async-delegation/background notification turns,
             # #82888). DB-only; stripped from provider-bound payloads.

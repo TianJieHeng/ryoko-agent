@@ -219,7 +219,7 @@ _WORKTREE_SUBCOMMANDS = {
 
 # Message fields copied verbatim onto a /branch row (plus role / tool_name / api_content).
 _BRANCH_COPY_KEYS = ("content", "tool_calls", "tool_call_id", "reasoning", "reasoning_details",
-                     "codex_reasoning_items", "codex_message_items", "timestamp")
+                     "codex_reasoning_items", "codex_message_items", "timestamp", "anthropic_content_blocks", "bedrock_content_blocks", "provider_sidecar")
 
 # /hatch progress event -> catalog key (``cli.commands.hatch.*``).
 _HATCH_PROGRESS = {"compose": "hatch.progress_compose", "save": "hatch.progress_save"}

@@ -53,12 +53,11 @@ class RuntimeRun:
 _PENDING: ContextVar[_SubmittedCommand | None] = ContextVar("runtime_submitted_command", default=None)
 _RUN: ContextVar[RuntimeRun | None] = ContextVar("runtime_authoritative_run", default=None)
 _MAX_OUTCOME_BYTES = 240000
-_SUPPORTED_API_MODES = frozenset({"chat_completions", "anthropic_messages", "bedrock_converse", "codex_responses"})
 
 
 def supports_runtime_execution(agent) -> bool:
-    return (getattr(agent, "api_mode", "chat_completions") in _SUPPORTED_API_MODES
-            and getattr(agent, "provider", None) != "moa")
+    from agent.provider_capabilities import provider_capabilities_for
+    return provider_capabilities_for(agent).durable_execution
 
 
 def _authority(agent):

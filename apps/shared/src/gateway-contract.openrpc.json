@@ -28600,6 +28600,28 @@
             ],
             "default": null
           },
+          "provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeProviderCapabilities"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "tool_view": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeToolView"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
           "cursor_policy": {
             "const": "snapshot_required_on_expired_or_unknown_cursor",
             "title": "Cursor Policy",
@@ -28943,6 +28965,17 @@
             ],
             "default": null
           },
+          "physical_attempt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimePhysicalAttempt"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
           "admission_state": {
             "anyOf": [
               {
@@ -29148,6 +29181,197 @@
         "title": "RuntimeOutstandingRequest",
         "type": "object"
       },
+      "RuntimePhysicalAttempt": {
+        "additionalProperties": false,
+        "description": "Opaque account correlation only, never credentials, endpoint or payload.",
+        "properties": {
+          "attempt_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Attempt Id",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "initial",
+              "auth_failure",
+              "quota_exhausted",
+              "throttled",
+              "overloaded",
+              "context_overflow",
+              "unsupported_capability",
+              "ambiguous_transport",
+              "request_rejected"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "provider_account_ref": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Provider Account Ref",
+            "type": "string"
+          },
+          "reservation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Reservation Id",
+            "type": "string"
+          },
+          "remote_acceptance": {
+            "enum": [
+              "unknown",
+              "rejected",
+              "accepted"
+            ],
+            "title": "Remote Acceptance",
+            "type": "string"
+          },
+          "logical_request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Logical Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attempt_id",
+          "reason",
+          "provider_account_ref",
+          "reservation_id",
+          "remote_acceptance",
+          "logical_request_id"
+        ],
+        "title": "RuntimePhysicalAttempt",
+        "type": "object"
+      },
+      "RuntimeProviderCapabilities": {
+        "additionalProperties": false,
+        "description": "Adapter declarations; model support and live cancellation remain separate.",
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "api_mode": {
+            "title": "Api Mode",
+            "type": "string"
+          },
+          "adapter": {
+            "title": "Adapter",
+            "type": "string"
+          },
+          "declaration_scope": {
+            "const": "adapter",
+            "title": "Declaration Scope",
+            "type": "string"
+          },
+          "streaming": {
+            "enum": [
+              "supported",
+              "unsupported",
+              "unknown"
+            ],
+            "title": "Streaming",
+            "type": "string"
+          },
+          "parallel_tools": {
+            "enum": [
+              "supported",
+              "unsupported",
+              "unknown"
+            ],
+            "title": "Parallel Tools",
+            "type": "string"
+          },
+          "media_inputs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Media Inputs",
+            "type": "array"
+          },
+          "model_capabilities": {
+            "const": "unverified",
+            "title": "Model Capabilities",
+            "type": "string"
+          },
+          "usage": {
+            "enum": [
+              "final_response",
+              "provider_reported",
+              "unknown"
+            ],
+            "title": "Usage",
+            "type": "string"
+          },
+          "cancellation": {
+            "enum": [
+              "local_only",
+              "provider_acknowledgment",
+              "unknown"
+            ],
+            "title": "Cancellation",
+            "type": "string"
+          },
+          "cache_semantics": {
+            "title": "Cache Semantics",
+            "type": "string"
+          },
+          "opaque_state_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opaque State Version"
+          },
+          "execution_owner": {
+            "enum": [
+              "hermes",
+              "provider",
+              "unknown"
+            ],
+            "title": "Execution Owner",
+            "type": "string"
+          },
+          "durable_execution": {
+            "title": "Durable Execution",
+            "type": "boolean"
+          },
+          "bounded_budget": {
+            "enum": [
+              "conditional_openai_text",
+              "unsupported"
+            ],
+            "title": "Bounded Budget",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "api_mode",
+          "adapter",
+          "declaration_scope",
+          "streaming",
+          "parallel_tools",
+          "media_inputs",
+          "model_capabilities",
+          "usage",
+          "cancellation",
+          "cache_semantics",
+          "opaque_state_version",
+          "execution_owner",
+          "durable_execution",
+          "bounded_budget"
+        ],
+        "title": "RuntimeProviderCapabilities",
+        "type": "object"
+      },
       "RuntimeSessionParams": {
         "additionalProperties": false,
         "properties": {
@@ -29249,6 +29473,66 @@
           "text"
         ],
         "title": "RuntimeTextPayload",
+        "type": "object"
+      },
+      "RuntimeToolView": {
+        "additionalProperties": false,
+        "description": "Frozen authorized metadata only; inspection cannot refresh the prompt.",
+        "properties": {
+          "catalog_version": {
+            "title": "Catalog Version",
+            "type": "string"
+          },
+          "session_policy_version": {
+            "title": "Session Policy Version",
+            "type": "string"
+          },
+          "installed_tool_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Installed Tool Ids",
+            "type": "array"
+          },
+          "authorized_tool_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Authorized Tool Ids",
+            "type": "array"
+          },
+          "discoverable_tool_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Discoverable Tool Ids",
+            "type": "array"
+          },
+          "selected_tool_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Selected Tool Ids",
+            "type": "array"
+          },
+          "unavailable_reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Unavailable Reasons",
+            "type": "object"
+          }
+        },
+        "required": [
+          "catalog_version",
+          "session_policy_version",
+          "installed_tool_ids",
+          "authorized_tool_ids",
+          "discoverable_tool_ids",
+          "selected_tool_ids",
+          "unavailable_reasons"
+        ],
+        "title": "RuntimeToolView",
         "type": "object"
       },
       "RuntimeUnresolvedEffect": {

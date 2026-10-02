@@ -106,6 +106,50 @@ class RuntimeAdmissionLimits(Result):
     launch_lease_seconds: float
 
 
+class RuntimeProviderCapabilities(Result):
+    """Adapter declarations; model support and live cancellation remain separate."""
+
+    schema_version: Literal[1]
+    api_mode: str
+    adapter: str
+    declaration_scope: Literal["adapter"]
+    streaming: Literal["supported", "unsupported", "unknown"]
+    parallel_tools: Literal["supported", "unsupported", "unknown"]
+    media_inputs: list[str]
+    model_capabilities: Literal["unverified"]
+    usage: Literal["final_response", "provider_reported", "unknown"]
+    cancellation: Literal["local_only", "provider_acknowledgment", "unknown"]
+    cache_semantics: str
+    opaque_state_version: int | None
+    execution_owner: Literal["hermes", "provider", "unknown"]
+    durable_execution: bool
+    bounded_budget: Literal["conditional_openai_text", "unsupported"]
+
+
+class RuntimeToolView(Result):
+    """Frozen authorized metadata only; inspection cannot refresh the prompt."""
+
+    catalog_version: str
+    session_policy_version: str
+    installed_tool_ids: list[str]
+    authorized_tool_ids: list[str]
+    discoverable_tool_ids: list[str]
+    selected_tool_ids: list[str]
+    unavailable_reasons: dict[str, str]
+
+
+class RuntimePhysicalAttempt(Result):
+    """Opaque account correlation only, never credentials, endpoint or payload."""
+
+    attempt_id: RuntimeIdentifier
+    reason: Literal["initial", "auth_failure", "quota_exhausted", "throttled", "overloaded",
+                    "context_overflow", "unsupported_capability", "ambiguous_transport", "request_rejected"]
+    provider_account_ref: RuntimeIdentifier
+    reservation_id: RuntimeIdentifier
+    remote_acceptance: Literal["unknown", "rejected", "accepted"]
+    logical_request_id: RuntimeIdentifier
+
+
 class RuntimeCapabilities(Result):
     schema_versions: list[Literal[1]]
     operations: list[RuntimeOperationCapability]
@@ -113,6 +157,8 @@ class RuntimeCapabilities(Result):
     durable_replay: bool
     max_events: int
     admission: RuntimeAdmissionLimits | None = None
+    provider: RuntimeProviderCapabilities | None = None
+    tool_view: RuntimeToolView | None = None
     cursor_policy: Literal["snapshot_required_on_expired_or_unknown_cursor"]
 
 
@@ -198,6 +244,7 @@ class RuntimeEventPayload(Result):
     checkpoint_id: str | None = None
     included_seq: int | None = None
     cancellation: RuntimeCancellation | None = None
+    physical_attempt: RuntimePhysicalAttempt | None = None
     admission_state: Literal["expired", "cancelled", "rejected"] | None = None
     control_outcome: Literal["steer_queued", "steer_not_queued", "cancel_requested", "cancel_not_requested"] | None = None
 

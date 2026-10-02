@@ -798,12 +798,13 @@ def test_flush_sanitized_active_user_and_tool_rows_do_not_append_duplicates(tmp_
     rows = db.get_messages(session_id, include_inactive=True)
     assert [row["id"] for row in rows] == durable_ids
     assert [message["_row_id"] for message in messages] == durable_ids
-    assert rows[0]["content"].startswith("hi \ufffd there")
-    assert " EDITED" in rows[0]["content"]
+    assert rows[0]["content"][0]["text"].startswith("hi \ufffd there")
+    assert " EDITED" in rows[0]["content"][0]["text"]
+    assert rows[0]["content"][1] == messages[0]["content"][1]
     assert messages[0]["content"][0]["text"].endswith(" EDITED")
     assert messages[0]["message_id"] == 12345 and "platform_message_id" not in messages[0]
-    # Neither our own rewrite nor a metadata-only change copies the lossy durable projection back: the live
-    # image part survives while the reaction metadata is synced.
+    # Multipart content stays lossless through both our rewrite and a metadata-only change;
+    # the image part survives while the reaction metadata is synced.
     assert messages[0]["content"][1]["type"] == "image_url"
     assert messages[0]["display_metadata"] == rows[0]["display_metadata"]
     assert rows[2]["content"] == "winner"

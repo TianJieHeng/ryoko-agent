@@ -4,6 +4,7 @@ Jittered delays (vs. fixed exponential) prevent thundering-herd retry spikes
 when many sessions hit the same rate-limited provider concurrently.
 """
 
+import math
 import random
 import re
 import threading
@@ -44,12 +45,12 @@ def parse_retry_after_seconds(value_or_headers: Any) -> Optional[float]:
     if raw is None or isinstance(raw, bool):
         return None
     if isinstance(raw, (int, float)):
-        return max(0.0, float(raw))
+        return max(0.0, float(raw)) if math.isfinite(float(raw)) else None
     text = str(raw).strip()
     if not text:
         return None
     try:
-        return max(0.0, float(text))
+        return max(0.0, float(text)) if math.isfinite(float(text)) else None
     except (TypeError, ValueError):
         pass
     # HTTP-date form (RFC 7231): seconds until that instant, clamped at 0.

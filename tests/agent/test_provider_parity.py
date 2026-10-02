@@ -66,7 +66,14 @@ def _reset_auxiliary_provider_state():
 
 
 def _make_agent(monkeypatch, provider, api_mode="chat_completions", base_url="https://openrouter.ai/api/v1", model=None):
-    monkeypatch.setattr("model_tools.get_tool_definitions", lambda **kw: _tool_defs("web_search", "terminal"))
+    def fixture_tools(**kwargs):
+        from agent.tool_view import derive_tool_view
+        from tools.registry import registry
+        definitions = _tool_defs("web_search", "terminal")
+        view = derive_tool_view(registry=registry, requested_tool_ids={"web_search", "terminal"},
+                                available_definitions=definitions, selected_definitions=definitions)
+        return definitions, view
+    monkeypatch.setattr("model_tools.get_tool_definitions_with_view", fixture_tools)
     monkeypatch.setattr("model_tools.check_toolset_requirements", lambda: {})
     monkeypatch.setattr("agent.process_bootstrap.OpenAI", _FakeOpenAI)
     kwargs = dict(

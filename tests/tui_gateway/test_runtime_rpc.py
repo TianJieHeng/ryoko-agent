@@ -7,6 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import httpx
+import openai
 
 
 @pytest.fixture
@@ -31,8 +33,11 @@ def runtime(tmp_path, monkeypatch):
         db = SessionDB(home / "state.db")
         db.create_session(context.identity.session_id, source="tui")
         db.claim_session_agent_identity(context.identity.session_id, context.identity.to_record())
+        client = openai.OpenAI(api_key="private-fixture-key", base_url="https://private-fixture.invalid/v1",
+            http_client=httpx.Client(transport=httpx.MockTransport(
+                lambda request: httpx.Response(500, json={"error": "unexpected fixture request"}))))
         agent = SimpleNamespace(runtime_context=context, _session_db=db, session_id=context.identity.session_id,
-                                api_mode="chat_completions", provider="fixture")
+                                api_mode="chat_completions", provider="openai", client=client)
         peer = SimpleNamespace(write=lambda _frame: True)
         homes[label], agents[label], peers[label] = home, agent, peer
         sessions[f"live-{label}"] = {"agent": agent, "profile_home": str(home), "transport": peer,
@@ -87,12 +92,49 @@ def runtime(tmp_path, monkeypatch):
     for session in sessions.values():
         server._release_active_session_slot(session)
     for agent in agents.values():
+        agent.client.close()
         agent._session_db.close()
 
 
 def envelope(command_id="command-1", **changes):
     return {"command_id": command_id, "idempotency_key": command_id, "expected_revision": 0,
             "operation": "submit", "payload": {"text": "Private fixture request"}, **changes}
+
+
+def test_capability_inspection_uses_frozen_view_and_redacts_provider_authority(runtime, monkeypatch):
+    from agent.tool_view import ToolView
+
+    agent = runtime.agents["a"]
+    view = ToolView("fixture-catalog", agent.runtime_context.policy.digest, (), (), (), (), {})
+    agent.tool_view = view
+
+    def forbidden_refresh(*args, **kwargs):
+        raise AssertionError("Capability inspection must not rebuild tool schemas")
+
+    monkeypatch.setattr("model_tools.get_tool_definitions", forbidden_refresh)
+    first = runtime.call("runtime.capabilities")["result"]
+    second = runtime.call("runtime.capabilities")["result"]
+    assert first["tool_view"] == second["tool_view"] == view.to_record()
+    assert agent.tool_view is view
+    assert first["provider"]["declaration_scope"] == "adapter"
+    assert first["provider"]["model_capabilities"] == "unverified"
+    assert first["provider"]["execution_owner"] == "hermes"
+    assert first["provider"]["cancellation"] != "provider_acknowledgment"
+    assert "private-fixture" not in json.dumps(first)
+    agent.tool_view = ToolView("foreign", "other-policy", ("private-foreign-tool",), (), (), (), {})
+    foreign = runtime.call("runtime.capabilities")["result"]
+    assert foreign["tool_view"] is None and "private-foreign-tool" not in json.dumps(foreign)
+    agent.tool_view = view
+    known_client = agent.client
+    try:
+        agent.client = object()
+        unknown = runtime.call("runtime.capabilities")["result"]
+        assert not unknown["provider"]["durable_execution"]
+        assert not any(item["executes"] for item in unknown["operations"])
+        denied = runtime.call("runtime.command", **envelope("opaque"))
+        assert denied["error"]["data"]["code"] == "runtime_transport_unsupported"
+    finally:
+        agent.client = known_client
 
 
 def test_real_two_profile_transport_boundaries_and_strict_identity(runtime):
@@ -137,6 +179,26 @@ def test_real_two_profile_transport_boundaries_and_strict_identity(runtime):
     agent._session_db.patch_session_model_config(agent.session_id, {"agent_identity": None})
     for method, params in (("runtime.snapshot", {}), ("runtime.command", envelope())):
         assert runtime.call(method, **params)["error"]["data"]["code"] == "identity_mismatch"
+
+
+def test_physical_attempt_replay_is_typed_and_never_exports_raw_provider_data(runtime):
+    receipt = runtime.call("runtime.command", **envelope())["result"]
+    agent = runtime.agents["a"]
+    db = agent._session_db
+    assert db.try_acquire_session_turn_lease(agent.session_id, "attempt-fixture", ttl_seconds=60)
+    generation = db.get_session_turn_lease(agent.session_id)["generation"]
+    attempt = {"attempt_id": "physical-1", "reason": "throttled", "provider_account_ref": "opaque-account-ref",
+               "reservation_id": "physical-1", "remote_acceptance": "rejected", "logical_request_id": "logical-1"}
+    for payload in ({"physical_attempt": attempt, "raw_response": "private-fixture-provider-data"},
+                    {"physical_attempt": {**attempt, "api_key": "private-fixture-secret"}}):
+        db.append_runtime_event(agent.session_id, "model.failed", payload, holder="attempt-fixture",
+                                generation=generation, run_id=receipt["run_id"], operation_id="physical-1")
+    db.release_session_turn_lease(agent.session_id, "attempt-fixture")
+    replay = runtime.call("runtime.events.since")["result"]
+    events = [event for event in replay["events"] if event["type"] == "model.failed"]
+    assert events[0]["payload"]["physical_attempt"] == attempt
+    assert events[1]["payload"] == {}
+    assert "private-fixture" not in json.dumps(replay)
 
 
 def test_command_receipt_is_idempotent_restart_replay_and_protocol_freshness(runtime):

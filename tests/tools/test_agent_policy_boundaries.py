@@ -249,6 +249,10 @@ def test_hook_exception_frozen_mutation_and_duplicate_callback_do_not_bypass(hom
     ctx = context(home, config(allowed=["clarify"]))
     agent = SimpleNamespace(runtime_context=ctx, session_id="session", _current_turn_id="",
                             _tool_guardrails=SimpleNamespace(before_call=lambda *a: SimpleNamespace(allows_execution=True)))
+    import httpx
+    from openai import OpenAI
+    agent.client = OpenAI(api_key="fixture", base_url="https://fixture.invalid/v1", max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(lambda request: pytest.fail("no network expected"))))
     calls, mutation_errors, duplicate_errors = [], [], []
     monkeypatch.setattr(executor, "_begin_tool_execution", lambda *a, **kw: None)
     monkeypatch.setattr(executor, "_run_with_activity_heartbeat", lambda agent, name, fn: fn())
@@ -296,6 +300,7 @@ def test_hook_exception_frozen_mutation_and_duplicate_callback_do_not_bypass(hom
             reset_runtime_run(token, run)
             lease.release()
             db.close()
+            agent.client.close()
     assert result.result == "ok"
     assert calls == [({"questions": []}, ctx)]
     assert mutation_errors == [True]
