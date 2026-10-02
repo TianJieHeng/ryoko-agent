@@ -843,6 +843,8 @@ def _execute_tool(function_name: str, function_args: Dict[str, Any], original_ar
         dispatch_kwargs["user_task"] = user_task
 
     def _dispatch(next_args: Dict[str, Any]) -> Any:
+        from tools.agent_policy_gate import assert_runtime_dispatch
+        assert_runtime_dispatch()
         from tools.agent_policy_gate import authorize_tool
         denied = authorize_tool(function_name)
         if denied is not None:

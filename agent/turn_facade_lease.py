@@ -37,6 +37,7 @@ class DurableTurnLease:
         self.db = db
         self.session_id = session_id  # id at admission; release always targets this row
         self.holder = holder
+        self.generation: int | None = None
         self.stop = threading.Event()
         self.refresh_interval = float(getattr(agent, "_session_turn_lease_refresh_interval", 60.0))
         self._lock = threading.Lock()
@@ -103,12 +104,15 @@ class DurableTurnLease:
         """Release the row and drop the agent's holder attrs (only if they still name this lease)."""
         agent = self.agent
         try:
-            self.db.release_session_turn_lease(self.session_id, self.holder)
+            self.db.release_session_turn_lease(
+                self.session_id, self.holder,
+                **({"generation": self.generation} if self.generation is not None else {}))
         except Exception:
             logger.error("Failed to release session turn lease: %s", self.session_id, exc_info=True)
         if getattr(agent, "_active_session_turn_lease_holder", None) == self.holder:
             agent._active_session_turn_lease_holder = None
             agent._active_session_turn_lease_ttl_seconds = None
+            agent._active_session_turn_lease_generation = None
 
     def is_turn_active(self) -> bool:
         with self._lock:
@@ -190,7 +194,8 @@ class DurableTurnLease:
             return False
         try:
             if self.db.refresh_session_turn_lease(
-                self._current_session_id(), self.holder, ttl_seconds=LEASE_TTL_SECONDS
+                self._current_session_id(), self.holder, ttl_seconds=LEASE_TTL_SECONDS,
+                **({"generation": self.generation} if self.generation is not None else {})
             ):
                 return None
             if self.stop.is_set():
@@ -293,6 +298,13 @@ def admit_durable_turn_lease(
     agent._active_session_turn_lease_holder = holder
     agent._active_session_turn_lease_ttl_seconds = LEASE_TTL_SECONDS
     try:
+        from agent.runtime_context import AgentContext
+        if isinstance(getattr(agent, "runtime_context", None), AgentContext):
+            owned = db.get_session_turn_lease(session_id)
+            if owned is None or owned["holder"] != holder:
+                raise InterruptedError("Durable runtime lease was lost during admission")
+            lease.generation = owned["generation"]
+            agent._active_session_turn_lease_generation = lease.generation
         # Read the row only now: the previous holder may have created or deleted it while this
         # turn waited, so an answer from before admission can be stale either way.
         durable = _durable_session_exists(db, session_id)

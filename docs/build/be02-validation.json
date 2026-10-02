@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "phase": "BE02",
+  "base_sha": "ee1e2af072e19152c16158d29cbed26a23c4fe5f",
+  "publication": "direct main per latest user instruction; no pull-request step",
+  "database_schema": 32,
+  "runtime_schema": 1,
+  "python": "3.14.7",
+  "command": "HOME=/tmp/ryoko-be02-tests HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/hermes_state/test_runtime_store.py tests/agent/test_identity_lifecycle.py tests/tools/test_agent_policy_boundaries.py tests/tui_gateway/test_runtime_rpc.py tests/agent/test_runtime_commands.py -j 5 --file-retries 0",
+  "results": [
+    {
+      "file": "tests/hermes_state/test_runtime_store.py",
+      "passed": 13,
+      "failed": 0,
+      "duration_seconds": 1.4
+    },
+    {
+      "file": "tests/agent/test_identity_lifecycle.py",
+      "passed": 20,
+      "failed": 0,
+      "duration_seconds": 2.5
+    },
+    {
+      "file": "tests/tools/test_agent_policy_boundaries.py",
+      "passed": 27,
+      "failed": 0,
+      "duration_seconds": 3.4
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_rpc.py",
+      "passed": 4,
+      "failed": 0,
+      "duration_seconds": 4.2
+    },
+    {
+      "file": "tests/agent/test_runtime_commands.py",
+      "passed": 13,
+      "failed": 0,
+      "duration_seconds": 8.9
+    }
+  ],
+  "passed": 77,
+  "failed": 0,
+  "duration_seconds": 8.9,
+  "log_sha256": "142453b4575d692a11458d767f4926bd505b232c04b7f8f9f576c186dfba5488",
+  "other_campaigns": [
+    {
+      "command": "scripts/run_tests.sh tests/hermes_state/ --tb=short",
+      "passed": 1492,
+      "failed": 0,
+      "skipped": 16,
+      "files": 146,
+      "duration_seconds": 53.4,
+      "scope": "before final bounded interrupted-operation projection; final runtime store13 retested above"
+    },
+    {
+      "command": "HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/agent/test_runtime_commands.py tests/tools/test_agent_policy_boundaries.py tests/tui_gateway/test_runtime_rpc.py tests/agent/test_turn_facade_lease.py tests/agent/test_turn_api_call_interrupt.py tests/agent/test_streaming.py tests/agent/test_cron_inline_api_call.py tests/agent/test_direct_contexts_stream_inline.py tests/agent/test_tool_executor_checkpoint_paths.py tests/tools/test_registry.py tests/tui_gateway/test_prompt_accept_logging.py tests/tui_gateway/test_queued_prompt_persistence.py tests/agent/test_anthropic_stream_fallbacks.py tests/agent/test_aux_progress_streaming.py tests/agent/test_aux_stream_host_deadline.py -j 6",
+      "passed": 218,
+      "failed": 0,
+      "skipped": 4,
+      "files": 15,
+      "duration_seconds": 15.6,
+      "command_source": "runner header; exact selected paths and concurrency",
+      "log_sha256": "58e860e88f468b122568af1ee6ac19509d9f9d9ff09315830a47524dea401354"
+    },
+    {
+      "command": "scripts/run_tests.sh tests/tools/test_delegate.py tests/tools/test_delegate_fallback_matrix.py tests/tools/test_delegate_kanban_isolation.py tests/agent/test_identity_lifecycle.py -j 3",
+      "passed": 116,
+      "failed": 0,
+      "files": 4,
+      "duration_seconds": 12.0
+    }
+  ],
+  "checks": [
+    "Shared TypeScript workspace typecheck passed",
+    "Standalone generated TypeScript compile passed",
+    "Generated Python/TypeScript/OpenRPC freshness and catalog passed",
+    "Focused Ruff and git diff --check passed"
+  ],
+  "limits": [
+    "Provider/tool effects use harmless deterministic doubles; no live service or billing certification",
+    "Opaque native/plugin inner-loop transports explicitly unsupported",
+    "Full project suite deferred to consolidated release gate",
+    "No OS isolation, encryption/deployment or exactly-once external effects certification",
+    "BE00 project-tree failures and previously recorded AF_UNIX environment limitation not represented as fixed"
+  ]
+}

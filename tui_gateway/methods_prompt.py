@@ -650,6 +650,46 @@ def _lock_in_submit_turn(
     return None, fields
 
 
+def _submit_runtime_prompt(rid, sid, session, agent, envelope):
+    """Admit a durable text command into the existing streaming turn pipeline."""
+    from agent.runtime_commands import (
+        RuntimeCommandError, read_command_state, rejected_receipt, submit_command,
+    )
+    with _session_turn_admission(session) as admitted:
+        transport, owned = _current_session_steer_authority(sid)
+        if transport is None or owned is not session or session.get("agent") is not agent:
+            raise RuntimeCommandError("identity_mismatch")
+        record = read_command_state(agent, envelope["command_id"])
+        if record is not None:
+            # Always validate the duplicate's contents before returning its receipt.
+            receipt = submit_command(agent, envelope)
+            if record["status"] != "accepted" or session.get("running"):
+                return receipt
+        if not admitted or session.get("_closing") or session.get("running"):
+            return receipt if record is not None else rejected_receipt(agent, envelope["command_id"], "session_busy")
+        if _ensure_active_session_slot(sid, session) is not None:
+            return receipt if record is not None else rejected_receipt(agent, envelope["command_id"], "session_not_owned")
+        if record is None:
+            receipt = submit_command(agent, envelope)
+        if receipt["status"] == "rejected":
+            return receipt
+        session["running"] = True
+        session["_turn_cancel_requested"] = False
+        session["last_active"] = time.time()
+        _start_inflight_turn(session, envelope["payload"]["text"])
+    # _run_prompt_submit owns work/thread admission and the normal completion
+    # events. Pass a trusted argument, never a dispatcher ContextVar or a slot
+    # another command can overwrite before this worker starts.
+    try:
+        _run_prompt_submit(rid, sid, session, envelope["payload"]["text"],
+                           image_paths=[], runtime_command_receipt=receipt)
+    except BaseException:
+        with session["history_lock"]:
+            session["running"] = False
+        raise
+    return receipt
+
+
 # Per-turn client surfaces that carry a model-bound note (session_notifications._surface_note).
 _CLIENT_SURFACES = frozenset({"hud", "voice-live"})
 

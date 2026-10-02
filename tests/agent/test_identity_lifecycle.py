@@ -171,3 +171,49 @@ def test_denied_optional_weixin_credential_remains_unavailable(tmp_path, monkeyp
     context = resolve_agent_context(config(), session_id="optional_secret", profile_home=tmp_path)
     with agent_runtime_scope(context):
         assert _weixin_env_pconfig() is None
+
+
+def test_late_session_metadata_preserves_claimed_identity(tmp_path, monkeypatch):
+    write_config(tmp_path, config()); monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    from run_agent import AIAgent
+    db = SessionDB(tmp_path / "state.db")
+    context = resolve_agent_context(config(), session_id="late_metadata", profile_home=tmp_path)
+    db.create_session("late_metadata", source="cli")
+    db.claim_session_agent_identity("late_metadata", context.identity.to_record())
+    agent = object.__new__(AIAgent)
+    agent._runtime_context = context
+    agent._persist_disabled = False
+    agent._session_db_created = False
+    agent._session_db = db
+    agent.session_id = "late_metadata"
+    agent.platform = "cli"
+    agent.model = "fixture/model"
+    agent._cached_system_prompt = None
+    agent._parent_session_id = None
+    agent._session_init_model_config = {"max_iterations": 7, "agent_identity": {"tampered": True}}
+    with agent_runtime_scope(context):
+        agent._ensure_db_session()
+    assert agent._session_db_created
+    assert db.get_session_model_config_value("late_metadata", "max_iterations") == 7
+    assert db.get_session_model_config_value("late_metadata", "agent_identity") == context.identity.to_record()
+    db.close()
+
+
+def test_compressed_resume_preserves_logical_identity_but_copied_branch_cannot(tmp_path, monkeypatch):
+    write_config(tmp_path, config()); monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    db = SessionDB(tmp_path / "state.db")
+    original = SimpleNamespace()
+    construct(original, session_id="logical_root", session_db=db)
+    binding = original.runtime_context.identity.to_record()
+    db.end_session("logical_root", "compression")
+    db.create_session("physical_tip", source="cli", parent_session_id="logical_root",
+                      model_config={"agent_identity": binding})
+    resumed = SimpleNamespace()
+    construct(resumed, session_id="physical_tip", session_db=db)
+    assert resumed.session_id == "physical_tip"
+    assert resumed.runtime_context.identity == original.runtime_context.identity
+    db.create_session("branch", source="cli", parent_session_id="logical_root",
+                      model_config={"agent_identity": binding, "_branched_from": "logical_root"})
+    with pytest.raises(IdentityPolicyError):
+        construct(SimpleNamespace(), session_id="branch", session_db=db)
+    db.close()

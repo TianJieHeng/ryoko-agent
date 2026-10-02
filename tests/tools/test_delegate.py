@@ -321,9 +321,9 @@ class TestDelegateTask(unittest.TestCase):
                 child_db = kwargs["session_db"]
                 self.assertIsInstance(child_db, SessionDB)
                 self.assertIsNot(child_db, parent_db)
-                self.assertEqual(
-                    str(child_db.db_path), str(parent_db.db_path)
-                )
+                # The registry canonicalizes aliases (for example /tmp -> /var/tmp).
+                # The contract is the same database FILE, not the same spelling.
+                self.assertTrue(child_db.db_path.samefile(parent_db.db_path))
             finally:
                 if child_db is not None:
                     child_db.close()

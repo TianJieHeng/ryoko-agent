@@ -1107,7 +1107,7 @@ def _run_prompt_submit(
     display_metadata: dict | None = None, image_paths: list[str] | None = None,
     queued_prompt_generation: int | None = None,
     terminal_callback: Callable[[dict[str, Any]], None] | None = None,
-    turn_author: dict | None = None) -> bool:
+    turn_author: dict | None = None, runtime_command_receipt: dict | None = None) -> bool:
     # Every dispatch binds the session's own row (session_key, real source) before the turn writes:
     # the synthesized turns that enter here directly (crash auto-continue, queued-prompt drain,
     # wake-ups) bypass prompt.submit's persist, and a row-less turn is otherwise materialized by
@@ -1153,7 +1153,10 @@ def _run_prompt_submit(
         st = _TurnRun(
             session["agent"], session.pop("one_turn_model_restore", None), terminal_callback,
             receipt_committed=terminal_callback is None)
-        st.marker_key = _record_turn_marker(session, text, auto_continue=terminal_callback is None,
+        from agent.runtime_context import AgentContext
+        strict_runtime = isinstance(getattr(agent, "runtime_context", None), AgentContext)
+        st.marker_key = _record_turn_marker(session, text,
+            auto_continue=terminal_callback is None and not strict_runtime,
             notification_category=(display_metadata or {}).get("notification_category"))
         goal_followup = None
         try:
@@ -1222,7 +1225,11 @@ def _run_prompt_submit(
         # here only gates presentation; do not introduce a second runtime scope.
         from agent.notification_presentation import notification_policy_snapshot
         with notification_policy_snapshot(agent, "tui", notification_config), notification_turn(agent, muted=muted, session_id=sid):
-            followup = run_body()
+            from agent.runtime_commands import bind_submitted_command
+            command_scope = (bind_submitted_command(agent, runtime_command_receipt)
+                             if runtime_command_receipt is not None else contextlib.nullcontext())
+            with command_scope:
+                followup = run_body()
         if followup is not None:
             _run_post_turn_followups(rid, sid, session, *followup)
     # The handle is resolved BEFORE _sessions_lock: a profile session opens its own SessionDB through the

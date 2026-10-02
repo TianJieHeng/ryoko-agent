@@ -837,6 +837,8 @@ def create_anthropic_message(
     stream_fn = getattr(messages_api, "stream", None)
     if prefer_stream and callable(stream_fn):
         try:
+            from agent.runtime_commands import assert_runtime_dispatch
+            assert_runtime_dispatch()
             return _stream_final_message(stream_fn, api_kwargs, log_prefix, on_stream_event, on_response)
         except TimeoutError:
             raise
@@ -846,4 +848,6 @@ def create_anthropic_message(
             logger.debug(
                 "%sAnthropic Messages stream unavailable; falling back to messages.create(): %s", log_prefix, exc
             )
+    from agent.runtime_commands import assert_runtime_dispatch
+    assert_runtime_dispatch()
     return messages_api.create(**{k: v for k, v in api_kwargs.items() if k != "stream"})

@@ -114,3 +114,9 @@ def mcp_discovery_denial() -> str | None:
     if ctx.policy.role != "primary":
         return _denied("Nonprimary MCP discovery requires BE05-certified agent-owned pools.", unsupported=True)
     return None
+
+
+def assert_runtime_dispatch() -> None:
+    """Dispatch-only fence. Schema discovery never needs an executing turn."""
+    from agent.runtime_commands import assert_runtime_dispatch as assert_owner
+    assert_owner()

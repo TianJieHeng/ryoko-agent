@@ -575,9 +575,9 @@ class SessionCompressionMixin:
         from hermes_state import _compression_lock_holder_process_is_dead
         if not session_id or not holder:
             return False
-        now = time.time()
-        expires_at = now + max(0.1, float(ttl_seconds))
         def _do(conn):
+            now = time.time()
+            expires_at = now + max(0.1, float(ttl_seconds))
             # Sweep rows that expired long ago: a holder that died without releasing leaves its row
             # behind, and nothing else revisits a conversation nobody resumes. The grace keeps the
             # recent expiries a still-live owner can renew from a starved refresher; it is also the
@@ -585,10 +585,30 @@ class SessionCompressionMixin:
             conn.execute("DELETE FROM session_turn_leases WHERE expires_at < ?",
                          (now - _TURN_LEASE_SWEEP_GRACE_S,))
             conversation_id = self._session_turn_lease_key_on_conn(conn, session_id)
-            return _claim_lease_row(
-                conn, "session_turn_leases", "conversation_id", conversation_id, holder, now, expires_at,
-                lambda h, e: float(e) <= now or _compression_lock_holder_process_is_dead(h),
-            )[0]
+            row = conn.execute(
+                "SELECT holder, expires_at, generation FROM session_turn_leases WHERE conversation_id = ?",
+                (conversation_id,)).fetchone()
+            if row is not None and float(row["expires_at"]) > now and not _compression_lock_holder_process_is_dead(row["holder"]):
+                if row["holder"] != holder:
+                    return False
+                if row["generation"] > 0:
+                    return True
+                # A live pre-BE02 holder is upgraded only by its own admission, atomically.
+                # Other holders cannot use migration as a reason to steal a live lease.
+            # Keep the monotonic counter on the existing root session: lease release, transcript
+            # reclaim and the expiry sweep may delete ephemeral rows without reissuing a fence.
+            conn.execute("UPDATE sessions SET turn_owner_generation = turn_owner_generation + 1 WHERE id = ?",
+                         (conversation_id,))
+            counter = conn.execute("SELECT turn_owner_generation FROM sessions WHERE id = ?",
+                                   (conversation_id,)).fetchone()
+            generation = int(counter[0]) if counter is not None else 0
+            conn.execute(
+                "INSERT INTO session_turn_leases (conversation_id, holder, acquired_at, expires_at, generation) "
+                "VALUES (?, ?, ?, ?, ?) ON CONFLICT(conversation_id) DO UPDATE SET "
+                "holder=excluded.holder, acquired_at=excluded.acquired_at, "
+                "expires_at=excluded.expires_at, generation=excluded.generation",
+                (conversation_id, holder, now, expires_at, generation))
+            return True
         return bool(self._execute_write(_do, patience_s=patience_s))
 
     def acquire_session_turn_lease(
@@ -653,28 +673,40 @@ class SessionCompressionMixin:
                 last_notice_at = now
             time.sleep(min(max(0.01, float(poll_interval_seconds)), remaining))
 
-    def refresh_session_turn_lease(self, session_id: str, holder: str, *, ttl_seconds: float = 300.0) -> bool:
+    def get_session_turn_lease(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """Read the current lease fence; dispatch still validates it inside its write transaction."""
+        with self._read_ctx() as conn:
+            key = self._session_turn_lease_key_on_conn(conn, session_id)
+            row = conn.execute("SELECT * FROM session_turn_leases WHERE conversation_id = ? AND expires_at > ?",
+                               (key, time.time())).fetchone()
+            return dict(row) if row is not None else None
+
+    def refresh_session_turn_lease(self, session_id: str, holder: str, *, ttl_seconds: float = 300.0,
+                                   generation: Optional[int] = None) -> bool:
         """Extend a turn lease only while ``holder`` still owns it."""
         if not session_id or not holder:
             return False
-        expires_at = time.time() + max(0.1, float(ttl_seconds))
         def _do(conn):
+            now = time.time()
+            expires_at = now + max(0.1, float(ttl_seconds))
             conversation_id = self._session_turn_lease_key_on_conn(conn, session_id)
             return conn.execute(
                 "UPDATE session_turn_leases SET expires_at = ? "
-                "WHERE conversation_id = ? AND holder = ?", (expires_at, conversation_id, holder),
+                "WHERE conversation_id = ? AND holder = ? AND (? IS NULL OR generation = ?) "
+                "AND (? IS NULL OR expires_at > ?)",
+                (expires_at, conversation_id, holder, generation, generation, generation, now),
             ).rowcount > 0
         return bool(self._execute_write(_do))
 
-    def release_session_turn_lease(self, session_id: str, holder: str) -> None:
+    def release_session_turn_lease(self, session_id: str, holder: str, *, generation: Optional[int] = None) -> None:
         """Release a turn lease iff ``holder`` still owns it; idempotent."""
         if not session_id or not holder:
             return
         def _do(conn):
             conversation_id = self._session_turn_lease_key_on_conn(conn, session_id)
             conn.execute(
-                "DELETE FROM session_turn_leases WHERE conversation_id = ? AND holder = ?",
-                (conversation_id, holder))
+                "DELETE FROM session_turn_leases WHERE conversation_id = ? AND holder = ? "
+                "AND (? IS NULL OR generation = ?)", (conversation_id, holder, generation, generation))
         self._execute_write(_do)
 
     def get_compression_lock_holder(self, session_id: str) -> Optional[str]:

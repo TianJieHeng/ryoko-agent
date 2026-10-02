@@ -129,7 +129,18 @@ def identity_construction(function):
         stored = _stored_binding(values.get("session_db"), session_id)
         is_child = bool(values.get("side_agent") or values.get("parent_session_id")
                         or is_delegated_child_process_context())
-        context = resolve_agent_context(config, session_id=session_id,
+        identity_session_id = session_id
+        if isinstance(stored, Mapping) and stored.get("session_id") != session_id:
+            original = stored.get("session_id")
+            db = values.get("session_db")
+            # Compression continues one logical authority. Prove the existing
+            # fenced lineage instead of rewriting the immutable binding or
+            # trusting a copied record in an unrelated/branched session.
+            if (isinstance(original, str) and db is not None
+                    and db.get_session(original) is not None
+                    and db._session_turn_lease_key(session_id) == db._session_turn_lease_key(original)):
+                identity_session_id = original
+        context = resolve_agent_context(config, session_id=identity_session_id,
                                         profile_home=str(get_hermes_home()), parent_context=parent,
                                         is_child=is_child, stored_binding=stored)
         session_db = values.get("session_db")

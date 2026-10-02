@@ -57,6 +57,14 @@ class TurnFacadeMixin:
         from agent.turn_facade_lease import admit_durable_turn_lease, carry_unadmitted_user_message
         from hermes_cli.observability.relay_shared_metrics import finish_task_run, start_task_run
 
+        from agent.runtime_commands import (
+            prepare_turn_command, recorded_turn_result, claim_turn_command,
+            bind_runtime_run, reset_runtime_run, finish_turn_command, read_command_state,
+        )
+        command = prepare_turn_command(self, user_message)
+        if command is not None and command["status"] != "accepted":
+            return recorded_turn_result(self, command)
+
         effective_task_id = task_id or str(uuid.uuid4())
         session_id = str(getattr(self, "session_id", None) or "")
         task_context = {
@@ -75,6 +83,8 @@ class TurnFacadeMixin:
         # Scope tokens start None: early returns leave the try before the set_*() calls and
         # the finally resets each one unconditionally.
         token = affinity_token = acct_token = None
+        runtime_run = runtime_token = None
+        runtime_finished = False
         task_started = task_finished = False
         relay_outcome = "failed"
 
@@ -97,6 +107,11 @@ class TurnFacadeMixin:
                 return admission.early_result
             lease = admission.lease
             conversation_history = admission.conversation_history
+            if command is not None:
+                runtime_run = claim_turn_command(self, command, lease)
+                if runtime_run is None:
+                    return recorded_turn_result(self, read_command_state(self, command["receipt"]["command_id"]))
+                runtime_token = bind_runtime_run(runtime_run)
 
             relay_session_cwd, relay_turn_cwd = resolve_relay_scope_cwds(
                 self,
@@ -161,6 +176,11 @@ class TurnFacadeMixin:
                     # the interrupt clear itself waits for the thread join in the outer finally.
                     if lease is not None:
                         lease.stop_refresher()
+            if runtime_run is not None:
+                # Mark before checkpointing: a failed checkpoint must not attempt
+                # to finish an already terminal command a second time.
+                runtime_finished = True
+                finish_turn_command(runtime_run, result=result)
             terminal = result if isinstance(result, dict) else {}
             relay_outcome = (
                 "cancelled" if terminal.get("interrupted") is True
@@ -173,6 +193,14 @@ class TurnFacadeMixin:
                 finish_task_run(**task_context, result=result)
             return result
         except BaseException as exc:
+            if runtime_run is not None and not runtime_finished:
+                runtime_finished = True
+                try:
+                    finish_turn_command(runtime_run, error=exc)
+                except Exception:
+                    # The claimed record remains unresolved if journaling/ownership
+                    # was lost. Do not convert an uncertain run into replayable work.
+                    logger.error("Could not journal runtime failure", exc_info=True)
             if isinstance(exc, (KeyboardInterrupt, InterruptedError)) or (
                 type(exc).__name__ == "CancelledError"
             ):
@@ -196,6 +224,8 @@ class TurnFacadeMixin:
                     if relay_lease is not None:
                         relay_runtime.SESSION_COORDINATOR.release_conversation(relay_lease)
                 finally:
+                    if runtime_token is not None:
+                        reset_runtime_run(runtime_token, runtime_run)
                     if lease is not None:
                         lease.stop_refresher()
                         lease.join_threads()

@@ -271,9 +271,31 @@ def test_hook_exception_frozen_mutation_and_duplicate_callback_do_not_bypass(hom
             duplicate_errors.append(str(exc))
         return result, args
     monkeypatch.setattr(relay_tools, "execute", twice)
-    result = executor._run_agent_tool_execution_middleware(
-        agent, function_name="clarify", function_args={}, effective_task_id="task", tool_call_id="call",
-        execute=lambda args: calls.append((args, current_agent_context())) or "ok")
+    from agent.identity_lifecycle import agent_runtime_scope
+    from agent.runtime_commands import (prepare_turn_command, claim_turn_command,
+        bind_runtime_run, reset_runtime_run, finish_turn_command)
+    from agent.turn_facade_lease import DurableTurnLease
+    from hermes_state import SessionDB
+    db = SessionDB(home / "state.db")
+    db.create_session("session", source="test")
+    db.claim_session_agent_identity("session", ctx.identity.to_record())
+    agent._session_db = db
+    with agent_runtime_scope(ctx):
+        command = prepare_turn_command(agent, "test plugin boundary")
+        assert db.acquire_session_turn_lease("session", "fixture", wait_seconds=0)
+        lease = DurableTurnLease(agent, db, "session", "fixture")
+        lease.generation = db.get_session_turn_lease("session")["generation"]
+        run = claim_turn_command(agent, command, lease)
+        token = bind_runtime_run(run)
+        try:
+            result = executor._run_agent_tool_execution_middleware(
+                agent, function_name="clarify", function_args={}, effective_task_id="task", tool_call_id="call",
+                execute=lambda args: calls.append((args, current_agent_context())) or "ok")
+            finish_turn_command(run, {"final_response": "ok"})
+        finally:
+            reset_runtime_run(token, run)
+            lease.release()
+            db.close()
     assert result.result == "ok"
     assert calls == [({"questions": []}, ctx)]
     assert mutation_errors == [True]

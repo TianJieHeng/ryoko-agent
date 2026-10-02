@@ -232,7 +232,11 @@ def _build_child_agent(
     parent_sid = getattr(parent_agent, "session_id", None)
     child_session_db = _open_child_session_db(parent_agent)
     from agent.identity_lifecycle import agent_runtime_scope
-    with agent_runtime_scope(getattr(parent_agent, "runtime_context", None)), delegated_child_context():
+    from agent.runtime_context import AgentContext
+    parent_context = getattr(parent_agent, "runtime_context", None)
+    if not isinstance(parent_context, AgentContext):
+        parent_context = None  # legacy adapters do not carry configured identity authority
+    with agent_runtime_scope(parent_context), delegated_child_context():
         try:
             child = AIAgent(
                 **rt, max_iterations=max_iterations, prefill_messages=getattr(parent_agent, "prefill_messages", None),
@@ -272,16 +276,26 @@ def _build_child_agent(
         child._delegate_parent_ref = weakref.ref(parent_agent)
     except TypeError:
         child._delegate_parent_ref = None  # non-weakref-able test doubles
+    strict_child = isinstance(getattr(child, "runtime_context", None), AgentContext)
     # Sidebar marker: subagent sessions stay out of session pickers even when a
     # parent delete orphans them (mirrors /branch's ``_branched_from``).
     if parent_sid and getattr(child, "_session_init_model_config", None) is not None:
         child._session_init_model_config["_delegate_from"] = parent_sid
-    # Shared pool lets children rotate credentials on rate limits.
-    child_pool = _resolve_child_credential_pool(
-        rt["provider"], parent_agent, rt["base_url"], effective_requested_provider=rt.get("requested_provider"),
-    )
-    if child_pool is not None:
-        child._credential_pool = child_pool
+        if strict_child and child._session_db is not None:
+            try:
+                # Persist the fork fence before lease admission can walk a compressed parent.
+                child._session_db.patch_session_model_config(child.session_id, {"_delegate_from": parent_sid})
+            except BaseException:
+                child.close()
+                raise
+    # Strict children retain only their validated scoped credential. An opaque
+    # parent pool must not bypass construction-time grant intersection.
+    if not strict_child:
+        child_pool = _resolve_child_credential_pool(
+            rt["provider"], parent_agent, rt["base_url"], effective_requested_provider=rt.get("requested_provider"),
+        )
+        if child_pool is not None:
+            child._credential_pool = child_pool
 
     _attach_child(parent_agent, child)  # interrupt propagation
     # spawn_requested now — the child may queue for seconds when the pool is

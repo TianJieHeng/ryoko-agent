@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 31
+SCHEMA_VERSION = 32
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -409,6 +409,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     git_branch TEXT,
     git_repo_root TEXT,
     git_metadata_generation INTEGER NOT NULL DEFAULT 0,
+    -- Persists beyond ephemeral lease deletion, keyed by the compression root.
+    turn_owner_generation INTEGER NOT NULL DEFAULT 0,
     billing_provider TEXT,
     billing_base_url TEXT,
     billing_mode TEXT,
@@ -573,9 +575,71 @@ CREATE TABLE IF NOT EXISTS compression_locks (
 
 CREATE TABLE IF NOT EXISTS session_turn_leases (
     conversation_id TEXT PRIMARY KEY,
+    generation INTEGER NOT NULL DEFAULT 0,
     holder TEXT NOT NULL,
     acquired_at REAL NOT NULL,
     expires_at REAL NOT NULL
+);
+
+-- BE02 journal is an additive projection beside transcript storage. No second lease owner.
+CREATE TABLE IF NOT EXISTS runtime_state (
+    session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+    schema_version INTEGER NOT NULL DEFAULT 1,
+    epoch TEXT NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 0,
+    cursor_floor INTEGER NOT NULL DEFAULT 0,
+    principal_id TEXT,
+    profile_id TEXT,
+    agent_id TEXT,
+    snapshot_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS runtime_commands (
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    principal_id TEXT NOT NULL,
+    command_id TEXT NOT NULL,
+    idempotency_key TEXT NOT NULL,
+    schema_version INTEGER NOT NULL,
+    digest TEXT NOT NULL,
+    command_json TEXT NOT NULL,
+    receipt_json TEXT NOT NULL,
+    accepted_revision INTEGER NOT NULL,
+    run_id TEXT,
+    status TEXT NOT NULL DEFAULT 'accepted',
+    claimed_holder TEXT,
+    claimed_generation INTEGER,
+    result_json TEXT,
+    PRIMARY KEY (session_id, principal_id, command_id),
+    UNIQUE (session_id, principal_id, idempotency_key)
+);
+
+CREATE TABLE IF NOT EXISTS runtime_events (
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    seq INTEGER NOT NULL,
+    event_id TEXT NOT NULL UNIQUE,
+    schema_version INTEGER NOT NULL,
+    generation INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    occurred_at REAL NOT NULL,
+    mission_id TEXT,
+    run_id TEXT,
+    operation_id TEXT,
+    effect_id TEXT,
+    delivery_id TEXT,
+    approval_id TEXT,
+    payload_json TEXT NOT NULL,
+    PRIMARY KEY (session_id, seq)
+);
+
+-- Latest checkpoint only; old blobs belong in the explicit artifact store.
+CREATE TABLE IF NOT EXISTS runtime_checkpoints (
+    session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+    checkpoint_id TEXT NOT NULL,
+    schema_version INTEGER NOT NULL,
+    included_seq INTEGER NOT NULL,
+    published_seq INTEGER NOT NULL,
+    generation INTEGER NOT NULL,
+    checkpoint_json TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS async_delegations (

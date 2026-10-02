@@ -2623,7 +2623,11 @@ def _relay_sync_completion(
     kwargs = prepare_chat_messages(client, kwargs)
     # The progress hook is installed per TASK, so every attempt (retries, recovery rungs, fallbacks)
     # must stream through _create_with_progress or the compression watchdog sees silence (#98466).
-    callback = create or (lambda request: _create_with_progress(client, request))
+    provider_callback = create or (lambda request: _create_with_progress(client, request))
+    def callback(request):
+        from agent.runtime_commands import assert_runtime_dispatch
+        assert_runtime_dispatch()
+        return provider_callback(request)
     route = _relay_auxiliary_metadata(provider=provider, api_mode=api_mode)
     # Isolate only the provider callback so the owning thread can unwind its lease/DB
     # transaction on hard cancel without touching the shared client.
@@ -2652,7 +2656,11 @@ async def _relay_async_completion(
 
     kwargs = prepare_chat_messages(client, kwargs)
     # Async twin of the seam default above (#98466).
-    callback = create or (lambda request: _acreate_with_progress(client, request))
+    provider_callback = create or (lambda request: _acreate_with_progress(client, request))
+    async def callback(request):
+        from agent.runtime_commands import assert_runtime_dispatch
+        assert_runtime_dispatch()
+        return await provider_callback(request)
     route = _relay_auxiliary_metadata(provider=provider, api_mode=api_mode)
     if route is None:
         return await callback(kwargs)
@@ -2678,7 +2686,10 @@ def _relay_sync_stream(
     kwargs = prepare_chat_messages(client, kwargs)
     # The bypass runs inside the provider callback, AFTER Relay has seen (and possibly
     # rewritten) the real conversation; applying it to `kwargs` would hand Relay an empty one.
-    create = lambda request: client.chat.completions.create(**bypass_chat_sdk_request_transform(request, client))  # noqa: E731
+    def create(request):
+        from agent.runtime_commands import assert_runtime_dispatch
+        assert_runtime_dispatch()
+        return client.chat.completions.create(**bypass_chat_sdk_request_transform(request, client))
     route = _relay_auxiliary_metadata(provider=provider, api_mode=api_mode)
     if route is None:
         return create(kwargs)

@@ -86,7 +86,7 @@ def perform_api_call(
 
     _use_streaming = _should_stream(agent)
 
-    def _perform_api_call(next_api_kwargs):
+    def _perform_api_request(next_api_kwargs):
         if agent.api_mode == "codex_responses":
             next_api_kwargs = agent._get_transport().preflight_kwargs(
                 next_api_kwargs, allow_stream=False, is_github_responses=agent._is_copilot_url(),
@@ -118,6 +118,12 @@ def perform_api_call(
             },
             defer_logical_completion=True,
         )
+
+    def _perform_api_call(next_api_kwargs):
+        from agent.runtime_commands import invoke_runtime_operation
+        return invoke_runtime_operation(
+            "model", lambda: _perform_api_request(next_api_kwargs), agent=agent,
+            name=str(agent.model or ""))
 
     from hermes_cli.middleware import run_llm_execution_middleware
 

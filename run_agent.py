@@ -382,6 +382,14 @@ class AIAgent(
                 origin_json=_gateway_origin_json(self), parent_session_id=self._parent_session_id,
                 cwd=_launch_cwd_for_session(source), profile_name=profile_for_session,
             )
+            context = self.runtime_context
+            if context is not None:
+                # Identity admission precreates model_config. The existing upsert preserves
+                # that dictionary, so publish later constructor/delegate metadata explicitly.
+                metadata = dict(self._session_row_model_config() or {})
+                metadata["agent_identity"] = context.identity.to_record()
+                self._session_db.claim_session_agent_identity(self.session_id, metadata["agent_identity"])
+                self._session_db.patch_session_model_config(self.session_id, metadata)
             self._session_db_created = True
         except Exception as e:
             # Transient failure (e.g. SQLite lock): _session_db_created stays False so the next turn retries.

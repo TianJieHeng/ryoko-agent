@@ -763,7 +763,9 @@ def _dispatch_authorized_once(
     _advance_start_order(lambda: _begin_tool_execution(agent, ref, display_index))
     from agent.runtime_context import bind_agent_context
     with bind_agent_context(trusted_context):
-        return _run_with_activity_heartbeat(agent, ref.name, lambda: execute(ref.args))
+        from agent.runtime_commands import invoke_runtime_operation
+        return _run_with_activity_heartbeat(agent, ref.name, lambda: invoke_runtime_operation(
+            "tool", lambda: execute(ref.args), agent=agent, name=ref.name))
 
 
 @bound_agent_lifecycle
