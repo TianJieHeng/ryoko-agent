@@ -61,7 +61,8 @@ def test_exact_detail_is_owned_and_decision_survives_ended_run(runtime):
 
 
 @pytest.mark.parametrize("arguments", [{"password": "plainpassword"}, {"target": "https://site.invalid/?token=abc"},
-                                       {"text": "sk-aaaaaaaaaaaaaaaaaaaaaaaaaaaa"}])
+                                       {"text": "sk-aaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+                                       {"text": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmaXh0dXJlIn0.fixtureSignature"}])
 def test_sensitive_content_is_withheld_not_misrepresented_as_exact(runtime, arguments):
     run, action, approval = preview(runtime, arguments)
     response = runtime.call("runtime.approval.get", approval_id=approval.approval_id)
@@ -143,3 +144,80 @@ def test_review_binding_and_corruption_fail_without_fabricating_exact_content(ru
     corrupted = runtime.call("runtime.approval.get", approval_id=approval.approval_id)
     assert corrupted["error"]["data"]["code"] == "approval_review_mismatch"
     assert "injected" not in json.dumps(corrupted)
+
+
+@pytest.mark.platforms("linux")
+@pytest.mark.parametrize("body,reviewable", [
+    ('{"schema_version":1,"external_effects":"none","title":"Café ☀"}', True),
+    ('{"password":"plainpassword"}', False),
+    ('{"source":"https://site.invalid/?token=abc"}', False),
+    ('{"note":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmaXh0dXJlIn0.fixtureSignature"}', False),
+    ('{"note":"sk-aaaaaaaaaaaaaaaaaaaaaaaaaaaa"}', False),
+])
+def test_encoded_json_review_scans_decoded_content_without_treating_wrapper_as_credential(artifacts, body, reviewable):
+    import base64
+    import hashlib
+    project = artifacts.project()["id"]
+    prepared = result(artifacts.call("runtime.artifact.bytes.prepare", project_id=project,
+        command_id="json-review", request_id="json-review", mime="application/json",
+        content_base64=base64.b64encode(body.encode()).decode()))
+    detail = result(artifacts.call("runtime.approval.get", approval_id=prepared["approval_id"]))
+    assert detail["detail"]["reviewable"] is reviewable
+    assert detail["approval"]["status"] == "pending" and not detail["dispatch_performed"]
+    if reviewable:
+        from hermes_state_approval_reviews import review_digest
+        content = detail["detail"]["review"]["content"]
+        assert content["data"] == base64.b64encode(body.encode()).decode()
+        assert base64.b64decode(content["data"], validate=True) == body.encode()
+        assert content["sha256"] == prepared["sha256"] == hashlib.sha256(body.encode()).hexdigest()
+        assert detail["detail"]["review_digest"] == review_digest({
+            key: detail["detail"][key] for key in ("reviewable", "unavailable_reason", "review")})
+    else:
+        assert detail["detail"]["unavailable_reason"] == "sensitive_content"
+        assert detail["detail"]["review"] is None and body not in json.dumps(detail)
+
+
+@pytest.mark.platforms("linux")
+def test_encoded_review_validation_precedes_semantic_scanning(artifacts):
+    import base64
+    from copy import deepcopy
+    import hashlib
+    from hermes_state_approval_reviews import prepare_review
+    from hermes_state_effects import EffectStoreError, effect_digest
+
+    project = artifacts.project()["id"]
+    prepared = result(artifacts.call("runtime.artifact.bytes.prepare", project_id=project,
+        command_id="validated-review", request_id="validated-review", mime="application/json",
+        content_base64=base64.b64encode(b'{"title":"Safe"}').decode()))
+    detail = result(artifacts.call("runtime.approval.get", approval_id=prepared["approval_id"]))
+    original = detail["detail"]["review"]
+    agent = artifacts.agents["a"]
+    binding = agent._session_db.get_effect_approval(
+        prepared["approval_id"], artifact_actor(agent.runtime_context))["binding"]
+    invalid_wrappers = [
+        ({"encoding": "hex"}, "invalid_approval_review"),
+        ({"data": "%%%"}, "invalid_approval_review"),
+        ({"data": None}, "invalid_approval_review"),
+        ({"extra": "not a content field"}, "invalid_approval_review"),
+        ({"sha256": "0" * 64}, "approval_review_mismatch"),
+        ({"mime": "text/plain"}, "approval_review_mismatch"),
+        ({"data": base64.b64encode(b'changed').decode()}, "approval_review_mismatch"),
+    ]
+    for changes, code in invalid_wrappers:
+        review = deepcopy(original)
+        review["content"].update(changes)
+        with pytest.raises(EffectStoreError) as rejected:
+            prepare_review(review, binding)
+        assert rejected.value.code == code
+
+    # Even correctly digest-bound bytes must be readable before review is allowed.
+    review, opaque_binding = deepcopy(original), deepcopy(binding)
+    payload = b"\xff\xfe"
+    digest = hashlib.sha256(payload).hexdigest()
+    review["content"].update(data=base64.b64encode(payload).decode(), sha256=digest)
+    descriptor = review["action"]["arguments"]["descriptor"]
+    descriptor.update(sha256=digest, size=len(payload))
+    opaque_binding.update(action_digest=effect_digest(review["action"]), input_digest=effect_digest(descriptor))
+    assert prepare_review(review, opaque_binding) == {
+        "reviewable": False, "unavailable_reason": "opaque_content", "review": None}
+    assert result(artifacts.call("runtime.approval.get", approval_id=prepared["approval_id"])) == detail

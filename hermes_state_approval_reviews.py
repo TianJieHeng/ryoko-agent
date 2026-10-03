@@ -64,7 +64,12 @@ def prepare_review(review, binding):
     if len(encoded.encode()) > _MAX_REVIEW_BYTES:
         return {"reviewable": False, "unavailable_reason": "review_size_limit", "review": None}
     from agent.redact import redact_sensitive_text, redact_registered_vault_values
-    text = encoded + _json({key: binding[key] for key in ("input_revision", "artifact_revision", "target_ref")})
+    # Transport encoding is not semantic content: base64-encoded JSON starts
+    # with eyJ and resembles a JWT. Scan the exact decoded bytes below plus
+    # all action/content metadata; keep the immutable stored review unchanged.
+    scan_review = {"action": action, "content": None if content is None else
+                   {key: value for key, value in content.items() if key != "data"}}
+    text = _json(scan_review, maximum=262144) + _json({key: binding[key] for key in ("input_revision", "artifact_revision", "target_ref")})
     if content is not None:
         try:
             text += data.decode("utf-8")

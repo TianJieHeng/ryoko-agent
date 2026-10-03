@@ -80,6 +80,15 @@ def test_evaluated_human_promotion_parameterized_runs_and_canonical_history(arti
         request = run_request(approved, mission, name, f'run-{number}')
         prepared = result(artifacts.call('runtime.workflow.run.prepare', **request))
         assert result(artifacts.call('runtime.workflow.run.prepare', **request)) == prepared
+        # Every output, including the JSON run manifest, must be exactly
+        # human-reviewable before publication; encoded JSON is not a JWT.
+        for proposal in prepared['proposals']:
+            review = result(artifacts.call('runtime.approval.get', approval_id=proposal['approval_id']))
+            assert review['detail']['reviewable']
+            content = review['detail']['review']['content']
+            exact = base64.b64decode(content['data'], validate=True)
+            assert content['sha256'] == proposal['sha256'] == hashlib.sha256(exact).hexdigest()
+            assert len(exact) == proposal['size']
         approvals = [{key: p[key] for key in ('approval_id','approval_digest')} for p in prepared['proposals']]
         published = result(artifacts.call('runtime.workflow.run.publish', **request, approvals=approvals))
         assert output_bytes(artifacts, project, published['outputs'][0]) == f'# Greeting\nHello {name}\n'.encode()

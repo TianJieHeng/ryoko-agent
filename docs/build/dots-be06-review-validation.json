@@ -1,0 +1,54 @@
+{
+  "scope": "Dots BE06 prerequisite: exact JSON workflow output approval review",
+  "base_commit": "9c39b3cbc7d23c65782e0f73f8c8102d07955e2e",
+  "production_change": "Scan validated decoded UTF-8 content plus action, content metadata and bound revisions, excluding only base64 transport data from credential matching. Preserve exact stored review and review digest serialization.",
+  "source_sha256": {
+    "hermes_state_approval_reviews.py": "219c36f805fab468546e18d2ae34aee68eb6de1f7687388f4c23d029edeb71ea",
+    "tests/tui_gateway/test_runtime_approval_detail_rpc.py": "8514d56db46ce82038952f4b551700c71d17048db0977e54d1e664d47d3133f0",
+    "tests/tui_gateway/test_workflows_rpc.py": "928086c7c30119609619fc49dff653a0d57315f2b01bbf8dc7e99c15100cf927"
+  },
+  "baseline_red": {
+    "log": "/tmp/dots-be06/producer-review-fix/red.log",
+    "sha256": "626b7d22c2b5d230700ba9af281759820ca951cb46662bba2df526cc03d64b83",
+    "source": "Sibling reproduced on the same base in an isolated source snapshot before the fix",
+    "passed": 3,
+    "failed": 1,
+    "failure": "Benign base64-encoded JSON returned sensitive_content; credential-bearing cases were withheld"
+  },
+  "focused_validation": {
+    "command": "HERMES_PYTHON=/tmp/dots-backend-python/bin/python scripts/run_tests.sh -j 2 tests/tui_gateway/test_runtime_approval_detail_rpc.py tests/tui_gateway/test_workflows_rpc.py",
+    "log": "/tmp/dots-be06-review-validation/focused.log",
+    "sha256": "fa39d41821072cf4f4266f45144ccf60283626d77cf238e4015d0b00c391e94b",
+    "files": 2,
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "modules": {
+      "tests/tui_gateway/test_runtime_approval_detail_rpc.py": 15,
+      "tests/tui_gateway/test_workflows_rpc.py": 9
+    },
+    "coverage": [
+      "Benign JSON manifest retains exact base64, UTF-8 bytes, content digest and immutable review digest",
+      "Synthetic JWT/API credentials in decoded JSON and action remain withheld",
+      "Password fields and credential-bearing URLs remain withheld",
+      "Malformed encoding, base64 data, data type and wrapper shape fail closed",
+      "Content digest, MIME and payload mismatch fail closed",
+      "Digest-consistent invalid UTF-8 remains opaque_content",
+      "Real workflow RPC creation, evaluation, promotion, run preparation, exact review, artifact publication and canonical history"
+    ]
+  },
+  "static_validation": {
+    "ruff": "Passed for all three changed Python files",
+    "compileall": "Passed for all three changed Python files",
+    "diff_check": "Passed",
+    "global_redactor_unchanged": true,
+    "generated_contracts_unchanged": true
+  },
+  "limits": [
+    "Focused validation only; no full-suite run or dependency installation",
+    "Node-to-Python Dots consumer remains separately qualified after parent publication and producer re-pin",
+    "No remote publication, deployment, real credentials, live provider or external user-data transmission",
+    "BE07 scheduler work is separate and not included"
+  ]
+}
