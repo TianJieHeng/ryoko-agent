@@ -112,7 +112,7 @@ def test_schema37_reopen_and_owner_aware_legacy_goal_retention(stores):
     assert f.second.migrate_legacy_mission("session", ACTOR, **f.fence)["outcome"] == "old result"
     reopened = SessionDB(f.db.db_path)
     with reopened._read_ctx() as conn:
-        assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == 38
+        assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == __import__("hermes_state_common").SCHEMA_VERSION
     reopened.close()
 
 

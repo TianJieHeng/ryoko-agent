@@ -3167,6 +3167,172 @@ export interface DomainPublishResult {
   publication_atomic: false
   external_production: 'not_performed'
 }
+export interface WorkflowCreateParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  definition_json: string
+}
+export interface WorkflowResult {
+  workflow: WorkflowRecord
+}
+export interface WorkflowRecord {
+  workflow_id: string
+  version: number
+  project_id: string
+  sha256: string
+  definition_json: string
+  state: 'draft' | 'tested' | 'approved' | 'deprecated' | 'revoked'
+  revision: number
+  evaluation_ref: string | null
+  active_version: number | null
+  head_revision: number
+}
+export interface WorkflowVersionParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+}
+export interface WorkflowProjectParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+}
+export interface WorkflowListResult {
+  workflows: WorkflowRecord[]
+  complete: false
+}
+export interface WorkflowTemplateResult {
+  template_id: string
+  version: number
+  project_id: string
+  sha256: string
+  definition_json: string
+}
+export interface WorkflowEvaluateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  expected_revision: number
+  cases_json: string
+}
+export interface WorkflowEvaluateResult {
+  workflow: WorkflowRecord
+  evaluation_json: string
+}
+export interface WorkflowDecisionParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  sha256: string
+  expected_revision: number
+  expected_head_revision: number
+  action: 'approve' | 'deprecate' | 'revoke' | 'rollback' | 'authorize_export'
+  recipient?: string | null
+}
+export interface WorkflowDecisionPrepareResult {
+  approval_id: string
+  approval_digest: string
+  expires_at: number
+  scope_json: string
+  workflow: WorkflowRecord
+}
+export interface WorkflowDecisionCommitParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  sha256: string
+  expected_revision: number
+  expected_head_revision: number
+  action: 'approve' | 'deprecate' | 'revoke' | 'rollback' | 'authorize_export'
+  recipient?: string | null
+  approval_id: string
+  approval_digest: string
+}
+export interface WorkflowDecisionResult {
+  workflow: WorkflowRecord
+  decision_json: string
+}
+export interface WorkflowExportParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  recipient: string
+  approval_id: string
+}
+export interface WorkflowExportResult {
+  recipient: string
+  export_json: string
+  external_send_performed: false
+}
+export interface WorkflowFeedbackParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  evidence_json: string
+}
+export interface WorkflowEvidenceResult {
+  evidence_json: string
+}
+export interface WorkflowRunParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  sha256: string
+  mission_id: string
+  mission_revision: number
+  parameters_json: string
+}
+export interface WorkflowRunPrepareResult {
+  workflow_run_id: string
+  pin_json: string
+  proposals: ArtifactProposalResult[]
+  publication_atomic: false
+}
+export interface WorkflowRunPublishParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  sha256: string
+  mission_id: string
+  mission_revision: number
+  parameters_json: string
+  approvals: DomainApproval[]
+}
+export interface WorkflowRunPublishResult {
+  workflow_run_id: string
+  state: 'published'
+  outputs: ArtifactPublishResult[]
+  manifest: ArtifactPublishResult
+  publication_atomic: false
+  mission_completed: false
+}
+export interface WorkflowHistoryResult {
+  runs_json: string
+  complete: false
+}
 export interface ResearchResolveParams {
   session_id: string
   schema_version: 1
@@ -6800,6 +6966,30 @@ export interface RpcMethods {
   'runtime.template.create': { params: TemplateCreateParams; result: TemplateResult }
   'runtime.template.get': { params: TemplateParams; result: TemplateResult }
   'runtime.template.list': { params: SourceListParams; result: TemplateListResult }
+  /** Create an immutable draft with scoped accepted-work or consent evidence; never promote or execute it. */
+  'runtime.workflow.create': { params: WorkflowCreateParams; result: WorkflowResult }
+  /** Commit the exact reviewed human workflow decision; no skill self-promotion. */
+  'runtime.workflow.decision.commit': { params: WorkflowDecisionCommitParams; result: WorkflowDecisionResult }
+  /** Prepare exact lifecycle/pointer/sharing approval bound to content, evaluation, destination and current policy. */
+  'runtime.workflow.decision.prepare': { params: WorkflowDecisionParams; result: WorkflowDecisionPrepareResult }
+  /** Evaluate bounded local producers on varied tuning and held-out cases against recorded baseline outputs; never execute external effects. */
+  'runtime.workflow.evaluate': { params: WorkflowEvaluateParams; result: WorkflowEvaluateResult }
+  /** Prepare canonical export only under an exact approved recipient grant; no external send is performed. */
+  'runtime.workflow.export': { params: WorkflowExportParams; result: WorkflowExportResult }
+  /** Retain corrections or failure evidence as references without training or silently modifying instructions. */
+  'runtime.workflow.feedback': { params: WorkflowFeedbackParams; result: WorkflowEvidenceResult }
+  /** Read an exact granted canonical workflow version and its lifecycle. */
+  'runtime.workflow.get': { params: WorkflowVersionParams; result: WorkflowResult }
+  /** Discover explicitly project-granted workflows without reading personal memory. */
+  'runtime.workflow.list': { params: WorkflowProjectParams; result: WorkflowListResult }
+  /** Execute a finite local workflow pinned to immutable content, parameters, template, budget and exact ready Mission; prepare outputs. */
+  'runtime.workflow.run.prepare': { params: WorkflowRunParams; result: WorkflowRunPrepareResult }
+  /** Publish only exactly approved prepared outputs through existing artifact effects; mission completion remains separately verified. */
+  'runtime.workflow.run.publish': { params: WorkflowRunPublishParams; result: WorkflowRunPublishResult }
+  /** Inspect owned run pins and output history; never resume by resolving a changed active pointer. */
+  'runtime.workflow.runs': { params: WorkflowVersionParams; result: WorkflowHistoryResult }
+  /** Create a separate immutable style template; existing workflow pins and deliverables remain unchanged. */
+  'runtime.workflow.template.create': { params: WorkflowCreateParams; result: WorkflowTemplateResult }
   /** Attach the frontend to a live session without closing the previously focused one. */
   'session.activate': { params: SessionActivateParams; result: SessionActivateResult }
   /** Live sessions in this process, insertion order (not a DB browser). */
@@ -7206,6 +7396,18 @@ export const RPC_METHODS = [
   'runtime.template.create',
   'runtime.template.get',
   'runtime.template.list',
+  'runtime.workflow.create',
+  'runtime.workflow.decision.commit',
+  'runtime.workflow.decision.prepare',
+  'runtime.workflow.evaluate',
+  'runtime.workflow.export',
+  'runtime.workflow.feedback',
+  'runtime.workflow.get',
+  'runtime.workflow.list',
+  'runtime.workflow.run.prepare',
+  'runtime.workflow.run.publish',
+  'runtime.workflow.runs',
+  'runtime.workflow.template.create',
   'session.activate',
   'session.active_list',
   'session.archive',

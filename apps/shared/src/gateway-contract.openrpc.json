@@ -4201,6 +4201,222 @@
       }
     },
     {
+      "name": "runtime.workflow.create",
+      "summary": "Create an immutable draft with scoped accepted-work or consent evidence; never promote or execute it.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.decision.commit",
+      "summary": "Commit the exact reviewed human workflow decision; no skill self-promotion.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowDecisionCommitParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowDecisionResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.decision.prepare",
+      "summary": "Prepare exact lifecycle/pointer/sharing approval bound to content, evaluation, destination and current policy.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowDecisionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowDecisionPrepareResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.evaluate",
+      "summary": "Evaluate bounded local producers on varied tuning and held-out cases against recorded baseline outputs; never execute external effects.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowEvaluateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowEvaluateResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.export",
+      "summary": "Prepare canonical export only under an exact approved recipient grant; no external send is performed.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowExportParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowExportResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.feedback",
+      "summary": "Retain corrections or failure evidence as references without training or silently modifying instructions.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowFeedbackParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowEvidenceResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.get",
+      "summary": "Read an exact granted canonical workflow version and its lifecycle.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowVersionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.list",
+      "summary": "Discover explicitly project-granted workflows without reading personal memory.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowProjectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.run.prepare",
+      "summary": "Execute a finite local workflow pinned to immutable content, parameters, template, budget and exact ready Mission; prepare outputs.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowRunParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowRunPrepareResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.run.publish",
+      "summary": "Publish only exactly approved prepared outputs through existing artifact effects; mission completion remains separately verified.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowRunPublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowRunPublishResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.runs",
+      "summary": "Inspect owned run pins and output history; never resume by resolving a changed active pointer.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowVersionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowHistoryResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.template.create",
+      "summary": "Create a separate immutable style template; existing workflow pins and deliverables remain unchanged.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowTemplateResult"
+        }
+      }
+    },
+    {
       "name": "session.activate",
       "summary": "Attach the frontend to a live session without closing the previously focused one.",
       "params": [
@@ -50256,6 +50472,1017 @@
           "disabled_persisted"
         ],
         "title": "WakeStopResult",
+        "type": "object"
+      },
+      "WorkflowCreateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "definition_json": {
+            "maxLength": 262144,
+            "minLength": 2,
+            "title": "Definition Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "definition_json"
+        ],
+        "title": "WorkflowCreateParams",
+        "type": "object"
+      },
+      "WorkflowDecisionCommitParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "expected_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "expected_head_revision": {
+            "minimum": 0,
+            "title": "Expected Head Revision",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "approve",
+              "deprecate",
+              "revoke",
+              "rollback",
+              "authorize_export"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recipient"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "sha256",
+          "expected_revision",
+          "expected_head_revision",
+          "action",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "WorkflowDecisionCommitParams",
+        "type": "object"
+      },
+      "WorkflowDecisionParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "expected_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "expected_head_revision": {
+            "minimum": 0,
+            "title": "Expected Head Revision",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "approve",
+              "deprecate",
+              "revoke",
+              "rollback",
+              "authorize_export"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recipient"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "sha256",
+          "expected_revision",
+          "expected_head_revision",
+          "action"
+        ],
+        "title": "WorkflowDecisionParams",
+        "type": "object"
+      },
+      "WorkflowDecisionPrepareResult": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          },
+          "scope_json": {
+            "title": "Scope Json",
+            "type": "string"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowRecord"
+          }
+        },
+        "required": [
+          "approval_id",
+          "approval_digest",
+          "expires_at",
+          "scope_json",
+          "workflow"
+        ],
+        "title": "WorkflowDecisionPrepareResult",
+        "type": "object"
+      },
+      "WorkflowDecisionResult": {
+        "additionalProperties": false,
+        "properties": {
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowRecord"
+          },
+          "decision_json": {
+            "title": "Decision Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow",
+          "decision_json"
+        ],
+        "title": "WorkflowDecisionResult",
+        "type": "object"
+      },
+      "WorkflowEvaluateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "cases_json": {
+            "maxLength": 262144,
+            "minLength": 2,
+            "title": "Cases Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "expected_revision",
+          "cases_json"
+        ],
+        "title": "WorkflowEvaluateParams",
+        "type": "object"
+      },
+      "WorkflowEvaluateResult": {
+        "additionalProperties": false,
+        "properties": {
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowRecord"
+          },
+          "evaluation_json": {
+            "title": "Evaluation Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow",
+          "evaluation_json"
+        ],
+        "title": "WorkflowEvaluateResult",
+        "type": "object"
+      },
+      "WorkflowEvidenceResult": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_json": {
+            "title": "Evidence Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_json"
+        ],
+        "title": "WorkflowEvidenceResult",
+        "type": "object"
+      },
+      "WorkflowExportParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "recipient": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Recipient",
+            "type": "string"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "recipient",
+          "approval_id"
+        ],
+        "title": "WorkflowExportParams",
+        "type": "object"
+      },
+      "WorkflowExportResult": {
+        "additionalProperties": false,
+        "properties": {
+          "recipient": {
+            "title": "Recipient",
+            "type": "string"
+          },
+          "export_json": {
+            "title": "Export Json",
+            "type": "string"
+          },
+          "external_send_performed": {
+            "const": false,
+            "title": "External Send Performed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "recipient",
+          "export_json",
+          "external_send_performed"
+        ],
+        "title": "WorkflowExportResult",
+        "type": "object"
+      },
+      "WorkflowFeedbackParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "evidence_json": {
+            "maxLength": 262144,
+            "minLength": 2,
+            "title": "Evidence Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "evidence_json"
+        ],
+        "title": "WorkflowFeedbackParams",
+        "type": "object"
+      },
+      "WorkflowHistoryResult": {
+        "additionalProperties": false,
+        "properties": {
+          "runs_json": {
+            "title": "Runs Json",
+            "type": "string"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "runs_json",
+          "complete"
+        ],
+        "title": "WorkflowHistoryResult",
+        "type": "object"
+      },
+      "WorkflowListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "workflows": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowRecord"
+            },
+            "title": "Workflows",
+            "type": "array"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "workflows",
+          "complete"
+        ],
+        "title": "WorkflowListResult",
+        "type": "object"
+      },
+      "WorkflowProjectParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id"
+        ],
+        "title": "WorkflowProjectParams",
+        "type": "object"
+      },
+      "WorkflowRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "definition_json": {
+            "title": "Definition Json",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "draft",
+              "tested",
+              "approved",
+              "deprecated",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "evaluation_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluation Ref"
+          },
+          "active_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Version"
+          },
+          "head_revision": {
+            "title": "Head Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "version",
+          "project_id",
+          "sha256",
+          "definition_json",
+          "state",
+          "revision",
+          "evaluation_ref",
+          "active_version",
+          "head_revision"
+        ],
+        "title": "WorkflowRecord",
+        "type": "object"
+      },
+      "WorkflowResult": {
+        "additionalProperties": false,
+        "properties": {
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowRecord"
+          }
+        },
+        "required": [
+          "workflow"
+        ],
+        "title": "WorkflowResult",
+        "type": "object"
+      },
+      "WorkflowRunParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "mission_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Mission Id",
+            "type": "string"
+          },
+          "mission_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Mission Revision",
+            "type": "integer"
+          },
+          "parameters_json": {
+            "maxLength": 262144,
+            "minLength": 2,
+            "title": "Parameters Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "sha256",
+          "mission_id",
+          "mission_revision",
+          "parameters_json"
+        ],
+        "title": "WorkflowRunParams",
+        "type": "object"
+      },
+      "WorkflowRunPrepareResult": {
+        "additionalProperties": false,
+        "properties": {
+          "workflow_run_id": {
+            "title": "Workflow Run Id",
+            "type": "string"
+          },
+          "pin_json": {
+            "title": "Pin Json",
+            "type": "string"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactProposalResult"
+            },
+            "title": "Proposals",
+            "type": "array"
+          },
+          "publication_atomic": {
+            "const": false,
+            "title": "Publication Atomic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "workflow_run_id",
+          "pin_json",
+          "proposals",
+          "publication_atomic"
+        ],
+        "title": "WorkflowRunPrepareResult",
+        "type": "object"
+      },
+      "WorkflowRunPublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "mission_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Mission Id",
+            "type": "string"
+          },
+          "mission_revision": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Mission Revision",
+            "type": "integer"
+          },
+          "parameters_json": {
+            "maxLength": 262144,
+            "minLength": 2,
+            "title": "Parameters Json",
+            "type": "string"
+          },
+          "approvals": {
+            "items": {
+              "$ref": "#/components/schemas/DomainApproval"
+            },
+            "maxItems": 33,
+            "minItems": 2,
+            "title": "Approvals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "sha256",
+          "mission_id",
+          "mission_revision",
+          "parameters_json",
+          "approvals"
+        ],
+        "title": "WorkflowRunPublishParams",
+        "type": "object"
+      },
+      "WorkflowRunPublishResult": {
+        "additionalProperties": false,
+        "properties": {
+          "workflow_run_id": {
+            "title": "Workflow Run Id",
+            "type": "string"
+          },
+          "state": {
+            "const": "published",
+            "title": "State",
+            "type": "string"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactPublishResult"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/ArtifactPublishResult"
+          },
+          "publication_atomic": {
+            "const": false,
+            "title": "Publication Atomic",
+            "type": "boolean"
+          },
+          "mission_completed": {
+            "const": false,
+            "title": "Mission Completed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "workflow_run_id",
+          "state",
+          "outputs",
+          "manifest",
+          "publication_atomic",
+          "mission_completed"
+        ],
+        "title": "WorkflowRunPublishResult",
+        "type": "object"
+      },
+      "WorkflowTemplateResult": {
+        "additionalProperties": false,
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "definition_json": {
+            "title": "Definition Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "project_id",
+          "sha256",
+          "definition_json"
+        ],
+        "title": "WorkflowTemplateResult",
+        "type": "object"
+      },
+      "WorkflowVersionParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version"
+        ],
+        "title": "WorkflowVersionParams",
         "type": "object"
       },
       "_SessionScoped": {

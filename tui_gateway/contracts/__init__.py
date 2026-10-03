@@ -17,6 +17,7 @@ from . import (  # noqa: F401
     memory,
     missions,
     domains,
+    workflows,
     research,
     profiles_vault_complete_foreign_subagents,
     projects_pets,

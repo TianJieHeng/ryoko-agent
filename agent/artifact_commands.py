@@ -23,7 +23,10 @@ _CONTROL_RPCS = frozenset({"runtime.artifact.prepare", "runtime.artifact.publish
     "runtime.artifact.edit.prepare", "runtime.artifact.edit.publish",
     "runtime.artifact.merge.prepare", "runtime.artifact.merge.publish",
     "runtime.artifact.status", "runtime.artifact.cancel", "runtime.domain.prepare", "runtime.domain.publish",
-    "runtime.brief.prepare", "runtime.brief.publish"})
+    "runtime.brief.prepare", "runtime.brief.publish",
+    "runtime.workflow.create", "runtime.workflow.template.create", "runtime.workflow.evaluate",
+    "runtime.workflow.decision.prepare", "runtime.workflow.decision.commit", "runtime.workflow.feedback",
+    "runtime.workflow.run.prepare", "runtime.workflow.run.publish"})
 
 
 @dataclass(frozen=True)

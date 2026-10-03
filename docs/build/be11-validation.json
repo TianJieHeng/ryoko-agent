@@ -1,0 +1,54 @@
+{
+  "phase": "BE11",
+  "status": "implemented_local_validation_passed",
+  "schema_migration": "38_to_39_additive",
+  "focused_validation": [
+    {
+      "command": "HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/agent/test_workflow_contract.py tests/agent/test_workflow_runtime.py tests/tui_gateway/test_workflows_rpc.py tests/hermes_cli/test_workflow_authority.py tests/hermes_state/test_workflow_migration.py tests/hermes_state/test_mission_records.py tests/tui_gateway/test_domains_rpc.py tests/tui_gateway/contracts/test_generated.py",
+      "passed": 86,
+      "failed": 0,
+      "seconds": 11.2,
+      "note": "Before final concurrent-export revocation regression; all eight suites passed"
+    },
+    {
+      "command": "HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tui_gateway/test_workflows_rpc.py tests/hermes_cli/test_workflow_authority.py",
+      "passed": 11,
+      "failed": 0,
+      "seconds": 11.7,
+      "note": "Final affected-file rerun after export revocation TOCTOU fix; includes nine RPC tests and two authority tests"
+    },
+    {
+      "command": "python -m ruff check (all BE11 Python implementation and focused tests)",
+      "result": "passed"
+    },
+    {
+      "command": "npm run typecheck --workspace @hermes/shared",
+      "result": "passed",
+      "runner": "parent",
+      "note": "Generated contracts unchanged afterward"
+    },
+    {
+      "command": "git diff --check -- (BE11 tracked paths)",
+      "result": "passed"
+    }
+  ],
+  "supported": [
+    "immutable bounded workflow definitions and separate style templates",
+    "varied tuning and held-out local evaluation with recorded generalist and exact incumbent comparison",
+    "owned human digest-bound lifecycle and exact-recipient export decisions",
+    "manual mission-bound local Markdown and BE10 adapter execution",
+    "original input, version, template, environment, mission and budget pins",
+    "existing artifact approval/effect publication and cancellation controls",
+    "schema38 preservation and A-to-B-to-A project/profile isolation"
+  ],
+  "limits": [
+    "No live shell, browser, remote account, arbitrary import or model execution adapters",
+    "No model weight training or independent attestation of human-supplied expected labels/generalist origins",
+    "No measured user-cleanup savings",
+    "No automatic personal-memory discovery",
+    "No external export transmission",
+    "Expired or replaced prepared controls remain inspectable and require reconciliation; no silent adoption",
+    "Scheduled occurrence integration belongs to BE12; mandatory approved-version admission is exposed",
+    "Full repository test suite not run"
+  ]
+}

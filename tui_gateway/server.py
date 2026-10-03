@@ -3671,6 +3671,7 @@ from . import (  # noqa: E402
     methods_runtime_results as _methods_runtime_results,
     methods_artifacts as _methods_artifacts,
     methods_domains as _methods_domains,
+    methods_workflows as _methods_workflows,
     methods_research as _methods_research,
     methods_memory as _methods_memory,
     methods_missions as _methods_missions,
@@ -3689,7 +3690,7 @@ for _m in (
     _methods_browser_control, _methods_session, _methods_prompt, _methods_config,
     _methods_config_set, _methods_complete, _methods_tools, _methods_profiles, _methods_images,
     _methods_bot_relay, _prompt_turn, _billing_view, _methods_projects, _methods_session_foreign,
-    _methods_session_control, _methods_subagents, _methods_runtime, _methods_runtime_effects, _methods_runtime_results, _methods_artifacts, _methods_domains, _methods_research, _methods_memory, _methods_missions, _methods_project_sources, _methods_vault, _methods_free_tier, _methods_connectors,
+    _methods_session_control, _methods_subagents, _methods_runtime, _methods_runtime_effects, _methods_runtime_results, _methods_artifacts, _methods_domains, _methods_workflows, _methods_research, _methods_memory, _methods_missions, _methods_project_sources, _methods_vault, _methods_free_tier, _methods_connectors,
     _methods_connectors_account, _methods_display, _methods_display_watch, _methods_onboarding,
     _methods_i18n, _methods_shared_metrics):
     _m.register(sys.modules[__name__])

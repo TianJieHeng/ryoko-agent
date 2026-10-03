@@ -16,6 +16,7 @@ from hermes_cli.domain_media import _read
 
 MAX_JOB_BYTES = 4 * 1024 * 1024
 MAX_OUTPUTS = 16
+DOMAIN_ADAPTERS = frozenset({"meeting", "creative", "tutor", "educator", "coding", "browser_evidence", "data", "decision"})
 
 
 def _json(value):
@@ -81,7 +82,7 @@ def build_domain_package(context, db, job, *, admitted_at):
     adapters = {"meeting": build_meeting_package, "creative": build_creative_package,
                 "tutor": build_tutor_package, "educator": build_educator_package,
                 "coding": build_coding_package, "browser_evidence": build_browser_package}
-    if job.adapter not in {*adapters, "data", "decision"}:
+    if job.adapter not in DOMAIN_ADAPTERS:
         raise ValueError("Unsupported domain adapter; no implicit remote fallback")
     authorize_project(context, job.project_id, "read")
     arguments = json.loads(job.arguments_json)
