@@ -52,7 +52,9 @@ _DIMENSIONS = frozenset({"tokens", "attempts", "cost_micros", "wall_ms", "provid
 # still run first; this set is a cost-contract floor, never a capability grant.
 _LOCAL_TOOLS = {"todo_list": "tools.todo_tool", "delegate_task": "tools.delegate_tool",
                 "execute_code": "tools.code_execution_tool", "memory": "tools.memory_tool",
-                "session_search": "tools.session_search_tool"}
+                "session_search": "tools.session_search_tool",
+                "dots_page_read": "tools.dots_tool", "dots_page_propose": "tools.dots_tool",
+                "dots_computer_observe": "tools.dots_tool", "dots_computer_propose": "tools.dots_tool"}
 
 
 def _integer(value, name, *, minimum=1):
@@ -544,7 +546,10 @@ def budget_tool_scope(run, name):
     # slots. Holding a parent executor slot while waiting would deadlock a size-1 pool.
     # The isolated executor reserves at its concrete launch edge, including
     # direct registry/handler entry; a wrapper slot here would double-count.
-    if name in {"delegate_task", "execute_code"}:
+    # Dots bridges likewise reserve at each physical request; human approval
+    # waits hold no executor slot and cannot inflate the finite request bound.
+    if name in {"delegate_task", "execute_code", "dots_page_read", "dots_page_propose",
+                "dots_computer_observe", "dots_computer_propose"}:
         yield
         return
     maximum = min(budget.policy.record["request_timeout_ms"], max(1, int((budget.deadline - time.time()) * 1000)))

@@ -172,6 +172,7 @@ _DETAIL_MODES = frozenset({"hidden", "collapsed", "expanded"})
 # interrupts); voice.*/wake.* = SYNCHRONOUS faster-whisper install (300s); session.workspace.move =
 # git subprocess probes on an arbitrary (maybe slow) mount.
 _LONG_HANDLERS = frozenset({
+    "runtime.dots.page.publish", "runtime.dots.computer.execute", "runtime.dots.effect.reconcile",
     "session.foreign.list", "session.foreign.preview", "session.foreign.import",
     "billing.state", "subscription.state", "subscription.preview", "subscription.change",
     "subscription.resume", "subscription.upgrade", "usage.bars", "session.usage", "billing.step_up",
@@ -2678,7 +2679,9 @@ def _make_agent(
     ignore_rules = is_truthy_value(os.environ.get("HERMES_IGNORE_RULES"))
     with _sessions_lock:
         session = _sessions.get(sid)
-    agent = AIAgent(
+    from tui_gateway.dots_surface import construct_native_agent
+    agent = construct_native_agent(AIAgent,
+        dots_transport=current_transport() or (session or {}).get("transport"),
         model=model, max_iterations=_cfg_max_turns(cfg, 500), provider=runtime.get("provider"),
         requested_provider=runtime.get("requested_provider"),
         base_url=runtime.get("base_url"), api_key=runtime.get("api_key"), api_mode=runtime.get("api_mode"),
@@ -3669,8 +3672,10 @@ from . import (  # noqa: E402
     methods_runtime as _methods_runtime,
     methods_runtime_conversations as _methods_runtime_conversations,
     methods_runtime_effects as _methods_runtime_effects,
+    methods_runtime_controls as _methods_runtime_controls,
     methods_runtime_results as _methods_runtime_results,
     methods_artifacts as _methods_artifacts,
+    methods_dots_effects as _methods_dots_effects,
     methods_domains as _methods_domains,
     methods_workflows as _methods_workflows,
     methods_schedules as _methods_schedules,
@@ -3687,6 +3692,7 @@ from . import (  # noqa: E402
     methods_operations_control as _methods_operations_control,
     methods_connected_sources as _methods_connected_sources,
     methods_specialists as _methods_specialists,
+    methods_agent_configuration as _methods_agent_configuration,
     methods_opportunities as _methods_opportunities,
     methods_vault as _methods_vault, methods_free_tier as _methods_free_tier,
     methods_connectors as _methods_connectors, methods_connectors_account as _methods_connectors_account,
@@ -3702,8 +3708,8 @@ for _m in (
     _methods_browser_control, _methods_session, _methods_prompt, _methods_config,
     _methods_config_set, _methods_complete, _methods_tools, _methods_profiles, _methods_images,
     _methods_bot_relay, _prompt_turn, _billing_view, _methods_projects, _methods_session_foreign,
-    _methods_session_control, _methods_subagents, _methods_runtime, _methods_runtime_conversations, _methods_runtime_effects, _methods_runtime_results, _methods_artifacts, _methods_domains, _methods_workflows, _methods_schedules, _methods_schedule_outputs, _methods_monitor_notifications, _methods_media, _methods_research, _methods_memory, _methods_missions, _methods_project_sources, _methods_capture_processing, _methods_template_application, _methods_output_influences, _methods_vault, _methods_free_tier, _methods_connectors,
-    _methods_operations_control, _methods_connected_sources, _methods_specialists, _methods_opportunities, _methods_connectors_account, _methods_display, _methods_display_watch, _methods_onboarding,
+    _methods_session_control, _methods_subagents, _methods_runtime, _methods_runtime_conversations, _methods_runtime_effects, _methods_runtime_controls, _methods_runtime_results, _methods_artifacts, _methods_dots_effects, _methods_domains, _methods_workflows, _methods_schedules, _methods_schedule_outputs, _methods_monitor_notifications, _methods_media, _methods_research, _methods_memory, _methods_missions, _methods_project_sources, _methods_capture_processing, _methods_template_application, _methods_output_influences, _methods_vault, _methods_free_tier, _methods_connectors,
+    _methods_operations_control, _methods_connected_sources, _methods_specialists, _methods_agent_configuration, _methods_opportunities, _methods_connectors_account, _methods_display, _methods_display_watch, _methods_onboarding,
     _methods_i18n, _methods_shared_metrics):
     _m.register(sys.modules[__name__])
 del _m

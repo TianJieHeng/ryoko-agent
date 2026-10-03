@@ -22,8 +22,9 @@ def _install_runtime_context(agent, context):
 
 
 def identity_config():
-    from hermes_cli.config_effective import load_user_config_effective
-    return load_user_config_effective(fail_closed=True)
+    from agent.agent_configuration import base_configuration, frozen_configuration
+    from agent.runtime_context import current_agent_context
+    return frozen_configuration(base_configuration(), current_agent_context())
 
 
 def strict_identity_enabled() -> bool:
@@ -143,6 +144,15 @@ def identity_construction(function):
                     and db.get_session(original) is not None
                     and db._session_turn_lease_key(session_id) == db._session_turn_lease_key(original)):
                 identity_session_id = original
+        from agent.agent_configuration import base_configuration, prepare_construction
+        session_db = values.get("session_db")
+        if session_db is not None:
+            if Path(session_db.db_path).resolve().parent != Path(get_hermes_home()).resolve():
+                raise IdentityPolicyError("Session store belongs to another profile home")
+            session_db.create_session(session_id, source=values.get("platform") or "cli",
+                                      parent_session_id=values.get("parent_session_id"))
+        config, _ = prepare_construction(base_configuration(), session_db, identity_session_id,
+                                          parent=parent, stored=stored, is_child=is_child)
         from agent.specialist_manifest import construction_context
         context = construction_context(config, parent=parent, session_id=identity_session_id, stored=stored)
         if context is None:
@@ -160,6 +170,8 @@ def identity_construction(function):
         # The legacy background reviewer still shares its parent's store and remains disabled.
         values["skip_background_review"] = True
         with agent_runtime_scope(context):
+            from agent.agent_configuration import bind_startup_configuration
+            bind_startup_configuration(context, session_db, values)
             from agent.secret_scope import current_secret_scope
             provided_key = values.get("api_key")
             granted_values = (current_secret_scope() or {}).values()

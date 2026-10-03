@@ -6,8 +6,8 @@ import logging
 import time
 import uuid
 
-from agent.agent_identity import resolve_owned_agent_context
-from agent.identity_lifecycle import agent_runtime_scope, identity_config
+from agent.conversation_identity import recorded_owner_scope
+from agent.identity_lifecycle import agent_runtime_scope
 from cron.durable_contract import canonical, digest, require, next_due, occurrence_id
 from hermes_state_schedules import ScheduleRegistry
 
@@ -20,6 +20,8 @@ def _occurrence_session(version, oid):
 
 def _check(registry, occurrence, definition, holder, generation):
     from tools.capability_broker import require_live_policy
+    from hermes_state_runtime_controls import assert_owner_running
+    assert_owner_running(registry.db, registry.actor)
     require(require_live_policy(require_run=False) == registry.context, "Scheduled policy changed", "identity_mismatch")
     require(time.time() < occurrence["deadline_at"], "Original scheduled deadline expired", "schedule_expired")
     with registry.access.guard(definition["project_id"], registry.actor, "read"), registry.db._runtime_read() as conn:
@@ -37,6 +39,8 @@ def _observe(registry, occurrence, definition, holder, generation, observation):
     now = time.time()
     with registry.access.guard(definition["project_id"], registry.actor, "read"):
         def write(conn):
+            from hermes_state_runtime_controls import assert_owner_running_on_conn
+            assert_owner_running_on_conn(conn, registry.actor)
             registry.db._runtime_fence_on_conn(conn, occurrence["session_id"], holder, generation)
             row = registry._row(conn, key)
             require(row["state"] == "active" and row["version"] == version and now < occurrence["deadline_at"],
@@ -120,6 +124,7 @@ def _finish(registry, occurrence, definition, holder, generation, result, *, err
 
 
 def execute_occurrence(registry, occurrence, definition):
+    require(definition["kind"] != "command", "Scheduled prompts must use the ordinary command queue", "invalid_schedule")
     db, sid = registry.db, occurrence["session_id"]
     record = db.read_runtime_command(sid, occurrence["command_id"])
     # Accepted work may start once; a claimed or terminal command cannot.
@@ -213,6 +218,8 @@ def _missed(registry, row, definition, now):
         return
     key, version = row["schedule_key"], row["version"]
     def write(conn):
+        from hermes_state_runtime_controls import assert_owner_running_on_conn
+        assert_owner_running_on_conn(conn, registry.actor)
         live = registry._row(conn, key)
         require(live["revision"] == row["revision"] and live["state"] == "active", "Schedule changed", "schedule_revision_conflict")
         registry._no_unresolved(conn, key)
@@ -240,8 +247,14 @@ def tick_durable_schedules():
             if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='durable_schedules'").fetchone() is None:
                 return 0
         _recover(db)
+        from cron.command_schedule_runtime import recover_command_occurrences
+        recover_command_occurrences(db)
         with db._runtime_read() as conn:
-            rows = [dict(row) for row in conn.execute("SELECT * FROM durable_schedules WHERE state='active' ORDER BY next_due LIMIT 100")]
+            rows = [dict(row) for row in conn.execute("SELECT s.* FROM durable_schedules s WHERE s.state='active' "
+                "AND (s.next_due<=? OR EXISTS (SELECT 1 FROM durable_occurrences o WHERE o.schedule_key=s.schedule_key AND o.state='accepted')) "
+                "AND NOT EXISTS (SELECT 1 FROM runtime_owner_controls c WHERE c.paused=1 "
+                "AND c.principal_id=json_extract(s.owner_json,'$.principal_id') AND c.profile_id=json_extract(s.owner_json,'$.profile_id')) "
+                "ORDER BY s.next_due LIMIT 100", (time.time(),))]
         for row in rows:
             try:
                 with db._runtime_read() as conn:
@@ -250,11 +263,25 @@ def tick_durable_schedules():
                                            (row["schedule_key"],)).fetchone()
                 definition = json.loads(version["definition_json"])
                 now = time.time()
+                from hermes_state_runtime_controls import owner_paused_on_conn
+                with db._runtime_read() as conn:
+                    if owner_paused_on_conn(conn, json.loads(row["owner_json"])):
+                        continue
+                if definition["kind"] == "command":
+                    if row["next_due"] is None or row["next_due"] > now:
+                        continue
+                    context = recorded_owner_scope(db, owner_binding=json.loads(row["owner_binding_json"]),
+                        session_id=definition["specification"]["session_id"], profile_home=home)
+                    with agent_runtime_scope(context):
+                        from hermes_state_command_schedules import CommandScheduleRegistry
+                        receipt = CommandScheduleRegistry(context, db).admit_command(row, now=now)
+                        completed += receipt["command_id"] is not None
+                    continue
                 if pending is None and (row["next_due"] is None or row["next_due"] > now):
                     continue
                 oid = pending["occurrence_id"] if pending else occurrence_id(row["schedule_key"], row["version"], row["next_due"])
                 sid = pending["session_id"] if pending else _occurrence_session(version, oid)
-                context = resolve_owned_agent_context(identity_config(), owner_binding=json.loads(row["owner_binding_json"]),
+                context = recorded_owner_scope(db, owner_binding=json.loads(row["owner_binding_json"]),
                     session_id=sid, profile_home=home)
                 with agent_runtime_scope(context):
                     registry = ScheduleRegistry(context, db)
@@ -269,7 +296,7 @@ def tick_durable_schedules():
                             continue
                         # Catch-up may choose a different canonical due instant.
                         oid = occurrence_id(row["schedule_key"], row["version"], row["next_due"])
-                        context = resolve_owned_agent_context(identity_config(), owner_binding=json.loads(row["owner_binding_json"]),
+                        context = recorded_owner_scope(db, owner_binding=json.loads(row["owner_binding_json"]),
                             session_id=_occurrence_session(version, oid), profile_home=home)
                         with agent_runtime_scope(context):
                             registry = ScheduleRegistry(context, db)
@@ -279,7 +306,9 @@ def tick_durable_schedules():
                     completed += execute_occurrence(registry, occurrence, definition)
             except Exception as exc:
                 code = getattr(exc, "code", type(exc).__name__)
-                state = {"schedule_expired": "expired", "IdentityPolicyError": "paused"}.get(code)
+                state = {"schedule_expired": "expired", "IdentityPolicyError": "paused",
+                         "agent_configuration_revoked": "paused", "agent_configuration_changed": "paused",
+                         "identity_mismatch": "paused"}.get(code)
                 db._execute_write(lambda conn: conn.execute("UPDATE durable_schedules SET health='unhealthy',last_error=?,"
                     "state=COALESCE(?,state) WHERE schedule_key=?", (code, state, row["schedule_key"])))
                 logger.warning("Durable schedule %s blocked: %s", row["schedule_id"], code)

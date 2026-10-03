@@ -599,10 +599,19 @@ def _write_submit_user_row(session: dict, text: Any, display_kind: str | None,
             return None
         target = _submit_row_target_key(session)
         try:
-            staged["_row_id"] = db.append_message(
-                target, "user", content=text, display_kind=display_kind, timestamp=staged["timestamp"],
-                message_uid=stamp_message_uid(staged),  # the live dict the turn adopts carries the row's uid
-                display_metadata=staged.get("display_metadata"))
+            from hermes_state_runtime_messages import append_input, bound_command
+            owner = bound_command(db)
+            if owner is not None and owner.agent is session.get("agent"):
+                staged = append_input(db, target, owner.command_id, staged)
+                target = staged.get("session_id") or target
+                # Keep only the accepted command identity until adoption. A restart
+                # may recover a row whose content the prologue already expanded.
+                staged.pop("_runtime_command_input", None)
+            else:
+                staged["_row_id"] = db.append_message(
+                    target, "user", content=text, display_kind=display_kind, timestamp=staged["timestamp"],
+                    message_uid=stamp_message_uid(staged),  # live dict carries the row's UID
+                    display_metadata=staged.get("display_metadata"))
         except Exception as exc:
             _workdir_reraise_disk_full(exc, "submit-time user row persist failed")
             return None
@@ -635,7 +644,15 @@ def _adopt_submit_user_row(session: dict, agent, persist_user_message: Any, text
     ``text`` is THIS turn's raw submit: a staged row from an earlier send (its turn ended before the agent
     ran) is discarded untouched, so the DB row stays the user's message and never a synthesized turn's text."""
     staged = session.pop("_submit_user_row", None)
-    if not isinstance(staged, dict) or agent is None or staged.get("content") != text:
+    if not isinstance(staged, dict) or agent is None:
+        return
+    command_id = staged.pop("_runtime_command_id", None)
+    if command_id is not None:
+        from hermes_state_runtime_messages import bound_command
+        owner = bound_command(agent._session_db, command_id)
+        if owner is None or owner.agent is not agent:
+            return
+    elif staged.get("content") != text:
         return
     if staged["content"] != persist_user_message:
         with _session_db(session) as db:

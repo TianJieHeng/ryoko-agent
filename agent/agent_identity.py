@@ -561,7 +561,8 @@ def resolve_agent_context(
             "stored identity binding does not match this session, home or current policy; start a new session"
         )
     return AgentContext(
-        identity=binding, policy=policy, config_digest=parsed.digest, profile_home=home
+        identity=binding, policy=policy, config_digest=parsed.digest, profile_home=home,
+        configuration_session_id=parent_context.identity.session_id if is_child else None,
     )
 
 

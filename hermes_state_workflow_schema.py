@@ -33,3 +33,6 @@ CREATE TABLE IF NOT EXISTS workflow_decisions (
     record_json TEXT NOT NULL, created_at REAL NOT NULL
 );
 """
+
+from hermes_state_workflow_delivery_schema import WORKFLOW_DELIVERY_SCHEMA_SQL
+WORKFLOW_SCHEMA_SQL += WORKFLOW_DELIVERY_SCHEMA_SQL

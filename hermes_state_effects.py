@@ -158,6 +158,9 @@ class SessionEffectsMixin:
                             (sid, run_id, actor["principal_id"])).fetchall()
         command = next((item for item in rows if json.loads(item["command_json"])["operation"] in {"submit", "artifact"}), None)
         _check(command is not None, "effect_run_not_found", "An accepted runtime run is required")
+        if dispatch and not finalizing_artifact:
+            from hermes_state_runtime_controls import assert_owner_running_on_conn
+            assert_owner_running_on_conn(conn, actor)
         if dispatch:
             _check(command["status"] == "claimed" and command["claimed_holder"] == holder
                    and command["claimed_generation"] == generation,
@@ -328,7 +331,7 @@ class SessionEffectsMixin:
 
     def request_effect_approval(self, session_id, actor, *, holder, generation, run_id, action_digest, input_digest,
                                 target_ref, policy_version, policy_digest, input_revision, artifact_revision,
-                                expires_at, approval_id=None):
+                                expires_at, approval_id=None, review=None):
         actor, expires_at = _actor(actor), _deadline(expires_at)
         approval_id = _identifier(approval_id or uuid.uuid4().hex, "approval_id")
         def write(conn):
@@ -337,8 +340,12 @@ class SessionEffectsMixin:
                                policy_version, policy_digest, input_revision, artifact_revision)
             _check(time.time() < expires_at <= time.time() + 3600,
                    "approval_expired", "Exact approval must expire within one hour")
+            from hermes_state_approval_reviews import prepare_review, write_review_on_conn, review_digest
+            prepared_review = prepare_review(review, binding)
+            review_binding = {"review_digest": review_digest(prepared_review)} if prepared_review is not None else {}
             binding_json = _json(binding)
-            approval_digest = effect_digest({"approval_id": approval_id, "actor": actor, "binding": binding, "expires_at": expires_at})
+            approval_digest = effect_digest({"approval_id": approval_id, "actor": actor, "binding": binding,
+                                             "expires_at": expires_at, **review_binding})
             existing = conn.execute("SELECT * FROM runtime_effect_approvals WHERE approval_id=?", (approval_id,)).fetchone()
             if existing:
                 _check(existing["approval_digest"] == approval_digest, "idempotency_conflict", "Approval ID already names another scope")
@@ -349,6 +356,7 @@ class SessionEffectsMixin:
                          "binding_json,approval_digest,expires_at,status,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                          (approval_id, EFFECT_SCHEMA_VERSION, sid, run_id, *(actor[key] for key in _ACTOR_KEYS),
                           binding_json, approval_digest, expires_at, "pending", now))
+            write_review_on_conn(conn, approval_id, prepared_review)
             self._append_runtime_event_on_conn(conn, sid, "approval.requested", {"status": "pending", "expires_at": expires_at},
                                                generation, run_id=run_id, approval_id=approval_id)
             return self._approval_projection_on_conn(conn, self._effect_approval_on_conn(conn, approval_id, actor))
@@ -368,7 +376,9 @@ class SessionEffectsMixin:
                    "approval_mismatch", "Approval answer changed, was answered, or belongs to an earlier owner")
             _check(row["expires_at"] > time.time(), "approval_expired", "Approval expired")
             status = "approved" if choice == "once" else "denied"
-            conn.execute("UPDATE runtime_effect_approvals SET status=?,resolved_at=? WHERE approval_id=?", (status, time.time(), approval_id))
+            resolved_at = time.time()
+            conn.execute("UPDATE runtime_effect_approvals SET status=?,resolved_at=? WHERE approval_id=?", (status, resolved_at, approval_id))
+            conn.execute("INSERT INTO runtime_approval_decisions VALUES(?,?,?)", (approval_id, choice, resolved_at))
             self._append_runtime_event_on_conn(conn, row["session_id"], "approval.resolved", {"status": status}, generation,
                                                run_id=row["run_id"], approval_id=approval_id)
             return self._approval_projection_on_conn(conn, self._effect_approval_on_conn(conn, approval_id, actor))

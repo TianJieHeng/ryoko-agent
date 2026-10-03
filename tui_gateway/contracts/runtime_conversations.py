@@ -5,7 +5,7 @@ from pydantic import ConfigDict, Field, StrictInt, field_validator
 
 from .base import Params, Result
 from .registry import method
-from .runtime_v1 import RuntimeIdentifier
+from .runtime_v1 import RuntimeCommandReceiptResult, RuntimeIdentifier
 
 
 class RuntimeConversationParams(Params):
@@ -30,6 +30,8 @@ class RuntimeConversationIdentity(Result):
     agent_id: RuntimeIdentifier
     policy_digest: str
     config_digest: str
+    role: Literal["primary", "specialist"]
+    memory_backend: Literal["personal_mcp", "builtin"]
 
 
 class RuntimeConversationCapabilities(Result):
@@ -42,12 +44,13 @@ class RuntimeConversationCapabilities(Result):
     max_text_chunk_chars: int
     max_page_text_bytes: int
     transcript_format: Literal["safe_transcript_v1"]
-    command_message_linkage: Literal["unavailable"]
+    command_message_linkage: Literal["explicit"]
     restore_supported: Literal[False]
 
 
 class RuntimeConversation(Result):
     conversation_id: str
+    agent_id: RuntimeIdentifier
     title: str
     archived: bool
     revision: int
@@ -57,6 +60,7 @@ class RuntimeConversation(Result):
 
 
 class RuntimeConversationOperationParams(RuntimeConversationParams):
+    agent_id: RuntimeIdentifier | None = None
     idempotency_key: RuntimeIdentifier
 
 
@@ -69,6 +73,7 @@ class RuntimeConversationOperationResult(Result):
 
 
 class RuntimeConversationCreateParams(RuntimeConversationParams):
+    agent_id: RuntimeIdentifier | None = None
     idempotency_key: RuntimeIdentifier
     title: Annotated[str, Field(max_length=200)] = ""
 
@@ -80,6 +85,7 @@ class RuntimeConversationCreateResult(Result):
 
 
 class RuntimeConversationListParams(RuntimeConversationParams):
+    agent_id: RuntimeIdentifier | None = None
     limit: Annotated[StrictInt, Field(ge=1, le=100)] = 50
     cursor: Annotated[str, Field(max_length=2048)] | None = None
     archived: bool = False
@@ -124,18 +130,25 @@ class RuntimeConversationHistoryParams(RuntimeConversationRefParams):
     cursor: Annotated[str, Field(max_length=2048)] | None = None
 
 
+class RuntimeConversationCommandReceiptParams(RuntimeConversationRefParams):
+    command_id: RuntimeIdentifier
+    message_limit: Annotated[StrictInt, Field(ge=1, le=100)] = 100
+    message_cursor: Annotated[str, Field(max_length=2048)] | None = None
+
+
 class RuntimeConversationTextChunk(Result):
     message_id: str
     physical_session_id: str
     role: Literal["user", "assistant"]
     text: str
     text_offset: int = Field(description="UTF-8 byte offset in the original safe text before control-character sanitization")
+    next_text_offset: int = Field(description="Exclusive UTF-8 source byte end offset before control-character sanitization")
     text_complete: bool
     text_sanitized: bool
     non_text_omitted: bool
     timestamp: float
     committed: Literal[True]
-    command_id: None
+    command_id: str | None
 
 
 class RuntimeConversationHistoryResult(Result):
@@ -168,3 +181,6 @@ method("runtime.conversation.export", params=RuntimeConversationHistoryParams, r
 
 method("runtime.conversation.operation.get", params=RuntimeConversationOperationParams, result=RuntimeConversationOperationResult,
        doc="Read the original owner-scoped operation receipt or found=false. Never create, rename, archive, bind or queue work.")
+
+method("runtime.conversation.command.receipt", params=RuntimeConversationCommandReceiptParams, result=RuntimeCommandReceiptResult,
+       doc="Read an owned canonical conversation's durable command receipt and bounded message links without binding a live session or constructing a provider. Never requeue or claim work.")

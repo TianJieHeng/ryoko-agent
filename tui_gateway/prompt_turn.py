@@ -1170,6 +1170,10 @@ def _run_prompt_submit(
             notification_category=(display_metadata or {}).get("notification_category"))
         goal_followup = None
         try:
+            if runtime_command_receipt is not None:
+                # Acceptance and input persistence are separate durable facts. Bind
+                # the accepted command here before claim, with UID-based retry adoption.
+                _persist_submit_user_row(session, text, display_kind, display_metadata)
             prepared = _prepare_turn_input(sid, session, st, text, images)
             if prepared is None:
                 if st.terminal_callback is not None and not st.receipt_attempted:

@@ -134,6 +134,8 @@ TOOLSETS = {
     "session_search": _ts("Search and recall past conversations with summarization", ["session_search"]),
     "connections": _ts("Remote connector discovery, execution, and account authorization", ["manage_connections"]),
     "project": _ts("Desktop Projects — create/switch named workspaces (GUI sessions only)", ["desktop_project"]),
+    "dots_native": _ts("Owned Dots native page and computer adapters (advertised stdio sessions only)",
+        ["dots_page_read", "dots_page_propose", "dots_computer_observe", "dots_computer_propose"]),
     "bot_room": _ts("Verified text-only Group Chat turn capabilities"),
 
     # GUI-renderer affordances, enabled per desktop-sourced SESSION by the GUI

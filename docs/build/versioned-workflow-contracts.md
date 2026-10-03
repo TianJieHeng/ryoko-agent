@@ -54,6 +54,16 @@ Manual stop/review uses the existing `runtime.artifact.cancel` and `.status` wit
 
 All canonical export requests require project `share` authority and an exact `authorize_export` human decision naming recipient and immutable version. A different recipient, changed content or revoked version is denied. Export returns a bounded package; it does not transmit it to that recipient. Actual external publication still needs its transport's authority and policy.
 
+## Reviewed delivery to a specialist
+
+`runtime.workflow.delivery.prepare` and `.commit` install approved workflow knowledge for one named stable specialist. Both require `command_id`, `project_id`, `workflow_id`, `version`, `sha256`, `specialist_id`, `expected_delivery_revision` (zero for a first installation), and `action` (`deliver` or `rollback`). Commit additionally requires the returned exact `approval_id` and `approval_digest`. The prepare response includes canonical workflow content, the existing pin and the approval scope. `runtime.workflow.delivery.list` takes the exact project and specialist and returns current installation pins.
+
+Only the configured primary owner on its owned human transport can install. Approval binds workflow bytes, lifecycle/evaluation, the specialist configuration revision/digest and the previous delivery. The source requires live project sharing authority; the target requires both its configured project ceiling and a live project read grant. A shared project does not expose personal memory or let one specialist manage another. Model runs cannot mint a delivery approval, including through an owned transport.
+
+`workflow_deliveries` retains immutable installation decisions and `workflow_delivery_heads` owns compare-and-swap pointers in SessionDB. Approval consumption and the new pin commit together. Rollback restores a previously delivered, still-approved ancestor for that specialist without moving the global workflow head. Changed targets, stale revisions, revoked content or project grants fail closed. The existing artifact command status/cancel endpoints own interrupted review; no credentials, provider or live configuration files are written.
+
+`agent.workflow_delivery.snapshot_specialist_workflows` is consumed by the agent configuration startup binder. It loads the pinned canonical procedures as advisory instructions without executing them, reading personal memory or broadening tool/project authority. Both empty and populated instruction/pin snapshots are persisted once per session and reused on reconnect/restart. Future delivery, rollback and revocation do not rewrite a live cached prompt. New sessions omit revoked/deprecated versions and inaccessible projects; actual execution still uses the existing live admission checks. The installation budget is 32 workflows and 32 KiB of aggregate escaped canonical procedure text per specialist; content is never silently truncated.
+
 The callable CLI `python -m hermes_cli.workflows definition.json` only validates syntax and prints its digest, explicitly `executed:false, approved:false`. Runtime work goes through owned controls. No graphical canvas or frontend behavior is added; TypeScript/OpenRPC contracts are generated for future FE03/FE06/FE07 consumers.
 
 ## Reproducible validation
@@ -64,6 +74,7 @@ Use the already provisioned independent interpreter:
 HERMES_PYTHON="$PWD/.venv/bin/python" scripts/run_tests.sh \
   tests/agent/test_workflow_contract.py tests/agent/test_workflow_runtime.py \
   tests/tui_gateway/test_workflows_rpc.py tests/hermes_cli/test_workflow_authority.py \
+  tests/tui_gateway/test_workflow_delivery_rpc.py \
   tests/hermes_state/test_workflow_migration.py tests/hermes_state/test_mission_records.py \
   tests/tui_gateway/test_domains_rpc.py tests/tui_gateway/contracts/test_generated.py
 npm run typecheck --workspace @hermes/shared

@@ -25,7 +25,7 @@ class ScheduleCreateParams(RuntimeSessionParams):
 
 
 class ScheduleImportParams(ScheduleCreateParams):
-    import_json: Annotated[str, Field(min_length=2, max_length=4096)]
+    import_json: Annotated[str, Field(min_length=2, max_length=131072)]
 
 
 class ScheduleUpdateParams(ScheduleGetParams):

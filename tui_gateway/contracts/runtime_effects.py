@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, StrictInt
 
-from .base import Result
+from .base import Result, JsonValue
 from .registry import method
 from .runtime_v1 import RuntimeIdentifier, RuntimeSessionParams
 
@@ -16,6 +16,45 @@ RuntimeEffectState = Literal["prepared", "dispatched", "confirmed", "failed", "o
 class RuntimeApprovalListParams(RuntimeSessionParams):
     run_id: RuntimeIdentifier | None = None
     limit: Annotated[StrictInt, Field(ge=1, le=200)] = 100
+
+
+class RuntimeApprovalGetParams(RuntimeSessionParams):
+    approval_id: RuntimeIdentifier
+
+
+class RuntimeApprovalReviewAction(Result):
+    name: str
+    arguments: dict[str, JsonValue]
+    operation_class: str
+    resource_roots: list[str]
+    destination: str
+    destination_purpose: str
+    contract_digest: str
+
+
+class RuntimeApprovalReviewContent(Result):
+    encoding: Literal["base64"]
+    data: str
+    sha256: RuntimeEffectDigest
+    mime: str
+
+
+class RuntimeApprovalExactReview(Result):
+    action: RuntimeApprovalReviewAction
+    content: RuntimeApprovalReviewContent | None
+
+
+class RuntimeApprovalDetail(Result):
+    reviewable: bool
+    unavailable_reason: Literal["review_not_retained", "opaque_content", "sensitive_content", "content_not_retained", "review_size_limit"] | None
+    review: RuntimeApprovalExactReview | None
+    review_digest: RuntimeEffectDigest | None
+
+
+class RuntimeApprovalDecision(Result):
+    choice: Literal["once", "deny"] | None
+    resolved_at: float | None
+    consumed_at: float | None
 
 
 class RuntimeApprovalResolveParams(RuntimeSessionParams):
@@ -45,6 +84,15 @@ class RuntimeApprovalRecord(Result):
     mission_id: str | None = None
     mission_revision: int | None = None
     invalidated_at: float | None = None
+
+
+class RuntimeApprovalGetResult(Result):
+    approval: RuntimeApprovalRecord
+    detail: RuntimeApprovalDetail
+    decision: RuntimeApprovalDecision
+    input_revision: str | None
+    artifact_revision: str | None
+    dispatch_performed: Literal[False]
 
 
 class RuntimeApprovalListResult(Result):
@@ -81,7 +129,7 @@ class RuntimeEffectRecord(Result):
     effect_id: str
     run_id: str
     operation_id: str
-    operation_type: Literal["artifact_publish", "project_artifact_publish", "mission_test_execution", "unsupported"]
+    operation_type: Literal["artifact_publish", "project_artifact_publish", "mission_test_execution", "dots_page_publish", "dots_computer_action", "unsupported"]
     state: RuntimeEffectState
     action_digest: str
     input_digest: str
@@ -124,3 +172,6 @@ method("runtime.effect.get", params=RuntimeEffectParams, result=RuntimeEffectGet
        doc="Inspect one owned effect and its bounded receipt metadata without exposing private input or paths.")
 method("runtime.effect.reconcile", params=RuntimeEffectParams, result=RuntimeEffectReconcileResult,
        doc="Inspect local artifact state under a bounded server-owned lease and record evidence. Never replay a mutation.")
+
+method("runtime.approval.get", params=RuntimeApprovalGetParams, result=RuntimeApprovalGetResult,
+       doc="Read one exact owner/session approval and retained review bytes plus durable decision. Never resolve, consume or dispatch on recovery.")

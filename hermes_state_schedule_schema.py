@@ -45,3 +45,29 @@ CREATE TABLE IF NOT EXISTS durable_condition_grants (
  remaining INTEGER NOT NULL, state TEXT NOT NULL, created_at REAL NOT NULL
 );
 """
+
+# Command schedules share the registry but keep occurrence slots separate from
+# the finite-adapter table's unique due_at constraint (two manual runs can share a millisecond).
+SCHEDULE_SCHEMA_SQL += """
+CREATE TABLE IF NOT EXISTS durable_command_schedule_bindings (
+ schedule_key TEXT NOT NULL, version INTEGER NOT NULL, session_id TEXT NOT NULL,
+ budget_policy_json TEXT, PRIMARY KEY(schedule_key,version)
+);
+CREATE TABLE IF NOT EXISTS durable_command_occurrences (
+ occurrence_id TEXT PRIMARY KEY, schedule_key TEXT NOT NULL, version INTEGER NOT NULL,
+ slot TEXT NOT NULL, due_at REAL NOT NULL, session_id TEXT NOT NULL,
+ command_id TEXT, state TEXT NOT NULL, created_at REAL NOT NULL, detail_json TEXT NOT NULL,
+ UNIQUE(schedule_key,version,slot)
+);
+CREATE INDEX IF NOT EXISTS durable_command_occurrence_owner ON durable_command_occurrences(schedule_key,state);
+CREATE TABLE IF NOT EXISTS durable_schedule_cutovers (
+ schedule_key TEXT PRIMARY KEY, source_id TEXT NOT NULL, retirement_receipt TEXT NOT NULL,
+ command_id TEXT NOT NULL, created_at REAL NOT NULL
+);
+"""
+SCHEDULE_SCHEMA_SQL += """
+CREATE TABLE IF NOT EXISTS durable_schedule_manual_requests (
+ session_id TEXT NOT NULL, request_id TEXT NOT NULL, intent_sha256 TEXT NOT NULL,
+ occurrence_id TEXT NOT NULL, PRIMARY KEY(session_id,request_id)
+);
+"""

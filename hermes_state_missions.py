@@ -20,6 +20,7 @@ MAX_MISSION_RECEIPTS = 262144
 MAX_RECEIPTS_PER_MISSION = 1000
 MAX_MISSION_TURNS = 1000
 _ACTOR_KEYS = ("principal_id", "profile_id", "agent_id")
+_UNSPECIFIED_TARGET = object()
 _CONTRACT_FIELDS = set(MissionContract.__dataclass_fields__)
 _MUTABLE_FIELDS = _CONTRACT_FIELDS - {"project_id", "budget_ref"} | {
     "state", "next_step", "blockers", "artifact_refs", "effect_refs", "delivery_refs", "last_verdict", "last_reason",
@@ -101,8 +102,11 @@ class SessionMissionsMixin:
             with access.guard(project_id, actor, permission):
                 yield
 
-    def _mission_row_on_conn(self, conn, session_id, actor, *, holder=None, generation=None, expected_revision=None):
+    def _mission_row_on_conn(self, conn, session_id, actor, *, holder=None, generation=None, expected_revision=None, mission_id=_UNSPECIFIED_TARGET):
         sid = self._mission_owner_on_conn(conn, session_id, actor, holder=holder, generation=generation)
+        if mission_id is not _UNSPECIFIED_TARGET:
+            from hermes_state_mission_history import require_active_target_on_conn
+            require_active_target_on_conn(conn, sid, mission_id)
         row = conn.execute("SELECT * FROM runtime_missions WHERE session_id=?", (sid,)).fetchone()
         require(row is not None, "Mission does not exist", "mission_not_found")
         require(all(row[key] == actor[key] for key in _ACTOR_KEYS), "Mission belongs to another actor", "identity_mismatch")
@@ -152,6 +156,8 @@ class SessionMissionsMixin:
         if deadline is not None:
             contract["deadline"] = min(contract["deadline"], deadline) if contract["deadline"] is not None else deadline
         record = _initial(contract, identifier(mission_id) if mission_id else uuid.uuid4().hex, sid, actor, time.time())
+        require(conn.execute("SELECT 1 FROM runtime_mission_history WHERE mission_id=?", (record["mission_id"],)).fetchone() is None,
+                "Mission IDs name immutable history", "mission_identity_conflict")
         self._mission_refs_on_conn(conn, record, actor, access)
         conn.execute("INSERT INTO runtime_missions(session_id,mission_id,principal_id,profile_id,agent_id,project_id,revision,generation,record_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
             (sid, record["mission_id"], *(actor[key] for key in _ACTOR_KEYS), contract["project_id"], 1, generation,
@@ -159,11 +165,23 @@ class SessionMissionsMixin:
         self._mission_event_on_conn(conn, record, generation)
         return record
 
-    def create_mission(self, session_id, actor, *, holder, generation, contract, mission_id=None, access=None):
+    def create_mission(self, session_id, actor, *, holder, generation, contract, mission_id=None, access=None,
+                       previous_mission_id=None, previous_revision=None):
         actor = _actor(actor)
         contract = contract.to_dict() if isinstance(contract, MissionContract) else MissionContract.from_dict(contract).to_dict()
-        with self._mission_guard(session_id, actor, access, "write", project_id=contract["project_id"]):
-            return self._execute_write(lambda conn: self._create_mission_on_conn(conn, session_id, actor, holder, generation, contract, mission_id, access))
+        require((previous_mission_id is None) == (previous_revision is None), "Previous mission ID and revision are required together")
+        if previous_mission_id is None:
+            with self._mission_guard(session_id, actor, access, "write", project_id=contract["project_id"]):
+                return self._execute_write(lambda conn: self._create_mission_on_conn(conn, session_id, actor, holder, generation, contract, mission_id, access))
+        from hermes_state_mission_history import archive_previous_on_conn, replacement_guard
+        identifier(previous_mission_id)
+        require(type(previous_revision) is int and previous_revision >= 1, "Previous revision must be positive")
+        with replacement_guard(self, session_id, actor, access, contract["project_id"]):
+            def write(conn):
+                sid = self._mission_owner_on_conn(conn, session_id, actor, holder=holder, generation=generation)
+                archive_previous_on_conn(self, conn, sid, actor, previous_mission_id, previous_revision, generation, access)
+                return self._create_mission_on_conn(conn, sid, actor, holder, generation, contract, mission_id, access)
+            return self._execute_write(write)
 
     def _mission_live_refs_on_conn(self, conn, record, actor):
         refs = {item["effect_id"] for item in record["effect_refs"]}
@@ -185,14 +203,21 @@ class SessionMissionsMixin:
         record["delivery_status"] = "not_requested" if not states else next(iter(states)) if len(states) == 1 and not count > 100 else "mixed"
         return record
 
-    def get_mission(self, session_id, actor, *, access=None):
+    def get_mission(self, session_id, actor, *, access=None, mission_id=None):
         actor = _actor(actor)
+        if mission_id is not None:
+            from hermes_state_mission_history import get_archived_mission
+            archived = get_archived_mission(self, session_id, actor, mission_id, access)
+            if archived is not None:
+                return archived
         with self._mission_guard(session_id, actor, access, "read"):
             with self._runtime_read() as conn:
                 sid = self._mission_owner_on_conn(conn, session_id, actor)
                 if conn.execute("SELECT 1 FROM runtime_missions WHERE session_id=?", (sid,)).fetchone() is None:
                     return None
                 _, record = self._mission_row_on_conn(conn, session_id, actor)
+                if mission_id is not None and record["mission_id"] != mission_id:
+                    return None
                 self._mission_live_refs_on_conn(conn, record, actor)
                 record["verification_current"] = self._mission_verified_on_conn(conn, record, actor, access)
                 return record
@@ -248,8 +273,8 @@ class SessionMissionsMixin:
             self._append_runtime_event_on_conn(conn, record["session_id"], "approval.resolved", {"status": "invalidated", "invalidation_reason": matches[0], "mission_revision": record["revision"]}, generation, approval_id=row["approval_id"], run_id=row["run_id"], mission_id=record["mission_id"])
 
     def _update_mission_on_conn(self, conn, session_id, actor, holder, generation, expected_revision, changes, access,
-                                changed_inputs=(), changed_targets=(), changed_plan_steps=()):
-        _, old = self._mission_row_on_conn(conn, session_id, actor, holder=holder, generation=generation, expected_revision=expected_revision)
+                                changed_inputs=(), changed_targets=(), changed_plan_steps=(), mission_id=_UNSPECIFIED_TARGET):
+        _, old = self._mission_row_on_conn(conn, session_id, actor, holder=holder, generation=generation, expected_revision=expected_revision, mission_id=mission_id)
         require(isinstance(changes, dict) and set(changes) <= _MUTABLE_FIELDS, "Unknown or authoritative mission field")
         record = {**old, **changes}
         contract = MissionContract.from_dict({key: record[key] for key in _CONTRACT_FIELDS}).to_dict()
@@ -301,11 +326,11 @@ class SessionMissionsMixin:
         return self._mission_save_on_conn(conn, record, generation)
 
     def update_mission(self, session_id, actor, *, holder, generation, expected_revision, changes,
-                       changed_inputs=(), changed_targets=(), changed_plan_steps=(), access=None):
+                       changed_inputs=(), changed_targets=(), changed_plan_steps=(), access=None, mission_id=_UNSPECIFIED_TARGET):
         actor = _actor(actor)
         with self._mission_guard(session_id, actor, access, "write"):
             return self._execute_write(lambda conn: self._update_mission_on_conn(conn, session_id, actor, holder, generation,
-                expected_revision, changes, access, changed_inputs, changed_targets, changed_plan_steps))
+                expected_revision, changes, access, changed_inputs, changed_targets, changed_plan_steps, mission_id))
 
     def _receipt_on_conn(self, conn, record, receipt, actor, access):
         receipt = receipt.to_dict() if isinstance(receipt, VerificationReceipt) else VerificationReceipt.from_dict(receipt).to_dict()
@@ -337,9 +362,14 @@ class SessionMissionsMixin:
                 return self._receipt_on_conn(conn, record, receipt, actor, access)
             return self._execute_write(write)
 
-    def list_verification_receipts(self, session_id, actor, *, limit=100, access=None):
+    def list_verification_receipts(self, session_id, actor, *, limit=100, access=None, mission_id=None):
         actor = _actor(actor)
         require(type(limit) is int and 1 <= limit <= 100, "Receipt page exceeds bound")
+        if mission_id is not None:
+            record = self.get_mission(session_id, actor, access=access, mission_id=mission_id)
+            require(record is not None, "Mission does not exist", "mission_not_found")
+            with self._runtime_read() as conn:
+                return [json.loads(row[0]) for row in conn.execute("SELECT receipt_json FROM runtime_mission_verifications WHERE mission_id=? ORDER BY created_at DESC,receipt_id LIMIT ?", (mission_id, limit))]
         with self._mission_guard(session_id, actor, access, "read"):
             with self._runtime_read() as conn:
                 _, record = self._mission_row_on_conn(conn, session_id, actor)
@@ -533,13 +563,13 @@ class SessionMissionsMixin:
                 return json.loads(row["decision_json"])
             return self._execute_write(write)
 
-    def accept_mission(self, session_id, actor, *, holder, generation, expected_revision, access=None):
+    def accept_mission(self, session_id, actor, *, holder, generation, expected_revision, access=None, mission_id=_UNSPECIFIED_TARGET):
         from agent.mission_controls import assert_mission_user_control
         actor = _actor(actor)
         assert_mission_user_control(session_id, actor, holder, generation)
         with self._mission_guard(session_id, actor, access, "write"):
             def write(conn):
-                _, record = self._mission_row_on_conn(conn, session_id, actor, holder=holder, generation=generation, expected_revision=expected_revision)
+                _, record = self._mission_row_on_conn(conn, session_id, actor, holder=holder, generation=generation, expected_revision=expected_revision, mission_id=mission_id)
                 require(record["state"] == "ready_to_review" and self._mission_verified_on_conn(conn, record, actor, access),
                         "Only currently verified review-ready work can be accepted", "mission_verification_required")
                 require(conn.execute("SELECT 1 FROM runtime_effects WHERE session_id=? AND state IN ('dispatched','outcome_unknown','reconciliation_required') LIMIT 1", (record["session_id"],)).fetchone() is None,

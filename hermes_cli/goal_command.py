@@ -195,7 +195,7 @@ def _dispatch_mission_goal(mgr, arg, mission_session_id):
                 return GoalCommandResult("No mission set.")
             state = "paused" if lowered == "pause" else "ready" if lowered == "resume" else "cancelled"
             row = db.update_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
-                expected_revision=current["revision"], changes={"state": state,
+                expected_revision=current["revision"], mission_id=current["mission_id"], changes={"state": state,
                     "paused_reason": "user-paused" if state == "paused" else None}, access=access)
             if state in {"paused", "cancelled"}:
                 active = getattr(agent, "_active_runtime_run", None)
@@ -216,7 +216,7 @@ def _dispatch_mission_goal(mgr, arg, mission_session_id):
             # Replacing vague prose cannot make an old acceptance contract prove a new goal.
             changes["acceptance"] = []
             row = db.update_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
-                expected_revision=current["revision"], changes=changes, access=access)
+                expected_revision=current["revision"], mission_id=current["mission_id"], changes=changes, access=access)
     return GoalCommandResult(f'Mission saved, waiting for acceptance criteria: {row["outcome"]}. '
         "Use runtime.mission.revise to bind checks to exact artifact versions; no automatic judge loop started.")
 

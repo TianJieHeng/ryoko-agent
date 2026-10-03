@@ -305,3 +305,33 @@ def test_contract_rejects_verifier_and_retention_overflow_before_admission(store
     assert f.db.get_mission("session", ACTOR) is None
     with f.db._read_ctx() as conn:
         assert conn.execute("SELECT COUNT(*) FROM runtime_mission_verifications").fetchone()[0] == 0
+
+
+def test_sequential_history_retains_uncertainty_and_budget_without_reusing_ids(stores):
+    from hermes_state_mission_history import list_conversation_missions
+    f = stores
+    request = approval(f, "prior-approval", "destination")
+    row = f.db.create_mission("session", ACTOR, **f.fence, mission_id="first",
+        contract=contract(plan_steps=[{"step_id": "first-step", "approval_ids": [request["approval_id"]]}]))
+    effect = f.db.prepare_effect(actor=ACTOR, session_id="session", run_id=f.run, **f.fence,
+        operation_id="unresolved", intent_key="unresolved", operation_type="remote",
+        action_digest=effect_digest("act"), input_digest=effect_digest("input"), target_ref="target",
+        policy_version="1", policy_digest=effect_digest("policy"), input_revision="1", artifact_revision="1")
+    f.db.dispatch_effect(effect["effect_id"], ACTOR, **f.fence)
+    f.db.record_effect_outcome(effect["effect_id"], ACTOR, **f.fence, state="outcome_unknown", evidence={"reason": "transport_lost"})
+    cancelled = update(f, row, state="cancelled")
+    f.db.finish_runtime_command("session", "submit", **f.fence, status="completed", result={"completed": False})
+    second = f.db.create_mission("session", ACTOR, **f.fence, mission_id="second", contract=contract(),
+        previous_mission_id="first", previous_revision=cancelled["revision"])
+    old = f.second.get_mission("session", ACTOR, mission_id="first")
+    assert old["archived"] and old["effect_refs"] == [{"effect_id": effect["effect_id"], "state": "outcome_unknown"}]
+    assert old["plan_steps"][0]["approval_ids"] == [request["approval_id"]]
+    assert f.second.get_effect_approval(request["approval_id"], ACTOR)["status"] == "pending"
+    assert old["budget_ref"] == second["budget_ref"]
+    assert {item["mission_id"] for item in list_conversation_missions(f.second, "session", ACTOR, access=None)} == {"first", "second"}
+    # History is the immutable archival observation, not a mutable copy of today's effect state.
+    f.db.record_effect_outcome(effect["effect_id"], ACTOR, **f.fence, state="confirmed", receipt={"sha256": "a" * 64}, evidence={"reason": "inspected"})
+    assert f.second.get_mission("session", ACTOR, mission_id="first") == old
+    reject("mission_identity_conflict", lambda: f.db.update_mission("session", ACTOR, **f.fence,
+        expected_revision=1, changes={"state": "cancelled"}, mission_id="first"))
+    assert f.second.get_mission("session", ACTOR)["mission_id"] == "second"

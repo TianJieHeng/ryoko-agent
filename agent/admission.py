@@ -49,6 +49,19 @@ class AdmissionQueue:
         from agent.runtime_commands import _envelope
         db, sid, actor, command = _envelope(agent, envelope)
         _require(db is self.db and command["operation"] == "submit", "invalid_command")
+        policy = getattr(agent, "_runtime_budget_policy", None)
+        return self.submit_bound(sid, actor, command, workload=workload, deadline=deadline,
+                                 budget_policy_json=policy.snapshot if policy is not None else None)
+
+    def submit_bound(self, sid, actor, command, *, workload="background", deadline=None,
+                     budget_policy_json=None, admission=None):
+        """Producer-owned admission; callers bind identity before entering this seam.
+
+        The optional schedule callback commits occurrence/debit metadata in the
+        same transaction as the ordinary command and queue reference.
+        """
+        db = self.db
+        _require(command["operation"] == "submit", "invalid_command")
         _require(workload in {"interactive", "background"}, "invalid_workload")
         existing = db.read_runtime_command(sid, command["command_id"])
         accepted_at = (db.read_runtime_run_accepted_at(sid, existing["receipt"]["run_id"])
@@ -84,10 +97,11 @@ class AdmissionQueue:
                          "enqueued_at,expires_at,payload_bytes,budget_policy_json) VALUES(?,?,?,?,?,?,?,?)",
                          (root_sid, receipt["command_id"], actor["principal_id"], workload, now, expires, size,
                           budget_snapshot))
+            if admission is not None:
+                admission(conn, root_sid, command_json, receipt)
 
-        policy = getattr(agent, "_runtime_budget_policy", None)
         receipt = db.submit_runtime_command(sid, actor=actor, command=command, admission=admit,
-                                           budget_policy_json=policy.snapshot if policy is not None else None)
+                                           budget_policy_json=budget_policy_json)
         if existing is not None:
             # An explicitly retried pre-queue BE02 acceptance may acquire its
             # first queue reference. Never reenqueue a claimed/terminal command
@@ -154,8 +168,11 @@ class AdmissionQueue:
             if len(active) >= self.policy.max_active:
                 return None
             busy = {row["session_id"] for row in active}
-            rows = conn.execute("SELECT * FROM runtime_admission_queue WHERE state='queued' ORDER BY enqueued_at,command_id").fetchall()
-            rows = [row for row in rows if row["session_id"] in eligible and row["session_id"] not in busy]
+            rows = conn.execute("SELECT q.*,s.profile_id,s.agent_id FROM runtime_admission_queue q "
+                "JOIN runtime_state s USING(session_id) WHERE q.state='queued' ORDER BY q.enqueued_at,q.command_id").fetchall()
+            from hermes_state_runtime_controls import owner_paused_on_conn
+            rows = [row for row in rows if row["session_id"] in eligible and row["session_id"] not in busy
+                    and not owner_paused_on_conn(conn, dict(row))]
             if not rows:
                 return None
             served = dict(conn.execute("SELECT principal_id,MAX(started_at) FROM runtime_admission_queue "
@@ -202,18 +219,22 @@ class AdmissionQueue:
         from agent.runtime_commands import _envelope
         db, sid, actor, command = _envelope(agent, envelope)
         _require(command["operation"] == "cancel", "invalid_command")
+        target = command.get("target_run_id")
+        target_filter = " AND c.run_id=?" if target is not None else ""
         with db._runtime_read() as conn:
             root = db._runtime_session_on_conn(conn, sid)
             existing = db._runtime_command_on_conn(conn, root, command["command_id"])
             pending = conn.execute("SELECT 1 FROM runtime_admission_queue q JOIN runtime_commands c "
                 "USING(session_id,command_id) WHERE q.session_id=? AND c.status='accepted' "
-                "AND q.state IN ('queued','running') LIMIT 1", (root,)).fetchone()
+                "AND q.state IN ('queued','running')" + target_filter + " LIMIT 1",
+                (root, target) if target is not None else (root,)).fetchone()
         if existing is None and pending is None:
             return None
         def cancel(conn, root_sid, _encoded, receipt):
             rows = conn.execute("SELECT q.* FROM runtime_admission_queue q JOIN runtime_commands c "
                 "USING(session_id,command_id) WHERE q.session_id=? AND c.status='accepted' "
-                "AND q.state IN ('queued','running')", (root_sid,)).fetchall()
+                "AND q.state IN ('queued','running')" + target_filter,
+                (root_sid, target) if target is not None else (root_sid,)).fetchall()
             for row in rows:
                 self._terminal(conn, row, "cancelled", "cancelled_before_launch", time.time())
             result = {"outcome": "cancel_requested", "cancelled_queued": len(rows), "provider_cancelled": False,
@@ -229,7 +250,7 @@ class AdmissionQueue:
             return db.submit_runtime_command(sid, actor=actor, command=command, admission=cancel,
                                              queued_cancel=True)
         except RuntimeStoreError as exc:
-            if exc.code == "no_active_run":
+            if exc.code in {"no_active_run", "target_run_ended"}:
                 # A concurrent launch may claim the target after the read above.
                 # The queue consumer cannot cancel that run or retain an orphan
                 # accepted control; the caller reports the unavailable target.
@@ -292,6 +313,13 @@ class AdmissionQueue:
 
 
 def assert_launch_on_conn(conn, session_id, command_id):
+    from hermes_state_runtime_controls import assert_owner_running_on_conn
+    command = conn.execute("SELECT command_json FROM runtime_commands WHERE session_id=? AND command_id=?",
+                           (session_id, command_id)).fetchone()
+    if command and json.loads(command[0])["operation"] in {"submit", "artifact"}:
+        actor = conn.execute("SELECT principal_id,profile_id,agent_id FROM runtime_state WHERE session_id=?",
+                             (session_id,)).fetchone()
+        assert_owner_running_on_conn(conn, dict(actor))
     row = conn.execute("SELECT state,expires_at,lease_until FROM runtime_admission_queue "
                        "WHERE session_id=? AND command_id=?", (session_id, command_id)).fetchone()
     if row is not None:

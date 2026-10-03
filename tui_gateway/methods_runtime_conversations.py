@@ -14,7 +14,8 @@ def _conversation_rpc(name, model_name):
         def handler(rid, params):
             import sqlite3
             from agent.agent_identity import IdentityPolicyError, resolve_agent_context
-            from hermes_cli.config import load_config
+            from agent.agent_configuration import base_configuration
+            from agent.runtime_commands import _RUN
             from hermes_state_runtime import RuntimeStoreError
             from tui_gateway.contracts import runtime_conversations as models
             from tui_gateway.transport import StdioTransport
@@ -26,10 +27,13 @@ def _conversation_rpc(name, model_name):
             if peer is not _stdio_transport or not isinstance(peer, StdioTransport):
                 return _err(rid, 5010, "Canonical conversations require the trusted stdio owner",
                             {"code": "runtime_transport_unsupported"})
+            if _RUN.get() is not None:
+                return _err(rid, 4030, "Conversation ingress requires its human owner",
+                            {"code": "conversation_owner_required"})
             # Never let a caller choose the profile or inherit an unrelated worker context.
             with _profile_build_scope(_hermes_home):
                 try:
-                    config = load_config()
+                    config = base_configuration()
                     context = resolve_agent_context(config, session_id="conversation_ingress", profile_home=_hermes_home)
                     if context is None:
                         return _err(rid, 4030, "Configured stable identity required", {"code": "identity_required"})
@@ -55,25 +59,28 @@ def _conversation_capabilities(rid, request, context, config, db):
             "owner_scope": "principal_profile_agent_home",
             "identity": {"principal_id": identity.principal_id, "profile_id": identity.profile_id,
                          "agent_id": identity.agent_id, "policy_digest": identity.policy_digest,
-                         "config_digest": identity.config_digest},
+                         "config_digest": identity.config_digest, "role": context.policy.role,
+                         "memory_backend": context.policy.memory_backend},
             "methods": ["runtime.conversation." + name for name in
-                        ("capabilities", "create", "list", "bind", "rename", "archive", "history", "export", "operation.get")]
+                        ("capabilities", "create", "list", "bind", "rename", "archive", "history", "export", "operation.get", "command.receipt")]
                        + ["runtime.command.receipt"],
             "max_page": CONVERSATION_MAX_PAGE, "max_text_chunk_chars": CONVERSATION_TEXT_CHARS,
             "max_page_text_bytes": CONVERSATION_TEXT_BYTES, "transcript_format": "safe_transcript_v1",
-            "command_message_linkage": "unavailable", "restore_supported": False}
+            "command_message_linkage": "explicit", "restore_supported": False}
 
 
 @_conversation_rpc("runtime.conversation.create", "RuntimeConversationCreateParams")
 def _conversation_create(rid, request, context, config, db):
-    from agent.agent_identity import resolve_agent_context
-    context = resolve_agent_context(config, session_id=_new_session_key(), profile_home=_hermes_home)
-    return db.create_runtime_conversation(context, request.model_dump())
+    from agent.conversation_identity import selected_conversation_scope
+    selected, enrollment = selected_conversation_scope(context, config, db, request.agent_id, session_id=_new_session_key())
+    return db.create_runtime_conversation(selected, request.model_dump(exclude_none=True), configuration_enrollment=enrollment)
 
 
 @_conversation_rpc("runtime.conversation.list", "RuntimeConversationListParams")
 def _conversation_list(rid, request, context, config, db):
-    return db.list_runtime_conversations(context, **request.model_dump(exclude={"schema_version"}))
+    from agent.conversation_identity import selected_conversation_scope
+    selected, _ = selected_conversation_scope(context, config, db, request.agent_id, session_id="conversation_ingress")
+    return db.list_runtime_conversations(selected, **request.model_dump(exclude={"schema_version", "agent_id"}))
 
 
 def _conversation_binding_state(session, context, db):
@@ -92,13 +99,12 @@ def _conversation_binding_state(session, context, db):
 
 @_conversation_rpc("runtime.conversation.bind", "RuntimeConversationRefParams")
 def _conversation_bind(rid, request, context, config, db):
-    from agent.agent_identity import resolve_agent_context
+    from agent.conversation_identity import recorded_conversation_scope
     from hermes_state_runtime import RuntimeStoreError
 
-    owned = db.read_runtime_conversation(context, request.conversation_id)
-    # Validate the original immutable binding before constructing or attaching anything.
-    expected = resolve_agent_context(config, session_id=request.conversation_id,
-                                     profile_home=_hermes_home, stored_binding=owned["binding"])
+    # Prove the owner/home/profile before resolving the stored selected identity.
+    expected, _ = recorded_conversation_scope(context, config, db, request.conversation_id)
+    owned = db.read_runtime_conversation(expected, request.conversation_id)
     tip = owned["lineage"][-1]
     ctx = _Resume(rid, {"source": "web", "omit_messages": True, "inline_images": False}, tip)
     ctx.db, ctx.owns_db, ctx.found = db, False, db.get_session(tip)
@@ -116,7 +122,10 @@ def _conversation_bind(rid, request, context, config, db):
                     "readiness": readiness, "failure_code": failure}
     history, _display, _raw = ctx.restore()
     overrides = _stored_session_runtime_overrides(ctx.found)
-    record = ctx.record("web", ctx.profile_resume_cwd or _default_session_cwd(), history, overrides,
+    # This ingress already proved the single-owner stdio peer. Its agent replies
+    # on the existing local TUI surface; the durable conversation's web creation
+    # provenance does not make this an external web/gateway delivery runtime.
+    record = ctx.record("tui", ctx.profile_resume_cwd or _default_session_cwd(), history, overrides,
                         display_history_prefix=ctx.display_prefix(), todo_state=_todo_state_from_history(history))
     new_session = False
     with _session_resume_lock:
@@ -141,27 +150,50 @@ def _conversation_bind(rid, request, context, config, db):
 
 @_conversation_rpc("runtime.conversation.rename", "RuntimeConversationRenameParams")
 def _conversation_rename(rid, request, context, config, db):
-    return db.mutate_runtime_conversation(context, request.model_dump(), operation="rename")
+    from agent.conversation_identity import recorded_conversation_scope
+    selected, _ = recorded_conversation_scope(context, config, db, request.conversation_id)
+    return db.mutate_runtime_conversation(selected, request.model_dump(), operation="rename")
 
 
 @_conversation_rpc("runtime.conversation.archive", "RuntimeConversationArchiveParams")
 def _conversation_archive(rid, request, context, config, db):
-    return db.mutate_runtime_conversation(context, request.model_dump(), operation="archive")
+    from agent.conversation_identity import recorded_conversation_scope
+    selected, _ = recorded_conversation_scope(context, config, db, request.conversation_id)
+    return db.mutate_runtime_conversation(selected, request.model_dump(), operation="archive")
 
 
 @_conversation_rpc("runtime.conversation.history", "RuntimeConversationHistoryParams")
 def _conversation_history(rid, request, context, config, db):
-    return db.read_runtime_conversation_history(context, request.conversation_id, limit=request.limit, cursor=request.cursor)
+    from agent.conversation_identity import recorded_conversation_scope
+    selected, _ = recorded_conversation_scope(context, config, db, request.conversation_id)
+    return db.read_runtime_conversation_history(selected, request.conversation_id, limit=request.limit, cursor=request.cursor)
 
 
 @_conversation_rpc("runtime.conversation.export", "RuntimeConversationHistoryParams")
 def _conversation_export(rid, request, context, config, db):
-    return db.read_runtime_conversation_history(context, request.conversation_id, limit=request.limit, cursor=request.cursor)
+    from agent.conversation_identity import recorded_conversation_scope
+    selected, _ = recorded_conversation_scope(context, config, db, request.conversation_id)
+    return db.read_runtime_conversation_history(selected, request.conversation_id, limit=request.limit, cursor=request.cursor)
 
 
 @_conversation_rpc("runtime.conversation.operation.get", "RuntimeConversationOperationParams")
 def _conversation_operation_get(rid, request, context, config, db):
-    return db.read_runtime_conversation_operation(context, request.idempotency_key)
+    from agent.conversation_identity import selected_conversation_scope
+    selected, _ = selected_conversation_scope(context, config, db, request.agent_id, session_id="conversation_ingress")
+    return db.read_runtime_conversation_operation(selected, request.idempotency_key)
+
+
+@_conversation_rpc("runtime.conversation.command.receipt", "RuntimeConversationCommandReceiptParams")
+def _conversation_command_receipt(rid, request, context, config, db):
+    from agent.conversation_identity import recorded_conversation_scope
+
+    selected, _ = recorded_conversation_scope(context, config, db, request.conversation_id)
+    owned = db.read_runtime_conversation(selected, request.conversation_id)
+    # Validate the complete persisted binding/lineage before reading its journal.
+    # Historical inspection never binds a live session or grants execution authority.
+    command = db.read_runtime_command_receipt(owned["lineage"][-1], request.command_id,
+        message_cursor=request.message_cursor, message_limit=request.message_limit)
+    return _runtime_command_receipt_projection(request.command_id, command)
 
 
 def register(server):

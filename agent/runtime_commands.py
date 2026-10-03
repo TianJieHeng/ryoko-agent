@@ -33,6 +33,8 @@ class RuntimeFenceError(InterruptedError):
 class _SubmittedCommand:
     agent: Any
     command_id: str
+    session_id: str
+    run_id: str | None
 
 
 @dataclass(frozen=True)
@@ -96,11 +98,17 @@ def _authority(agent):
 def _envelope(agent, envelope):
     context, db, session_id = _authority(agent)
     expected = {"schema_version", "command_id", "idempotency_key", "expected_revision", "operation", "payload"}
-    if not isinstance(envelope, dict) or set(envelope) != expected:
+    if not isinstance(envelope, dict) or set(envelope) - {"target_run_id"} != expected:
         raise RuntimeCommandError("invalid_command")
     if type(envelope["schema_version"]) is not int or envelope["schema_version"] != 1:
         raise RuntimeCommandError("unsupported_schema")
     operation, payload = envelope["operation"], envelope["payload"]
+    if "target_run_id" in envelope:
+        target = envelope["target_run_id"]
+        if (not isinstance(operation, str) or operation not in {"cancel", "steer"}
+                or not isinstance(target, str)
+                or not 0 < len(target) <= 256 or target.strip() != target):
+            raise RuntimeCommandError("invalid_command")
     if not isinstance(payload, dict):
         raise RuntimeCommandError("invalid_command")
     if operation == "submit" and "specialist_handoff" in payload:
@@ -166,6 +174,9 @@ def _submit_command(agent, envelope: dict, *, expected_run=None) -> dict:
     """
     db, sid, actor, command = _envelope(agent, envelope)
     operation = command["operation"]
+    if "target_run_id" in command:
+        from agent.runtime_target_controls import submit_targeted_control
+        return submit_targeted_control(agent, envelope, db, sid, actor, command, expected_run=expected_run)
     run = getattr(agent, "_active_runtime_run", None)
     existing = db.read_runtime_command(sid, command["command_id"])
     if operation != "submit" and existing is None:
@@ -243,7 +254,8 @@ def _submit_command(agent, envelope: dict, *, expected_run=None) -> dict:
 @contextmanager
 def bind_submitted_command(agent, receipt: dict):
     """Bind inside the admitted worker, never in a shared mutable session slot."""
-    token = _PENDING.set(_SubmittedCommand(agent, receipt["command_id"]))
+    token = _PENDING.set(_SubmittedCommand(agent, receipt["command_id"],
+                                         str(agent.session_id), receipt.get("run_id")))
     try:
         yield
     finally:
@@ -322,19 +334,28 @@ def claim_turn_command(agent, record, lease):
 
 def bind_runtime_run(run):
     if run is not None:
-        run.agent._active_runtime_run = run
-        if run.task_scope is not None:
-            run.task_scope.start_deadline_watchdog()
+        # A control's last owner check and local signal must not straddle a
+        # handoff to another run on the same mutable agent instance.
+        while True:
+            previous = getattr(run.agent, "_active_runtime_run", None)
+            with previous.control_lock if isinstance(previous, RuntimeRun) else nullcontext():
+                if getattr(run.agent, "_active_runtime_run", None) is not previous:
+                    continue
+                run.agent._active_runtime_run = run
+                if run.task_scope is not None:
+                    run.task_scope.start_deadline_watchdog()
+                break
     return _RUN.set(run)
 
 
 def reset_runtime_run(token, run):
-    if run is not None and run.task_scope is not None:
-        run.task_scope.stop_deadline_watchdog()
-    if run is not None and getattr(run.agent, "_active_runtime_run", None) is run:
-        run.agent._active_runtime_run = None
-    if run is not None and getattr(run.agent, "_mission_finalizing_run_id", None) == run.run_id:
-        run.agent._mission_finalizing_run_id = None
+    with run.control_lock if run is not None else nullcontext():
+        if run is not None and run.task_scope is not None:
+            run.task_scope.stop_deadline_watchdog()
+        if run is not None and getattr(run.agent, "_active_runtime_run", None) is run:
+            run.agent._active_runtime_run = None
+        if run is not None and getattr(run.agent, "_mission_finalizing_run_id", None) == run.run_id:
+            run.agent._mission_finalizing_run_id = None
     _RUN.reset(token)
 
 
@@ -389,6 +410,9 @@ def assert_runtime_dispatch(agent=None):
     if not supports_runtime_execution(run.agent):
         raise RuntimeFenceError("Runtime transport changed to an unsupported execution route")
     _check_run(run)
+    from hermes_state_runtime_controls import assert_owner_running
+    identity = run.context.identity
+    assert_owner_running(run.db, {key: getattr(identity, key) for key in ("principal_id", "profile_id", "agent_id")})
     return run
 
 

@@ -3013,6 +3013,132 @@
       }
     },
     {
+      "name": "runtime.agent.archive",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/AgentConfigurationArchiveParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/AgentConfigurationResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.agent.create",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/AgentConfigurationCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/AgentConfigurationResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.agent.get",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/AgentConfigurationParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/AgentConfigurationResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.agent.list",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/AgentConfigurationList"
+        }
+      }
+    },
+    {
+      "name": "runtime.agent.session.get",
+      "summary": "Inspect current-session frozen revisions and desired workflow pins without changing prompts or granting execution.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/AgentSessionConfiguration"
+        }
+      }
+    },
+    {
+      "name": "runtime.agent.update",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/AgentConfigurationUpdateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/AgentConfigurationResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.approval.get",
+      "summary": "Read one exact owner/session approval and retained review bytes plus durable decision. Never resolve, consume or dispatch on recovery.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeApprovalGetParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeApprovalGetResult"
+        }
+      }
+    },
+    {
       "name": "runtime.approval.resolve",
       "summary": "Record one exact human decision for the owned live run. Repeated answers are rejected; this never dispatches.",
       "params": [
@@ -3751,6 +3877,60 @@
       }
     },
     {
+      "name": "runtime.control.get",
+      "summary": "Read owner/profile pause state and an optional immutable operation receipt; never replay a control.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeControlGetParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeControlResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.control.pause",
+      "summary": "CAS and idempotently set owner/profile admission and dispatch state. Existing work retains ownership; no rollback or provider stop is implied.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeControlParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeControlResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.control.resume",
+      "summary": "CAS and idempotently set owner/profile admission and dispatch state. Existing work retains ownership; no rollback or provider stop is implied.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeControlParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeControlResult"
+        }
+      }
+    },
+    {
       "name": "runtime.conversation.archive",
       "summary": "Idempotent metadata-revision-checked archive/restore; does not cancel running work.",
       "params": [
@@ -3801,6 +3981,24 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/RuntimeConversationCapabilities"
+        }
+      }
+    },
+    {
+      "name": "runtime.conversation.command.receipt",
+      "summary": "Read an owned canonical conversation's durable command receipt and bounded message links without binding a live session or constructing a provider. Never requeue or claim work.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeConversationCommandReceiptParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeCommandReceiptResult"
         }
       }
     },
@@ -4053,6 +4251,114 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/DomainPublishResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.dots.computer.execute",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsComputerExecuteParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsEffectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.dots.computer.prepare",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsComputerPrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsPreparedResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.dots.effect.reconcile",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsReconcileParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsEffectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.dots.page.prepare",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsPagePrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsPreparedResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.dots.page.publish",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsPagePublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsEffectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.dots.register",
+      "summary": "Register the owned current stdio peer's native adapter; does not provision credentials or replay effects.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsRegistrationParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsRegistrationResult"
         }
       }
     },
@@ -4477,7 +4783,7 @@
         {
           "name": "params",
           "schema": {
-            "$ref": "#/components/schemas/RuntimeSessionParams"
+            "$ref": "#/components/schemas/MissionGetParams"
           }
         }
       ],
@@ -4485,6 +4791,24 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/MissionGetResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.mission.history",
+      "summary": "Read current and immutable archived missions for this canonical conversation. Controls always target the active exact mission.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/MissionListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MissionListResult"
         }
       }
     },
@@ -4531,7 +4855,7 @@
         {
           "name": "params",
           "schema": {
-            "$ref": "#/components/schemas/MissionListParams"
+            "$ref": "#/components/schemas/MissionReceiptListParams"
           }
         }
       ],
@@ -5065,6 +5389,24 @@
       }
     },
     {
+      "name": "runtime.schedule.cutover",
+      "summary": "Retain a trusted legacy-retirement attestation; does not independently verify foreign execution",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleCutoverParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
       "name": "runtime.schedule.get",
       "summary": "Read owned schedule health, occurrences and retained notification intents",
       "params": [
@@ -5198,6 +5540,24 @@
           "name": "params",
           "schema": {
             "$ref": "#/components/schemas/ScheduleReconcileParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.run_now",
+      "summary": "Admit one idempotent occurrence through the ordinary durable command queue",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleRunNowParams"
           }
         }
       ],
@@ -5817,6 +6177,60 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/WorkflowDecisionPrepareResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.delivery.commit",
+      "summary": "Install the exact reviewed immutable specialist pin with compare-and-swap; rollback selects an earlier delivered approved version.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowDeliveryCommitParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowDeliveryCommitResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.delivery.list",
+      "summary": "List current workflow pins for one owned specialist and project; installation grants no tool or personal-memory authority.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowDeliveryListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowDeliveryListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.workflow.delivery.prepare",
+      "summary": "Review exact approved workflow bytes and a named stable specialist before installing advisory knowledge next session.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/WorkflowDeliveryParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WorkflowDeliveryPrepareResult"
         }
       }
     },
@@ -7800,6 +8214,332 @@
         "title": "AgendaWork",
         "type": "object"
       },
+      "AgentConfigurationArchiveParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "agent_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "agent_id",
+          "expected_revision"
+        ],
+        "title": "AgentConfigurationArchiveParams",
+        "type": "object"
+      },
+      "AgentConfigurationCreateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "copy_from_agent_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Copy From Agent Id"
+          },
+          "config": {
+            "$ref": "#/components/schemas/AgentEditableConfig"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "config"
+        ],
+        "title": "AgentConfigurationCreateParams",
+        "type": "object"
+      },
+      "AgentConfigurationList": {
+        "additionalProperties": false,
+        "properties": {
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/AgentConfigurationRecord"
+            },
+            "title": "Agents",
+            "type": "array"
+          },
+          "activation": {
+            "const": "next_session",
+            "default": "next_session",
+            "title": "Activation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agents"
+        ],
+        "title": "AgentConfigurationList",
+        "type": "object"
+      },
+      "AgentConfigurationParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "agent_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "title": "Agent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "agent_id"
+        ],
+        "title": "AgentConfigurationParams",
+        "type": "object"
+      },
+      "AgentConfigurationRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "primary",
+              "specialist"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "memory_backend": {
+            "enum": [
+              "personal_mcp",
+              "builtin"
+            ],
+            "title": "Memory Backend",
+            "type": "string"
+          },
+          "builtin_memory_namespace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Builtin Memory Namespace"
+          },
+          "config": {
+            "$ref": "#/components/schemas/AgentEditableConfig"
+          },
+          "revision": {
+            "minimum": 1,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "active_session_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Session Revision"
+          },
+          "authority_revocation_revision": {
+            "minimum": 0,
+            "title": "Authority Revocation Revision",
+            "type": "integer"
+          },
+          "active_session_revision_revoked": {
+            "title": "Active Session Revision Revoked",
+            "type": "boolean"
+          },
+          "activation": {
+            "const": "next_session",
+            "default": "next_session",
+            "title": "Activation",
+            "type": "string"
+          },
+          "personal_memory_mutation_supported": {
+            "const": false,
+            "default": false,
+            "title": "Personal Memory Mutation Supported",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent_id",
+          "role",
+          "memory_backend",
+          "builtin_memory_namespace",
+          "config",
+          "revision",
+          "archived",
+          "active_session_revision",
+          "authority_revocation_revision",
+          "active_session_revision_revoked"
+        ],
+        "title": "AgentConfigurationRecord",
+        "type": "object"
+      },
+      "AgentConfigurationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/AgentConfigurationRecord"
+          }
+        },
+        "required": [
+          "agent"
+        ],
+        "title": "AgentConfigurationResult",
+        "type": "object"
+      },
+      "AgentConfigurationUpdateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "agent_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "config": {
+            "$ref": "#/components/schemas/AgentEditableConfig"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "agent_id",
+          "expected_revision",
+          "config"
+        ],
+        "title": "AgentConfigurationUpdateParams",
+        "type": "object"
+      },
+      "AgentEditableConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "instructions": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Instructions",
+            "type": "string"
+          },
+          "research_allowed": {
+            "default": true,
+            "title": "Research Allowed",
+            "type": "boolean"
+          },
+          "memory_allowed": {
+            "default": true,
+            "title": "Memory Allowed",
+            "type": "boolean"
+          },
+          "project_grants": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Project Grants",
+            "type": "array"
+          },
+          "default_project_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Default Project Id"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "AgentEditableConfig",
+        "type": "object"
+      },
       "AgentPluginRow": {
         "additionalProperties": false,
         "description": "``methods_tools._plugin_rows`` + ``plugins_cmd_catalog.catalog_row_fields`` provenance.",
@@ -7989,6 +8729,174 @@
           "uptime"
         ],
         "title": "AgentProcessRow",
+        "type": "object"
+      },
+      "AgentSessionConfiguration": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "primary",
+              "specialist",
+              "child"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "memory_backend": {
+            "enum": [
+              "personal_mcp",
+              "builtin"
+            ],
+            "title": "Memory Backend",
+            "type": "string"
+          },
+          "active_configuration_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Configuration Revision"
+          },
+          "desired_configuration_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desired Configuration Revision"
+          },
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "authority_revocation_revision": {
+            "title": "Authority Revocation Revision",
+            "type": "integer"
+          },
+          "authority_current": {
+            "title": "Authority Current",
+            "type": "boolean"
+          },
+          "revocation_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revocation Code"
+          },
+          "startup_frozen": {
+            "title": "Startup Frozen",
+            "type": "boolean"
+          },
+          "active_workflows": {
+            "items": {
+              "$ref": "#/components/schemas/AgentSessionWorkflowPin"
+            },
+            "title": "Active Workflows",
+            "type": "array"
+          },
+          "desired_workflows": {
+            "items": {
+              "$ref": "#/components/schemas/AgentSessionWorkflowPin"
+            },
+            "title": "Desired Workflows",
+            "type": "array"
+          },
+          "activation": {
+            "const": "next_session",
+            "title": "Activation",
+            "type": "string"
+          },
+          "execution_authority": {
+            "const": false,
+            "title": "Execution Authority",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent_id",
+          "role",
+          "memory_backend",
+          "active_configuration_revision",
+          "desired_configuration_revision",
+          "archived",
+          "authority_revocation_revision",
+          "authority_current",
+          "revocation_code",
+          "startup_frozen",
+          "active_workflows",
+          "desired_workflows",
+          "activation",
+          "execution_authority"
+        ],
+        "title": "AgentSessionConfiguration",
+        "type": "object"
+      },
+      "AgentSessionWorkflowPin": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "delivery_revision": {
+            "minimum": 1,
+            "title": "Delivery Revision",
+            "type": "integer"
+          },
+          "workflow_state": {
+            "enum": [
+              "draft",
+              "tested",
+              "approved",
+              "deprecated",
+              "revoked",
+              "unavailable"
+            ],
+            "title": "Workflow State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "workflow_id",
+          "version",
+          "sha256",
+          "delivery_revision",
+          "workflow_state"
+        ],
+        "title": "AgentSessionWorkflowPin",
         "type": "object"
       },
       "AgentsListParams": {
@@ -14160,6 +15068,11 @@
           "server_requests": {
             "default": false,
             "title": "Server Requests",
+            "type": "boolean"
+          },
+          "dots_native": {
+            "default": false,
+            "title": "Dots Native",
             "type": "boolean"
           }
         },
@@ -21785,6 +22698,1531 @@
         "title": "DomainPublishResult",
         "type": "object"
       },
+      "DotsApprovalRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "authority": {
+            "$ref": "#/components/schemas/DotsReadAuthority"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "action_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Action Digest",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id",
+          "authority",
+          "approval_id",
+          "approval_digest",
+          "action_digest",
+          "expires_at"
+        ],
+        "title": "DotsApprovalRequest",
+        "type": "object"
+      },
+      "DotsApprovalResult": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "choice": {
+            "enum": [
+              "once",
+              "deny"
+            ],
+            "title": "Choice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approval_id",
+          "approval_digest",
+          "choice"
+        ],
+        "title": "DotsApprovalResult",
+        "type": "object"
+      },
+      "DotsClickInput": {
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Ref",
+            "type": "string"
+          },
+          "snapshotId": {
+            "minimum": 0,
+            "title": "Snapshotid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ref",
+          "snapshotId"
+        ],
+        "title": "DotsClickInput",
+        "type": "object"
+      },
+      "DotsComputerExecuteParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/DotsComputerProposal"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "proposal",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "DotsComputerExecuteParams",
+        "type": "object"
+      },
+      "DotsComputerObserveRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "authority": {
+            "$ref": "#/components/schemas/DotsReadAuthority"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/DotsComputerObserveScope"
+          },
+          "deadline_at": {
+            "title": "Deadline At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id",
+          "authority",
+          "scope",
+          "deadline_at"
+        ],
+        "title": "DotsComputerObserveRequest",
+        "type": "object"
+      },
+      "DotsComputerObserveResult": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "$ref": "#/components/schemas/DotsReadAuthority"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/DotsComputerObserveScope"
+          },
+          "control_revision": {
+            "minimum": 0,
+            "title": "Control Revision",
+            "type": "integer"
+          },
+          "snapshot_id": {
+            "minimum": 0,
+            "title": "Snapshot Id",
+            "type": "integer"
+          },
+          "snapshot_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "content_json": {
+            "maxLength": 65536,
+            "title": "Content Json",
+            "type": "string"
+          },
+          "content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authority",
+          "scope",
+          "control_revision",
+          "snapshot_id",
+          "snapshot_sha256",
+          "content_json",
+          "content_sha256"
+        ],
+        "title": "DotsComputerObserveResult",
+        "type": "object"
+      },
+      "DotsComputerObserveScope": {
+        "additionalProperties": false,
+        "properties": {
+          "executor_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Executor Id",
+            "type": "string"
+          },
+          "expected_grant_revision": {
+            "minimum": 0,
+            "title": "Expected Grant Revision",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "snapshot",
+              "read",
+              "screenshot",
+              "files_list",
+              "files_read",
+              "result"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DotsEmptyInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsFilesListInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsFilesReadInput"
+              }
+            ],
+            "title": "Input"
+          },
+          "effect_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Effect Id"
+          }
+        },
+        "required": [
+          "executor_id",
+          "expected_grant_revision",
+          "action"
+        ],
+        "title": "DotsComputerObserveScope",
+        "type": "object"
+      },
+      "DotsComputerPrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/DotsComputerProposal"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "proposal"
+        ],
+        "title": "DotsComputerPrepareParams",
+        "type": "object"
+      },
+      "DotsComputerProposal": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "computer",
+            "default": "computer",
+            "title": "Kind",
+            "type": "string"
+          },
+          "executor_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Executor Id",
+            "type": "string"
+          },
+          "expected_grant_revision": {
+            "minimum": 0,
+            "title": "Expected Grant Revision",
+            "type": "integer"
+          },
+          "expected_control_revision": {
+            "minimum": 0,
+            "title": "Expected Control Revision",
+            "type": "integer"
+          },
+          "snapshot_id": {
+            "minimum": 0,
+            "title": "Snapshot Id",
+            "type": "integer"
+          },
+          "snapshot_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "action": {
+            "enum": [
+              "navigate",
+              "read",
+              "snapshot",
+              "screenshot",
+              "click",
+              "type",
+              "key",
+              "scroll",
+              "files_list",
+              "files_read",
+              "files_write",
+              "exec"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DotsEmptyInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsNavigateInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsClickInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsTypeInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsKeyInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsScrollInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsFilesListInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsFilesReadInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsFilesWriteInput"
+              },
+              {
+                "$ref": "#/components/schemas/DotsExecInput"
+              }
+            ],
+            "title": "Input"
+          }
+        },
+        "required": [
+          "executor_id",
+          "expected_grant_revision",
+          "expected_control_revision",
+          "snapshot_id",
+          "snapshot_sha256",
+          "action",
+          "input"
+        ],
+        "title": "DotsComputerProposal",
+        "type": "object"
+      },
+      "DotsDispatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/DotsEffectIdentity"
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DotsPageProposal"
+              },
+              {
+                "$ref": "#/components/schemas/DotsComputerProposal"
+              }
+            ],
+            "title": "Proposal"
+          },
+          "content_json": {
+            "maxLength": 65536,
+            "title": "Content Json",
+            "type": "string"
+          },
+          "deadline_at": {
+            "title": "Deadline At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id",
+          "identity",
+          "proposal",
+          "content_json",
+          "deadline_at"
+        ],
+        "title": "DotsDispatchRequest",
+        "type": "object"
+      },
+      "DotsEffectIdentity": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "principal_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "profile_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "agent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "runtime_session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Runtime Session Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "effect_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Effect Id",
+            "type": "string"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "action_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Action Digest",
+            "type": "string"
+          },
+          "input_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Input Digest",
+            "type": "string"
+          },
+          "policy_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Policy Digest",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "generation": {
+            "minimum": 0,
+            "title": "Generation",
+            "type": "integer"
+          },
+          "adapter_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Adapter Id",
+            "type": "string"
+          },
+          "adapter_kind": {
+            "enum": [
+              "page",
+              "computer"
+            ],
+            "title": "Adapter Kind",
+            "type": "string"
+          },
+          "grant_revision": {
+            "minimum": 0,
+            "title": "Grant Revision",
+            "type": "integer"
+          },
+          "scope_json": {
+            "maxLength": 8192,
+            "title": "Scope Json",
+            "type": "string"
+          },
+          "content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "content_size": {
+            "minimum": 0,
+            "title": "Content Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "principal_id",
+          "profile_id",
+          "agent_id",
+          "runtime_session_id",
+          "run_id",
+          "operation_id",
+          "effect_id",
+          "approval_id",
+          "approval_digest",
+          "action_digest",
+          "input_digest",
+          "policy_digest",
+          "policy_version",
+          "generation",
+          "adapter_id",
+          "adapter_kind",
+          "grant_revision",
+          "scope_json",
+          "content_sha256",
+          "content_size"
+        ],
+        "title": "DotsEffectIdentity",
+        "type": "object"
+      },
+      "DotsEffectReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "identity": {
+            "$ref": "#/components/schemas/DotsEffectIdentity"
+          },
+          "state": {
+            "enum": [
+              "committed",
+              "not_applied",
+              "outcome_unknown"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "receipt_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Receipt Id"
+          },
+          "content_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Content Sha256"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Version"
+          },
+          "result_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Result Sha256"
+          },
+          "reason": {
+            "enum": [
+              "committed",
+              "conflict",
+              "grant_revoked",
+              "takeover",
+              "stale_snapshot",
+              "unavailable",
+              "unknown"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identity",
+          "state",
+          "reason"
+        ],
+        "title": "DotsEffectReceipt",
+        "type": "object"
+      },
+      "DotsEffectResult": {
+        "additionalProperties": false,
+        "properties": {
+          "effect_id": {
+            "title": "Effect Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "prepared",
+              "dispatched",
+              "confirmed",
+              "failed",
+              "outcome_unknown",
+              "reconciliation_required"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DotsEffectReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replay_permitted": {
+            "const": false,
+            "default": false,
+            "title": "Replay Permitted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "effect_id",
+          "operation_id",
+          "state",
+          "receipt"
+        ],
+        "title": "DotsEffectResult",
+        "type": "object"
+      },
+      "DotsEmptyInput": {
+        "additionalProperties": false,
+        "properties": {},
+        "title": "DotsEmptyInput",
+        "type": "object"
+      },
+      "DotsExecInput": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Command",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "default": 30000,
+            "maximum": 60000,
+            "minimum": 1000,
+            "title": "Timeoutms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "command"
+        ],
+        "title": "DotsExecInput",
+        "type": "object"
+      },
+      "DotsFilesListInput": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "default": "",
+            "maxLength": 1024,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "title": "DotsFilesListInput",
+        "type": "object"
+      },
+      "DotsFilesReadInput": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "DotsFilesReadInput",
+        "type": "object"
+      },
+      "DotsFilesWriteInput": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "contents": {
+            "maxLength": 24000,
+            "title": "Contents",
+            "type": "string"
+          },
+          "append": {
+            "default": false,
+            "title": "Append",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "path",
+          "contents"
+        ],
+        "title": "DotsFilesWriteInput",
+        "type": "object"
+      },
+      "DotsInspectRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/DotsEffectIdentity"
+          },
+          "deadline_at": {
+            "title": "Deadline At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id",
+          "identity",
+          "deadline_at"
+        ],
+        "title": "DotsInspectRequest",
+        "type": "object"
+      },
+      "DotsKeyInput": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "DotsKeyInput",
+        "type": "object"
+      },
+      "DotsNavigateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "DotsNavigateInput",
+        "type": "object"
+      },
+      "DotsPageDocument": {
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "content": {
+            "maxLength": 24000,
+            "title": "Content",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title",
+          "content",
+          "parent_id",
+          "archived"
+        ],
+        "title": "DotsPageDocument",
+        "type": "object"
+      },
+      "DotsPagePrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/DotsPageProposal"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "proposal"
+        ],
+        "title": "DotsPagePrepareParams",
+        "type": "object"
+      },
+      "DotsPageProposal": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "page",
+            "default": "page",
+            "title": "Kind",
+            "type": "string"
+          },
+          "store_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Store Id",
+            "type": "string"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "space_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Space Id",
+            "type": "string"
+          },
+          "page_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Page Id",
+            "type": "string"
+          },
+          "expected_head_version": {
+            "minimum": 0,
+            "title": "Expected Head Version",
+            "type": "integer"
+          },
+          "expected_grant_revision": {
+            "minimum": 0,
+            "title": "Expected Grant Revision",
+            "type": "integer"
+          },
+          "document": {
+            "$ref": "#/components/schemas/DotsPageDocument"
+          }
+        },
+        "required": [
+          "store_id",
+          "project_id",
+          "space_id",
+          "page_id",
+          "expected_head_version",
+          "expected_grant_revision",
+          "document"
+        ],
+        "title": "DotsPageProposal",
+        "type": "object"
+      },
+      "DotsPagePublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/DotsPageProposal"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "proposal",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "DotsPagePublishParams",
+        "type": "object"
+      },
+      "DotsPageReadRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "authority": {
+            "$ref": "#/components/schemas/DotsReadAuthority"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/DotsPageReadScope"
+          },
+          "deadline_at": {
+            "title": "Deadline At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "session_id",
+          "authority",
+          "scope",
+          "deadline_at"
+        ],
+        "title": "DotsPageReadRequest",
+        "type": "object"
+      },
+      "DotsPageReadResult": {
+        "additionalProperties": false,
+        "properties": {
+          "authority": {
+            "$ref": "#/components/schemas/DotsReadAuthority"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/DotsPageReadScope"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "content_json": {
+            "maxLength": 65536,
+            "title": "Content Json",
+            "type": "string"
+          },
+          "content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authority",
+          "scope",
+          "version",
+          "content_json",
+          "content_sha256"
+        ],
+        "title": "DotsPageReadResult",
+        "type": "object"
+      },
+      "DotsPageReadScope": {
+        "additionalProperties": false,
+        "properties": {
+          "store_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Store Id",
+            "type": "string"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "space_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Space Id",
+            "type": "string"
+          },
+          "page_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Page Id",
+            "type": "string"
+          },
+          "expected_grant_revision": {
+            "minimum": 0,
+            "title": "Expected Grant Revision",
+            "type": "integer"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Version"
+          }
+        },
+        "required": [
+          "store_id",
+          "project_id",
+          "space_id",
+          "page_id",
+          "expected_grant_revision"
+        ],
+        "title": "DotsPageReadScope",
+        "type": "object"
+      },
+      "DotsPreparedResult": {
+        "additionalProperties": false,
+        "properties": {
+          "command_id": {
+            "title": "Command Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "action_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Action Digest",
+            "type": "string"
+          },
+          "input_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Input Digest",
+            "type": "string"
+          },
+          "content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "approval_id": {
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "command_id",
+          "run_id",
+          "operation_id",
+          "action_digest",
+          "input_digest",
+          "content_sha256",
+          "approval_id",
+          "approval_digest",
+          "expires_at"
+        ],
+        "title": "DotsPreparedResult",
+        "type": "object"
+      },
+      "DotsReadAuthority": {
+        "additionalProperties": false,
+        "properties": {
+          "principal_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "profile_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "agent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "runtime_session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Runtime Session Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "policy_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Policy Digest",
+            "type": "string"
+          },
+          "generation": {
+            "minimum": 0,
+            "title": "Generation",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "principal_id",
+          "profile_id",
+          "agent_id",
+          "runtime_session_id",
+          "run_id",
+          "policy_digest",
+          "generation"
+        ],
+        "title": "DotsReadAuthority",
+        "type": "object"
+      },
+      "DotsReconcileParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "effect_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Effect Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "effect_id"
+        ],
+        "title": "DotsReconcileParams",
+        "type": "object"
+      },
+      "DotsRegistrationParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "adapter_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Adapter Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "page",
+              "computer"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          },
+          "revision": {
+            "minimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "project_ids": {
+            "default": [],
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Project Ids",
+            "type": "array"
+          },
+          "space_ids": {
+            "default": [],
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Space Ids",
+            "type": "array"
+          },
+          "actions": {
+            "default": [],
+            "items": {
+              "enum": [
+                "navigate",
+                "read",
+                "snapshot",
+                "screenshot",
+                "click",
+                "type",
+                "key",
+                "scroll",
+                "files_list",
+                "files_read",
+                "files_write",
+                "exec"
+              ],
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Actions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "adapter_id",
+          "kind",
+          "revision",
+          "enabled"
+        ],
+        "title": "DotsRegistrationParams",
+        "type": "object"
+      },
+      "DotsRegistrationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "adapter_id": {
+            "title": "Adapter Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "page",
+              "computer"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "registered": {
+            "const": true,
+            "title": "Registered",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "adapter_id",
+          "kind",
+          "revision",
+          "enabled",
+          "agent_id",
+          "registered"
+        ],
+        "title": "DotsRegistrationResult",
+        "type": "object"
+      },
+      "DotsScrollInput": {
+        "additionalProperties": false,
+        "properties": {
+          "deltaY": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "ge": -10000,
+            "le": 10000,
+            "title": "Deltay"
+          }
+        },
+        "required": [
+          "deltaY"
+        ],
+        "title": "DotsScrollInput",
+        "type": "object"
+      },
+      "DotsTypeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Ref",
+            "type": "string"
+          },
+          "snapshotId": {
+            "minimum": 0,
+            "title": "Snapshotid",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 16000,
+            "title": "Text",
+            "type": "string"
+          },
+          "submit": {
+            "default": false,
+            "title": "Submit",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ref",
+          "snapshotId",
+          "text"
+        ],
+        "title": "DotsTypeInput",
+        "type": "object"
+      },
       "EmptyRequestParams": {
         "additionalProperties": false,
         "properties": {
@@ -28443,6 +30881,20 @@
             "title": "Schema Version",
             "type": "integer"
           },
+          "mission_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mission Id"
+          },
           "expected_revision": {
             "minimum": 1,
             "title": "Expected Revision",
@@ -28476,6 +30928,33 @@
             "const": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "previous_mission_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Previous Mission Id"
+          },
+          "previous_revision": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Previous Revision"
           },
           "mission_id": {
             "maxLength": 256,
@@ -28794,6 +31273,42 @@
           "kind"
         ],
         "title": "MissionExistenceCriterion",
+        "type": "object"
+      },
+      "MissionGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "mission_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mission Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "MissionGetParams",
         "type": "object"
       },
       "MissionGetResult": {
@@ -29412,6 +31927,49 @@
         "title": "MissionReadParameters",
         "type": "object"
       },
+      "MissionReceiptListParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "mission_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mission Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "MissionReceiptListParams",
+        "type": "object"
+      },
       "MissionReceiptListResult": {
         "additionalProperties": false,
         "properties": {
@@ -29811,6 +32369,23 @@
           "legacy_imported": {
             "title": "Legacy Imported",
             "type": "boolean"
+          },
+          "archived": {
+            "default": false,
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Archived At"
           }
         },
         "required": [
@@ -29876,6 +32451,20 @@
             "title": "Schema Version",
             "type": "integer"
           },
+          "mission_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mission Id"
+          },
           "expected_revision": {
             "minimum": 1,
             "title": "Expected Revision",
@@ -29936,6 +32525,20 @@
             "const": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "mission_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mission Id"
           },
           "expected_revision": {
             "minimum": 1,
@@ -42304,6 +44907,36 @@
         "title": "RoomTombstone",
         "type": "object"
       },
+      "RuntimeAcceptedInput": {
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "enum": [
+              "accepted",
+              "committed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          }
+        },
+        "required": [
+          "state",
+          "message_id"
+        ],
+        "title": "RuntimeAcceptedInput",
+        "type": "object"
+      },
       "RuntimeAdmissionJob": {
         "additionalProperties": false,
         "properties": {
@@ -42433,6 +45066,216 @@
           "jobs"
         ],
         "title": "RuntimeAdmissionSnapshot",
+        "type": "object"
+      },
+      "RuntimeApprovalDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "choice": {
+            "anyOf": [
+              {
+                "enum": [
+                  "once",
+                  "deny"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choice"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "consumed_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumed At"
+          }
+        },
+        "required": [
+          "choice",
+          "resolved_at",
+          "consumed_at"
+        ],
+        "title": "RuntimeApprovalDecision",
+        "type": "object"
+      },
+      "RuntimeApprovalDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "reviewable": {
+            "title": "Reviewable",
+            "type": "boolean"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "review_not_retained",
+                  "opaque_content",
+                  "sensitive_content",
+                  "content_not_retained",
+                  "review_size_limit"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeApprovalExactReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Digest"
+          }
+        },
+        "required": [
+          "reviewable",
+          "unavailable_reason",
+          "review",
+          "review_digest"
+        ],
+        "title": "RuntimeApprovalDetail",
+        "type": "object"
+      },
+      "RuntimeApprovalExactReview": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/RuntimeApprovalReviewAction"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeApprovalReviewContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "action",
+          "content"
+        ],
+        "title": "RuntimeApprovalExactReview",
+        "type": "object"
+      },
+      "RuntimeApprovalGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "approval_id"
+        ],
+        "title": "RuntimeApprovalGetParams",
+        "type": "object"
+      },
+      "RuntimeApprovalGetResult": {
+        "additionalProperties": false,
+        "properties": {
+          "approval": {
+            "$ref": "#/components/schemas/RuntimeApprovalRecord"
+          },
+          "detail": {
+            "$ref": "#/components/schemas/RuntimeApprovalDetail"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/RuntimeApprovalDecision"
+          },
+          "input_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Revision"
+          },
+          "artifact_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Revision"
+          },
+          "dispatch_performed": {
+            "const": false,
+            "title": "Dispatch Performed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approval",
+          "detail",
+          "decision",
+          "input_revision",
+          "artifact_revision",
+          "dispatch_performed"
+        ],
+        "title": "RuntimeApprovalGetResult",
         "type": "object"
       },
       "RuntimeApprovalListParams": {
@@ -42757,6 +45600,85 @@
         "title": "RuntimeApprovalResolveResult",
         "type": "object"
       },
+      "RuntimeApprovalReviewAction": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "title": "Arguments",
+            "type": "object"
+          },
+          "operation_class": {
+            "title": "Operation Class",
+            "type": "string"
+          },
+          "resource_roots": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resource Roots",
+            "type": "array"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "destination_purpose": {
+            "title": "Destination Purpose",
+            "type": "string"
+          },
+          "contract_digest": {
+            "title": "Contract Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "arguments",
+          "operation_class",
+          "resource_roots",
+          "destination",
+          "destination_purpose",
+          "contract_digest"
+        ],
+        "title": "RuntimeApprovalReviewAction",
+        "type": "object"
+      },
+      "RuntimeApprovalReviewContent": {
+        "additionalProperties": false,
+        "properties": {
+          "encoding": {
+            "const": "base64",
+            "title": "Encoding",
+            "type": "string"
+          },
+          "data": {
+            "title": "Data",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "encoding",
+          "data",
+          "sha256",
+          "mime"
+        ],
+        "title": "RuntimeApprovalReviewContent",
+        "type": "object"
+      },
       "RuntimeArtifactReference": {
         "additionalProperties": false,
         "properties": {
@@ -42967,9 +45889,48 @@
         "title": "RuntimeCapabilitiesParams",
         "type": "object"
       },
+      "RuntimeCommandMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "title": "Message Id",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant",
+              "tool"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "input",
+              "output"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "committed": {
+            "const": true,
+            "title": "Committed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "role",
+          "kind",
+          "committed"
+        ],
+        "title": "RuntimeCommandMessage",
+        "type": "object"
+      },
       "RuntimeCommandParams": {
         "additionalProperties": false,
-        "description": "Operation selects the payload: text for submit/steer, reason for cancel,\napproval_id/decision for approval. Accepted is a durable receipt, not proof\nof execution; consult capabilities and replay for execution status.",
+        "description": "Operation selects the payload: text for submit/steer, reason for cancel,\napproval_id/decision for approval. Accepted is a durable receipt, not proof\nof execution; consult capabilities and replay for execution status.\ntarget_run_id pins cancel/steer to one run; omission preserves legacy controls.",
         "properties": {
           "session_id": {
             "maxLength": 256,
@@ -43014,6 +45975,13 @@
               "approval"
             ],
             "title": "Operation",
+            "type": "string"
+          },
+          "target_run_id": {
+            "default": null,
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Target Run Id",
             "type": "string"
           },
           "payload": {
@@ -43062,6 +46030,26 @@
             "minLength": 1,
             "title": "Command Id",
             "type": "string"
+          },
+          "message_limit": {
+            "default": 100,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Message Limit",
+            "type": "integer"
+          },
+          "message_cursor": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Message Cursor"
           }
         },
         "required": [
@@ -43121,6 +46109,38 @@
           "durable_revision": {
             "title": "Durable Revision",
             "type": "integer"
+          },
+          "accepted_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeAcceptedInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeCommandMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "messages_has_more": {
+            "title": "Messages Has More",
+            "type": "boolean"
+          },
+          "next_message_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Message Cursor"
           }
         },
         "required": [
@@ -43129,7 +46149,11 @@
           "found",
           "receipt",
           "status",
-          "durable_revision"
+          "durable_revision",
+          "accepted_input",
+          "messages",
+          "messages_has_more",
+          "next_message_cursor"
         ],
         "title": "RuntimeCommandReceiptResult",
         "type": "object"
@@ -43153,11 +46177,248 @@
         "title": "RuntimeConflict",
         "type": "object"
       },
+      "RuntimeControlGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "operation_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Operation Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "RuntimeControlGetParams",
+        "type": "object"
+      },
+      "RuntimeControlOperation": {
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "paused": {
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "committed_at": {
+            "title": "Committed At",
+            "type": "number"
+          },
+          "status": {
+            "const": "committed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "digest",
+          "revision",
+          "paused",
+          "committed_at",
+          "status"
+        ],
+        "title": "RuntimeControlOperation",
+        "type": "object"
+      },
+      "RuntimeControlParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "operation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "operation_id",
+          "expected_revision"
+        ],
+        "title": "RuntimeControlParams",
+        "type": "object"
+      },
+      "RuntimeControlResult": {
+        "additionalProperties": false,
+        "properties": {
+          "control": {
+            "$ref": "#/components/schemas/RuntimeControlState"
+          },
+          "operation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeControlOperation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dispatch_performed": {
+            "const": false,
+            "title": "Dispatch Performed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "control",
+          "operation",
+          "dispatch_performed"
+        ],
+        "title": "RuntimeControlResult",
+        "type": "object"
+      },
+      "RuntimeControlState": {
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "paused": {
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "scope": {
+            "const": "owner_profile",
+            "title": "Scope",
+            "type": "string"
+          },
+          "admission_blocked": {
+            "title": "Admission Blocked",
+            "type": "boolean"
+          },
+          "scheduled_dispatch_blocked": {
+            "title": "Scheduled Dispatch Blocked",
+            "type": "boolean"
+          },
+          "in_flight_dispatch": {
+            "enum": [
+              "blocked_at_next_boundary",
+              "allowed_at_checked_boundary"
+            ],
+            "title": "In Flight Dispatch",
+            "type": "string"
+          },
+          "accepted_commands": {
+            "title": "Accepted Commands",
+            "type": "integer"
+          },
+          "claimed_commands": {
+            "title": "Claimed Commands",
+            "type": "integer"
+          },
+          "accepted_work_retained": {
+            "const": true,
+            "title": "Accepted Work Retained",
+            "type": "boolean"
+          },
+          "already_dispatched_may_complete": {
+            "const": true,
+            "title": "Already Dispatched May Complete",
+            "type": "boolean"
+          },
+          "provider_cancelled": {
+            "const": false,
+            "title": "Provider Cancelled",
+            "type": "boolean"
+          },
+          "remote_effects_undone": {
+            "const": false,
+            "title": "Remote Effects Undone",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revision",
+          "paused",
+          "updated_at",
+          "scope",
+          "admission_blocked",
+          "scheduled_dispatch_blocked",
+          "in_flight_dispatch",
+          "accepted_commands",
+          "claimed_commands",
+          "accepted_work_retained",
+          "already_dispatched_may_complete",
+          "provider_cancelled",
+          "remote_effects_undone"
+        ],
+        "title": "RuntimeControlState",
+        "type": "object"
+      },
       "RuntimeConversation": {
         "additionalProperties": false,
         "properties": {
           "conversation_id": {
             "title": "Conversation Id",
+            "type": "string"
+          },
+          "agent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Agent Id",
             "type": "string"
           },
           "title": {
@@ -43188,6 +46449,7 @@
         },
         "required": [
           "conversation_id",
+          "agent_id",
           "title",
           "archived",
           "revision",
@@ -43334,7 +46596,7 @@
             "type": "string"
           },
           "command_message_linkage": {
-            "const": "unavailable",
+            "const": "explicit",
             "title": "Command Message Linkage",
             "type": "string"
           },
@@ -43360,6 +46622,55 @@
         "title": "RuntimeConversationCapabilities",
         "type": "object"
       },
+      "RuntimeConversationCommandReceiptParams": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "conversation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "message_limit": {
+            "default": 100,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Message Limit",
+            "type": "integer"
+          },
+          "message_cursor": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Message Cursor"
+          }
+        },
+        "required": [
+          "schema_version",
+          "conversation_id",
+          "command_id"
+        ],
+        "title": "RuntimeConversationCommandReceiptParams",
+        "type": "object"
+      },
       "RuntimeConversationCreateParams": {
         "additionalProperties": false,
         "properties": {
@@ -43367,6 +46678,20 @@
             "const": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent Id"
           },
           "idempotency_key": {
             "maxLength": 256,
@@ -43546,6 +46871,22 @@
           "config_digest": {
             "title": "Config Digest",
             "type": "string"
+          },
+          "role": {
+            "enum": [
+              "primary",
+              "specialist"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "memory_backend": {
+            "enum": [
+              "personal_mcp",
+              "builtin"
+            ],
+            "title": "Memory Backend",
+            "type": "string"
           }
         },
         "required": [
@@ -43553,7 +46894,9 @@
           "profile_id",
           "agent_id",
           "policy_digest",
-          "config_digest"
+          "config_digest",
+          "role",
+          "memory_backend"
         ],
         "title": "RuntimeConversationIdentity",
         "type": "object"
@@ -43565,6 +46908,20 @@
             "const": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent Id"
           },
           "limit": {
             "default": 50,
@@ -43651,6 +47008,20 @@
             "const": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Agent Id"
           },
           "idempotency_key": {
             "maxLength": 256,
@@ -43845,6 +47216,11 @@
             "title": "Text Offset",
             "type": "integer"
           },
+          "next_text_offset": {
+            "description": "Exclusive UTF-8 source byte end offset before control-character sanitization",
+            "title": "Next Text Offset",
+            "type": "integer"
+          },
           "text_complete": {
             "title": "Text Complete",
             "type": "boolean"
@@ -43867,8 +47243,15 @@
             "type": "boolean"
           },
           "command_id": {
-            "title": "Command Id",
-            "type": "null"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command Id"
           }
         },
         "required": [
@@ -43877,6 +47260,7 @@
           "role",
           "text",
           "text_offset",
+          "next_text_offset",
           "text_complete",
           "text_sanitized",
           "non_text_omitted",
@@ -44401,6 +47785,8 @@
               "artifact_publish",
               "project_artifact_publish",
               "mission_test_execution",
+              "dots_page_publish",
+              "dots_computer_action",
               "unsupported"
             ],
             "title": "Operation Type",
@@ -46294,6 +49680,80 @@
         "title": "ScheduleCreateParams",
         "type": "object"
       },
+      "ScheduleCutoverParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "source_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "retirement_receipt": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Retirement Receipt",
+            "type": "string"
+          },
+          "unresolved_occurrences": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Unresolved Occurrences",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "expected_revision",
+          "source_id",
+          "retirement_receipt",
+          "unresolved_occurrences"
+        ],
+        "title": "ScheduleCutoverParams",
+        "type": "object"
+      },
       "ScheduleGetParams": {
         "additionalProperties": false,
         "properties": {
@@ -46438,7 +49898,7 @@
             "title": "Expected Revision"
           },
           "import_json": {
-            "maxLength": 4096,
+            "maxLength": 131072,
             "minLength": 2,
             "title": "Import Json",
             "type": "string"
@@ -46850,6 +50310,55 @@
           "record_json"
         ],
         "title": "ScheduleRecordResult",
+        "type": "object"
+      },
+      "ScheduleRunNowParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "expected_revision"
+        ],
+        "title": "ScheduleRunNowParams",
         "type": "object"
       },
       "ScheduleUpdateParams": {
@@ -60099,6 +63608,392 @@
         "title": "WorkflowDecisionResult",
         "type": "object"
       },
+      "WorkflowDeliveryCommitParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "specialist_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "expected_delivery_revision": {
+            "minimum": 0,
+            "title": "Expected Delivery Revision",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "deliver",
+              "rollback"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "sha256",
+          "specialist_id",
+          "expected_delivery_revision",
+          "action",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "WorkflowDeliveryCommitParams",
+        "type": "object"
+      },
+      "WorkflowDeliveryCommitResult": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery": {
+            "$ref": "#/components/schemas/WorkflowDeliveryRecord"
+          }
+        },
+        "required": [
+          "delivery"
+        ],
+        "title": "WorkflowDeliveryCommitResult",
+        "type": "object"
+      },
+      "WorkflowDeliveryListParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "specialist_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Specialist Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "specialist_id"
+        ],
+        "title": "WorkflowDeliveryListParams",
+        "type": "object"
+      },
+      "WorkflowDeliveryListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowDeliveryRecord"
+            },
+            "title": "Deliveries",
+            "type": "array"
+          },
+          "complete": {
+            "const": true,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deliveries",
+          "complete"
+        ],
+        "title": "WorkflowDeliveryListResult",
+        "type": "object"
+      },
+      "WorkflowDeliveryParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "specialist_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "expected_delivery_revision": {
+            "minimum": 0,
+            "title": "Expected Delivery Revision",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "deliver",
+              "rollback"
+            ],
+            "title": "Action",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "workflow_id",
+          "version",
+          "command_id",
+          "sha256",
+          "specialist_id",
+          "expected_delivery_revision",
+          "action"
+        ],
+        "title": "WorkflowDeliveryParams",
+        "type": "object"
+      },
+      "WorkflowDeliveryPrepareResult": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          },
+          "scope_json": {
+            "title": "Scope Json",
+            "type": "string"
+          },
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowRecord"
+          },
+          "current_delivery": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowDeliveryRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "approval_id",
+          "approval_digest",
+          "expires_at",
+          "scope_json",
+          "workflow",
+          "current_delivery"
+        ],
+        "title": "WorkflowDeliveryPrepareResult",
+        "type": "object"
+      },
+      "WorkflowDeliveryRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_id": {
+            "title": "Delivery Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "specialist_id": {
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "delivery_revision": {
+            "title": "Delivery Revision",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "deliver",
+              "rollback"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "approval_id": {
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          },
+          "previous_delivery_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Delivery Id"
+          },
+          "activation": {
+            "const": "next_session",
+            "title": "Activation",
+            "type": "string"
+          },
+          "execution_authority": {
+            "const": false,
+            "title": "Execution Authority",
+            "type": "boolean"
+          },
+          "personal_memory_shared": {
+            "const": false,
+            "title": "Personal Memory Shared",
+            "type": "boolean"
+          },
+          "recorded_at": {
+            "title": "Recorded At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "delivery_id",
+          "project_id",
+          "workflow_id",
+          "version",
+          "sha256",
+          "specialist_id",
+          "delivery_revision",
+          "action",
+          "approval_id",
+          "approval_digest",
+          "previous_delivery_id",
+          "activation",
+          "execution_authority",
+          "personal_memory_shared",
+          "recorded_at"
+        ],
+        "title": "WorkflowDeliveryRecord",
+        "type": "object"
+      },
       "WorkflowEvaluateParams": {
         "additionalProperties": false,
         "properties": {
@@ -60921,6 +64816,96 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/ValueResult"
+        }
+      }
+    },
+    {
+      "name": "dots.approval",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsApprovalRequest"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsApprovalResult"
+        }
+      }
+    },
+    {
+      "name": "dots.computer.observe",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsComputerObserveRequest"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsComputerObserveResult"
+        }
+      }
+    },
+    {
+      "name": "dots.effect.dispatch",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsDispatchRequest"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsEffectReceipt"
+        }
+      }
+    },
+    {
+      "name": "dots.effect.inspect",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsInspectRequest"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsEffectReceipt"
+        }
+      }
+    },
+    {
+      "name": "dots.page.read",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DotsPageReadRequest"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DotsPageReadResult"
         }
       }
     },

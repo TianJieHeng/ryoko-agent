@@ -483,6 +483,8 @@ class SessionMessagesMixin:
                 decode_row_fn=self._decoded_repair_row,
             )
             inserted, tool_calls_total = self._insert_message_rows(conn, session_id, inserted_rows)
+            from hermes_state_runtime_messages import record_links
+            record_links(self, conn, session_id, messages, new_rows=inserted_rows)
             self._bump_session_counters(conn, session_id, inserted, tool_calls_total, unit=False)
             return inserted
         return self._execute_transcript_write(_do, messages, patience_s=self._TRANSCRIPT_WRITE_PATIENCE_S)

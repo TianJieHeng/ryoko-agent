@@ -1,4 +1,4 @@
-"""Finite durable schedule definitions and timezone-aware occurrence identities."""
+"""Durable schedule definitions and timezone-aware occurrence identities."""
 from __future__ import annotations
 
 import hashlib
@@ -138,18 +138,26 @@ def validate_definition(record):
         require(isinstance(trigger["fold"], str) and trigger["fold"] in {"first", "second"} and trigger["gap"] == "skip", "Explicit DST fold/gap policy required")
     policy = record["policy"]
     exact(policy, "missed_run grace_seconds overlap")
-    require(isinstance(policy["missed_run"], str) and policy["missed_run"] in {"skip", "latest"} and policy["overlap"] == "block", "Supported missed/overlap policy required")
+    command_schedule = record["kind"] == "command"
+    require(isinstance(policy["missed_run"], str) and policy["missed_run"] in
+            ({"skip", "run_once"} if command_schedule else {"skip", "latest"}) and isinstance(policy["overlap"], str) and policy["overlap"] in
+            ({"skip", "queue"} if command_schedule else {"block"}), "Supported missed/overlap policy required")
     require(type(policy["grace_seconds"]) is int and 0 <= policy["grace_seconds"] <= 86400, "Bounded grace required")
     budget = record["budget"]
     exact(budget, "max_checks max_bytes deadline_seconds")
-    for key, maximum in {"max_checks": 10000, "max_bytes": 2097152, "deadline_seconds": 60}.items():
+    for key, maximum in {"max_checks": 1000 if command_schedule else 10000, "max_bytes": 2097152,
+                         "deadline_seconds": 3600 if command_schedule else 60}.items():
         require(type(budget[key]) is int and 1 <= budget[key] <= maximum, "Finite local job budget required")
     instant(record["expires_at"])
     from cron.durable_workflow_contract import validate_workflow_draft
-    validators = {"monitor": validate_monitor, "review": validate_review, "workflow_draft": validate_workflow_draft,
+    from cron.command_schedule_contract import validate_command_specification
+    validators = {"command": validate_command_specification, "monitor": validate_monitor, "review": validate_review, "workflow_draft": validate_workflow_draft,
                   "weekly_review": lambda value: exact(value, "")}
-    require(isinstance(record["kind"], str) and record["kind"] in validators, "Only installed finite local adapters are supported; scripts and agent loops are unavailable")
+    require(isinstance(record["kind"], str) and record["kind"] in validators, "Only installed finite adapters and bounded runtime commands are supported")
     validators[record["kind"]](record["specification"])
+    if command_schedule:
+        require(len(record["specification"]["prompt"].encode("utf-8")) <= budget["max_bytes"],
+                "Scheduled prompt exceeds its admitted byte bound")
     canonical(record)
     return record
 

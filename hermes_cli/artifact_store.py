@@ -197,7 +197,10 @@ def prepare_artifact(run, *, project_id, request_id, content_bytes, mime, artifa
         if error.code != "approval_not_found":
             raise
         expires = min(reservation["created_at"] + 300, getattr(run, "deadline_at", float("inf")))
-        preview = preview_action(action, approval_id=approved_id, expires_at=expires)
+        import base64
+        review_content = ({"encoding": "base64", "data": base64.b64encode(data).decode("ascii"),
+                           "sha256": descriptor["sha256"], "mime": mime} if len(data) <= 65536 else None)
+        preview = preview_action(action, approval_id=approved_id, expires_at=expires, review_content=review_content)
     return ArtifactProposal(request_id, _json(scope), data, approved_id,
                             preview.approval_digest, preview.expires_at)
 

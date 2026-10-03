@@ -63,12 +63,15 @@ class RuntimeCommandParams(RuntimeSessionParams):
     """Operation selects the payload: text for submit/steer, reason for cancel,
     approval_id/decision for approval. Accepted is a durable receipt, not proof
     of execution; consult capabilities and replay for execution status.
+    target_run_id pins cancel/steer to one run; omission preserves legacy controls.
     """
 
     command_id: RuntimeIdentifier
     idempotency_key: RuntimeIdentifier
     expected_revision: Annotated[StrictInt, Field(ge=0)] | None
     operation: RuntimeOperation
+    # None is the internal absent-field sentinel, never a valid supplied value.
+    target_run_id: RuntimeIdentifier = Field(default=None)
     payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
 
     @model_validator(mode="before")
@@ -76,6 +79,12 @@ class RuntimeCommandParams(RuntimeSessionParams):
     def payload_matches_operation(cls, values):
         if isinstance(values, dict):
             operation = values.get("operation")
+            if "target_run_id" in values:
+                target = values["target_run_id"]
+                if (not isinstance(operation, str) or operation not in {"steer", "cancel"}
+                        or not isinstance(target, str)
+                        or not target or target.strip() != target):
+                    raise ValueError("target_run_id requires an exact cancel/steer run identifier")
             payload_type = {
                 "submit": RuntimeTextPayload,
                 "steer": RuntimeTextPayload,
@@ -180,6 +189,20 @@ class CommandReceipt(Result):
 
 class RuntimeCommandReceiptParams(RuntimeSessionParams):
     command_id: RuntimeIdentifier
+    message_limit: Annotated[StrictInt, Field(ge=1, le=100)] = 100
+    message_cursor: Annotated[str, Field(max_length=2048)] | None = None
+
+
+class RuntimeAcceptedInput(Result):
+    state: Literal["accepted", "committed"]
+    message_id: str | None
+
+
+class RuntimeCommandMessage(Result):
+    message_id: str
+    role: Literal["user", "assistant", "tool"]
+    kind: Literal["input", "output"]
+    committed: Literal[True]
 
 
 class RuntimeCommandReceiptResult(Result):
@@ -191,6 +214,10 @@ class RuntimeCommandReceiptResult(Result):
     receipt: CommandReceipt | None
     status: Literal["accepted", "claimed", "completed", "failed", "blocked", "cancelled"] | None
     durable_revision: int
+    accepted_input: RuntimeAcceptedInput | None
+    messages: list[RuntimeCommandMessage]
+    messages_has_more: bool
+    next_message_cursor: str | None
 
 
 class RuntimeSnapshotState(Result):

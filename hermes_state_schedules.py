@@ -55,6 +55,9 @@ class ScheduleRegistry:
 
     def _public(self, conn, row):
         version = self._version(conn, row)
+        if json.loads(version["definition_json"])["kind"] == "command":
+            from hermes_state_command_schedules import public_command_schedule
+            return public_command_schedule(self, conn, row)
         result = {key: row[key] for key in ("schedule_id", "project_id", "version", "revision", "state", "next_due",
             "remaining_checks", "health", "last_success", "last_error")}
         result.update(owner_agent_id=self.actor["agent_id"], sha256=version["sha256"],
@@ -97,6 +100,7 @@ class ScheduleRegistry:
     def create(self, run, definition, *, expected_revision=None, imported=None):
         assert_schedule_control(run, {"runtime.schedule.create", "runtime.schedule.import"})
         record = validate_definition(definition)
+        require(record["kind"] != "command", "Command schedules require their owned queue adapter", "invalid_schedule")
         now, key, project = time.time(), self.key(record["schedule_id"]), record["project_id"]
         require(record["expires_at"] > now, "Cannot create an expired schedule")
         if record["kind"] == "workflow_draft":
@@ -117,6 +121,9 @@ class ScheduleRegistry:
                 require(conn.execute("SELECT COUNT(*) FROM durable_schedule_versions").fetchone()[0] < 16384,
                         "Retained schedule capacity reached", "schedule_capacity")
                 old = conn.execute("SELECT * FROM durable_schedules WHERE schedule_key=?", (key,)).fetchone()
+                if old:
+                    prior = json.loads(self._version(conn, old)["definition_json"])
+                    require(prior["kind"] != "command", "Command schedule kind cannot change", "schedule_immutable")
                 if old and old["version"] == record["version"]:
                     retained = self._version(conn, old)
                     require(old["project_id"] == project and retained["sha256"] == digest(record),
@@ -247,6 +254,7 @@ class ScheduleRegistry:
             current = self._row(conn, key)
             version = self._version(conn, current)
             definition = json.loads(version["definition_json"])
+        require(definition["kind"] != "command", "Scheduled prompts must use the ordinary command queue", "invalid_schedule")
         due = current["next_due"]
         require(due is not None and due <= now, "Occurrence is not due", "schedule_not_due")
         oid = occurrence_id(key, current["version"], due)
@@ -257,6 +265,10 @@ class ScheduleRegistry:
             "expected_revision": None, "operation": "artifact", "payload": {"schedule_key": key,
             "version": current["version"], "due_at": due, "definition_sha256": version["sha256"]}}
         def admission(conn, session_id, encoded, receipt):
+            from hermes_state_runtime_controls import assert_owner_running_on_conn
+            assert_owner_running_on_conn(conn, self.actor)
+            from tools.capability_broker import require_live_policy
+            require(require_live_policy(require_run=False) == self.context, "Schedule policy changed", "identity_mismatch")
             live = self._row(conn, key)
             require(live["state"] == "active" and live["version"] == current["version"]
                     and live["next_due"] == due and live["revision"] == current["revision"],

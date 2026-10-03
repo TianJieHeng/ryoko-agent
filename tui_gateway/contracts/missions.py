@@ -175,11 +175,17 @@ class MissionIntent(Result):
 
 
 class MissionCreateParams(RuntimeSessionParams):
+    previous_mission_id: RuntimeIdentifier | None = None
+    previous_revision: Annotated[StrictInt, Field(ge=1)] | None = None
     mission_id: RuntimeIdentifier
     contract: MissionIntent
 
 
-class MissionRevisionParams(RuntimeSessionParams):
+class MissionGetParams(RuntimeSessionParams):
+    mission_id: RuntimeIdentifier | None = None
+
+
+class MissionRevisionParams(MissionGetParams):
     expected_revision: Annotated[StrictInt, Field(ge=1)]
 
 
@@ -196,6 +202,10 @@ class MissionControlParams(MissionRevisionParams):
 
 class MissionListParams(RuntimeSessionParams):
     limit: Annotated[StrictInt, Field(ge=1, le=100)] = 100
+
+
+class MissionReceiptListParams(MissionListParams):
+    mission_id: RuntimeIdentifier | None = None
 
 
 class MissionEvidenceDependency(Result):
@@ -278,6 +288,8 @@ class MissionRecord(MissionIntent):
     created_at: float
     updated_at: float
     legacy_imported: bool
+    archived: bool = False
+    archived_at: float | None = None
 
 
 class MissionResult(Result):
@@ -309,7 +321,7 @@ class MissionVerifyResult(MissionResult):
 
 method("runtime.mission.create", params=MissionCreateParams, result=MissionResult,
        doc="Create bounded mission intent under an owned user control; never dispatch or reset a budget.")
-method("runtime.mission.get", params=RuntimeSessionParams, result=MissionGetResult,
+method("runtime.mission.get", params=MissionGetParams, result=MissionGetResult,
        doc="Read the owned authoritative mission independently from runtime command state.")
 method("runtime.mission.list", params=MissionListParams, result=MissionListResult,
        doc="Read a bounded actor- and project-authorized mission list, without completeness inference.")
@@ -322,5 +334,8 @@ method("runtime.mission.accept", params=MissionRevisionParams, result=MissionRes
        doc="Record explicit human acceptance only after current deterministic verification succeeds.")
 method("runtime.mission.verify", params=MissionRevisionParams, result=MissionVerifyResult,
        doc="Run bounded deterministic checks over retained artifact bytes; no model, shell or effect dispatch.")
-method("runtime.mission.receipts.list", params=MissionListParams, result=MissionReceiptListResult,
+method("runtime.mission.receipts.list", params=MissionReceiptListParams, result=MissionReceiptListResult,
        doc="Read a bounded immutable verification receipt list; missing evidence is never a pass.")
+
+method("runtime.mission.history", params=MissionListParams, result=MissionListResult,
+       doc="Read current and immutable archived missions for this canonical conversation. Controls always target the active exact mission.")

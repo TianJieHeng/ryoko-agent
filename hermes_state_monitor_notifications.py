@@ -184,6 +184,8 @@ def admit_notifications(registry, key):
         project_id = registry._row(conn, key)["project_id"]
     with registry.access.guard(project_id, registry.actor, "read"):
         def write(conn):
+            from tools.capability_broker import require_live_policy
+            require(require_live_policy(require_run=False) == registry.context, "Notification policy changed", "identity_mismatch")
             row = registry._row(conn, key)
             definition = json.loads(registry._version(conn, row)["definition_json"])
             policy = conn.execute("SELECT * FROM durable_monitor_policies WHERE schedule_key=? AND version=?", (key, row["version"])).fetchone()

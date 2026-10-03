@@ -39,7 +39,7 @@ def _runtime_effect_public(row):
               "policy_version", "policy_digest", "generation", "approval_id", "provider_idempotency", "created_at", "updated_at")
     result = {key: row[key] for key in fields}
     result.update(target_digest=_runtime_effect_reference_digest(row["target_ref"]),
-        operation_type=row["operation_type"] if row["operation_type"] in {"artifact_publish", "project_artifact_publish", "mission_test_execution"} else "unsupported",
+        operation_type=row["operation_type"] if row["operation_type"] in {"artifact_publish", "project_artifact_publish", "mission_test_execution", "dots_page_publish", "dots_computer_action"} else "unsupported",
         exactly_once_external=False, replay_permitted=False)
     return result
 
@@ -109,6 +109,30 @@ def _runtime_approvals_list(rid, params):
                                        run_id=request.run_id, limit=request.limit + 1)
         return _ok(rid, {"approvals": [_runtime_approval_public(row) for row in rows[:request.limit]],
                          "limit": request.limit, "truncated": len(rows) > request.limit, "complete": False})
+    except RuntimeStoreError as exc:
+        return _runtime_store_error(rid, exc)
+
+
+@method("runtime.approval.get")
+@_profile_scoped
+def _runtime_approval_get(rid, params):
+    from hermes_state_runtime import RuntimeStoreError
+    from hermes_state_approval_reviews import get_approval_detail
+    from tui_gateway.contracts.runtime_effects import RuntimeApprovalGetParams
+    request, error = _runtime_validate(rid, params, RuntimeApprovalGetParams)
+    if error:
+        return error
+    agent, db, error = _runtime_authority(rid, request.model_dump())
+    if error:
+        return error
+    try:
+        row, detail, decision = get_approval_detail(db, request.approval_id, _runtime_effect_actor(agent))
+        _runtime_effect_require_session(agent, db, row)
+        return _ok(rid, {"approval": _runtime_approval_public(row), "detail": detail,
+            "decision": decision,
+            "input_revision": row["binding"]["input_revision"] if detail["reviewable"] else None,
+            "artifact_revision": row["binding"]["artifact_revision"] if detail["reviewable"] else None,
+            "dispatch_performed": False})
     except RuntimeStoreError as exc:
         return _runtime_store_error(rid, exc)
 

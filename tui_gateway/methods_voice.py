@@ -447,6 +447,8 @@ def _(rid, params: dict) -> dict:
     from tui_gateway import server_requests
     from tui_gateway.contracts import registry as contracts
     server_requests.advertise(_caller_transport(), bool(params.get("server_requests")))
+    from tui_gateway.dots_surface import advertise_native_surface
+    advertise_native_surface(_caller_transport(), bool(params.get("dots_native")))
     return _ok(rid, {"server_requests": sorted(contracts.SERVER_REQUESTS), "declines_not_shown": True})
 
 

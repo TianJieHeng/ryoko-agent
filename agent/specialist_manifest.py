@@ -43,7 +43,8 @@ class SpecialistManifest:
         # The stable memory namespace remains unchanged when per-task grants narrow.
         binding = IdentityBinding(parsed.principal_id, parsed.profile_id, agent_id, session_id,
             "stable", narrowed.digest, parsed.digest, _digest(parent.profile_home))
-        context = AgentContext(binding, narrowed, parsed.digest, parent.profile_home)
+        context = AgentContext(binding, narrowed, parsed.digest, parent.profile_home,
+                               configuration_session_id=parent.identity.session_id)
         manifest = cls(canonical({"agent_id": agent_id, "responsibility": raw["responsibility"],
             "methods_ref": raw["methods_ref"], "limits": limits.to_record(), "output_contract": schema,
             "grants": narrowed.to_record(), "builtin_memory_namespace": IndividualMemoryScope.from_context(context).namespace_id}))

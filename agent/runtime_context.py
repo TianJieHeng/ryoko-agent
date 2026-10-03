@@ -30,10 +30,13 @@ class AgentContext:
     policy: AgentPolicy
     config_digest: str
     profile_home: str = field(repr=False)
+    configuration_session_id: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
-        from agent.agent_identity import _digest
+        from agent.agent_identity import _digest, _identifier
 
+        if self.configuration_session_id is not None:
+            _identifier(self.configuration_session_id, "configuration_session_id")
         object.__setattr__(
             self, "profile_home", canonical_profile_home(self.profile_home)
         )

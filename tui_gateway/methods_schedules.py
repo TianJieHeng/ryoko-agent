@@ -16,6 +16,21 @@ def _schedule_operation(agent, db, request, name):
 
     context = agent.runtime_context
     schedules, commitments = ScheduleRegistry(context, db), CommitmentRegistry(context, db)
+    if name in {"runtime.schedule.create", "runtime.schedule.import", "runtime.schedule.update",
+                "runtime.schedule.run_now", "runtime.schedule.cutover"}:
+        from cron.durable_contract import validate_definition
+        definition = (validate_definition(json.loads(request.definition_json)) if hasattr(request, "definition_json") else
+                      schedules.get(request.project_id, request.schedule_id)["definition"])
+        if isinstance(definition, dict) and definition.get("kind") == "command":
+            from hermes_state_command_schedules import CommandScheduleRegistry
+            return {"record_json": canonical(CommandScheduleRegistry(context, db).control(agent, request, name))}
+        if name in {"runtime.schedule.run_now", "runtime.schedule.cutover"}:
+            from cron.durable_contract import require
+            require(False, "This control requires a command schedule", "invalid_schedule")
+    if name == "runtime.schedule.grant":
+        from cron.durable_contract import require
+        require(schedules.get(request.project_id, request.schedule_id)["definition"]["kind"] != "command",
+                "Command authority is pinned by the immutable definition and activation", "invalid_schedule")
     writes = {
         "runtime.schedule.create": lambda run: schedules.create(run, json.loads(request.definition_json), expected_revision=request.expected_revision),
         "runtime.schedule.import": lambda run: schedules.create(run, json.loads(request.definition_json), expected_revision=request.expected_revision,
@@ -74,7 +89,8 @@ def _schedule_handler(name, model):
 
 
 from .contracts.schedules import _SPECS
-for _name, (_model, _doc) in _SPECS.items():
+from .contracts.command_schedules import COMMAND_SCHEDULE_SPECS
+for _name, (_model, _doc) in {**_SPECS, **COMMAND_SCHEDULE_SPECS}.items():
     method(_name)(_schedule_handler(_name, _model))
 
 

@@ -3,6 +3,7 @@ module is listed here so the generator and the runtime see the same catalog."""
 
 from . import (  # noqa: F401
     artifacts,
+    dots_effects,
     project_sources,
     capture_processing,
     template_application,
@@ -10,6 +11,7 @@ from . import (  # noqa: F401
     operations_control,
     connected_sources,
     specialists,
+    agent_configuration,
     opportunities,
     billing_delegation_pets,
     common,
@@ -27,6 +29,7 @@ from . import (  # noqa: F401
     workflows,
     schedules,
     schedule_outputs,
+    command_schedules,
     monitor_notifications,
     media,
     research,
@@ -36,6 +39,7 @@ from . import (  # noqa: F401
     runtime_v1,
     runtime_conversations,
     runtime_effects,
+    runtime_controls,
     runtime_results,
     server_requests,
     sessions,

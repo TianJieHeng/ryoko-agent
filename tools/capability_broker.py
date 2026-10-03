@@ -102,6 +102,9 @@ def require_live_policy(*, require_run=True):
         return None
     if parsed is None or parsed.digest != context.config_digest:
         raise CapabilityDenied("policy_revoked", "Agent policy changed; start a newly authorized session")
+    from agent.agent_configuration import base_configuration
+    from agent.agent_configuration_revocation import assert_managed_authority_current
+    assert_managed_authority_current(context, base_configuration())
     if require_run:
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
@@ -136,7 +139,7 @@ def _authority():
 
 
 def _action_authority(action):
-    if action.operation_class != "project_artifact_publish":
+    if action.operation_class not in {"project_artifact_publish", "dots_page_publish", "dots_computer_action"}:
         return _authority()
     from agent.artifact_commands import assert_artifact_dispatch
     run = assert_artifact_dispatch()
@@ -190,6 +193,8 @@ def tool_action(name: str, arguments: dict, *, entry=None) -> ActionSpec:
         destination = _canonical({"principal_id": identity.principal_id, "profile_id": identity.profile_id,
                                   "agent_id": identity.agent_id, "home": identity.profile_home_digest})
         purpose = "individual_memory" if name == "memory" else "session_recall"
+    elif name in {"dots_page_read", "dots_page_propose", "dots_computer_observe", "dots_computer_propose"} and module == "tools.dots_tool":
+        operation, destination, purpose = "dots_native_tool", "", "dots_native"
     elif entry is not None and entry.toolset.startswith("mcp-"):
         target = getattr(entry.handler, "_agent_mcp_target", None)
         if not isinstance(target, tuple) or len(target) != 2:
@@ -217,6 +222,10 @@ def tool_action(name: str, arguments: dict, *, entry=None) -> ActionSpec:
 
 
 def _authorize_action(action):
+    if action.operation_class in {"dots_page_publish", "dots_computer_action"}:
+        from agent.dots_adapter import authorize_dots_action
+        authorize_dots_action(action)
+        return
     if action.operation_class == "project_artifact_publish":
         from agent.artifact_commands import assert_artifact_dispatch
         from agent.project_context import authorize_project
@@ -317,7 +326,7 @@ def _approval_binding(authority, action):
 
 
 def _approval_store(authority, action=None):
-    if action is not None and action.operation_class == "project_artifact_publish":
+    if action is not None and action.operation_class in {"project_artifact_publish", "dots_page_publish", "dots_computer_action"}:
         from agent.artifact_commands import assert_artifact_dispatch
         run = assert_artifact_dispatch()
     else:
@@ -345,7 +354,7 @@ def _approval_record(preview, authority, action):
     return db, actor, record
 
 
-def preview_action(action: ActionSpec, *, ttl_seconds=300, approval_id=None, expires_at=None) -> ApprovalPreview:
+def preview_action(action: ActionSpec, *, ttl_seconds=300, approval_id=None, expires_at=None, review_content=None) -> ApprovalPreview:
     from hermes_state_runtime import RuntimeStoreError
     authority = _action_authority(action)
     _authorize_action(action)
@@ -358,7 +367,7 @@ def preview_action(action: ActionSpec, *, ttl_seconds=300, approval_id=None, exp
     db, actor = _approval_store(authority, action)
     try:
         record = db.request_effect_approval(actor=actor, expires_at=expires, approval_id=approval_id,
-                                            **_approval_binding(authority, action))
+            review={"action": action.to_record(), "content": review_content}, **_approval_binding(authority, action))
     except RuntimeStoreError as exc:
         raise CapabilityDenied(exc.code, str(exc)) from exc
     return ApprovalPreview(record["approval_id"], authority, action,
@@ -397,7 +406,7 @@ def issue_capability(action: ActionSpec, *, approval: ApprovalPreview | None = N
                      ttl_seconds=60) -> Capability:
     from hermes_state_runtime import RuntimeStoreError
     authority = _action_authority(action)
-    if action.operation_class == "project_artifact_publish":
+    if action.operation_class in {"project_artifact_publish", "dots_page_publish", "dots_computer_action"}:
         raise CapabilityDenied("effect_dispatch_required", "Artifact approval must be consumed with durable effect dispatch")
     _authorize_action(action)
     expires = _expiry(ttl_seconds, 60)

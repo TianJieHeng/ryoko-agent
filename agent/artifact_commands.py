@@ -19,7 +19,8 @@ from hermes_state_runtime import RuntimeStoreError
 
 CONTROL_TTL_SECONDS = 300
 _CONTROL = ContextVar("runtime_artifact_control", default=None)
-_CONTROL_RPCS = frozenset({"runtime.artifact.prepare", "runtime.artifact.publish",
+_CONTROL_RPCS = frozenset({"runtime.dots.page.prepare", "runtime.dots.page.publish",
+    "runtime.dots.computer.prepare", "runtime.dots.computer.execute","runtime.artifact.prepare", "runtime.artifact.publish",
     "runtime.artifact.bytes.prepare", "runtime.artifact.bytes.publish",
     "runtime.artifact.edit.prepare", "runtime.artifact.edit.publish",
     "runtime.artifact.merge.prepare", "runtime.artifact.merge.publish",
@@ -29,6 +30,7 @@ _CONTROL_RPCS = frozenset({"runtime.artifact.prepare", "runtime.artifact.publish
     "runtime.workflow.create", "runtime.workflow.template.create", "runtime.workflow.evaluate",
     "runtime.workflow.decision.prepare", "runtime.workflow.decision.commit", "runtime.workflow.feedback",
     "runtime.workflow.run.prepare", "runtime.workflow.run.publish",
+    "runtime.workflow.delivery.prepare", "runtime.workflow.delivery.commit",
     "runtime.schedule.create", "runtime.schedule.import", "runtime.schedule.update",
     "runtime.schedule.grant", "runtime.schedule.reconcile",
     "runtime.schedule.output.prepare", "runtime.schedule.output.publish",
@@ -147,6 +149,9 @@ def assert_artifact_dispatch(run=None):
             or record["claimed_holder"] != run.holder or record["claimed_generation"] != run.generation
             or record["receipt"]["run_id"] != run.run_id or record["command"]["operation"] != "artifact"):
         raise RuntimeStoreError("artifact_stale_owner", "Artifact control no longer owns dispatch")
+    from hermes_state_runtime_controls import assert_owner_running
+    identity = run.context.identity
+    assert_owner_running(run.db, {key: getattr(identity, key) for key in ("principal_id", "profile_id", "agent_id")})
     if run.budget is not None:
         run.budget.check()
     return run

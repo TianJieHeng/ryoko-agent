@@ -55,7 +55,8 @@ def _conversation_decode_cursor(value, scope, size):
 
 
 def _conversation_summary(row):
-    return {"conversation_id": row["conversation_id"], "title": row["display_title"] if row["display_title"] is not None else row["title"] or "",
+    return {"conversation_id": row["conversation_id"], "agent_id": json.loads(row["binding_json"])["agent_id"],
+            "title": row["display_title"] if row["display_title"] is not None else row["title"] or "",
             "archived": bool(row["archived"]), "revision": row["revision"],
             "created_at": row["created_at"], "updated_at": row["updated_at"], "source": "web"}
 
@@ -104,6 +105,16 @@ class SessionConversationsMixin:
         conn.execute("INSERT INTO runtime_conversation_operations VALUES(?,?,?,?,?,?)",
                      (owner, key, digest, operation, _json(result), time.time()))
 
+    def _conversation_receipt_on_conn(self, conn, owner, result):
+        # Receipts written before agent selectors existed omit this projection.
+        # Enrich from the immutable binding without rewriting historical results.
+        conversation = result["conversation"]
+        row = self._conversation_owned_on_conn(conn, owner, conversation["conversation_id"])
+        agent_id = json.loads(row["binding_json"])["agent_id"]
+        _require(conversation.get("agent_id", agent_id) == agent_id,
+                 "identity_mismatch", "Conversation receipt identity changed")
+        return {**result, "conversation": {**conversation, "agent_id": agent_id}}
+
     def read_runtime_conversation_operation(self, context, idempotency_key):
         owner = _conversation_owner(context)
         _identifier(idempotency_key, "idempotency_key")
@@ -112,17 +123,19 @@ class SessionConversationsMixin:
                                "WHERE owner_key=? AND idempotency_key=?", (owner, idempotency_key)).fetchone()
             return {"schema_version": 1, "found": row is not None, "idempotency_key": idempotency_key,
                     "operation": row["operation"] if row else None,
-                    "conversation": json.loads(row["result_json"])["conversation"] if row else None}
+                    "conversation": self._conversation_receipt_on_conn(conn, owner, json.loads(row["result_json"]))["conversation"] if row else None}
 
-    def create_runtime_conversation(self, context, request):
+    def create_runtime_conversation(self, context, request, *, configuration_enrollment=None):
         owner = _conversation_owner(context)
         title = _conversation_title(request.get("title", ""))
         request = {**request, "operation": "create"}
         def write(conn):
             key, digest, prior = self._conversation_operation_on_conn(conn, owner, request)
             if prior is not None:
-                self._conversation_owned_on_conn(conn, owner, prior["conversation"]["conversation_id"])
-                return {**prior, "created": False}
+                return {**self._conversation_receipt_on_conn(conn, owner, prior), "created": False}
+            if configuration_enrollment is not None:
+                from agent.conversation_identity import validate_conversation_enrollment
+                validate_conversation_enrollment(conn, context, configuration_enrollment)
             now = time.time()
             sid = context.identity.session_id
             binding = context.identity.to_record()
@@ -130,6 +143,9 @@ class SessionConversationsMixin:
                          "model_config,profile_name) VALUES(?,?,?,?,?,?,?,?,?)",
                          (sid, "web", "web", binding["principal_id"], now, None, None,
                           _json({"agent_identity": binding}), self._own_profile_name()))
+            if configuration_enrollment is not None:
+                conn.execute('INSERT INTO agent_configuration_sessions(session_id,snapshot_id,selected_agent_id) VALUES(?,?,?)',
+                             (sid, configuration_enrollment['snapshot_id'], configuration_enrollment['selected_agent_id']))
             conn.execute("INSERT INTO runtime_conversations(conversation_id,owner_key,binding_json,display_title,created_at,updated_at) "
                          "VALUES(?,?,?,?,?,?)", (sid, owner, _json(binding), title, now, now))
             result = {"schema_version": 1, "conversation": _conversation_summary(
@@ -177,7 +193,7 @@ class SessionConversationsMixin:
             row = self._conversation_owned_on_conn(conn, owner, request["conversation_id"])
             key, digest, prior = self._conversation_operation_on_conn(conn, owner, request)
             if prior is not None:
-                return prior
+                return self._conversation_receipt_on_conn(conn, owner, prior)
             _require(type(request.get("expected_revision")) is int and request["expected_revision"] == row["revision"],
                      "revision_conflict", "Conversation metadata changed")
             lineage = self._conversation_lineage_on_conn(conn, row)
@@ -200,6 +216,43 @@ class SessionConversationsMixin:
         return self._execute_write(write)
 
     def _conversation_text_on_conn(self, conn, row_id, offset):
+        from agent.context_compressor import (
+            SUMMARY_PREFIX, LEGACY_SUMMARY_PREFIX, _HISTORICAL_SUMMARY_PREFIXES,
+            _MERGED_SUMMARY_DELIMITER, split_user_originated_turn, is_compaction_summary_message,
+        )
+        needles = [prefix.splitlines()[0] for prefix in
+                   (SUMMARY_PREFIX, LEGACY_SUMMARY_PREFIX, *_HISTORICAL_SUMMARY_PREFIXES, _MERGED_SUMMARY_DELIMITER)]
+        # Structured content is JSON-encoded with ASCII escapes; recognize its
+        # legacy unflagged carrier prefixes too, without hydrating ordinary rows.
+        needles = list(dict.fromkeys(needles + [json.dumps(needle)[1:-1] for needle in needles]))
+        probes = " OR ".join("instr(CAST(content AS BLOB),CAST(? AS BLOB))>0" for _ in needles)
+        summary = conn.execute(f"SELECT _compressed_summary OR display_kind='hidden' OR {probes} FROM messages WHERE id=?",
+                               (*needles, row_id)).fetchone()
+        if summary and summary[0]:
+            carrier = conn.execute("SELECT role,content,display_kind,display_metadata,_compressed_summary FROM messages WHERE id=?", (row_id,)).fetchone()
+            message = {**dict(carrier), "content": self._decode_content(carrier["content"]),
+                       "display_metadata": self._decode_display_metadata(carrier["display_metadata"])}
+            # Metadata is authoritative, while the existing parser also recognizes
+            # legacy unflagged carriers. A hidden ordinary row never becomes human text.
+            if message["role"] == "assistant" and not is_compaction_summary_message(message):
+                live = message
+            else:
+                _, live = split_user_originated_turn(message)
+            if live is None:
+                return None
+            content = live.get("content")
+            structured = isinstance(content, list)
+            if structured:
+                content = "\n".join(part["text"] for part in content if isinstance(part, dict)
+                    and part.get("type") in {"text", "input_text", "output_text"} and isinstance(part.get("text"), str))
+            data = (content if isinstance(content, str) else "").encode("utf-8", errors="replace")
+            total = len(data)
+            data = data[offset:offset + CONVERSATION_TEXT_CHARS]
+            decoder = codecs.getincrementaldecoder("utf-8")("replace")
+            raw = decoder.decode(data, final=offset + len(data) >= total)
+            end = offset + len(data) - len(decoder.getstate()[0])
+            clean = _CONTROL_CHARS.sub("", raw)
+            return clean, end, total, clean != raw, structured
         # JSON content's NUL sentinel requires BLOB slicing (SQLite text substr stops at NUL).
         raw_json = "CAST(substr(CAST(content AS BLOB),7) AS TEXT)"
         is_json = "substr(CAST(content AS BLOB),1,6)=x'006a736f6e3a'"
@@ -238,7 +291,8 @@ class SessionConversationsMixin:
                        coalesce(nullif(message_uid,''),'row:'||id) AS uid
                 FROM messages WHERE session_id IN ({marks}) AND id<=?
                     AND (active=1 OR compacted=1) AND role IN ('user','assistant')
-                    AND coalesce(_compressed_summary,0)=0 AND coalesce(display_kind,'') IN ('','steer')
+                    AND ((coalesce(_compressed_summary,0)=0 AND coalesce(display_kind,'') IN ('','steer'))
+                         OR (role='user' AND coalesce(display_kind,'') IN ('','hidden')))
                     AND coalesce(json_extract(display_metadata,'$.model_only'),0)=0),
                 ranked AS (SELECT *,MIN(id) OVER (PARTITION BY uid) AS first_id,
                     ROW_NUMBER() OVER (PARTITION BY uid ORDER BY active DESC,id DESC) AS rank FROM eligible)
@@ -253,17 +307,23 @@ class SessionConversationsMixin:
                     if len(chunks) >= limit:
                         next_position = [upper, after, offset]
                         break
-                    text, end, total, sanitized, structured = self._conversation_text_on_conn(conn, row["id"], position)
+                    projection = self._conversation_text_on_conn(conn, row["id"], position)
+                    if projection is None:
+                        after, offset = row["first_id"], 0
+                        break
+                    text, end, total, sanitized, structured = projection
                     size = len(text.encode("utf-8"))
                     if chunks and used + size > CONVERSATION_TEXT_BYTES:
                         next_position = [upper, after, offset]
                         break
                     complete = end >= total
+                    link = conn.execute("SELECT command_id FROM runtime_command_messages WHERE session_id=? AND message_uid=?",
+                                        (conversation_id, row["uid"])).fetchone()
                     chunks.append({"message_id": row["uid"], "physical_session_id": row["session_id"],
-                                   "role": row["role"], "text": text, "text_offset": position,
+                                   "role": row["role"], "text": text, "text_offset": position, "next_text_offset": end,
                                    "text_complete": complete, "text_sanitized": sanitized,
                                    "non_text_omitted": structured, "timestamp": float(row["timestamp"]),
-                                   "committed": True, "command_id": None})
+                                   "committed": True, "command_id": link["command_id"] if link is not None else None})
                     used += size
                     after, offset = row["first_id"], 0 if complete else end
                     if complete:
@@ -271,6 +331,8 @@ class SessionConversationsMixin:
                     position = end
                 if next_position is not None:
                     break
+            if next_position is None and len(rows) > limit:
+                next_position = [upper, after, offset]
             return {"schema_version": 1, "conversation_id": conversation_id, "format": "safe_transcript_v1",
                     "messages": chunks, "lineage": chain, "snapshot_max_row_id": upper,
                     "has_more": next_position is not None,

@@ -679,6 +679,13 @@ def _stage_turn_user_message(
         user_msg = {"role": "user", "content": user_message}
         if isinstance(pending_cli_message, dict):
             agent._pending_cli_user_message = None
+    # A pre-claim host row may already be durable. Reconcile that exact row once
+    # under the claimed command so its linkage commits in the message writer txn.
+    from agent.runtime_commands import _RUN
+    run = _RUN.get()
+    if run is not None and run.agent is agent:
+        from agent.context_compressor import _DB_PERSISTED_MARKER
+        user_msg.pop(_DB_PERSISTED_MARKER, None)
     # CLI input is stamped when staged; gateway input may carry the platform event
     # time. Preserve either value and cover any legacy unstamped handoff.
     stamp_message_timestamp(user_msg, timestamp=persist_user_timestamp)

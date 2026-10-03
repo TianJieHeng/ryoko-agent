@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 def tick_monitor_notifications(db, home):
     """Bounded continuation of the sole per-profile cron tick, including offline holds."""
-    from agent.agent_identity import resolve_owned_agent_context
-    from agent.identity_lifecycle import agent_runtime_scope, identity_config
+    from agent.conversation_identity import recorded_owner_scope
+    from agent.identity_lifecycle import agent_runtime_scope
     from hermes_state_monitor_notifications import MonitorNotifications, admit_notifications, sync_notification_delivery
     def recover(conn):
         stale = conn.execute("SELECT o.obligation_id FROM delivery_obligations o JOIN durable_monitor_batches b "
@@ -23,12 +23,12 @@ def tick_monitor_notifications(db, home):
             sync_notification_delivery(conn, item[0])
     db._execute_write(recover)
     with db._runtime_read() as conn:
-        rows = [dict(row) for row in conn.execute("SELECT s.*,p.destination_session FROM durable_schedules s "
+        rows = [dict(row) for row in conn.execute("SELECT s.*,p.destination_session,p.owner_binding_json notification_owner_binding_json FROM durable_schedules s "
             "JOIN durable_monitor_policies p ON p.schedule_key=s.schedule_key AND p.version=s.version "
             "WHERE s.state='active' ORDER BY s.created_at LIMIT 100")]
     for row in rows:
         try:
-            context = resolve_owned_agent_context(identity_config(), owner_binding=json.loads(row["owner_binding_json"]),
+            context = recorded_owner_scope(db, owner_binding=json.loads(row["notification_owner_binding_json"]),
                 session_id=row["destination_session"], profile_home=home)
             with agent_runtime_scope(context):
                 admit_notifications(MonitorNotifications(context, db), row["schedule_key"])

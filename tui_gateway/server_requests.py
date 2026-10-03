@@ -48,10 +48,11 @@ logger = logging.getLogger(__name__)
 
 class ServerRequest:
     __slots__ = ("id", "sid", "method", "params", "event", "result", "answered", "created_at",
-                 "qids", "locked", "on_result", "declined")
+                 "qids", "locked", "on_result", "declined", "expected_transport")
 
     def __init__(self, sid: str, method: str, params: dict, *, qids: list[str] | None = None,
-                 on_result: Callable[[dict | None], None] | None = None) -> None:
+                 on_result: Callable[[dict | None], None] | None = None, expected_transport: Any = None) -> None:
+        self.expected_transport = expected_transport
         self.id = f"srq-{uuid.uuid4().hex[:12]}"
         self.sid = sid
         self.method = method
@@ -157,21 +158,37 @@ def _register(req: ServerRequest) -> None:
         raise ValueError(problem)  # a key the renderer's typed handler would never read: our bug
     with _lock:
         _open[req.id] = req
-    _write(req.frame())
+    if req.expected_transport is None:
+        _write(req.frame())
+    else:
+        try:
+            written = req.expected_transport.write(req.frame())
+        except BaseException:
+            # The native effect remains uncertain, but a dead write must not
+            # leave a forever-open request or a later response continuation.
+            with _lock:
+                _open.pop(req.id, None)
+            raise
+        if written is False:
+            with _lock:
+                _open.pop(req.id, None)
+            req.event.set()
 
 
 def send(method: str, sid: str, params: dict, *, timeout: float | None,
-         qids: list[str] | None = None) -> dict | None:
+         qids: list[str] | None = None, expected_transport: Any = None) -> dict | None:
     """Send one request and block for the response ``result`` (a dict).
 
     Returns ``None`` when the renderer never answered (timeout, cancel, or an error response — e.g.
     a client without a handler for ``method``). ``timeout`` semantics: None → wait until answered or
     cancelled, 0 → return immediately, > 0 → bounded wait. A batch (``qids``) that settled returns
     ``{"answers": <locked so far>, "outcome"}`` (``submitted`` / ``cancelled`` / ``timed_out``).
+    ``expected_transport`` pins native executor requests to one trusted peer;
+    these requests are excluded from reconnect replay and accept no other answer.
     """
     if _unanswerable(method, sid):
         return None
-    req = ServerRequest(sid, method, params, qids=qids)
+    req = ServerRequest(sid, method, params, qids=qids, expected_transport=expected_transport)
     _register(req)
     try:
         req.event.wait(timeout)
@@ -257,6 +274,10 @@ def resolve_response(frame: dict, transport: Any = None) -> bool:
     rid = frame.get("id")
     if not isinstance(rid, str):
         return False
+    with _lock:
+        pinned = _open.get(rid)
+        if pinned is not None and pinned.expected_transport is not None and pinned.expected_transport is not transport:
+            return False
     if _is_not_shown(frame):
         return _decline(rid, transport)
     with _lock:
@@ -265,6 +286,8 @@ def resolve_response(frame: dict, transport: Any = None) -> bool:
             # Already settled (timed out, cancelled, answered from another surface) or owned by
             # another process; say so — a dropped answer used to vanish without a trace.
             logger.debug("server request %s: response dropped, request no longer open", rid)
+            return False
+        if req.expected_transport is not None and req.expected_transport is not transport:
             return False
         # Removing the request and committing its outcome are one settlement.
         # ``cancel()`` also settles under this lock, so the first side to get
@@ -338,7 +361,9 @@ def open_requests(sid: str) -> list[dict]:
     """Unanswered requests for *sid*, oldest first."""
     with _lock:
         reqs = sorted((req for req in _open.values() if req.sid == sid), key=lambda r: r.created_at)
-    return [req.snapshot() for req in reqs]
+    # Executor requests cannot be fanned out or replayed after reconnect. The
+    # durable effect must instead be inspected through its read-only adapter.
+    return [req.snapshot() for req in reqs if req.expected_transport is None]
 
 
 def open_request_count() -> int:

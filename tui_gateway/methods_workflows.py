@@ -192,3 +192,5 @@ def _workflow_runs(rid, params):
 
 def register(server):
     bind_module(globals(), server)
+    from . import methods_workflow_delivery
+    methods_workflow_delivery.register(server)

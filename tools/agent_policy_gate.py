@@ -41,6 +41,8 @@ def missing_context_denial() -> str | None:
 def authorize_tool(name: str, *, context=_CURRENT, entry=None) -> str | None:
     ctx = _context(context)
     if ctx is None:
+        if name in {"dots_page_read", "dots_page_propose", "dots_computer_observe", "dots_computer_propose"}:
+            return _denied("Native tools require an immutable identity and advertised stdio surface.")
         return missing_context_denial()
     if not ctx.policy.allows_tool(name):
         return _denied("The current agent has no grant for this tool.")
@@ -60,6 +62,8 @@ def authorize_tool(name: str, *, context=_CURRENT, entry=None) -> str | None:
         "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
         "tool_call": "tools.tool_search", "execute_code": "tools.code_execution_tool",
         "delegate_task": "tools.delegate_tool",
+        "dots_page_read": "tools.dots_tool", "dots_page_propose": "tools.dots_tool",
+        "dots_computer_observe": "tools.dots_tool", "dots_computer_propose": "tools.dots_tool",
         "memory": "tools.memory_tool", "session_search": "tools.session_search_tool",
     }
     expected = certified.get(name)
@@ -67,6 +71,10 @@ def authorize_tool(name: str, *, context=_CURRENT, entry=None) -> str | None:
         return _denied("This execution route has no BE05-certified isolation/egress contract.", unsupported=True)
     if entry is None and name not in _SESSION_ONLY_TOOLS:
         return _denied("Certified handler provenance is unavailable.", unsupported=True)
+    if name.startswith("dots_"):
+        from tui_gateway.dots_surface import surface_tool_allowed
+        if not surface_tool_allowed(ctx):
+            return _denied("Native tools were not advertised before this owned stdio agent was constructed.")
     if name in ("memory", "session_search"):
         if ctx.policy.memory_backend != "builtin" or ctx.policy.role == "primary":
             return _denied("Local memory and session recall require an individual built-in backend.", unsupported=True)

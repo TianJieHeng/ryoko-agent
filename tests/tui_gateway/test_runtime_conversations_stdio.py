@@ -14,14 +14,15 @@ def test_stdio_owner_creation_reconciles_after_abrupt_process_restart(tmp_path):
     (home / "config.yaml").write_text(json.dumps({
         "agent_identity": {"schema_version": 1, "principal_id": "stdio-owner", "profile_id": "stdio-profile",
             "primary_agent_id": "ryoko", "active_agent_id": "ryoko",
-            "agents": {"ryoko": {"policy_version": 1, "role": "primary", "memory_backend": "personal_mcp"}}},
+            "agents": {"ryoko": {"policy_version": 1, "role": "primary", "memory_backend": "personal_mcp"},
+                       "researcher": {"policy_version": 1, "role": "specialist", "memory_backend": "builtin"}}},
         "mcp_servers": {}, "model": {"default": "fixture-unconfigured", "provider": "openai"}}), encoding="utf-8")
     env = {key: value for key, value in os.environ.items()
            if not any(part in key for part in ("API_KEY", "TOKEN", "SECRET", "PASSWORD"))}
     env.update(HERMES_HOME=str(home), HERMES_RUNTIME_DIR=str(tmp_path / "runtime"),
                HOME=str(tmp_path), HERMES_TEST_ISOLATION="1")
     repo = Path(__file__).resolve().parents[2]
-    conversation = None
+    conversation, specialist = None, None
     for attempt in range(2):
         with (tmp_path / f"stderr-{attempt}.log").open("w", encoding="utf-8") as diagnostics:
             process = subprocess.Popen([sys.executable, "-u", "-m", "tui_gateway.entry"], cwd=repo, env=env,
@@ -62,6 +63,17 @@ def test_stdio_owner_creation_reconciles_after_abrupt_process_restart(tmp_path):
                 assert listed["conversations"] == [conversation]
                 history = call("history", "history", conversation_id=conversation["conversation_id"])
                 assert history["messages"] == [] and history["lineage"] == [conversation["conversation_id"]]
+                named_receipt = call("operation.get", "named-receipt", agent_id="researcher", idempotency_key="unknown-outcome")
+                assert named_receipt["found"] == bool(attempt)
+                if attempt:
+                    assert named_receipt["conversation"] == specialist
+                named = call("create", "named-create", agent_id="researcher", idempotency_key="unknown-outcome", title="Specialist")
+                if specialist is None:
+                    specialist = named["conversation"]
+                assert named["conversation"] == specialist and named["created"] == (attempt == 0)
+                assert specialist["agent_id"] == "researcher" and specialist["conversation_id"] != conversation["conversation_id"]
+                assert call("list", "named-list", agent_id="researcher")["conversations"] == [specialist]
+                assert call("history", "named-history", conversation_id=specialist["conversation_id"])["messages"] == []
             finally:
                 process.kill()
                 process.wait(timeout=10)

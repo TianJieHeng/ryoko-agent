@@ -31,6 +31,7 @@ class ClientCapabilitiesParams(Params):
     #: error for methods it has no handler for. A WebSocket client that never says so is treated as a
     #: build older than server→client requests and every such request fails fast for it.
     server_requests: bool = False
+    dots_native: bool = False
 
 
 class ClientCapabilitiesResult(Result):

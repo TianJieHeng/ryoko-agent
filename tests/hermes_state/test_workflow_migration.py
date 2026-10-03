@@ -16,6 +16,7 @@ _LEGACY_TABLES = (
 _WORKFLOW_TABLES = {
     "workflow_versions", "workflow_heads", "workflow_templates", "workflow_evaluations",
     "workflow_evidence", "workflow_runs", "workflow_decisions",
+    "workflow_deliveries", "workflow_delivery_heads",
 }
 
 

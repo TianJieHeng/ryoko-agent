@@ -42,3 +42,22 @@ def test_interval_clock_jump_has_stable_anchor_and_unsupported_execution_fails_c
         record["kind"] = kind
         with pytest.raises(ValueError):
             validate_definition(record)
+
+
+def test_command_schedule_uses_same_explicit_dst_rules_and_enforces_prompt_authority_bounds():
+    record = definition()
+    record.update(kind="command", specification={"prompt": "Private summary", "session_id": "conversation", "authority_description": "One private summary"})
+    record["policy"] = {"missed_run": "run_once", "grace_seconds": 60, "overlap": "queue"}
+    validate_definition(record)
+    first = next_due(record, stamp("2026-11-01T00:00:00-04:00"))
+    assert first == stamp("2026-11-01T01:30:00-04:00")
+    assert next_due(record, first) == stamp("2026-11-02T01:30:00-05:00")
+    record["trigger"].update(hour=2, minute=30)
+    assert next_due(record, stamp("2026-03-08T00:00:00-05:00")) == stamp("2026-03-09T02:30:00-04:00")
+    record["budget"]["max_checks"] = 1001
+    with pytest.raises(ValueError):
+        validate_definition(record)
+    record["budget"]["max_checks"] = 1
+    record["budget"]["max_bytes"] = 1
+    with pytest.raises(ValueError):
+        validate_definition(record)

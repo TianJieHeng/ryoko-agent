@@ -36,6 +36,10 @@ def _target(descriptor):
 def dispatch_certified_effect(operation_type, *, run, input_ref, payload, operation_id, intent_key,
                                action=None, approval=None):
     """Called by the broker; provider classification never comes from model hints."""
+    if operation_type in {"dots_page_publish", "dots_computer_action"}:
+        from agent.dots_adapter import dispatch_dots_effect
+        return dispatch_dots_effect(operation_type, run=run, input_ref=input_ref, payload=payload,
+            operation_id=operation_id, intent_key=intent_key, action=action, approval=approval)
     if operation_type not in {"artifact_publish", "project_artifact_publish"}:
         raise CapabilityDenied("effect_adapter_unsupported", "No durable adapter certifies this mutation")
     if operation_type == "project_artifact_publish":
@@ -136,6 +140,9 @@ def reconcile_effect(db, effect_id, *, context, holder, generation, deadline_at)
     if effect is None:
         raise CapabilityDenied("effect_not_found", "Effect is unavailable in this actor scope")
     _assert_owner(db, context, effect["session_id"], holder, generation)
+    if effect["operation_type"] in {"dots_page_publish", "dots_computer_action"}:
+        from agent.dots_adapter import reconcile_dots_effect
+        return reconcile_dots_effect(db, effect, context=context, holder=holder, generation=generation, deadline_at=deadline_at)
     fence = {"holder": holder, "generation": generation}
     if effect["state"] in {"prepared", "confirmed", "failed"}:
         return effect

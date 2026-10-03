@@ -64,7 +64,7 @@ export interface RuntimeToolView {
   selected_tool_ids: string[]
   unavailable_reasons: Record<string, string>
 }
-/** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. */
+/** Operation selects the payload: text for submit/steer, reason for cancel, approval_id/decision for approval. Accepted is a durable receipt, not proof of execution; consult capabilities and replay for execution status. target_run_id pins cancel/steer to one run; omission preserves legacy controls. */
 export interface RuntimeCommandParams {
   session_id: string
   schema_version: 1
@@ -72,6 +72,7 @@ export interface RuntimeCommandParams {
   idempotency_key: string
   expected_revision: number | null
   operation: 'submit' | 'steer' | 'cancel' | 'approval'
+  target_run_id?: string
   payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
 }
 export interface RuntimeTextPayload {
@@ -100,6 +101,8 @@ export interface RuntimeCommandReceiptParams {
   session_id: string
   schema_version: 1
   command_id: string
+  message_limit?: number
+  message_cursor?: string | null
 }
 /** Read-only recovery of an original receipt and its latest recorded state. */
 export interface RuntimeCommandReceiptResult {
@@ -109,6 +112,20 @@ export interface RuntimeCommandReceiptResult {
   receipt: CommandReceipt | null
   status: 'accepted' | 'claimed' | 'completed' | 'failed' | 'blocked' | 'cancelled' | null
   durable_revision: number
+  accepted_input: RuntimeAcceptedInput | null
+  messages: RuntimeCommandMessage[]
+  messages_has_more: boolean
+  next_message_cursor: string | null
+}
+export interface RuntimeAcceptedInput {
+  state: 'accepted' | 'committed'
+  message_id: string | null
+}
+export interface RuntimeCommandMessage {
+  message_id: string
+  role: 'user' | 'assistant' | 'tool'
+  kind: 'input' | 'output'
+  committed: true
 }
 export interface RuntimeSessionParams {
   session_id: string
@@ -697,6 +714,170 @@ export interface ArtifactRecoveryResult {
   eof: boolean
   preview_mode: 'plain_text' | 'download_only'
   publication_state: 'committed' | 'published_uncommitted'
+}
+export interface DotsRegistrationParams {
+  session_id: string
+  schema_version: 1
+  adapter_id: string
+  kind: 'page' | 'computer'
+  expected_revision?: number | null
+  revision: number
+  enabled: boolean
+  project_ids?: string[]
+  space_ids?: string[]
+  actions?: ('navigate' | 'read' | 'snapshot' | 'screenshot' | 'click' | 'type' | 'key' | 'scroll' | 'files_list' | 'files_read' | 'files_write' | 'exec')[]
+}
+export interface DotsRegistrationResult {
+  adapter_id: string
+  kind: 'page' | 'computer'
+  revision: number
+  enabled: boolean
+  agent_id: string
+  registered: true
+}
+export interface DotsPagePrepareParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  proposal: DotsPageProposal
+}
+export interface DotsPageProposal {
+  kind?: 'page'
+  store_id: string
+  project_id: string
+  space_id: string
+  page_id: string
+  expected_head_version: number
+  expected_grant_revision: number
+  document: DotsPageDocument
+}
+export interface DotsPageDocument {
+  title: string
+  content: string
+  parent_id: string | null
+  archived: boolean
+}
+export interface DotsPreparedResult {
+  command_id: string
+  run_id: string
+  operation_id: string
+  action_digest: string
+  input_digest: string
+  content_sha256: string
+  approval_id: string
+  approval_digest: string
+  expires_at: number
+}
+export interface DotsPagePublishParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  proposal: DotsPageProposal
+  approval_id: string
+  approval_digest: string
+}
+export interface DotsEffectResult {
+  effect_id: string
+  operation_id: string
+  state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
+  receipt: DotsEffectReceipt | null
+  replay_permitted?: false
+}
+export interface DotsEffectReceipt {
+  identity: DotsEffectIdentity
+  state: 'committed' | 'not_applied' | 'outcome_unknown'
+  receipt_id?: string | null
+  content_sha256?: string | null
+  version?: number | null
+  result_sha256?: string | null
+  reason: 'committed' | 'conflict' | 'grant_revoked' | 'takeover' | 'stale_snapshot' | 'unavailable' | 'unknown'
+}
+export interface DotsEffectIdentity {
+  schema_version?: 1
+  principal_id: string
+  profile_id: string
+  agent_id: string
+  runtime_session_id: string
+  run_id: string
+  operation_id: string
+  effect_id: string
+  approval_id: string
+  approval_digest: string
+  action_digest: string
+  input_digest: string
+  policy_digest: string
+  policy_version: string
+  generation: number
+  adapter_id: string
+  adapter_kind: 'page' | 'computer'
+  grant_revision: number
+  scope_json: string
+  content_sha256: string
+  content_size: number
+}
+export interface DotsComputerPrepareParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  proposal: DotsComputerProposal
+}
+export interface DotsComputerProposal {
+  kind?: 'computer'
+  executor_id: string
+  expected_grant_revision: number
+  expected_control_revision: number
+  snapshot_id: number
+  snapshot_sha256: string
+  action: 'navigate' | 'read' | 'snapshot' | 'screenshot' | 'click' | 'type' | 'key' | 'scroll' | 'files_list' | 'files_read' | 'files_write' | 'exec'
+  input: DotsEmptyInput | DotsNavigateInput | DotsClickInput | DotsTypeInput | DotsKeyInput | DotsScrollInput | DotsFilesListInput | DotsFilesReadInput | DotsFilesWriteInput | DotsExecInput
+}
+export type DotsEmptyInput = Record<string, never>
+export interface DotsNavigateInput {
+  url: string
+}
+export interface DotsClickInput {
+  ref: string
+  snapshotId: number
+}
+export interface DotsTypeInput {
+  ref: string
+  snapshotId: number
+  text: string
+  submit?: boolean
+}
+export interface DotsKeyInput {
+  key: string
+}
+export interface DotsScrollInput {
+  deltaY: number
+}
+export interface DotsFilesListInput {
+  path?: string
+}
+export interface DotsFilesReadInput {
+  path: string
+}
+export interface DotsFilesWriteInput {
+  path: string
+  contents: string
+  append?: boolean
+}
+export interface DotsExecInput {
+  command: string
+  timeoutMs?: number
+}
+export interface DotsComputerExecuteParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  proposal: DotsComputerProposal
+  approval_id: string
+  approval_digest: string
+}
+export interface DotsReconcileParams {
+  session_id: string
+  schema_version: 1
+  effect_id: string
 }
 export interface CaptureCreateParams {
   session_id: string
@@ -1433,6 +1614,83 @@ export interface SpecialistCompletion {
   schema_valid: boolean | null
   parent_review_required?: true
   execution_resumed?: false
+}
+export interface AgentConfigurationList {
+  agents: AgentConfigurationRecord[]
+  activation?: 'next_session'
+}
+export interface AgentConfigurationRecord {
+  agent_id: string
+  role: 'primary' | 'specialist'
+  memory_backend: 'personal_mcp' | 'builtin'
+  builtin_memory_namespace: string | null
+  config: AgentEditableConfig
+  revision: number
+  archived: boolean
+  active_session_revision: number | null
+  authority_revocation_revision: number
+  active_session_revision_revoked: boolean
+  activation?: 'next_session'
+  personal_memory_mutation_supported?: false
+}
+export interface AgentEditableConfig {
+  name: string
+  instructions?: string
+  research_allowed?: boolean
+  memory_allowed?: boolean
+  project_grants?: string[]
+  default_project_id?: string | null
+}
+export interface AgentConfigurationParams {
+  session_id: string
+  schema_version: 1
+  agent_id: string
+}
+export interface AgentConfigurationResult {
+  agent: AgentConfigurationRecord
+}
+export interface AgentConfigurationCreateParams {
+  session_id: string
+  schema_version: 1
+  copy_from_agent_id?: string | null
+  config: AgentEditableConfig
+}
+export interface AgentConfigurationUpdateParams {
+  session_id: string
+  schema_version: 1
+  agent_id: string
+  expected_revision: number
+  config: AgentEditableConfig
+}
+export interface AgentConfigurationArchiveParams {
+  session_id: string
+  schema_version: 1
+  agent_id: string
+  expected_revision: number
+}
+export interface AgentSessionConfiguration {
+  agent_id: string
+  role: 'primary' | 'specialist' | 'child'
+  memory_backend: 'personal_mcp' | 'builtin'
+  active_configuration_revision: number | null
+  desired_configuration_revision: number | null
+  archived: boolean
+  authority_revocation_revision: number
+  authority_current: boolean
+  revocation_code: string | null
+  startup_frozen: boolean
+  active_workflows: AgentSessionWorkflowPin[]
+  desired_workflows: AgentSessionWorkflowPin[]
+  activation: 'next_session'
+  execution_authority: false
+}
+export interface AgentSessionWorkflowPin {
+  project_id: string
+  workflow_id: string
+  version: number
+  sha256: string
+  delivery_revision: number
+  workflow_state: 'draft' | 'tested' | 'approved' | 'deprecated' | 'revoked' | 'unavailable'
 }
 export interface OpportunityDiscoverParams {
   session_id: string
@@ -3373,6 +3631,7 @@ export interface GatewayCapabilitiesResult {
 }
 export interface ClientCapabilitiesParams {
   server_requests?: boolean
+  dots_native?: boolean
 }
 export interface ClientCapabilitiesResult {
   server_requests: string[]
@@ -3519,6 +3778,8 @@ export interface MemoryScopeResult {
 export interface MissionCreateParams {
   session_id: string
   schema_version: 1
+  previous_mission_id?: string | null
+  previous_revision?: number | null
   mission_id: string
   contract: MissionIntent
 }
@@ -3731,6 +3992,8 @@ export interface MissionRecord {
   created_at: number
   updated_at: number
   legacy_imported: boolean
+  archived?: boolean
+  archived_at?: number | null
 }
 export interface MissionEffectRef {
   effect_id: string
@@ -3745,6 +4008,11 @@ export interface MissionMissedSteer {
   run_id?: string | null
   effect_ids: string[]
   reason: 'effect_already_dispatched' | 'turn_already_finalizing'
+}
+export interface MissionGetParams {
+  session_id: string
+  schema_version: 1
+  mission_id?: string | null
 }
 export interface MissionGetResult {
   mission: MissionRecord | null
@@ -3763,6 +4031,7 @@ export interface MissionListResult {
 export interface MissionReviseParams {
   session_id: string
   schema_version: 1
+  mission_id?: string | null
   expected_revision: number
   contract: MissionIntent
   changed_inputs?: string[]
@@ -3772,12 +4041,14 @@ export interface MissionReviseParams {
 export interface MissionControlParams {
   session_id: string
   schema_version: 1
+  mission_id?: string | null
   expected_revision: number
   reason?: string
 }
 export interface MissionRevisionParams {
   session_id: string
   schema_version: 1
+  mission_id?: string | null
   expected_revision: number
 }
 export interface MissionVerifyResult {
@@ -3812,6 +4083,12 @@ export interface MissionEvidenceDependency {
   status?: string | null
   head_version?: number | null
   metadata_digest?: string | null
+}
+export interface MissionReceiptListParams {
+  session_id: string
+  schema_version: 1
+  limit?: number
+  mission_id?: string | null
 }
 export interface MissionReceiptListResult {
   receipts: MissionVerificationReceipt[]
@@ -4013,6 +4290,70 @@ export interface WorkflowRunPublishResult {
 export interface WorkflowHistoryResult {
   runs_json: string
   complete: false
+}
+export interface WorkflowDeliveryParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  sha256: string
+  specialist_id: string
+  expected_delivery_revision: number
+  action: 'deliver' | 'rollback'
+}
+export interface WorkflowDeliveryPrepareResult {
+  approval_id: string
+  approval_digest: string
+  expires_at: number
+  scope_json: string
+  workflow: WorkflowRecord
+  current_delivery: WorkflowDeliveryRecord | null
+}
+export interface WorkflowDeliveryRecord {
+  delivery_id: string
+  project_id: string
+  workflow_id: string
+  version: number
+  sha256: string
+  specialist_id: string
+  delivery_revision: number
+  action: 'deliver' | 'rollback'
+  approval_id: string
+  approval_digest: string
+  previous_delivery_id: string | null
+  activation: 'next_session'
+  execution_authority: false
+  personal_memory_shared: false
+  recorded_at: number
+}
+export interface WorkflowDeliveryCommitParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  workflow_id: string
+  version: number
+  command_id: string
+  sha256: string
+  specialist_id: string
+  expected_delivery_revision: number
+  action: 'deliver' | 'rollback'
+  approval_id: string
+  approval_digest: string
+}
+export interface WorkflowDeliveryCommitResult {
+  delivery: WorkflowDeliveryRecord
+}
+export interface WorkflowDeliveryListParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  specialist_id: string
+}
+export interface WorkflowDeliveryListResult {
+  deliveries: WorkflowDeliveryRecord[]
+  complete: true
 }
 export interface ScheduleCreateParams {
   session_id: string
@@ -4233,6 +4574,25 @@ export interface ScheduleOutputPublishParams {
   expected_sha256: string
   approval_id: string
   approval_digest: string
+}
+export interface ScheduleRunNowParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  schedule_id: string
+  command_id: string
+  expected_revision: number
+}
+export interface ScheduleCutoverParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  schedule_id: string
+  command_id: string
+  expected_revision: number
+  source_id: string
+  retirement_receipt: string
+  unresolved_occurrences: string[]
 }
 export interface MonitorPolicyParams {
   session_id: string
@@ -5519,7 +5879,7 @@ export interface RuntimeConversationCapabilities {
   max_text_chunk_chars: number
   max_page_text_bytes: number
   transcript_format: 'safe_transcript_v1'
-  command_message_linkage: 'unavailable'
+  command_message_linkage: 'explicit'
   restore_supported: false
 }
 export interface RuntimeConversationIdentity {
@@ -5528,9 +5888,12 @@ export interface RuntimeConversationIdentity {
   agent_id: string
   policy_digest: string
   config_digest: string
+  role: 'primary' | 'specialist'
+  memory_backend: 'personal_mcp' | 'builtin'
 }
 export interface RuntimeConversationCreateParams {
   schema_version: 1
+  agent_id?: string | null
   idempotency_key: string
   title?: string
 }
@@ -5541,6 +5904,7 @@ export interface RuntimeConversationCreateResult {
 }
 export interface RuntimeConversation {
   conversation_id: string
+  agent_id: string
   title: string
   archived: boolean
   revision: number
@@ -5550,6 +5914,7 @@ export interface RuntimeConversation {
 }
 export interface RuntimeConversationListParams {
   schema_version: 1
+  agent_id?: string | null
   limit?: number
   cursor?: string | null
   archived?: boolean
@@ -5612,15 +5977,17 @@ export interface RuntimeConversationTextChunk {
   role: 'user' | 'assistant'
   text: string
   text_offset: number
+  next_text_offset: number
   text_complete: boolean
   text_sanitized: boolean
   non_text_omitted: boolean
   timestamp: number
   committed: true
-  command_id: null
+  command_id: string | null
 }
 export interface RuntimeConversationOperationParams {
   schema_version: 1
+  agent_id?: string | null
   idempotency_key: string
 }
 export interface RuntimeConversationOperationResult {
@@ -5629,6 +5996,13 @@ export interface RuntimeConversationOperationResult {
   idempotency_key: string
   operation: 'create' | 'rename' | 'archive' | null
   conversation: RuntimeConversation | null
+}
+export interface RuntimeConversationCommandReceiptParams {
+  schema_version: 1
+  conversation_id: string
+  command_id: string
+  message_limit?: number
+  message_cursor?: string | null
 }
 export interface RuntimeApprovalListParams {
   session_id: string
@@ -5692,7 +6066,7 @@ export interface RuntimeEffectRecord {
   effect_id: string
   run_id: string
   operation_id: string
-  operation_type: 'artifact_publish' | 'project_artifact_publish' | 'mission_test_execution' | 'unsupported'
+  operation_type: 'artifact_publish' | 'project_artifact_publish' | 'mission_test_execution' | 'dots_page_publish' | 'dots_computer_action' | 'unsupported'
   state: 'prepared' | 'dispatched' | 'confirmed' | 'failed' | 'outcome_unknown' | 'reconciliation_required'
   action_digest: string
   input_digest: string
@@ -5730,6 +6104,88 @@ export interface RuntimeEffectReconcileResult {
   evidence: RuntimeEffectEvidence[]
   inspection_only: true
   dispatch_performed: false
+}
+export interface RuntimeApprovalGetParams {
+  session_id: string
+  schema_version: 1
+  approval_id: string
+}
+export interface RuntimeApprovalGetResult {
+  approval: RuntimeApprovalRecord
+  detail: RuntimeApprovalDetail
+  decision: RuntimeApprovalDecision
+  input_revision: string | null
+  artifact_revision: string | null
+  dispatch_performed: false
+}
+export interface RuntimeApprovalDetail {
+  reviewable: boolean
+  unavailable_reason: 'review_not_retained' | 'opaque_content' | 'sensitive_content' | 'content_not_retained' | 'review_size_limit' | null
+  review: RuntimeApprovalExactReview | null
+  review_digest: string | null
+}
+export interface RuntimeApprovalExactReview {
+  action: RuntimeApprovalReviewAction
+  content: RuntimeApprovalReviewContent | null
+}
+export interface RuntimeApprovalReviewAction {
+  name: string
+  arguments: Record<string, unknown>
+  operation_class: string
+  resource_roots: string[]
+  destination: string
+  destination_purpose: string
+  contract_digest: string
+}
+export interface RuntimeApprovalReviewContent {
+  encoding: 'base64'
+  data: string
+  sha256: string
+  mime: string
+}
+export interface RuntimeApprovalDecision {
+  choice: 'once' | 'deny' | null
+  resolved_at: number | null
+  consumed_at: number | null
+}
+export interface RuntimeControlGetParams {
+  session_id: string
+  schema_version: 1
+  operation_id?: string | null
+}
+export interface RuntimeControlResult {
+  control: RuntimeControlState
+  operation: RuntimeControlOperation | null
+  dispatch_performed: false
+}
+export interface RuntimeControlState {
+  revision: number
+  paused: boolean
+  updated_at: number | null
+  scope: 'owner_profile'
+  admission_blocked: boolean
+  scheduled_dispatch_blocked: boolean
+  in_flight_dispatch: 'blocked_at_next_boundary' | 'allowed_at_checked_boundary'
+  accepted_commands: number
+  claimed_commands: number
+  accepted_work_retained: true
+  already_dispatched_may_complete: true
+  provider_cancelled: false
+  remote_effects_undone: false
+}
+export interface RuntimeControlOperation {
+  operation_id: string
+  digest: string
+  revision: number
+  paused: boolean
+  committed_at: number
+  status: 'committed'
+}
+export interface RuntimeControlParams {
+  session_id: string
+  schema_version: 1
+  operation_id: string
+  expected_revision: number
 }
 export interface SessionCreateParams {
   profile?: string | null
@@ -7128,6 +7584,83 @@ export interface OnboardingCatalogPlugin {
   app_state: CatalogAppState
   sentence: string
 }
+export interface DotsDispatchRequest {
+  session_id: string
+  identity: DotsEffectIdentity
+  proposal: DotsPageProposal | DotsComputerProposal
+  content_json: string
+  deadline_at: number
+}
+export interface DotsInspectRequest {
+  session_id: string
+  identity: DotsEffectIdentity
+  deadline_at: number
+}
+export interface DotsPageReadRequest {
+  session_id: string
+  authority: DotsReadAuthority
+  scope: DotsPageReadScope
+  deadline_at: number
+}
+export interface DotsReadAuthority {
+  principal_id: string
+  profile_id: string
+  agent_id: string
+  runtime_session_id: string
+  run_id: string
+  policy_digest: string
+  generation: number
+}
+export interface DotsPageReadScope {
+  store_id: string
+  project_id: string
+  space_id: string
+  page_id: string
+  expected_grant_revision: number
+  version?: number | null
+}
+export interface DotsPageReadResult {
+  authority: DotsReadAuthority
+  scope: DotsPageReadScope
+  version: number
+  content_json: string
+  content_sha256: string
+}
+export interface DotsComputerObserveRequest {
+  session_id: string
+  authority: DotsReadAuthority
+  scope: DotsComputerObserveScope
+  deadline_at: number
+}
+export interface DotsComputerObserveScope {
+  executor_id: string
+  expected_grant_revision: number
+  action: 'snapshot' | 'read' | 'screenshot' | 'files_list' | 'files_read' | 'result'
+  input?: DotsEmptyInput | DotsFilesListInput | DotsFilesReadInput
+  effect_id?: string | null
+}
+export interface DotsComputerObserveResult {
+  authority: DotsReadAuthority
+  scope: DotsComputerObserveScope
+  control_revision: number
+  snapshot_id: number
+  snapshot_sha256: string
+  content_json: string
+  content_sha256: string
+}
+export interface DotsApprovalRequest {
+  session_id: string
+  authority: DotsReadAuthority
+  approval_id: string
+  approval_digest: string
+  action_digest: string
+  expires_at: number
+}
+export interface DotsApprovalResult {
+  approval_id: string
+  approval_digest: string
+  choice: 'once' | 'deny'
+}
 /** ``answers`` rides only on a reconnect replay (locks the server already accepted; null = skipped). */
 export interface ClarifyRequestParams {
   session_id: string
@@ -8025,6 +8558,15 @@ export interface RpcMethods {
   'rollback.restore': { params: RollbackRestoreParams; result: RollbackRestoreResult }
   /** Preview fixed/flexible/overflow day or week capacity without calendar writes */
   'runtime.agenda.plan': { params: AgendaPlanParams; result: ScheduleRecordResult }
+  'runtime.agent.archive': { params: AgentConfigurationArchiveParams; result: AgentConfigurationResult }
+  'runtime.agent.create': { params: AgentConfigurationCreateParams; result: AgentConfigurationResult }
+  'runtime.agent.get': { params: AgentConfigurationParams; result: AgentConfigurationResult }
+  'runtime.agent.list': { params: RuntimeSessionParams; result: AgentConfigurationList }
+  /** Inspect current-session frozen revisions and desired workflow pins without changing prompts or granting execution. */
+  'runtime.agent.session.get': { params: RuntimeSessionParams; result: AgentSessionConfiguration }
+  'runtime.agent.update': { params: AgentConfigurationUpdateParams; result: AgentConfigurationResult }
+  /** Read one exact owner/session approval and retained review bytes plus durable decision. Never resolve, consume or dispatch on recovery. */
+  'runtime.approval.get': { params: RuntimeApprovalGetParams; result: RuntimeApprovalGetResult }
   /** Record one exact human decision for the owned live run. Repeated answers are rejected; this never dispatches. */
   'runtime.approval.resolve': { params: RuntimeApprovalResolveParams; result: RuntimeApprovalResolveResult }
   /** Read an owned oldest-first bounded approval snapshot. This is not complete history or permission to act. */
@@ -8096,12 +8638,20 @@ export interface RpcMethods {
   'runtime.commitment.review': { params: ScheduleProjectParams; result: ScheduleRecordResult }
   /** Record sourced waiting or terminal commitment evidence */
   'runtime.commitment.update': { params: CommitmentUpdateParams; result: ScheduleRecordResult }
+  /** Read owner/profile pause state and an optional immutable operation receipt; never replay a control. */
+  'runtime.control.get': { params: RuntimeControlGetParams; result: RuntimeControlResult }
+  /** CAS and idempotently set owner/profile admission and dispatch state. Existing work retains ownership; no rollback or provider stop is implied. */
+  'runtime.control.pause': { params: RuntimeControlParams; result: RuntimeControlResult }
+  /** CAS and idempotently set owner/profile admission and dispatch state. Existing work retains ownership; no rollback or provider stop is implied. */
+  'runtime.control.resume': { params: RuntimeControlParams; result: RuntimeControlResult }
   /** Idempotent metadata-revision-checked archive/restore; does not cancel running work. */
   'runtime.conversation.archive': { params: RuntimeConversationArchiveParams; result: RuntimeConversationResult }
   /** Authorize before initializing/reusing a live session; poll readiness without resubmitting commands. */
   'runtime.conversation.bind': { params: RuntimeConversationRefParams; result: RuntimeConversationBindResult }
   /** Discover the owner-scoped API. Only the server-owned launch-profile stdio pipe is supported. */
   'runtime.conversation.capabilities': { params: RuntimeConversationParams; result: RuntimeConversationCapabilities }
+  /** Read an owned canonical conversation's durable command receipt and bounded message links without binding a live session or constructing a provider. Never requeue or claim work. */
+  'runtime.conversation.command.receipt': { params: RuntimeConversationCommandReceiptParams; result: RuntimeCommandReceiptResult }
   /** Atomically persist a canonical conversation and an owner-scoped durable idempotency receipt. */
   'runtime.conversation.create': { params: RuntimeConversationCreateParams; result: RuntimeConversationCreateResult }
   /** Same paged safe transcript as history; concatenate text chunks by message_id and text_offset. Not a runtime backup or import format. */
@@ -8130,6 +8680,13 @@ export interface RpcMethods {
   'runtime.domain.prepare': { params: DomainPrepareParams; result: DomainPrepareResult }
   /** Approve each exact prepared output and publish its manifest last; bundle publication is not atomic. */
   'runtime.domain.publish': { params: DomainPublishParams; result: DomainPublishResult }
+  'runtime.dots.computer.execute': { params: DotsComputerExecuteParams; result: DotsEffectResult }
+  'runtime.dots.computer.prepare': { params: DotsComputerPrepareParams; result: DotsPreparedResult }
+  'runtime.dots.effect.reconcile': { params: DotsReconcileParams; result: DotsEffectResult }
+  'runtime.dots.page.prepare': { params: DotsPagePrepareParams; result: DotsPreparedResult }
+  'runtime.dots.page.publish': { params: DotsPagePublishParams; result: DotsEffectResult }
+  /** Register the owned current stdio peer's native adapter; does not provision credentials or replay effects. */
+  'runtime.dots.register': { params: DotsRegistrationParams; result: DotsRegistrationResult }
   /** Inspect one owned effect and its bounded receipt metadata without exposing private input or paths. */
   'runtime.effect.get': { params: RuntimeEffectParams; result: RuntimeEffectGetResult }
   /** Inspect local artifact state under a bounded server-owned lease and record evidence. Never replay a mutation. */
@@ -8168,13 +8725,15 @@ export interface RpcMethods {
   /** Create bounded mission intent under an owned user control; never dispatch or reset a budget. */
   'runtime.mission.create': { params: MissionCreateParams; result: MissionResult }
   /** Read the owned authoritative mission independently from runtime command state. */
-  'runtime.mission.get': { params: RuntimeSessionParams; result: MissionGetResult }
+  'runtime.mission.get': { params: MissionGetParams; result: MissionGetResult }
+  /** Read current and immutable archived missions for this canonical conversation. Controls always target the active exact mission. */
+  'runtime.mission.history': { params: MissionListParams; result: MissionListResult }
   /** Read a bounded actor- and project-authorized mission list, without completeness inference. */
   'runtime.mission.list': { params: MissionListParams; result: MissionListResult }
   /** Apply an explicit owned mission control with exact revision and existing budget scope. */
   'runtime.mission.pause': { params: MissionControlParams; result: MissionResult }
   /** Read a bounded immutable verification receipt list; missing evidence is never a pass. */
-  'runtime.mission.receipts.list': { params: MissionListParams; result: MissionReceiptListResult }
+  'runtime.mission.receipts.list': { params: MissionReceiptListParams; result: MissionReceiptListResult }
   /** Apply an explicit owned mission control with exact revision and existing budget scope. */
   'runtime.mission.resume': { params: MissionControlParams; result: MissionResult }
   /** CAS-revise intent while preserving prior evidence, retained versions and budget ceilings. */
@@ -8219,6 +8778,8 @@ export interface RpcMethods {
   'runtime.resume.get': { params: ProjectResumeParams; result: ProjectResumeResult }
   /** Create a paused immutable owner-bound local schedule */
   'runtime.schedule.create': { params: ScheduleCreateParams; result: ScheduleRecordResult }
+  /** Retain a trusted legacy-retirement attestation; does not independently verify foreign execution */
+  'runtime.schedule.cutover': { params: ScheduleCutoverParams; result: ScheduleRecordResult }
   /** Read owned schedule health, occurrences and retained notification intents */
   'runtime.schedule.get': { params: ScheduleGetParams; result: ScheduleRecordResult }
   /** Grant exact bounded local review or draft-production authority separately from scheduling */
@@ -8235,6 +8796,8 @@ export interface RpcMethods {
   'runtime.schedule.output.publish': { params: ScheduleOutputPublishParams; result: ArtifactPublishResult }
   /** Retain manual evidence for an unknown occurrence without replaying it */
   'runtime.schedule.reconcile': { params: ScheduleReconcileParams; result: ScheduleRecordResult }
+  /** Admit one idempotent occurrence through the ordinary durable command queue */
+  'runtime.schedule.run_now': { params: ScheduleRunNowParams; result: ScheduleRecordResult }
   /** Pause, resume or revoke an exact schedule revision */
   'runtime.schedule.update': { params: ScheduleUpdateParams; result: ScheduleRecordResult }
   /** Validate an overlay region and guide the supported selected-text workflow. */
@@ -8293,6 +8856,12 @@ export interface RpcMethods {
   'runtime.workflow.decision.commit': { params: WorkflowDecisionCommitParams; result: WorkflowDecisionResult }
   /** Prepare exact lifecycle/pointer/sharing approval bound to content, evaluation, destination and current policy. */
   'runtime.workflow.decision.prepare': { params: WorkflowDecisionParams; result: WorkflowDecisionPrepareResult }
+  /** Install the exact reviewed immutable specialist pin with compare-and-swap; rollback selects an earlier delivered approved version. */
+  'runtime.workflow.delivery.commit': { params: WorkflowDeliveryCommitParams; result: WorkflowDeliveryCommitResult }
+  /** List current workflow pins for one owned specialist and project; installation grants no tool or personal-memory authority. */
+  'runtime.workflow.delivery.list': { params: WorkflowDeliveryListParams; result: WorkflowDeliveryListResult }
+  /** Review exact approved workflow bytes and a named stable specialist before installing advisory knowledge next session. */
+  'runtime.workflow.delivery.prepare': { params: WorkflowDeliveryParams; result: WorkflowDeliveryPrepareResult }
   /** Evaluate bounded local producers on varied tuning and held-out cases against recorded baseline outputs; never execute external effects. */
   'runtime.workflow.evaluate': { params: WorkflowEvaluateParams; result: WorkflowEvaluateResult }
   /** Prepare canonical export only under an exact approved recipient grant; no external send is performed. */
@@ -8651,6 +9220,13 @@ export const RPC_METHODS = [
   'rollback.list',
   'rollback.restore',
   'runtime.agenda.plan',
+  'runtime.agent.archive',
+  'runtime.agent.create',
+  'runtime.agent.get',
+  'runtime.agent.list',
+  'runtime.agent.session.get',
+  'runtime.agent.update',
+  'runtime.approval.get',
   'runtime.approval.resolve',
   'runtime.approvals.list',
   'runtime.artifact.bytes.prepare',
@@ -8692,9 +9268,13 @@ export const RPC_METHODS = [
   'runtime.commitment.list',
   'runtime.commitment.review',
   'runtime.commitment.update',
+  'runtime.control.get',
+  'runtime.control.pause',
+  'runtime.control.resume',
   'runtime.conversation.archive',
   'runtime.conversation.bind',
   'runtime.conversation.capabilities',
+  'runtime.conversation.command.receipt',
   'runtime.conversation.create',
   'runtime.conversation.export',
   'runtime.conversation.history',
@@ -8709,6 +9289,12 @@ export const RPC_METHODS = [
   'runtime.delivery.status',
   'runtime.domain.prepare',
   'runtime.domain.publish',
+  'runtime.dots.computer.execute',
+  'runtime.dots.computer.prepare',
+  'runtime.dots.effect.reconcile',
+  'runtime.dots.page.prepare',
+  'runtime.dots.page.publish',
+  'runtime.dots.register',
   'runtime.effect.get',
   'runtime.effect.reconcile',
   'runtime.effects.list',
@@ -8733,6 +9319,7 @@ export const RPC_METHODS = [
   'runtime.mission.cancel',
   'runtime.mission.create',
   'runtime.mission.get',
+  'runtime.mission.history',
   'runtime.mission.list',
   'runtime.mission.pause',
   'runtime.mission.receipts.list',
@@ -8765,6 +9352,7 @@ export const RPC_METHODS = [
   'runtime.result.get',
   'runtime.resume.get',
   'runtime.schedule.create',
+  'runtime.schedule.cutover',
   'runtime.schedule.get',
   'runtime.schedule.grant',
   'runtime.schedule.import',
@@ -8773,6 +9361,7 @@ export const RPC_METHODS = [
   'runtime.schedule.output.prepare',
   'runtime.schedule.output.publish',
   'runtime.schedule.reconcile',
+  'runtime.schedule.run_now',
   'runtime.schedule.update',
   'runtime.screen.annotate',
   'runtime.screen.capture',
@@ -8807,6 +9396,9 @@ export const RPC_METHODS = [
   'runtime.workflow.create',
   'runtime.workflow.decision.commit',
   'runtime.workflow.decision.prepare',
+  'runtime.workflow.delivery.commit',
+  'runtime.workflow.delivery.list',
+  'runtime.workflow.delivery.prepare',
   'runtime.workflow.evaluate',
   'runtime.workflow.export',
   'runtime.workflow.feedback',
@@ -8911,6 +9503,11 @@ export interface ServerRequestMap {
   clarify: { params: ClarifyRequestParams; result: ClarifyResult }
   /** Masked sudo password for the Bot Screen package install; app-level (empty session). */
   'display.install.sudo': { params: DisplayInstallSudoParams; result: ValueResult }
+  'dots.approval': { params: DotsApprovalRequest; result: DotsApprovalResult }
+  'dots.computer.observe': { params: DotsComputerObserveRequest; result: DotsComputerObserveResult }
+  'dots.effect.dispatch': { params: DotsDispatchRequest; result: DotsEffectReceipt }
+  'dots.effect.inspect': { params: DotsInspectRequest; result: DotsEffectReceipt }
+  'dots.page.read': { params: DotsPageReadRequest; result: DotsPageReadResult }
   /** Click / type / scroll / annotate inside the in-app browser preview. */
   'preview.act': { params: PreviewActRequestParams; result: ValueResult }
   /** Read the in-app browser preview's text (JSON text answer). */
@@ -8937,6 +9534,11 @@ export const SERVER_REQUEST_METHODS = [
   'approval',
   'clarify',
   'display.install.sudo',
+  'dots.approval',
+  'dots.computer.observe',
+  'dots.effect.dispatch',
+  'dots.effect.inspect',
+  'dots.page.read',
   'preview.act',
   'preview.read',
   'secret',

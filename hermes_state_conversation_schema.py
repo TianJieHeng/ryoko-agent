@@ -21,6 +21,19 @@ CREATE TABLE IF NOT EXISTS runtime_conversation_operations (
     created_at REAL NOT NULL,
     PRIMARY KEY(owner_key, idempotency_key)
 );
+CREATE TABLE IF NOT EXISTS runtime_command_messages (
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    command_id TEXT NOT NULL,
+    message_uid TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('user','assistant','tool')),
+    kind TEXT NOT NULL CHECK(kind IN ('input','output')),
+    first_row_id INTEGER NOT NULL,
+    PRIMARY KEY(session_id, message_uid)
+);
+CREATE INDEX IF NOT EXISTS idx_runtime_command_messages_command
+    ON runtime_command_messages(session_id, command_id, first_row_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_runtime_command_messages_input
+    ON runtime_command_messages(session_id, command_id) WHERE kind='input';
 """
 
 

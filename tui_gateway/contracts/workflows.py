@@ -169,3 +169,5 @@ method('runtime.workflow.run.publish', params=WorkflowRunPublishParams, result=W
        doc='Publish only exactly approved prepared outputs through existing artifact effects; mission completion remains separately verified.')
 method('runtime.workflow.runs', params=WorkflowVersionParams, result=WorkflowHistoryResult,
        doc='Inspect owned run pins and output history; never resume by resolving a changed active pointer.')
+
+from . import workflow_delivery  # noqa: E402,F401

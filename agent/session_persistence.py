@@ -268,7 +268,15 @@ def _db_flush_collect(agent, messages: List[Dict], conversation_history: Optiona
             # minted (same-batch pairing happens inside the insert).
             if (tool_uid := tool_call_uid_from_history(messages, msg_idx, tool_uid_owners)) is not None:
                 msg[TOOL_CALL_UID] = tool_uid
-        batch_rows.append(_db_flush_row(agent, msg, ov_idx == msg_idx or msg is pending_cli_message))
+        is_current_user = ov_idx == msg_idx or msg is pending_cli_message
+        row = _db_flush_row(agent, msg, is_current_user)
+        from hermes_state_runtime_messages import bound_command, RUNTIME_COMMAND_KEY, RUNTIME_INPUT_KEY
+        owner = bound_command(agent._session_db) if getattr(agent, "_session_db", None) else None
+        if owner is not None and owner.agent is agent and not is_history:
+            if (is_current_user and msg.get("role") == "user") or msg.get("role") in {"assistant", "tool"}:
+                row[RUNTIME_COMMAND_KEY] = owner.command_id
+                row[RUNTIME_INPUT_KEY] = msg.get("role") == "user"
+        batch_rows.append(row)
         batch_msgs.append(msg)
     return batch_rows, batch_msgs
 

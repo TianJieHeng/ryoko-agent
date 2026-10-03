@@ -43,7 +43,8 @@ def _mission_public(row):
     from tui_gateway.contracts.missions import MissionRecord
     if row is None:
         return None
-    return {key: row[key] for key in MissionRecord.model_fields if key in row}
+    return {**{key: row[key] for key in MissionRecord.model_fields if key in row},
+            "archived": row.get("archived", False), "archived_at": row.get("archived_at")}
 
 
 def _mission_receipt_public(row):
@@ -65,9 +66,11 @@ def _mission_read(agent, db):
 @method("runtime.mission.get")
 @_profile_scoped
 def _runtime_mission_get(rid, params):
-    from tui_gateway.contracts.runtime_v1 import RuntimeSessionParams
-    return _mission_request(rid, params, RuntimeSessionParams,
-        lambda agent, db, request: {"mission": _mission_public(_mission_read(agent, db))})
+    from tui_gateway.contracts.missions import MissionGetParams
+    def get(agent, db, request):
+        actor, access = _mission_access(agent)
+        return {"mission": _mission_public(db.get_mission(agent.session_id, actor, access=access, mission_id=request.mission_id))}
+    return _mission_request(rid, params, MissionGetParams, get)
 
 
 @method("runtime.mission.list")
@@ -91,7 +94,8 @@ def _runtime_mission_create(rid, params):
         actor, access = _mission_access(agent)
         with mission_user_control(agent, request.session_id) as control:
             row = db.create_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
-                mission_id=request.mission_id, contract=request.contract.model_dump(by_alias=True, exclude_unset=True), access=access)
+                mission_id=request.mission_id, contract=request.contract.model_dump(by_alias=True, exclude_unset=True), access=access,
+                previous_mission_id=request.previous_mission_id, previous_revision=request.previous_revision)
         return {"mission": _mission_public(row), "dispatch_performed": False}
     return _mission_request(rid, params, MissionCreateParams, create)
 
@@ -105,6 +109,8 @@ def _runtime_mission_revise(rid, params):
         from hermes_state_runtime import RuntimeStoreError
         actor, access = _mission_access(agent)
         with mission_user_control(agent, request.session_id) as control:
+            from hermes_state_mission_history import require_active_target
+            require_active_target(db, control.session_id, actor, request.mission_id)
             current = db.get_mission(control.session_id, actor, access=access)
             if current is None:
                 raise RuntimeStoreError("mission_not_found", "Mission does not exist")
@@ -117,7 +123,7 @@ def _runtime_mission_revise(rid, params):
                 contract["state"] = "ready"
             row = db.update_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
                 expected_revision=request.expected_revision, changes=contract, changed_inputs=request.changed_inputs,
-                changed_targets=request.changed_targets, changed_plan_steps=request.changed_plan_steps, access=access)
+                changed_targets=request.changed_targets, changed_plan_steps=request.changed_plan_steps, access=access, mission_id=request.mission_id)
         return {"mission": _mission_public(row), "dispatch_performed": False}
     return _mission_request(rid, params, MissionReviseParams, revise)
 
@@ -126,9 +132,11 @@ def _mission_control_operation(agent, db, request, operation):
     from agent.mission_controls import mission_user_control
     actor, access = _mission_access(agent)
     with mission_user_control(agent, request.session_id) as control:
+        from hermes_state_mission_history import require_active_target
+        require_active_target(db, control.session_id, actor, request.mission_id)
         if operation == "accept":
             row = db.accept_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
-                                    expected_revision=request.expected_revision, access=access)
+                                    expected_revision=request.expected_revision, access=access, mission_id=request.mission_id)
         else:
             state = {"pause": "paused", "resume": "ready", "cancel": "cancelled"}[operation]
             changes = {"state": state}
@@ -137,7 +145,7 @@ def _mission_control_operation(agent, db, request, operation):
             elif operation == "resume":
                 changes["paused_reason"] = None
             row = db.update_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
-                expected_revision=request.expected_revision, changes=changes, access=access)
+                expected_revision=request.expected_revision, changes=changes, access=access, mission_id=request.mission_id)
             if operation in {"pause", "cancel"}:
                 active = getattr(agent, "_active_runtime_run", None)
                 task_scope = getattr(active, "task_scope", None)
@@ -164,13 +172,13 @@ for _operation in ("pause", "resume", "cancel", "accept"):
 @method("runtime.mission.receipts.list")
 @_profile_scoped
 def _runtime_mission_receipts(rid, params):
-    from tui_gateway.contracts.missions import MissionListParams
+    from tui_gateway.contracts.missions import MissionReceiptListParams
     def receipts(agent, db, request):
         actor, access = _mission_access(agent)
-        rows = db.list_verification_receipts(agent.session_id, actor, access=access, limit=request.limit)
+        rows = db.list_verification_receipts(agent.session_id, actor, access=access, limit=request.limit, mission_id=request.mission_id)
         return {"receipts": [_mission_receipt_public(row) for row in rows], "limit": request.limit,
                 "limit_reached": len(rows) == request.limit, "complete": False}
-    return _mission_request(rid, params, MissionListParams, receipts)
+    return _mission_request(rid, params, MissionReceiptListParams, receipts)
 
 
 @method("runtime.mission.verify")
@@ -184,6 +192,8 @@ def _runtime_mission_verify(rid, params):
         import time
         actor, access = _mission_access(agent)
         with mission_user_control(agent, request.session_id) as control:
+            from hermes_state_mission_history import require_active_target
+            require_active_target(db, control.session_id, actor, request.mission_id)
             row = db.get_mission(control.session_id, actor, access=access)
             if row is None or row["revision"] != request.expected_revision:
                 raise RuntimeStoreError("revision_conflict", "Mission revision changed")
@@ -206,10 +216,23 @@ def _runtime_mission_verify(rid, params):
             else:
                 state = "waiting_for_user"
             row = db.update_mission(control.session_id, actor, holder=control.holder, generation=control.generation,
-                expected_revision=row["revision"], changes={"state": state}, access=access)
+                expected_revision=row["revision"], changes={"state": state}, access=access, mission_id=request.mission_id)
         return {"mission": _mission_public(row), "receipts": [_mission_receipt_public(r) for r in receipts],
                 "dispatch_performed": False}
     return _mission_request(rid, params, MissionRevisionParams, verify)
+
+
+@method("runtime.mission.history")
+@_profile_scoped
+def _runtime_mission_history(rid, params):
+    from tui_gateway.contracts.missions import MissionListParams
+    def history(agent, db, request):
+        from hermes_state_mission_history import list_conversation_missions
+        actor, access = _mission_access(agent)
+        rows = list_conversation_missions(db, agent.session_id, actor, access=access, limit=request.limit)
+        return {"missions": [_mission_public(row) for row in rows], "limit": request.limit,
+                "limit_reached": len(rows) == request.limit, "complete": False}
+    return _mission_request(rid, params, MissionListParams, history)
 
 
 def register(server):

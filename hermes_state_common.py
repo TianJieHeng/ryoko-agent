@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 46
+SCHEMA_VERSION = 47
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -1745,3 +1745,8 @@ def _json_or(raw: Any, fallback: Any, warning: str) -> Any:
     except (json.JSONDecodeError, TypeError):
         logger.warning(warning)
         return fallback
+
+from hermes_state_review_controls_schema import REVIEW_CONTROLS_SCHEMA_SQL
+SCHEMA_SQL += REVIEW_CONTROLS_SCHEMA_SQL
+from hermes_state_agent_configuration_schema import AGENT_CONFIGURATION_SCHEMA_SQL
+SCHEMA_SQL += AGENT_CONFIGURATION_SCHEMA_SQL

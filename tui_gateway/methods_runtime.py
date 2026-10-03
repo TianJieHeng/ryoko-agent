@@ -236,7 +236,11 @@ def _runtime_command(rid, params):
                          "durable_revision": snapshot["revision"], "run_id": None,
                          "conflict": {"code": "operation_not_supported",
                                       "message": "Approval authorization requires BE05/BE06"}})
-    envelope = request.model_dump(exclude={"session_id"})
+    # Old envelopes must retain their original digest across client upgrades.
+    exclude = {"session_id"}
+    if "target_run_id" not in request.model_fields_set:
+        exclude.add("target_run_id")
+    envelope = request.model_dump(exclude=exclude)
     try:
         if request.operation == "submit":
             transport, session = _current_session_steer_authority(request.session_id)
@@ -273,9 +277,7 @@ def _runtime_snapshot(rid, params):
 @_profile_scoped
 def _runtime_command_receipt(rid, params):
     from hermes_state_runtime import RuntimeStoreError
-    from tui_gateway.contracts.runtime_v1 import (
-        CommandReceipt, RuntimeCommandReceiptParams, RuntimeConflict,
-    )
+    from tui_gateway.contracts.runtime_v1 import RuntimeCommandReceiptParams
 
     request, error = _runtime_validate(rid, params, RuntimeCommandReceiptParams)
     if error:
@@ -284,9 +286,16 @@ def _runtime_command_receipt(rid, params):
     if error:
         return error
     try:
-        command = db.read_runtime_command_receipt(agent.session_id, request.command_id)
+        command = db.read_runtime_command_receipt(agent.session_id, request.command_id,
+            message_cursor=request.message_cursor, message_limit=request.message_limit)
     except RuntimeStoreError as exc:
         return _runtime_store_error(rid, exc)
+    return _ok(rid, _runtime_command_receipt_projection(request.command_id, command))
+
+
+def _runtime_command_receipt_projection(command_id, command):
+    from tui_gateway.contracts.runtime_v1 import CommandReceipt, RuntimeConflict
+
     # Reconnect recovery must never enter submission/admission: even an accepted
     # or orphaned claimed command remains an observation, not a retry request.
     receipt = None
@@ -295,9 +304,10 @@ def _runtime_command_receipt(rid, params):
                    if key in command["receipt"]}
         if receipt.get("conflict") is not None:
             receipt["conflict"] = {key: receipt["conflict"][key] for key in RuntimeConflict.model_fields}
-    return _ok(rid, {"schema_version": 1, "command_id": request.command_id,
-                     "found": receipt is not None, "receipt": receipt,
-                     "status": command["status"], "durable_revision": command["durable_revision"]})
+    return {"schema_version": 1, "command_id": command_id,
+            "found": receipt is not None, "receipt": receipt,
+            "status": command["status"], "durable_revision": command["durable_revision"],
+            **{key: command[key] for key in ("accepted_input", "messages", "messages_has_more", "next_message_cursor")}}
 
 
 @method("runtime.events.since")

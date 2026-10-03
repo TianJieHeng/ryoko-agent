@@ -85,8 +85,12 @@ def _validated_command(actor, command):
     _require(isinstance(command.get("operation"), str) and command["operation"] in _OPERATIONS, "invalid_command", "Unknown runtime operation")
     _require(isinstance(command.get("payload"), Mapping), "invalid_command", "payload must be an object")
     _require(set(command) <= {"schema_version", "command_id", "idempotency_key", "expected_revision",
-                              "identity_binding", "operation", "payload"},
+                              "identity_binding", "operation", "payload", "target_run_id"},
              "invalid_command", "Unsupported command fields")
+    if "target_run_id" in command:
+        _identifier(command["target_run_id"], "target_run_id")
+        _require(command["operation"] in {"cancel", "steer"}, "invalid_command",
+                 "Only cancel and steer may target a run")
     binding = command.get("identity_binding", actor)
     _require(isinstance(binding, Mapping) and all(binding.get(key) == actor[key]
              for key in ("principal_id", "profile_id", "agent_id")),
@@ -330,9 +334,16 @@ class SessionRuntimeMixin:
                          "idempotency_conflict", "Command key was already used for different content")
                 _version(duplicates[0]["schema_version"])
                 return json.loads(duplicates[0]["receipt_json"])
+            if command["operation"] in {"submit", "artifact"}:
+                from hermes_state_runtime_controls import assert_owner_running_on_conn, is_stop_only_schedule_control
+                if not is_stop_only_schedule_control(command, admission):
+                    assert_owner_running_on_conn(conn, actor)
             _revision(state["revision"], command.get("expected_revision"))
             run_id = uuid.uuid4().hex if command["operation"] in {"submit", "artifact"} else json.loads(state["snapshot_json"])["state"]["run_id"]
-            if queued_cancel:
+            if "target_run_id" in command:
+                from hermes_state_runtime_targets import control_target_on_conn
+                run_id = control_target_on_conn(self, conn, sid, command, queued_cancel=queued_cancel)
+            elif queued_cancel:
                 # Queue-only cancellation is a local terminal transition. Its
                 # target must still be unclaimed in this same writer transaction;
                 # it grants no authority to control a model run that won launch.
@@ -380,15 +391,17 @@ class SessionRuntimeMixin:
                 "claimed_holder": row["claimed_holder"], "claimed_generation": row["claimed_generation"],
                 "result": json.loads(row["result_json"]) if row["result_json"] is not None else None}
 
-    def read_runtime_command_receipt(self, session_id, command_id):
+    def read_runtime_command_receipt(self, session_id, command_id, *, message_cursor=None, message_limit=100):
         """Observe status and its revision in one snapshot without claiming work."""
         with self._runtime_read() as conn:
             sid = self._runtime_session_on_conn(conn, session_id)
             row = self._runtime_command_on_conn(conn, sid, command_id)
             state = self._runtime_state_on_conn(conn, sid)
+            from hermes_state_runtime_messages import read_links
+            links = read_links(conn, sid, row, cursor=message_cursor, limit=message_limit)
             return {"receipt": json.loads(row["receipt_json"]) if row is not None else None,
                     "status": row["status"] if row is not None else None,
-                    "durable_revision": state["revision"] if state is not None else 0}
+                    "durable_revision": state["revision"] if state is not None else 0, **links}
 
     def read_runtime_run_accepted_at(self, session_id, run_id):
         """Original acceptance time; retries and queue recovery cannot reset it."""
@@ -401,22 +414,30 @@ class SessionRuntimeMixin:
             # An absent/pruned acceptance cannot authorize a fresh deadline.
             return row[0] if row is not None else None
 
+    def _claim_runtime_command_on_conn(self, conn, sid, command_id, *, holder, generation):
+        self._runtime_fence_on_conn(conn, sid, holder, generation)
+        row = self._runtime_command_on_conn(conn, sid, command_id)
+        _require(row is not None, "command_not_found", "Runtime command does not exist")
+        if row["status"] != "accepted":
+            return False
+        command = json.loads(row["command_json"])
+        if "target_run_id" in command:
+            from hermes_state_runtime_targets import control_target_on_conn
+            control_target_on_conn(self, conn, sid, command, holder=holder, generation=generation)
+        from agent.admission import assert_launch_on_conn
+        assert_launch_on_conn(conn, sid, command_id)
+        conn.execute("UPDATE runtime_commands SET status='claimed',claimed_holder=?,claimed_generation=? "
+                     "WHERE session_id=? AND command_id=?", (holder, generation, sid, command_id))
+        self._append_runtime_event_on_conn(conn, sid, "command.claimed", {"command_id": command_id},
+                                           generation, run_id=row["run_id"])
+        return True
+
     def claim_runtime_command(self, session_id, command_id, *, holder, generation):
         """One durable admission; a crashed claim is unresolved, never implicitly retried."""
         def write(conn):
             sid = self._runtime_session_on_conn(conn, session_id)
-            self._runtime_fence_on_conn(conn, sid, holder, generation)
-            row = self._runtime_command_on_conn(conn, sid, command_id)
-            _require(row is not None, "command_not_found", "Runtime command does not exist")
-            if row["status"] != "accepted":
-                return False
-            from agent.admission import assert_launch_on_conn
-            assert_launch_on_conn(conn, sid, command_id)
-            conn.execute("UPDATE runtime_commands SET status='claimed',claimed_holder=?,claimed_generation=? "
-                         "WHERE session_id=? AND command_id=?", (holder, generation, sid, command_id))
-            self._append_runtime_event_on_conn(conn, sid, "command.claimed", {"command_id": command_id},
-                                               generation, run_id=row["run_id"])
-            return True
+            return self._claim_runtime_command_on_conn(conn, sid, command_id,
+                                                        holder=holder, generation=generation)
         return self._execute_write(write)
 
     def finish_runtime_command(self, session_id, command_id, *, holder, generation, status="completed", result=None):
