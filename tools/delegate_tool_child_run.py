@@ -747,6 +747,18 @@ class _ChildRun:
     def seed_workspace(self) -> None:
         """Seed cwd/container aliases and optional worktree isolation for the child;
         ``goal`` is extended with the worktree contract note when isolation engaged."""
+        from agent.runtime_context import AgentContext
+        if isinstance(getattr(self.child, "runtime_context", None), AgentContext):
+            from agent.delegation_runtime import PreparedDelegation
+            from agent.delegation_contract import require
+            prepared = getattr(self.child, "_durable_delegation", None)
+            require(isinstance(prepared, PreparedDelegation), "delegation_handoff_required", "Strict child workspace is unbound")
+            prepared.workspace.verify_inputs()
+            self.child_task_id = prepared.ticket.child_id
+            self.parent_task_id = None
+            self.parent_reads_snapshot = []
+            self.wall_start = time.time()
+            return  # Never seed ambient parent cwd, file reads or container aliases.
         import uuid as _uuid
         self.child_task_id = self.subagent_id or f"subagent-{self.task_index}-{_uuid.uuid4().hex[:8]}"
         self.parent_task_id = getattr(self.parent_agent, "_current_task_id", None)

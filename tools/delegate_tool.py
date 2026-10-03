@@ -178,6 +178,7 @@ def _build_child_agent(
     routing_cfg: Optional[Dict[str, Any]] = None,
     # Legacy; accepted for wire compat but ignored (capability is depth-derived).
     role: str = "leaf",
+    specialist_id: Optional[str] = None,
 ):
     """Build (don't run) a child AIAgent on the main thread. override_* (from delegation config) replace parent
     inheritance so children can run on a different provider:model pair."""
@@ -230,19 +231,38 @@ def _build_child_agent(
     else:
         request_overrides = {} if override_provider else dict(getattr(parent_agent, "request_overrides", {}) or {})
     parent_sid = getattr(parent_agent, "session_id", None)
-    child_session_db = _open_child_session_db(parent_agent)
     from agent.identity_lifecycle import agent_runtime_scope
     from agent.runtime_context import AgentContext
     parent_context = getattr(parent_agent, "runtime_context", None)
     if not isinstance(parent_context, AgentContext):
         parent_context = None  # legacy adapters do not carry configured identity authority
-    with agent_runtime_scope(parent_context), delegated_child_context():
+    from contextlib import nullcontext
+    from agent.specialist_manifest import SpecialistManifest, specialist_construction
+    from agent.identity_lifecycle import identity_config
+    specialist = None
+    session_id = None
+    construction = nullcontext()
+    if specialist_id is not None:
+        from hermes_state_ids import new_session_id
+        from agent.delegation_contract import require
+        require(parent_context is not None, "specialist_identity_required", "Specialists require a configured parent identity")
+        session_id = new_session_id()
+        specialist, specialist_context = SpecialistManifest.resolve(identity_config(), specialist_id,
+            parent=parent_context, session_id=session_id)
+        from agent.specialist_manifest import specialist_methods_text
+        child_prompt += specialist_methods_text(specialist, specialist_context, parent=parent_context,
+            db=getattr(parent_agent, "_session_db", None))
+        from tools.delegation_output_schema import append_output_contract
+        child_prompt = append_output_contract(child_prompt, specialist.to_record()["output_contract"])
+        construction = specialist_construction(specialist, specialist_context, parent_context)
+    child_session_db = _open_child_session_db(parent_agent)
+    with agent_runtime_scope(parent_context), delegated_child_context(), construction:
         try:
             child = AIAgent(
                 **rt, max_iterations=max_iterations, prefill_messages=getattr(parent_agent, "prefill_messages", None),
                 enabled_toolsets=child_toolsets, disabled_toolsets=child_disabled_toolsets, quiet_mode=True,
                 ephemeral_system_prompt=child_prompt, log_prefix=f"[subagent-{task_index}]", platform="subagent",
-                side_agent=True,
+                side_agent=True, session_id=session_id,
                 skip_context_files=True, skip_memory=parent_context is None, clarify_callback=None,
                 thinking_callback=(
                     (lambda text: _safe_progress(child_progress_cb, "_thinking", text) if text else None)
@@ -265,6 +285,9 @@ def _build_child_agent(
     except BaseException:
         child.close()
         raise
+    if specialist is not None:
+        child._specialist_manifest = specialist
+        child._delegate_output_schema = specialist.to_record()["output_contract"]
     child._print_fn = getattr(parent_agent, "_print_fn", None)
     _apply_child_cache_ttl(child)
     if child_session_db is not None:
@@ -411,11 +434,23 @@ def _build_children(
                 task_index=i, goal=t["goal"], context=_child_context,
                 toolsets=None,  # always inherit the parent's toolsets
                 model=creds["model"], max_iterations=max_iterations, task_count=len(task_list),
-                parent_agent=parent_agent, role=_normalize_role(t.get("role") or top_role), **overrides,
+                parent_agent=parent_agent, role=_normalize_role(t.get("role") or top_role),
+                **({"specialist_id": t["specialist"]} if t.get("specialist") else {}), **overrides,
             )
         except ValueError as exc:
+            for _, _, built in children:
+                _detach_child(parent_agent, built)
+                built.close()
             return [], str(exc)
         if _task_schema is not None:
+            specialist = getattr(child, "_specialist_manifest", None)
+            if specialist is not None and specialist.to_record()["output_contract"] != _task_schema:
+                for _, _, built in children:
+                    _detach_child(parent_agent, built)
+                    built.close()
+                _detach_child(parent_agent, child)
+                child.close()
+                return [], "Task output schema cannot replace the configured specialist contract"
             with _quiet("Could not attach output schema to child %d", i):
                 child._delegate_output_schema = _task_schema
         # Validated per-task images; absent on image-less tasks, which keep the text-only goal turn.
@@ -526,6 +561,11 @@ def delegate_task(
         task_images, err = _coerce_task_images(task_list, images)
     if err:
         return tool_error(err)
+    try:
+        from agent.delegation_runtime import strict_preflight
+        strict_preflight(parent_agent, task_list)
+    except (ValueError, PermissionError, InterruptedError) as exc:
+        return tool_error(str(exc))
     err = _oneshot_spawn_budget(parent_agent, len(task_list))
     if err:
         return tool_error(err)
@@ -679,6 +719,10 @@ DELEGATE_TASK_SCHEMA = {
                             "What this subagent should accomplish. Be specific and self-contained — it knows "
                             "nothing about your conversation history.",
                         ),
+                        "specialist": _p("string", "Optional exact configured specialist ID; display names never grant authority."),
+                        "artifacts": _p("array", "Exact accepted artifact references, each with id, version, sha256.", items={"type": "object"}),
+                        "evidence": _p("array", "Exact current evidence anchor references, each with id, version, sha256.", items={"type": "object"}),
+                        "constraints": _p("array", "Bounded explicit constraints for this child.", items={"type": "string"}),
                         "context": _p(
                             "string",
                             "Background THIS child needs: file paths, error messages, constraints. Each child "

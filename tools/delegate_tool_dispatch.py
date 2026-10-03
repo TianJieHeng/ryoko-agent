@@ -59,7 +59,9 @@ class _Batch:
 
     def run_child(self, i: int, task: Dict[str, Any], child: Any) -> Dict[str, Any]:
         from tools.delegate_tool import _run_single_child
-        return _run_single_child(task_index=i, goal=task["goal"], child=child, parent_agent=self.parent_agent, **self.owner_kwargs())
+        from agent.delegation_runtime import run_child
+        return run_child(self, i, task, child, lambda: _run_single_child(
+            task_index=i, goal=task["goal"], child=child, parent_agent=self.parent_agent, **self.owner_kwargs()))
 
 
 def _announce_batch(parent_agent, n_tasks: int, live_deleg_id: Optional[str]) -> None:
@@ -392,7 +394,10 @@ def _dispatch_unit(unit: _Batch, unit_id: Optional[str], slot_key: Optional[str]
         for c in child_agents:
             _signal_child_stop(c, "Async delegation cancelled")
 
+    from agent.delegation_runtime import attach_async
+    handoffs = attach_async(unit, unit_id)
     return dispatch_async_delegation_batch(
+        durable_handoffs=handoffs,
         # Call-wide goals: completion formatting indexes them by task_index.
         goals=[t["goal"] for t in unit.task_list], context=unit.context,
         toolsets=None,  # metadata for the completion block only; subagents inherit the parent's toolsets
@@ -467,6 +472,14 @@ def _dispatch_background(batch: _Batch) -> str:
 
 def _run_batch(batch: _Batch, background: bool) -> str:
     """Tool result JSON: a dispatch handle (background) or the joined combined results."""
+    from agent.delegation_runtime import prepare_batch
+    try:
+        prepare_batch(batch)
+    except (ValueError, PermissionError, InterruptedError) as exc:
+        for _, _, child in batch.children:
+            _detach_child(batch.parent_agent, child)
+            child.close()
+        return json.dumps({"error": str(exc), "status": "blocked", "executed": False})
     # Every unit of this call shares task_list, so its last joined unit emits the call's one row.
     begin_delegation_run(
         batch.task_list, subagents=len(batch.children), depth=getattr(batch.parent_agent, "_delegate_depth", 0) + 1,

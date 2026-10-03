@@ -44,7 +44,7 @@ class CLIProcessNotificationsMixin:
         for event, text in process_registry.drain_notifications(
             session_key=getattr(self, "session_id", "") or "", owns_event=self._owns_process_notification,
         ):
-            claim = claim_event_delivery(event, consumer)
+            claim = claim_event_delivery(event, consumer, owner_context=getattr(getattr(self, "agent", None), "runtime_context", None))
             if claim is None:
                 continue
             claimed.append((event, text))

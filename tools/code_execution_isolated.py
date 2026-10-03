@@ -49,7 +49,22 @@ def execute_strict_code(code: str, *, reset: bool = False) -> str:
         # cwd. Host input mounts are intentionally not accepted by this tool API.
         stages = Path(context.profile_home) / "cache" / "isolated-code"
         stages.mkdir(parents=True, exist_ok=True, mode=0o700)
-        workspace = StagedWorkspace.create(stages / uuid.uuid4().hex)
+        from agent.runtime_commands import assert_runtime_dispatch
+        from agent.delegation_runtime import PreparedDelegation
+        run = assert_runtime_dispatch()
+        prepared = getattr(run.agent, "_durable_delegation", None)
+        if isinstance(prepared, PreparedDelegation):
+            from agent.executor_capabilities import require_executor
+            require_executor(context, prepared.handoff.to_record()["executor"], capability="python.isolated")
+            prepared.workspace.verify_inputs()
+            # A fresh output stage per tool invocation, with only the accepted
+            # child's immutable input files. Never mount the parent's cwd/home.
+            workspace = StagedWorkspace.create(stages / uuid.uuid4().hex,
+                parent_root=prepared.workspace.inputs,
+                input_paths=tuple(item.path for item in prepared.workspace.manifest.inputs),
+                base_revision=prepared.handoff.sha256)
+        else:
+            workspace = StagedWorkspace.create(stages / uuid.uuid4().hex)
         args = {"code_sha256": hashlib.sha256(code.encode()).hexdigest(),
                 "workspace_manifest_digest": workspace.manifest.digest,
                 "wall_ms": maximum_ms, "reset": bool(reset)}

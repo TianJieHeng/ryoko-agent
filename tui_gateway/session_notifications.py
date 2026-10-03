@@ -471,7 +471,7 @@ def _notif_dispatch_event(sid: str, session: dict, evt: dict, text: str) -> None
     """Run the claimed (running=True) agent turn for one notification event."""
     from tools.async_delegation import claim_event_delivery, complete_event_delivery, release_event_delivery
     try:
-        claim = claim_event_delivery(evt, "tui-poller")
+        claim = claim_event_delivery(evt, "tui-poller", owner_context=getattr(session.get("agent"), "runtime_context", None))
     except Exception as exc:  # shared ledger busy/unreadable: the durable row stays pending and replays
         _notif_log_failure("notification delivery claim failed", exc)
         claim = None
@@ -583,7 +583,7 @@ def _notif_dispatch_completions(sid, session, notifications, registry, deferred)
     claimed: list = []
     try:
         for event, event_text in notifications:
-            if (claim := claim_event_delivery(event, "tui-completion-batch")) is not None:
+            if (claim := claim_event_delivery(event, "tui-completion-batch", owner_context=getattr(session.get("agent"), "runtime_context", None))) is not None:
                 claimed.append((event, event_text, claim))
         batch = ProcessNotificationBatch(tuple((event, event_text) for event, event_text, _claim in claimed))
         text = batch.render(registry)

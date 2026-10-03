@@ -31,7 +31,7 @@ def test_drain_honors_background_process_notifications_off(monkeypatch, mode, ex
     cli._pending_input = queue.Queue()
     monkeypatch.setattr("tools.process_registry.process_registry", _registry(events))
     acked = []
-    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a: "claimed")
+    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a, **kw: "claimed")
     monkeypatch.setattr("tools.async_delegation.complete_event_delivery", lambda *a: acked.append(a))
     monkeypatch.setattr("cli.CLI_CONFIG", {"display": {"background_process_notifications": mode}})
     cli._drain_process_notifications("cli-post-turn")
@@ -51,7 +51,7 @@ def test_off_mutes_process_wakes_but_subagent_results_still_land(monkeypatch):
     cli.session_id = "display-session"
     cli._pending_input = queue.Queue()
     monkeypatch.setattr("tools.process_registry.process_registry", _registry(events))
-    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a: "claimed")
+    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a, **kw: "claimed")
     monkeypatch.setattr("tools.async_delegation.complete_event_delivery", lambda *a: None)
     monkeypatch.setattr("cli.CLI_CONFIG", {"display": {"background_process_notifications": "off"}})
     cli._drain_process_notifications("cli-post-turn")
@@ -70,7 +70,7 @@ def test_heartbeat_wake_paints_one_line_and_persists_hidden(monkeypatch):
     cli.session_id = "display-session"
     cli._pending_input = queue.Queue()
     monkeypatch.setattr("tools.process_registry.process_registry", _registry([beat]))
-    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a: "claimed")
+    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a, **kw: "claimed")
     monkeypatch.setattr("tools.async_delegation.complete_event_delivery", lambda *a: None)
     cli._drain_process_notifications("cli-idle")
     queued = cli._pending_input.get_nowait()
@@ -87,7 +87,7 @@ def test_process_completion_display_keeps_payload_separate_across_surfaces(monke
     cli._pending_input = queue.Queue()
     registry = _registry(events)
     monkeypatch.setattr("tools.process_registry.process_registry", registry)
-    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a: "claimed")
+    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a, **kw: "claimed")
     monkeypatch.setattr("tools.async_delegation.complete_event_delivery", lambda *a: None)
     cli._drain_process_notifications("cli-idle")
     for attr, value in {"_pending_resume_sessions": [], "_typed_voice_stop": lambda t: False,

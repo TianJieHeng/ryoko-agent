@@ -143,9 +143,12 @@ def identity_construction(function):
                     and db.get_session(original) is not None
                     and db._session_turn_lease_key(session_id) == db._session_turn_lease_key(original)):
                 identity_session_id = original
-        context = resolve_agent_context(config, session_id=identity_session_id,
-                                        profile_home=str(get_hermes_home()), parent_context=parent,
-                                        is_child=is_child, stored_binding=stored)
+        from agent.specialist_manifest import construction_context
+        context = construction_context(config, parent=parent, session_id=identity_session_id, stored=stored)
+        if context is None:
+            context = resolve_agent_context(config, session_id=identity_session_id,
+                                            profile_home=str(get_hermes_home()), parent_context=parent,
+                                            is_child=is_child, stored_binding=stored)
         session_db = values.get("session_db")
         if session_db is not None:
             session_db.create_session(session_id, source=values.get("platform") or "cli",

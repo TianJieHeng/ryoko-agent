@@ -159,13 +159,16 @@ def _persist_dispatch(record: Dict[str, Any]) -> None:
         owner_started_at = None
     task_payload = {
         key: record.get(key)
-        for key in ("goal", "goals", "context", "toolsets", "role", "model", "is_batch", "task_indexes", "task_transcripts", *_ROUTING_KEYS)
+        for key in ("goal", "goals", "context", "toolsets", "role", "model", "is_batch", "task_indexes", "task_transcripts", "durable_handoffs", *_ROUTING_KEYS)
         if key in record}
-    try:  # where the children's terminals started; lets recovery add a git-state hint
-        task_payload["owner_cwd"] = os.getcwd()
+    try:  # Strict child recovery cannot inspect ambient parent cwd/history.
+        if not record.get("durable_handoffs"):
+            task_payload["owner_cwd"] = os.getcwd()
     except OSError:
         pass
     with _DB_LOCK, _transaction() as conn:
+        from hermes_state_delegations import validate_async_handoffs
+        validate_async_handoffs(conn, record)
         conn.execute("""INSERT OR REPLACE INTO async_delegations
                (delegation_id, origin_session, origin_ui_session_id,
                 parent_session_id, state, dispatched_at, updated_at,
@@ -284,9 +287,9 @@ def recover_abandoned_delegations() -> int:
             # Verbatim transcript tails + a git snapshot of the owner's cwd, so the parent can
             # continue or re-dispatch from the event alone instead of opening files (#116000).
             from tools.async_delegation_recovery_hints import git_state_hint, transcript_tails
-            if tails := transcript_tails(diagnostics["task_transcripts"]):
+            if not task.get("durable_handoffs") and (tails := transcript_tails(diagnostics["task_transcripts"])):
                 diagnostics["transcript_tails"] = tails
-            if hint := git_state_hint(task.get("owner_cwd")):
+            if not task.get("durable_handoffs") and (hint := git_state_hint(task.get("owner_cwd"))):
                 diagnostics["git_state_hint"] = hint
             event = {
                 "type": "async_delegation", "delegation_id": delegation_id, "session_key": session_key,
@@ -298,6 +301,12 @@ def recover_abandoned_delegations() -> int:
                 **({"results": recovered_results} if recovered_results else {}),
                 "dispatched_at": dispatched_at, "completed_at": now,
                 **{k: task[k] for k in _ROUTING_KEYS if task.get(k)}}
+            if task.get("durable_handoffs"):
+                event.update(durable_handoffs=task["durable_handoffs"], execution_resumed=False)
+                for reference in task["durable_handoffs"]:
+                    conn.execute("UPDATE delegation_handoffs SET state=CASE WHEN state='accepted' THEN 'orphaned' ELSE 'unknown' END,updated_at=? "
+                        "WHERE child_id=? AND handoff_sha256=? AND state IN ('accepted','running')",
+                        (now, reference["child_id"], reference["sha256"]))
             result = {"status": "unknown", "summary": None, "error": event["error"], **diagnostics,
                       **({"results": recovered_results} if recovered_results else {})}
             conn.execute("""UPDATE async_delegations SET state='unknown', completed_at=?,
@@ -430,15 +439,21 @@ def _update_delivery(sql: str, params: tuple) -> bool:
 def mark_completion_delivered(delegation_id: str) -> bool:
     """Atomically acknowledge successful injection of a durable completion."""
     now = time.time()
-    return _update_delivery(
-        """UPDATE async_delegations SET delivery_state='delivered', delivered_at=?, updated_at=?
-           WHERE delegation_id=? AND delivery_state!='delivered'""", (now, now, delegation_id))
+    with _DB_LOCK, _transaction() as conn:
+        strict = conn.execute("SELECT 1 FROM delegation_handoffs WHERE async_delegation_id=?", (delegation_id,)).fetchone()
+        if strict:
+            return False
+        return conn.execute("UPDATE async_delegations SET delivery_state='delivered', delivered_at=?, updated_at=? "
+            "WHERE delegation_id=? AND delivery_state!='delivered'", (now, now, delegation_id)).rowcount == 1
 
 
-def claim_completion_delivery(delegation_id: str, claim_id: str) -> bool:
+def claim_completion_delivery(delegation_id: str, claim_id: str, *, owner_context=None) -> bool:
     """Claim one pending completion across competing consumers/processes."""
     now = time.time()
     with _DB_LOCK, _transaction() as conn:
+        from hermes_state_delegations import authorize_async_delivery
+        if not authorize_async_delivery(conn, delegation_id, owner_context):
+            return False
         row = conn.execute(
             "SELECT delivery_state FROM async_delegations WHERE delegation_id=?", (delegation_id,)).fetchone()
         if row is None:
@@ -448,6 +463,9 @@ def claim_completion_delivery(delegation_id: str, claim_id: str) -> bool:
                WHERE delegation_id=? AND delivery_state='pending'
                  AND (delivery_claim IS NULL OR delivery_claimed_at < ?)""",
             (claim_id, now, now, delegation_id, now - _CLAIM_LEASE_S))
+        if cur.rowcount == 1:
+            conn.execute("UPDATE delegation_handoffs SET delivery_state='claimed',delivery_claim=?,updated_at=? "
+                "WHERE async_delegation_id=? AND delivery_state!='delivered'", (claim_id, now, delegation_id))
         return cur.rowcount == 1
 
 
@@ -458,7 +476,7 @@ def is_interim_delegation_event(evt: Dict[str, Any]) -> bool:
     return evt.get("type") == "async_delegation" and bool(evt.get("task_failure_notice"))
 
 
-def claim_event_delivery(evt: Dict[str, Any], consumer: str) -> Optional[str]:
+def claim_event_delivery(evt: Dict[str, Any], consumer: str, *, owner_context=None) -> Optional[str]:
     """Claim a durable delegation event; non-durable events (and interim notices) need no token."""
     if is_interim_delegation_event(evt):
         return ""
@@ -466,7 +484,7 @@ def claim_event_delivery(evt: Dict[str, Any], consumer: str) -> Optional[str]:
     if not delegation_id:
         return ""
     claim_id = f"{consumer}:{os.getpid()}:{uuid.uuid4().hex}"
-    return claim_id if claim_completion_delivery(delegation_id, claim_id) else None
+    return claim_id if claim_completion_delivery(delegation_id, claim_id, owner_context=owner_context) else None
 
 
 def release_completion_delivery(delegation_id: str, claim_id: str) -> bool:
@@ -514,13 +532,19 @@ def drop_completion_delivery(delegation_id: str, claim_id: str) -> bool:
 
 
 def complete_completion_delivery(delegation_id: str, claim_id: str) -> bool:
-    """Acknowledge acceptance for the consumer holding this claim."""
+    """Acknowledge acceptance for the consumer holding this exact parent claim."""
     now = time.time()
-    return _update_delivery("""UPDATE async_delegations SET delivery_state='delivered',
-                  delivered_at=?, updated_at=?, delivery_claim=NULL,
-                  delivery_claimed_at=NULL
-           WHERE delegation_id=? AND delivery_state='pending'
-             AND delivery_claim=?""", (now, now, delegation_id, claim_id))
+    with _DB_LOCK, _transaction() as conn:
+        cur = conn.execute("""UPDATE async_delegations SET delivery_state='delivered',
+                      delivered_at=?, updated_at=?, delivery_claim=NULL,
+                      delivery_claimed_at=NULL
+               WHERE delegation_id=? AND delivery_state='pending'
+                 AND delivery_claim=?""", (now, now, delegation_id, claim_id))
+        if cur.rowcount:
+            conn.execute("UPDATE delegation_handoffs SET delivery_state='delivered',updated_at=? "
+                "WHERE async_delegation_id=? AND delivery_claim=? AND delivery_state='claimed'",
+                (now, delegation_id, claim_id))
+        return cur.rowcount == 1
 
 
 def complete_event_delivery(evt: Dict[str, Any], claim_id: str) -> None:
@@ -730,6 +754,7 @@ def _dispatch_admitted(
     progress_fn: Optional[Callable[[], tuple]], capacity_error: str, slot_key: Optional[str] = None,
     task_indexes: Optional[List[int]] = None,
     task_transcripts: Optional[Dict[str, str]] = None,
+    durable_handoffs: Optional[List[dict]] = None,
 ) -> Dict[str, Any]:
     """Shared dispatch core for single (``goals is None``) and batch units. Capacity check +
     record insert happen under ONE lock hold so concurrent dispatches can't both pass the check
@@ -737,6 +762,10 @@ def _dispatch_admitted(
     can't pile up unbounded background work. ``slot_key`` names the pool slot the unit occupies
     (default: its own id); the units of one delegate_task call share the first unit's id so
     splitting a call into per-group completions never consumes more capacity than the call did."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None and not durable_handoffs:
+        from agent.delegation_contract import DelegationError
+        raise DelegationError("delegation_handoff_required", "Strict async execution requires canonical admitted handoffs")
     is_batch = goals is not None
     label = " batch" if is_batch else ""
     classify = _batch_status if is_batch else (lambda r: r.get("status") or "completed")
@@ -751,6 +780,7 @@ def _dispatch_admitted(
         "status": "running", "dispatched_at": dispatched_at, "completed_at": None,
         "interrupt_fn": interrupt_fn, **({"is_batch": True} if is_batch else {}), "progress_fn": progress_fn,
         "slot_key": slot_key or delegation_id,
+        **({"durable_handoffs": durable_handoffs} if durable_handoffs else {}),
         **({"task_transcripts": dict(task_transcripts)} if task_transcripts else {}),
         # Which of the call's ``goals`` this unit runs (None = all of them).
         **({"task_indexes": list(task_indexes)} if task_indexes is not None else {}),
@@ -765,7 +795,13 @@ def _dispatch_admitted(
             return {"status": "rejected", "error": capacity_error}
         _records[delegation_id] = record
         live_units = sum(1 for r in _records.values() if r.get("status") in _LIVE_STATES)
-    _persist_dispatch(record)
+    try:
+        _persist_dispatch(record)
+    except BaseException:
+        with _records_lock:
+            if _records.get(delegation_id) is record:
+                _records.pop(delegation_id, None)
+        raise
     # Units of one call share a slot, so live units can exceed slots: size the pool by units or a
     # unit queues behind a full pool and the stale monitor kills it before its child ever starts.
     executor = _get_executor(max(max_async_children, live_units))
@@ -843,6 +879,7 @@ def dispatch_async_delegation_batch(
     progress_fn: Optional[Callable[[], tuple]] = None, slot_key: Optional[str] = None,
     task_indexes: Optional[List[int]] = None,
     task_transcripts: Optional[Dict[str, str]] = None,
+    durable_handoffs: Optional[List[dict]] = None,
 ) -> Dict[str, Any]:
     """Dispatch a fan-out unit (a whole batch, or one ``group`` of a delegate_task call) as ONE
     background unit: ``runner`` runs its tasks and returns the combined ``{"results": [...],
@@ -860,7 +897,7 @@ def dispatch_async_delegation_batch(
         parent_session_id=parent_session_id, runner=runner,
         origin_ui_session_id=origin_ui_session_id, origin_session_id=origin_session_id,
         interrupt_fn=interrupt_fn, max_async_children=max_async_children, progress_fn=progress_fn, slot_key=slot_key,
-        task_indexes=task_indexes, task_transcripts=task_transcripts,
+        task_indexes=task_indexes, task_transcripts=task_transcripts, durable_handoffs=durable_handoffs,
         capacity_error=(
             f"Async delegation capacity reached ({max_async_children} running). Wait for one to finish "
             "(its result will re-enter the chat), or raise delegation.max_concurrent_children in "
@@ -930,12 +967,16 @@ def _push_completion_event(record: Dict[str, Any], result: Dict[str, Any], statu
         "context": record.get("context"), "toolsets": record.get("toolsets"), "role": record.get("role"),
         "model": record.get("model") if is_batch else (result.get("model") or record.get("model")),
         "status": status, **payload, "dispatched_at": dispatched_at, "completed_at": completed_at,
+        **({"durable_handoffs": record["durable_handoffs"], "execution_resumed": False} if record.get("durable_handoffs") else {}),
         **({} if is_batch else {"exit_reason": result.get("exit_reason")}),
         **{k: record[k] for k in _ROUTING_KEYS if record.get(k)},
         **{k: result[k] for k in _STALL_META_KEYS if k in result}}
     try:
         _persist_completion(evt, result)
     except Exception as exc:  # noqa: BLE001 — a lost durable row is recoverable; a lost result + leaked slot is not
+        if record.get("durable_handoffs"):
+            logger.error("Strict async delegation %s: completion journal unavailable; delivery remains pending", record.get("delegation_id"))
+            return
         logger.error(f"Async delegation{label} %s: durable completion write failed; delivering in-memory "
                      "only (a restart may report this unit as unknown): %s", record.get("delegation_id"), exc)
     try:

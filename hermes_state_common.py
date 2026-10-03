@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 40
+SCHEMA_VERSION = 41
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -1028,6 +1028,10 @@ SCHEMA_SQL += WORKFLOW_SCHEMA_SQL
 from hermes_state_schedule_schema import SCHEDULE_SCHEMA_SQL
 from hermes_state_commitment_schema import COMMITMENT_SCHEMA_SQL
 SCHEMA_SQL += SCHEDULE_SCHEMA_SQL + COMMITMENT_SCHEMA_SQL
+
+from hermes_state_delegation_schema import DELEGATION_SCHEMA_SQL
+from hermes_state_media_schema import MEDIA_SCHEMA_SQL
+SCHEMA_SQL += DELEGATION_SCHEMA_SQL + MEDIA_SCHEMA_SQL
 
 # Indexes on later-added columns must run AFTER _reconcile_columns(), or executescript fails on legacy DBs.
 DEFERRED_INDEX_SQL = """

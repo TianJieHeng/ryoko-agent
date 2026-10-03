@@ -39,7 +39,8 @@ def _no_turn(monkeypatch) -> list:
 def test_a_lost_delivery_claim_hands_the_turn_back(monkeypatch, claim):
     """A gateway sharing this home claims the durable row before it verifies the target, so the
     poller holding the live copy of the same event gets ``None`` — after it already took the turn."""
-    def _claim(evt, consumer):
+    def _claim(evt, consumer, *, owner_context=None):
+        assert owner_context is None  # Legacy fixture carries no strict parent identity.
         if isinstance(claim, Exception):
             raise claim
         return claim
@@ -62,7 +63,8 @@ def test_a_completion_batch_that_cannot_be_prepared_hands_the_turn_back(monkeypa
     claims = iter(["claim-a", sqlite3.OperationalError("database is locked")] if fail_at == "claim"
                   else ["claim-a", "claim-b"])
 
-    def _claim(evt, consumer):
+    def _claim(evt, consumer, *, owner_context=None):
+        assert owner_context is None  # Legacy fixture carries no strict parent identity.
         value = next(claims)
         if isinstance(value, Exception):
             raise value

@@ -3445,6 +3445,42 @@
       }
     },
     {
+      "name": "runtime.channel.bind",
+      "summary": "Bind an owned local surface to its exact principal/project/agent/session mission.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ChannelBindParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.channel.submit",
+      "summary": "Deduplicate one logical input across verified local surfaces; never replay history.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ChannelSubmitParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
       "name": "runtime.command",
       "summary": "Accept one idempotent command. Retries return the original durable receipt.",
       "params": [
@@ -3855,6 +3891,24 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.media.capabilities",
+      "summary": "Report unconfigured speech and the bounded selected-frame workflow honestly.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
         }
       }
     },
@@ -4453,6 +4507,168 @@
       }
     },
     {
+      "name": "runtime.screen.annotate",
+      "summary": "Validate an overlay region and guide the supported selected-text workflow.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScreenAnnotateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.screen.capture",
+      "summary": "Explicit client selected-window PNG; bounded metadata inspection, no OS capture or OCR.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScreenCaptureParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.screen.inspect",
+      "summary": "Inspect the currently owned fresh frame reference and dimensions.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScreenFrameParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.screen.submit",
+      "summary": "Submit confirmed selected text from an owned fresh region through the command queue.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScreenSubmitParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.services.capabilities",
+      "summary": "Two authenticated finite local document services; no remote shell.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.services.execute",
+      "summary": "Run or recover only uncommitted pure local stages under the exact preview digest.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ServiceExecuteParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.services.output",
+      "summary": "Read digest-verified private staged output; publication needs the artifact approval path.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ServicePipelineParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.services.prepare",
+      "summary": "Disclose exact source digest, bytes, location, route and fresh executor before transfer.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ServicePrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.services.status",
+      "summary": "Read committed per-stage digest/transfer receipts, without replay.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ServicePipelineParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
       "name": "runtime.snapshot",
       "summary": "Read a consistent durable mission projection and its restart-stable cursor.",
       "params": [
@@ -4521,6 +4737,114 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/TemplateListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.voice.capture.cancel",
+      "summary": "Discard this transport's captured audio, without cancelling a mission.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.voice.capture.feed",
+      "summary": "Sequenced bounded PCM and partial/final transcript feedback; never accepts a task.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/VoiceFeedParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.voice.capture.start",
+      "summary": "Explicit bounded client-PCM push-to-talk; fail closed without a local STT adapter.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.voice.speak",
+      "summary": "Interruptible declared local TTS; fail closed when unconfigured.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/VoiceSpeakParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.voice.stop",
+      "summary": "Stop only speech; UI streaming and mission cancellation are separate.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.voice.submit",
+      "summary": "Explicitly confirm all transcript text before normal durable command admission.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/VoiceSubmitParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
         }
       }
     },
@@ -11591,6 +11915,109 @@
         "description": "``change_watcher._CHANGE_WATCHES`` payload fn \u2014 ``{}`` for every watch except pet.changed.",
         "properties": {},
         "title": "ChangeSignalPayload",
+        "type": "object"
+      },
+      "ChannelBindParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "channel": {
+            "enum": [
+              "local_jsonrpc",
+              "voice",
+              "screen"
+            ],
+            "title": "Channel",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "channel"
+        ],
+        "title": "ChannelBindParams",
+        "type": "object"
+      },
+      "ChannelSubmitParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "binding_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Binding Id",
+            "type": "string"
+          },
+          "input_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Input Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          },
+          "operation": {
+            "enum": [
+              "submit",
+              "steer",
+              "cancel"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeTextPayload"
+              },
+              {
+                "$ref": "#/components/schemas/RuntimeCancelPayload"
+              }
+            ],
+            "title": "Payload"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "binding_id",
+          "input_id",
+          "operation",
+          "payload"
+        ],
+        "title": "ChannelSubmitParams",
         "type": "object"
       },
       "ClarifyLockParams": {
@@ -23513,6 +23940,22 @@
           "oauth_needed"
         ],
         "title": "McpServersTestResult",
+        "type": "object"
+      },
+      "MediaResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "response_json": {
+            "maxLength": 2097152,
+            "minLength": 2,
+            "title": "Response Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "response_json"
+        ],
+        "title": "MediaResponse",
         "type": "object"
       },
       "MemoryCapabilities": {
@@ -40427,6 +40870,202 @@
         "title": "ScheduleUpdateParams",
         "type": "object"
       },
+      "ScreenAnnotateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "frame_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Frame Id",
+            "type": "string"
+          },
+          "region": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Region",
+            "type": "array"
+          },
+          "label": {
+            "default": "",
+            "maxLength": 512,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "frame_id",
+          "region"
+        ],
+        "title": "ScreenAnnotateParams",
+        "type": "object"
+      },
+      "ScreenCaptureParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "png_base64": {
+            "maxLength": 1398104,
+            "minLength": 1,
+            "title": "Png Base64",
+            "type": "string"
+          },
+          "scope": {
+            "const": "selected_window",
+            "title": "Scope",
+            "type": "string"
+          },
+          "window_ref": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Window Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "png_base64",
+          "scope",
+          "window_ref"
+        ],
+        "title": "ScreenCaptureParams",
+        "type": "object"
+      },
+      "ScreenFrameParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "frame_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Frame Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "frame_id"
+        ],
+        "title": "ScreenFrameParams",
+        "type": "object"
+      },
+      "ScreenSubmitParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "binding_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Binding Id",
+            "type": "string"
+          },
+          "input_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Input Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          },
+          "text": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "confirmed_text": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Confirmed Text",
+            "type": "string"
+          },
+          "frame_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Frame Id",
+            "type": "string"
+          },
+          "region": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Region",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "binding_id",
+          "input_id",
+          "text",
+          "confirmed_text",
+          "frame_id",
+          "region"
+        ],
+        "title": "ScreenSubmitParams",
+        "type": "object"
+      },
       "SecretRequestParams": {
         "additionalProperties": false,
         "properties": {
@@ -40513,6 +41152,119 @@
           "role"
         ],
         "title": "SeedMessage",
+        "type": "object"
+      },
+      "ServiceExecuteParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "pipeline_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "pipeline_id",
+          "manifest_sha256"
+        ],
+        "title": "ServiceExecuteParams",
+        "type": "object"
+      },
+      "ServicePipelineParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "pipeline_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Pipeline Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "pipeline_id"
+        ],
+        "title": "ServicePipelineParams",
+        "type": "object"
+      },
+      "ServicePrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "request_id",
+          "artifact_id",
+          "version"
+        ],
+        "title": "ServicePrepareParams",
         "type": "object"
       },
       "SessionActivateParams": {
@@ -50674,6 +51426,52 @@
         "title": "VerificationStatusResult",
         "type": "object"
       },
+      "VoiceFeedParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "sequence": {
+            "minimum": 0,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "pcm_base64": {
+            "maxLength": 85336,
+            "title": "Pcm Base64",
+            "type": "string"
+          },
+          "final": {
+            "default": false,
+            "title": "Final",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "capture_id",
+          "sequence",
+          "pcm_base64"
+        ],
+        "title": "VoiceFeedParams",
+        "type": "object"
+      },
       "VoiceRecordAction": {
         "enum": [
           "start",
@@ -50751,6 +51549,35 @@
         "title": "VoiceRecordStatus",
         "type": "string"
       },
+      "VoiceSpeakParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "text"
+        ],
+        "title": "VoiceSpeakParams",
+        "type": "object"
+      },
       "VoiceStatusPayload": {
         "additionalProperties": false,
         "description": "``methods_voice._vr_on_status``; states come from the recorder (idle / listening / transcribing \u2026).",
@@ -50764,6 +51591,69 @@
           "state"
         ],
         "title": "VoiceStatusPayload",
+        "type": "object"
+      },
+      "VoiceSubmitParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "binding_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Binding Id",
+            "type": "string"
+          },
+          "input_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Input Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          },
+          "text": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "confirmed_text": {
+            "maxLength": 65536,
+            "minLength": 1,
+            "title": "Confirmed Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "binding_id",
+          "input_id",
+          "text",
+          "confirmed_text"
+        ],
+        "title": "VoiceSubmitParams",
         "type": "object"
       },
       "VoiceToggleAction": {

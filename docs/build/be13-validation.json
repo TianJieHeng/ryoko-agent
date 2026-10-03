@@ -1,0 +1,114 @@
+{
+  "phase": "BE13",
+  "status": "bounded_local_implementation_validated_qualification_pending",
+  "base_commit": "75951795ed4e4cf0305de917870ca097528aa980",
+  "schema_migration": "40_to_41_additive",
+  "canonical_campaign": {
+    "log": "/tmp/be13-validation.log",
+    "sha256": "d73eba21bcca3bdc9ecfc567abe326c62d720b8d916f2308aff21f099d980a44",
+    "passed": 243,
+    "failed": 9,
+    "skipped": 1,
+    "seconds": 20.9
+  },
+  "failure_resolution": {
+    "original_failures": 9,
+    "cause": "Eight old notification claim mocks rejected the new owner_context keyword; source-isolation negative test expected PermissionError rather than actual ArtifactStoreError(identity_mismatch). Production denial remained fail closed. Test doubles and exact exception assertion corrected. A final direct-strict-async bypass regression was added.",
+    "final_affected_campaigns": [
+      {
+        "log": "/tmp/be13-final-affected.log",
+        "sha256": "1f8fdb7fbe5a65c92a0280eb1f3e557fe748da52a6d04f5409fd764c09fba9f1",
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 3.7
+      },
+      {
+        "log": "/tmp/be13-async-final.log",
+        "sha256": "63a0db37021a2670c650d2d1156237e6dd5dc4a9b1fcf45cb188d02fd44f8a0e",
+        "passed": 49,
+        "failed": 0,
+        "skipped": 1,
+        "seconds": 20.1
+      }
+    ]
+  },
+  "final_result": "All affected failures resolved; final source-specific reruns passed. One native macOS test remains skipped on Linux. No full repository release campaign was run.",
+  "additional_checks": [
+    {
+      "command": "npm run typecheck --workspace @hermes/shared",
+      "result": "passed",
+      "runner": "parent",
+      "log": "/tmp/be13-shared-typecheck.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "command": "python -m ruff check (BE13 Python paths)",
+      "result": "passed",
+      "log": "/tmp/be13-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "command": "git diff --check -- (BE13 paths)",
+      "result": "passed",
+      "log": "/tmp/be13-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "supported": [
+    "constructor-bound stable specialist manifest with separate persistent built-in memory",
+    "ephemeral child namespaces and narrowed child/grandchild policy",
+    "finite single-child strict delegate and existing durable async consumers",
+    "immutable handoff/root limits/budget reservation/workspace/source pins",
+    "same-process authenticated local executor refs; isolated code capability requires real probe",
+    "owned completion claims separate from child completion, no blind respawn",
+    "two finite local document services with transfer receipts and no completed-stage replay",
+    "owned PTT speech interfaces and selected-frame inspect/annotate/confirmed text-to-task workflow",
+    "same-mission local/voice/screen deduplication through existing runtime admission queue"
+  ],
+  "not_qualified": [
+    "parallel team measured benefit and live specialist performance acceptance",
+    "running-child process resumption or supervisor execution adoption",
+    "remote executor migration, remote bounded services or hardware routing",
+    "live microphone/STT/TTS; default adapters unconfigured and fixtures finite doubles",
+    "OCR, general screen/OS actions or independently attested client acquisition timestamps",
+    "Slack external identity adapters",
+    "native macOS/other OS execution and full release suite"
+  ],
+  "source_files": {
+    "agent/delegation_contract.py": "1075d2c6d1243feae151c5c58dff5bf26793848c1987b5bc9d5cf979249dec4f",
+    "agent/delegation_runtime.py": "ea59bdb554481af66b118e7ec6d7d329f50402f0a2d03989b1ad05d472d72508",
+    "agent/executor_capabilities.py": "a96d240f02f8009140fee84bc7e7114ebf1e6b9611f0498f5821f8124daddd37",
+    "agent/specialist_manifest.py": "41d9d0cded93191836e056a4cb8e7363ca3f5fa5c1a8232a374530d7f2ca925d",
+    "agent/identity_lifecycle.py": "0e1dc692bd31d5b76e94cb6f355a431a8e4c54d96cfff154ef2799270c0d67e2",
+    "agent/bounded_services.py": "4e0b412dc5e8c3c8e49e8a421409939cfddc8f765d37e4d80af32eced46cee65",
+    "agent/channel_handoff.py": "6097d1fb5313d9a0dfa2f07198acecc8df1454960279adfe8a3994ff17d018e4",
+    "agent/media_ingress.py": "ab4b580606a178aef0d551249943fad58613b669d3b4f4650f3c3447c7faf8a3",
+    "hermes_state_delegation_schema.py": "f934d1a2639e5f32038f0d1b642a1b42406a954c26113177bd592920ffab9b27",
+    "hermes_state_delegations.py": "c29b538211a8e7b35d81de9c47e83afaa2dcd91527b16452f0f035e0d3c951cc",
+    "hermes_state_media_schema.py": "6bf7dbee3a58754701234afed1c96a64eca3b9031216776ec73b52945f1c9b8b",
+    "hermes_state_common.py": "9c8d66f5dacfac6fbdd57c19a79f3cb2faef07aff5ae362cdb5e624b37897f45",
+    "tools/delegate_tool.py": "3f93fa1665f7d418b7da02f106d14e5f35fd778f6ed13d23f9f0ae549d13bdf3",
+    "tools/delegate_tool_dispatch.py": "6a0efee2af5b0d812eb6d824da788e23586c5c69a458afeabcf8ac66741e88bc",
+    "tools/delegate_tool_child_run.py": "7a1e1060708fcef312f1526ae2e7d46ad7b6139c9f1331b8a73ebf746884122b",
+    "tools/async_delegation.py": "b428323793369bcf60d42b90c9886ae70a43ea8578121cbd07017972a6b16ae1",
+    "tools/code_execution_isolated.py": "94148aae6c7b717b0060b577e24de7767af2ef115666ead5c653a2ce6bc066b6",
+    "hermes_cli/cli_process_notifications.py": "99ab58b3f1a8dcaa04cdf115d4ed98bf6072823e03d159a348f21c0f8972fb3e",
+    "tui_gateway/session_notifications.py": "da51560314738eb3e1a4ac24fb42b93679c19b8586514b55869682a8dab9e496",
+    "tui_gateway/server.py": "053dd193744cbec3caaba02544b59119806cf5d78a7c7210441aaf517ee83e81",
+    "tui_gateway/methods_media.py": "1d76aeb412f61ca5b11cce57d6788584be655a1b7627fdade65de7d95e606ad6",
+    "tui_gateway/contracts/media.py": "9065323213268d0b27a1388bf2ab441ad0833e243b0b1a3c61f361aa812cd154",
+    "tui_gateway/contracts/__init__.py": "456a5e8716036148ea2d905db4e27bcae8c3586d1c5642546b3c155eecc3ece4",
+    "apps/shared/src/gateway-contract.generated.ts": "5192063bb407af0ff545be1b3a0b00cb15fc88f5c36a115765da7b596d55c891",
+    "apps/shared/src/gateway-contract.openrpc.json": "edfba7824569902225a5dbdf83df0beb03ea23642778772c2c31c2596be79f41",
+    "tests/agent/test_durable_delegation.py": "d91e19ddfaa873000c491382ee2376331980760518d5d6e6ace750b6afe35846",
+    "tests/agent/test_media_ingress.py": "5843b742c6d27aab1dba13adcedca9fad195be1ee1cf6f4c2ac34c87cb166395",
+    "tests/tui_gateway/test_media_rpc.py": "4ce99b1e0e11089e69aa43b2a7b92349e547bc0713a5582fd338b2a615aa8a44",
+    "tests/tui_gateway/test_delegation_sources.py": "1cb5b85680a5ea1b21d8504b03ff68ec1b8facaab4bb8d9f2f61857a963fa76d",
+    "docs/build/delegation-contracts.md": "a8e2ae2206eaf6606d7e63911bc4398e850f9ade22ec21a5b19a49a99c3bcfa5",
+    "docs/build/media-service-contracts.md": "b37c6ee0725681be3d2f072c2f8084272aecf9922b65ae4f40bddbccdf0be1d6",
+    "tests/hermes_cli/test_process_notification_display.py": "2d60600803dad96d7b42de4b66f0dbda4df2ced8c63003f42b2f153b4b0c1206",
+    "tests/tui_gateway/test_notification_turn_release.py": "44c8a79bfa562fc8c7d188ea75349055fd79f0560dc0954b401ea37469a4e51d"
+  },
+  "source_manifest_sha256": "77a3cc39f5b95a512da48a943fe28afb7eb0e26e95373c2792fc20ce2f6ee6bf"
+}

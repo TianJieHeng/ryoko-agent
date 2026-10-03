@@ -3474,6 +3474,94 @@ export interface CalendarPreviewParams {
   end_at: string
   duration_minutes?: number
 }
+export interface MediaResponse {
+  response_json: string
+}
+export interface ServicePrepareParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  request_id: string
+  artifact_id: string
+  version: number
+}
+export interface ServiceExecuteParams {
+  session_id: string
+  schema_version: 1
+  pipeline_id: string
+  manifest_sha256: string
+}
+export interface ServicePipelineParams {
+  session_id: string
+  schema_version: 1
+  pipeline_id: string
+}
+export interface VoiceFeedParams {
+  session_id: string
+  schema_version: 1
+  capture_id: string
+  sequence: number
+  pcm_base64: string
+  final?: boolean
+}
+export interface VoiceSpeakParams {
+  session_id: string
+  schema_version: 1
+  text: string
+}
+export interface VoiceSubmitParams {
+  session_id: string
+  schema_version: 1
+  binding_id: string
+  input_id: string
+  expected_revision?: number | null
+  text: string
+  confirmed_text: string
+}
+export interface ScreenCaptureParams {
+  session_id: string
+  schema_version: 1
+  png_base64: string
+  scope: 'selected_window'
+  window_ref: string
+}
+export interface ScreenFrameParams {
+  session_id: string
+  schema_version: 1
+  frame_id: string
+}
+export interface ScreenAnnotateParams {
+  session_id: string
+  schema_version: 1
+  frame_id: string
+  region: number[]
+  label?: string
+}
+export interface ScreenSubmitParams {
+  session_id: string
+  schema_version: 1
+  binding_id: string
+  input_id: string
+  expected_revision?: number | null
+  text: string
+  confirmed_text: string
+  frame_id: string
+  region: number[]
+}
+export interface ChannelBindParams {
+  session_id: string
+  schema_version: 1
+  channel: 'local_jsonrpc' | 'voice' | 'screen'
+}
+export interface ChannelSubmitParams {
+  session_id: string
+  schema_version: 1
+  binding_id: string
+  input_id: string
+  expected_revision?: number | null
+  operation: 'submit' | 'steer' | 'cancel'
+  payload: RuntimeTextPayload | RuntimeCancelPayload
+}
 export interface ResearchResolveParams {
   session_id: string
   schema_version: 1
@@ -7037,6 +7125,10 @@ export interface RpcMethods {
   'runtime.capture.list': { params: SourceListParams; result: CaptureListResult }
   /** Read retained original bytes with digest verification and plain-text-only preview. */
   'runtime.capture.read': { params: CaptureReadParams; result: ArtifactReadResult }
+  /** Bind an owned local surface to its exact principal/project/agent/session mission. */
+  'runtime.channel.bind': { params: ChannelBindParams; result: MediaResponse }
+  /** Deduplicate one logical input across verified local surfaces; never replay history. */
+  'runtime.channel.submit': { params: ChannelSubmitParams; result: MediaResponse }
   /** Accept one idempotent command. Retries return the original durable receipt. */
   'runtime.command': { params: RuntimeCommandParams; result: CommandReceipt }
   /** Human-accept a sourced obligation */
@@ -7080,6 +7172,8 @@ export interface RpcMethods {
   'runtime.evidence.list': { params: SourceListParams; result: EvidenceListResult }
   /** Classify selected immutable imported inbox messages as nonbinding candidates */
   'runtime.inbox.prepare': { params: InboxPrepareParams; result: ScheduleRecordResult }
+  /** Report unconfigured speech and the bounded selected-frame workflow honestly. */
+  'runtime.media.capabilities': { params: RuntimeSessionParams; result: MediaResponse }
   /** Read a revision-bound local structured export in bounded chunks; no remote sharing. */
   'runtime.memory.export': { params: MemoryExportParams; result: MemoryExportResult }
   /** Tombstone one exact built-in record version; this is not physical erasure of backups. */
@@ -7138,11 +7232,41 @@ export interface RpcMethods {
   'runtime.schedule.reconcile': { params: ScheduleReconcileParams; result: ScheduleRecordResult }
   /** Pause, resume or revoke an exact schedule revision */
   'runtime.schedule.update': { params: ScheduleUpdateParams; result: ScheduleRecordResult }
+  /** Validate an overlay region and guide the supported selected-text workflow. */
+  'runtime.screen.annotate': { params: ScreenAnnotateParams; result: MediaResponse }
+  /** Explicit client selected-window PNG; bounded metadata inspection, no OS capture or OCR. */
+  'runtime.screen.capture': { params: ScreenCaptureParams; result: MediaResponse }
+  /** Inspect the currently owned fresh frame reference and dimensions. */
+  'runtime.screen.inspect': { params: ScreenFrameParams; result: MediaResponse }
+  /** Submit confirmed selected text from an owned fresh region through the command queue. */
+  'runtime.screen.submit': { params: ScreenSubmitParams; result: MediaResponse }
+  /** Two authenticated finite local document services; no remote shell. */
+  'runtime.services.capabilities': { params: RuntimeSessionParams; result: MediaResponse }
+  /** Run or recover only uncommitted pure local stages under the exact preview digest. */
+  'runtime.services.execute': { params: ServiceExecuteParams; result: MediaResponse }
+  /** Read digest-verified private staged output; publication needs the artifact approval path. */
+  'runtime.services.output': { params: ServicePipelineParams; result: MediaResponse }
+  /** Disclose exact source digest, bytes, location, route and fresh executor before transfer. */
+  'runtime.services.prepare': { params: ServicePrepareParams; result: MediaResponse }
+  /** Read committed per-stage digest/transfer receipts, without replay. */
+  'runtime.services.status': { params: ServicePipelineParams; result: MediaResponse }
   /** Read a consistent durable mission projection and its restart-stable cursor. */
   'runtime.snapshot': { params: RuntimeSessionParams; result: MissionSnapshot }
   'runtime.template.create': { params: TemplateCreateParams; result: TemplateResult }
   'runtime.template.get': { params: TemplateParams; result: TemplateResult }
   'runtime.template.list': { params: SourceListParams; result: TemplateListResult }
+  /** Discard this transport's captured audio, without cancelling a mission. */
+  'runtime.voice.capture.cancel': { params: RuntimeSessionParams; result: MediaResponse }
+  /** Sequenced bounded PCM and partial/final transcript feedback; never accepts a task. */
+  'runtime.voice.capture.feed': { params: VoiceFeedParams; result: MediaResponse }
+  /** Explicit bounded client-PCM push-to-talk; fail closed without a local STT adapter. */
+  'runtime.voice.capture.start': { params: RuntimeSessionParams; result: MediaResponse }
+  /** Interruptible declared local TTS; fail closed when unconfigured. */
+  'runtime.voice.speak': { params: VoiceSpeakParams; result: MediaResponse }
+  /** Stop only speech; UI streaming and mission cancellation are separate. */
+  'runtime.voice.stop': { params: RuntimeSessionParams; result: MediaResponse }
+  /** Explicitly confirm all transcript text before normal durable command admission. */
+  'runtime.voice.submit': { params: VoiceSubmitParams; result: MediaResponse }
   /** Create an immutable draft with scoped accepted-work or consent evidence; never promote or execute it. */
   'runtime.workflow.create': { params: WorkflowCreateParams; result: WorkflowResult }
   /** Commit the exact reviewed human workflow decision; no skill self-promotion. */
@@ -7531,6 +7655,8 @@ export const RPC_METHODS = [
   'runtime.capture.get',
   'runtime.capture.list',
   'runtime.capture.read',
+  'runtime.channel.bind',
+  'runtime.channel.submit',
   'runtime.command',
   'runtime.commitment.accept',
   'runtime.commitment.candidate',
@@ -7554,6 +7680,7 @@ export const RPC_METHODS = [
   'runtime.evidence.get',
   'runtime.evidence.list',
   'runtime.inbox.prepare',
+  'runtime.media.capabilities',
   'runtime.memory.export',
   'runtime.memory.record.delete',
   'runtime.memory.record.get',
@@ -7587,10 +7714,25 @@ export const RPC_METHODS = [
   'runtime.schedule.list',
   'runtime.schedule.reconcile',
   'runtime.schedule.update',
+  'runtime.screen.annotate',
+  'runtime.screen.capture',
+  'runtime.screen.inspect',
+  'runtime.screen.submit',
+  'runtime.services.capabilities',
+  'runtime.services.execute',
+  'runtime.services.output',
+  'runtime.services.prepare',
+  'runtime.services.status',
   'runtime.snapshot',
   'runtime.template.create',
   'runtime.template.get',
   'runtime.template.list',
+  'runtime.voice.capture.cancel',
+  'runtime.voice.capture.feed',
+  'runtime.voice.capture.start',
+  'runtime.voice.speak',
+  'runtime.voice.stop',
+  'runtime.voice.submit',
   'runtime.workflow.create',
   'runtime.workflow.decision.commit',
   'runtime.workflow.decision.prepare',

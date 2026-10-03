@@ -19,6 +19,7 @@ from . import (  # noqa: F401
     domains,
     workflows,
     schedules,
+    media,
     research,
     profiles_vault_complete_foreign_subagents,
     projects_pets,
