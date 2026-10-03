@@ -163,6 +163,8 @@ class CommitmentRegistry:
                     old = self._row(conn, project_id, current["commitment_id"])
                     require(old["acceptance_json"] == canonical(decision), "commitment_already_accepted", "An accepted candidate cannot become a different obligation")
                     return self._public(old)
+                require(json.loads(current["record_json"]).get("review_state") != "declined",
+                        "commitment_declined", "A declined candidate cannot silently become an obligation")
                 require(current["revision"] == expected_revision, "commitment_revision_conflict", "Candidate revision changed")
                 self._capacity(conn, "accepted_commitments")
                 self._capacity(conn, "commitment_history")
@@ -182,6 +184,39 @@ class CommitmentRegistry:
                 conn.execute("INSERT INTO commitment_history VALUES(?,1,?,?)", (commitment_id, canonical(public), now))
                 return public
             return self.db._execute_write(write)
+
+    def decline(self, run, project_id, candidate_id, expected_revision, reason):
+        assert_commitment_control(run, "runtime.commitment.decline")
+        text(reason, 2000)
+        require(type(expected_revision) is int and expected_revision > 0,
+                "invalid_commitment", "Expected candidate revision is required")
+        with self.access.guard(project_id, self.actor, "write"):
+            def write(conn):
+                self._fence(conn, run)
+                row = conn.execute("SELECT * FROM commitment_candidates WHERE candidate_id=? "
+                    "AND project_id=? AND owner_json=?", (candidate_id, project_id, canonical(self.actor))).fetchone()
+                require(row is not None, "commitment_candidate_missing", "Candidate is not owned here")
+                require(row["commitment_id"] is None, "commitment_already_accepted",
+                        "An accepted obligation must use its explicit terminal transition")
+                record = json.loads(row["record_json"])
+                if record.get("review_state") == "declined":
+                    require(record["decline_reason"] == reason, "commitment_revision_conflict", "Decline is already retained")
+                    return {**record, "revision": row["revision"], "commitment_id": None, "accepted": False}
+                require(row["revision"] == expected_revision, "commitment_revision_conflict", "Candidate revision changed")
+                record.update(review_state="declined", decline_reason=reason, declined_at=time.time(),
+                              declined_by=self.actor, decline_command_id=run.command_id)
+                public = {**record, "revision": row["revision"] + 1, "commitment_id": None, "accepted": False}
+                bounded_result(public)
+                conn.execute("UPDATE commitment_candidates SET record_json=?,revision=revision+1 WHERE candidate_id=?",
+                             (canonical(record), candidate_id))
+                return public
+            return self.db._execute_write(write)
+
+    def plan_agenda(self, project_id, availability_ref, **options):
+        from hermes_state_agenda import plan_agenda
+        with self.access.guard(project_id, self.actor, "read"):
+            source = self._json_source(project_id, availability_ref)
+            return bounded_result({**plan_agenda(source, now=time.time(), **options), "source_ref": availability_ref})
 
     def update(self, run, project_id, commitment_id, expected_revision, state, evidence_ref,
                superseded_by=None, due_or_check_at=None):

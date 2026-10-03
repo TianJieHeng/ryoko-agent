@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -18,14 +19,14 @@ import tomllib
 import pytest
 
 from pm.store import current_target
-from tests.pm._fixtures import _wheel, served as served
+from tests.pm._fixtures import _wheel, seed_pm_runtime_cache, served as served
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.mark.platforms("linux")
 @pytest.mark.parametrize("fault", [None, "missing-wheel", "bad-hash"])
-def test_current_installer_publishes_real_dependencies_and_warm_path(tmp_path, served, fault):
+def test_current_installer_publishes_real_dependencies_and_warm_path(tmp_path, served, fault, request):
     uv = shutil.which("uv")
     assert uv, "fresh-install acceptance requires real uv"
     python = Path(sys._base_executable).resolve()
@@ -46,6 +47,9 @@ def test_current_installer_publishes_real_dependencies_and_warm_path(tmp_path, s
     env = {"PATH": os.environ["PATH"], "HOME": str(home), "LANG": "C.UTF-8",
            "HERMES_HOME": str(home / ".hermes"), "UV_PYTHON_INSTALL_DIR": str(managed),
            "UV_PYTHON_DOWNLOADS": "never", "UV_CACHE_DIR": str(tmp_path / "cache")}
+    if seed_pm_runtime_cache(request, tmp_path / "cache"):
+        seed_pm_runtime_cache(request, home / ".hermes" / "cache" / "uv")
+        env["UV_OFFLINE"] = "1"
     canary = tmp_path / "ambient-bin"
     canary.mkdir()
     npm_called = tmp_path / "npm-called"
@@ -81,11 +85,13 @@ def test_current_installer_publishes_real_dependencies_and_warm_path(tmp_path, s
     _wheel(wheels, "installer_probe", "1.0")
     recipe = tomllib.loads((source / "pm/pyproject.toml").read_text())
     yaml_dep = next(d for d in recipe["project"]["dependencies"] if d.startswith("ruamel.yaml"))
+    prepared_wheels = request.config.getini("pm_runtime_wheelhouse")
     (source / "pyproject.toml").write_text(
         '[project]\nname="installer-fixture"\nversion="1"\nrequires-python=">=3.14"\n'
         f'dependencies=["installer-probe==1.0",{json.dumps(yaml_dep)}]\n'
         '[project.optional-dependencies]\nall=[]\n[dependency-groups]\ndev=[]\ntest=[]\n'
         '[tool.uv]\npackage=false\n'
+        + (f'no-index=true\nfind-links=[{json.dumps(prepared_wheels)}]\n' if prepared_wheels else "") +
         '[tool.uv.sources]\ninstaller-probe={path="wheels/installer_probe-1.0-py3-none-any.whl"}\n',
         encoding="utf-8")
     run([uv, "lock", "--python", str(python)], cwd=source)
@@ -98,6 +104,26 @@ def test_current_installer_publishes_real_dependencies_and_warm_path(tmp_path, s
         "def main():\n print(json.dumps({'module':installer_probe.__file__, 'argv':sys.argv[1:]}))\n"
         "if __name__ == '__main__': main()\n", encoding="utf-8")
     docroot, url = served
+    prepared_bootstrap = request.config.getini("pm_bootstrap_archive")
+    if prepared_bootstrap:
+        from pm.lock import Lockfile
+
+        artifact = Lockfile(ROOT / "pm/lock.json").artifacts("uv", current_target())[0]
+        archive = Path(prepared_bootstrap)
+        assert hashlib.sha256(archive.read_bytes()).hexdigest() == artifact["sha256"]
+        shutil.copy2(archive, docroot / "bootstrap-uv.tar.gz")
+        curl = shutil.which("curl")
+        assert curl, "fresh-install acceptance requires real curl"
+        # The unchanged shell still downloads and verifies the original pin.
+        # Route only that exact URL to the fixture's real loopback server.
+        transport = canary / "curl"
+        transport.write_text(
+            '#!/usr/bin/env bash\nargs=()\nfor arg in "$@"; do\n'
+            f'  if [[ "$arg" == {shlex.quote(artifact["url"])} ]]; then '
+            f'arg={shlex.quote(url + "/bootstrap-uv.tar.gz")}; fi\n'
+            '  args+=("$arg")\ndone\n'
+            f'exec {shlex.quote(curl)} "${{args[@]}}"\n', encoding="utf-8")
+        transport.chmod(0o755)
     (source / "pm/artifact-mirror.json").write_text(
         json.dumps({"origin": url, "prefix": "mirror/"}, indent=2), encoding="utf-8")
     pins = {}

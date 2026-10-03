@@ -165,8 +165,9 @@ def test_delete_after_verified_exports_compacted_display_history(monkeypatch, tm
         db.close()
 
 
-def test_delete_after_verified_rejects_same_count_content_change(monkeypatch, tmp_path, capsys):
-    """A content rewrite is a real concurrent write that a count-only guard cannot see."""
+@pytest.mark.parametrize("changed_field", ["content", "provider_sidecar"])
+def test_delete_after_verified_rejects_same_count_content_change(monkeypatch, tmp_path, capsys, changed_field):
+    """Visible content and private replay rewrites both invalidate the exported snapshot."""
     import hermes_cli.session_export_md as session_export_md
 
     open_db = _real_store(monkeypatch, tmp_path)
@@ -178,7 +179,13 @@ def test_delete_after_verified_rejects_same_count_content_change(monkeypatch, tm
         writer = open_db()
         try:
             row = next(message for message in writer.get_messages("s1") if message.get("role") == "user")
-            assert writer.set_user_message_content("s1", row["id"], "changed after export") == 1
+            if changed_field == "content":
+                assert writer.set_user_message_content("s1", row["id"], "changed after export") == 1
+            else:
+                writer._write_sql("UPDATE messages SET provider_sidecar = ? WHERE id = ?", (
+                    '{"schema_version":1,"fields":{"anthropic_content_blocks":[{"signature":"new"}]}}',
+                    row["id"],
+                ))
         finally:
             writer.close()
         return path
@@ -191,6 +198,9 @@ def test_delete_after_verified_rejects_same_count_content_change(monkeypatch, tm
     db = open_db()
     try:
         assert db.get_session("s1") is not None
-        assert db.get_messages("s1")[0]["content"] == "changed after export"
+        if changed_field == "content":
+            assert db.get_messages("s1")[0]["content"] == "changed after export"
+        else:
+            assert "new" in db.export_session("s1")["messages"][0]["provider_sidecar"]
     finally:
         db.close()

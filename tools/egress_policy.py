@@ -15,7 +15,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 PURPOSES = frozenset({"main_model", "aux_model", "memory", "embeddings", "mcp",
                       "browser_tool", "message_delivery", "telemetry", "provisioning",
-                      "training", "subprocess"})
+                      "training", "subprocess", "connected_source"})
 TRANSPORTS = frozenset({"httpx", "subprocess", "browser", "opaque"})
 
 
@@ -156,7 +156,12 @@ class RecipientAuthorization:
     require_run: bool = True
 
     def check_url(self, url):
-        context = _context(require_run=self.require_run or self.grant.purpose != "mcp")
+        if self.grant.purpose == "connected_source":
+            from tools.connectors.source_reads import require_source_read
+            require_source_read()
+            context = _context(require_run=False)
+        else:
+            context = _context(require_run=self.require_run or self.grant.purpose != "mcp")
         if context != self.context:
             raise EgressDenied("recipient_authority_changed")
         plan = getattr(context.policy, "recipient_plan", None) if context is not None else None
@@ -174,6 +179,9 @@ class RecipientAuthorization:
 
 def prepare_recipient(purpose, endpoint, *, recipient_id=None, transport="httpx", require_run=True):
     """Resolve an explicit configured base endpoint; never guess or choose fallback."""
+    if purpose == "connected_source":
+        from tools.connectors.source_reads import require_source_read
+        require_source_read()
     if not policy_active():
         return None
     context = _context(require_run=False)

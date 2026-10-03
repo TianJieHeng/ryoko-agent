@@ -39,6 +39,9 @@ class _DB:
         self.events.append(("reload", session_id, kwargs))
         return [{"role": "user", "content": "durable latest"}]
 
+    def assert_provider_state_compatible(self, session_id):
+        self.events.append(("provider_compatible", session_id))
+
     def refresh_session_turn_lease(self, session_id, holder, **kwargs):
         return True
 
@@ -116,6 +119,7 @@ def test_run_conversation_acquires_then_reloads_latest_tip(monkeypatch, signal):
         "acquire",
         "resolve",
         "reload",
+        "provider_compatible",
         "release",
     ]
     assert db.events[2][2] == {
@@ -746,6 +750,7 @@ def test_run_conversation_exposes_holder_for_fenced_flush(monkeypatch):
         "acquire",
         "resolve",
         "reload",
+        "provider_compatible",
         "release",
     ]
 

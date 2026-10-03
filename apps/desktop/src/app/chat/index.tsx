@@ -55,6 +55,8 @@ import { $transcriptTailBySessionId, transcriptTailState } from '@/store/transcr
 import { isAuxiliaryWindow, isWatchWindow } from '@/store/windows'
 
 import { primaryRouteSelectedSessionId, routeSessionId } from '../routes'
+import { ConversationMissionControl } from '../runtime/conversation-mission'
+import { ConversationNotifications } from '../runtime/conversation-notifications'
 import { titlebarHeaderBaseClass, titlebarHeaderShadowClass, titlebarHeaderTitleClass } from '../shell/titlebar'
 
 import { ChatDropOverlay } from './chat-drop-overlay'
@@ -822,6 +824,9 @@ const ChatViewContent = memo(function ChatViewContent({
           selectedSessionId={selectedSessionId}
         />
       )}
+
+      {isPrimary && <ConversationMissionControl gateway={gateway} sessionId={activeSessionId} />}
+      {isPrimary && <ConversationNotifications gateway={gateway} sessionId={activeSessionId} />}
 
       {/* Mounted for the primary AND every tile, each scoped to its own session
           so a tiled/background session's blocking prompt surfaces instead of

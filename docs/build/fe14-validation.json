@@ -1,0 +1,53 @@
+{
+  "phase": "FE14",
+  "status": "partial_producer_handoff_only",
+  "producer_contract_commit": "b323e73f7b2f6792c57341240e206a72e43e3192",
+  "consumer_commit": null,
+  "OD00": "not_run",
+  "OD01_OD04": "not_implemented_in_this_repository",
+  "publication": "local_only",
+  "generated_contracts": {
+    "apps/shared/src/gateway-contract.generated.ts": "73f089aeca65cbc1e90c8a54da0f7d11c144fc160e8d8cc99e28043e9eef1839",
+    "apps/shared/src/gateway-contract.openrpc.json": "1d3151320c621de5b7032a4e5fb4ba170fe09fa5400fd762df832bca09622909"
+  },
+  "checks": [
+    {
+      "command": "python /tmp/validate-fe14.py",
+      "result": "passed",
+      "scope": "Exact committed producer wire hashes; OpenRPC JSON parse and required read/control method presence; producer-only fixture identity and absent consumer commit; document local-link existence"
+    }
+  ],
+  "declared_method_count": 407,
+  "required_methods_present": [
+    "runtime.capabilities",
+    "runtime.snapshot",
+    "runtime.events.since",
+    "runtime.command",
+    "runtime.artifact.status",
+    "runtime.delivery.status",
+    "runtime.specialist.status",
+    "runtime.sources.preview"
+  ],
+  "producer_fixtures_sha256": "d9d396a98626a8066d35f6fab17e71506141d0043d7dd68bddc97c8640fe9dc2",
+  "frontend_original_receipt_sha256": "33fc5b8dad8a8cfeca4119a6d08af0a35f519ade540158cc9e89005d75f33a40",
+  "frontend_additive_receipt_sha256": "809b6db27f3b6232141072ec1ae388980050dffdb013b1fc7d8f9abe4e9145d1",
+  "handoff_document_sha256": "427cfbac28ccd40bf3f9c99166e70a3b537291e5a0e25f4721c5351694c4037e",
+  "no_application_changes": true,
+  "limitations": [
+    "Documentation and producer contract checks only; no separate Dots checkout was modified or exercised.",
+    "Producer examples remain synthetic; no consumer compatibility certificate or write-capable adapter exists.",
+    "Backend/FE13 mandatory release gates and exact consumer commit, authority/replay/effect/scheduler tests are required before canary.",
+    "No credentials, model training, live provider activation, runtime-owner cutover or deployment performed.",
+    "Original browser/native/hardware/live source and matched human-effort gates remain open."
+  ],
+  "log": {
+    "path": "/tmp/fe14-document-validation.log",
+    "sha256": "6544be48f7cf031a9b803ea1e4c7e851de211e23bfc9c4b3961305eb6fd6283e"
+  },
+  "validation_script_sha256": "2014329e78ad22162d28b7676de6b79a90343d82e4166681f53e594c190b7522",
+  "frontend_followup_commit": "721157f35579e3e40a93f323b73e8c7ab63b134c",
+  "document_sha256": {
+    "FrontEnd_BuildPlan.md": "76bc5a85deb1d79d4e04f969bf15e97fb188d98740fb80a2b0371beba7558230",
+    "docs/build/frontend-adapter-handoff.md": "427cfbac28ccd40bf3f9c99166e70a3b537291e5a0e25f4721c5351694c4037e"
+  }
+}

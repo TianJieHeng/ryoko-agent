@@ -89,7 +89,8 @@ def validate_monitor(value):
     for source in value["source_set"]:
         identifier(source)
     require(len(set(value["source_set"])) == len(value["source_set"]), "Duplicate monitor source")
-    require(value["notify_policy"] == "record_only", "External notification adapters are not certified")
+    require(isinstance(value["notify_policy"], str) and value["notify_policy"] in {"record_only", "local_runtime"},
+            "External notification adapters are not certified")
     predicate = value["predicate"]
     require(isinstance(predicate, dict) and type(predicate.get("version")) is int and predicate["version"] == 1,
             "Supported predicate version required")
@@ -144,7 +145,8 @@ def validate_definition(record):
     for key, maximum in {"max_checks": 10000, "max_bytes": 2097152, "deadline_seconds": 60}.items():
         require(type(budget[key]) is int and 1 <= budget[key] <= maximum, "Finite local job budget required")
     instant(record["expires_at"])
-    validators = {"monitor": validate_monitor, "review": validate_review,
+    from cron.durable_workflow_contract import validate_workflow_draft
+    validators = {"monitor": validate_monitor, "review": validate_review, "workflow_draft": validate_workflow_draft,
                   "weekly_review": lambda value: exact(value, "")}
     require(isinstance(record["kind"], str) and record["kind"] in validators, "Only installed finite local adapters are supported; scripts and agent loops are unavailable")
     validators[record["kind"]](record["specification"])

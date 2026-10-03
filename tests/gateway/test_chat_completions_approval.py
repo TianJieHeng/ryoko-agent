@@ -11,7 +11,7 @@ from tests.gateway.test_api_server import _create_app, _make_adapter
 
 
 def _approval_agent(decisions):
-    agent = MagicMock()
+    agent = MagicMock(runtime_context=None, _memory_manager=None)
     agent.session_prompt_tokens = agent.session_completion_tokens = agent.session_total_tokens = 0
 
     def run_conversation(**_kw):

@@ -2995,6 +2995,24 @@
       }
     },
     {
+      "name": "runtime.agenda.plan",
+      "summary": "Preview fixed/flexible/overflow day or week capacity without calendar writes",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/AgendaPlanParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
       "name": "runtime.approval.resolve",
       "summary": "Record one exact human decision for the owned live run. Repeated answers are rejected; this never dispatches.",
       "params": [
@@ -3319,6 +3337,42 @@
       }
     },
     {
+      "name": "runtime.capture.batch.commit",
+      "summary": "Commit the exact reviewed batch in SessionDB with idempotency and live source/destination grants; no cross-store artifact move.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureBatchCommitParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureBatchCommitResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.batch.preview",
+      "summary": "Review exact scoped filing/consolidation CAS changes without mutation or original deletion.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureBatchParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureBatchPreviewResult"
+        }
+      }
+    },
+    {
       "name": "runtime.capture.create",
       "summary": "",
       "params": [
@@ -3409,6 +3463,24 @@
       }
     },
     {
+      "name": "runtime.capture.inspect",
+      "summary": "Inspect original, processing status and append-only filing/consolidation histories.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureInspectResult"
+        }
+      }
+    },
+    {
       "name": "runtime.capture.list",
       "summary": "",
       "params": [
@@ -3427,6 +3499,24 @@
       }
     },
     {
+      "name": "runtime.capture.process",
+      "summary": "Explicit bounded UTF-8 extraction/indexing of an existing original or supplied extraction; no fetch, OCR, models or embeddings.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureProcessParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureInspectResult"
+        }
+      }
+    },
+    {
       "name": "runtime.capture.read",
       "summary": "Read retained original bytes with digest verification and plain-text-only preview.",
       "params": [
@@ -3441,6 +3531,24 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/ArtifactReadResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.capture.search",
+      "summary": "Bounded exact-project lexical/fuzzy retrieval with live grants; never semantic or exhaustive.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CaptureSearchParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CaptureSearchResult"
         }
       }
     },
@@ -3524,6 +3632,24 @@
           "name": "params",
           "schema": {
             "$ref": "#/components/schemas/CommitmentCandidateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.commitment.decline",
+      "summary": "Retain human decline without creating an obligation",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CommitmentDeclineParams"
           }
         }
       ],
@@ -3931,6 +4057,78 @@
       }
     },
     {
+      "name": "runtime.memory.output.control",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OutputControlParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OutputControlResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.memory.output.control.get",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OutputControlGetParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OutputControlResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.memory.output.get",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OutputContextParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OutputContextResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.memory.output.list",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OutputContextsResult"
+        }
+      }
+    },
+    {
       "name": "runtime.memory.record.delete",
       "summary": "Tombstone one exact built-in record version; this is not physical erasure of backups.",
       "params": [
@@ -4219,6 +4417,294 @@
       }
     },
     {
+      "name": "runtime.monitor.dismiss",
+      "summary": "Persist dismissal of one immutable meaningful-change notice",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/MonitorDismissParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.monitor.notifications",
+      "summary": "Read exact-session retained notices, pending holds and delivery truth",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/MonitorListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.monitor.policy.set",
+      "summary": "Authorize bounded exact-session local monitor delivery",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/MonitorPolicyParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.monitor.snooze",
+      "summary": "Suppress notification delivery until explicit expiry without stopping checks",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/MonitorSnoozeParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.audit",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OperationsAuditParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.checkpoint",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.deletion.apply",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OperationsApplyParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.deletion.prepare",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OperationsDeletionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.inspect",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.repair.apply",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OperationsApplyParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.repair.prepare",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OperationsRepairParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.operations.retention",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OperationsRecord"
+        }
+      }
+    },
+    {
+      "name": "runtime.opportunity.discover",
+      "summary": "Explicit selected-project bounded local evidence review; no background scanning or task creation.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OpportunityDiscoverParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OpportunityDiscoverResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.opportunity.disposition",
+      "summary": "Record an idempotent CAS human save/dismiss/accept choice. Acceptance never approves or dispatches work.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OpportunityDispositionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OpportunityDispositionResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.opportunity.history",
+      "summary": "Read bounded owner/project candidate and disposition history under live project grants.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OpportunityHistoryParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OpportunityHistoryResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.opportunity.list",
+      "summary": "Read retained candidate dispositions with current evidence guards, without discovering new work.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/OpportunityListParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/OpportunityListResult"
+        }
+      }
+    },
+    {
       "name": "runtime.project.claim",
       "summary": "",
       "params": [
@@ -4418,7 +4904,7 @@
     },
     {
       "name": "runtime.schedule.grant",
-      "summary": "Grant bounded fresh local review authority separate from observation",
+      "summary": "Grant exact bounded local review or draft-production authority separately from scheduling",
       "params": [
         {
           "name": "params",
@@ -4467,6 +4953,60 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.output.get",
+      "summary": "Read exact confirmed private scheduled output bytes without rerunning or publishing",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleOutputReadParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleOutputReadResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.output.prepare",
+      "summary": "Prepare a fresh human approval for exact retained scheduled draft bytes",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleOutputPrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactProposalResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.output.publish",
+      "summary": "Consume fresh exact human approval to publish retained scheduled bytes without rerunning",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleOutputPublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactPublishResult"
         }
       }
     },
@@ -4687,6 +5227,132 @@
       }
     },
     {
+      "name": "runtime.sources.prepare",
+      "summary": "Read one exact selected Gmail thread or bounded calendar availability through an account-pinned connector; prepare immutable original and separate domain projection.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ConnectedSourcePrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ConnectedSourceResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.sources.preview",
+      "summary": "Read bounded inert chunks of exact prepared original or projection bytes under the original live owner and approval binding; never refetch or publish.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ConnectedSourcePreviewParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ConnectedSourcePreviewResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.sources.publish",
+      "summary": "Publish the exact previously fetched source bytes with both artifact approvals; never refetch or execute source content.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ConnectedSourcePublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ConnectedSourceResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.specialist.catalog",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SpecialistProjectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/SpecialistCatalog"
+        }
+      }
+    },
+    {
+      "name": "runtime.specialist.handoff",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SpecialistHandoffParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/CommandReceipt"
+        }
+      }
+    },
+    {
+      "name": "runtime.specialist.preview",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SpecialistPreviewParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/SpecialistPreview"
+        }
+      }
+    },
+    {
+      "name": "runtime.specialist.status",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/SpecialistStatusParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/SpecialistStatus"
+        }
+      }
+    },
+    {
       "name": "runtime.template.create",
       "summary": "",
       "params": [
@@ -4741,6 +5407,78 @@
       }
     },
     {
+      "name": "runtime.template.prepare",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/TemplatePrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/TemplatePrepareResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.template.preview",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/TemplatePreviewParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/TemplatePreviewResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.template.publish",
+      "summary": "",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/TemplatePublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactPublishResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.voice.admit",
+      "summary": "Explicit finite offline speech budget admission; reuses the current tree and never starts inference or capture.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/VoiceAdmissionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/MediaResponse"
+        }
+      }
+    },
+    {
       "name": "runtime.voice.capture.cancel",
       "summary": "Discard this transport's captured audio, without cancelling a mission.",
       "params": [
@@ -4783,7 +5521,7 @@
         {
           "name": "params",
           "schema": {
-            "$ref": "#/components/schemas/RuntimeSessionParams"
+            "$ref": "#/components/schemas/VoiceCaptureStartParams"
           }
         }
       ],
@@ -6752,6 +7490,134 @@
           "subagent_id"
         ],
         "title": "ActiveSubagent",
+        "type": "object"
+      },
+      "AgendaPlanParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "availability_ref_json": {
+            "maxLength": 2048,
+            "minLength": 2,
+            "title": "Availability Ref Json",
+            "type": "string"
+          },
+          "timezone": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "participants": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Participants",
+            "type": "array"
+          },
+          "windows": {
+            "items": {
+              "$ref": "#/components/schemas/AgendaWindow"
+            },
+            "maxItems": 7,
+            "minItems": 1,
+            "title": "Windows",
+            "type": "array"
+          },
+          "work": {
+            "items": {
+              "$ref": "#/components/schemas/AgendaWork"
+            },
+            "maxItems": 100,
+            "title": "Work",
+            "type": "array"
+          },
+          "buffer_minutes": {
+            "default": 10,
+            "maximum": 120,
+            "minimum": 0,
+            "title": "Buffer Minutes",
+            "type": "integer"
+          },
+          "daily_capacity_minutes": {
+            "default": 360,
+            "maximum": 720,
+            "minimum": 1,
+            "title": "Daily Capacity Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "availability_ref_json",
+          "timezone",
+          "participants",
+          "windows",
+          "work"
+        ],
+        "title": "AgendaPlanParams",
+        "type": "object"
+      },
+      "AgendaWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "start_at": {
+            "title": "Start At",
+            "type": "string"
+          },
+          "end_at": {
+            "title": "End At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_at",
+          "end_at"
+        ],
+        "title": "AgendaWindow",
+        "type": "object"
+      },
+      "AgendaWork": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Item Id",
+            "type": "string"
+          },
+          "duration_minutes": {
+            "maximum": 720,
+            "minimum": 1,
+            "title": "Duration Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_id",
+          "duration_minutes"
+        ],
+        "title": "AgendaWork",
         "type": "object"
       },
       "AgentPluginRow": {
@@ -11260,6 +12126,61 @@
         "title": "BrowserProgressPayload",
         "type": "object"
       },
+      "CalendarAvailabilitySelection": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "calendar_availability",
+            "title": "Kind",
+            "type": "string"
+          },
+          "account_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Account Id",
+            "type": "string"
+          },
+          "calendar_ids": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Calendar Ids",
+            "type": "array"
+          },
+          "timezone": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "start_at": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Start At",
+            "type": "string"
+          },
+          "end_at": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "End At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "account_id",
+          "calendar_ids",
+          "timezone",
+          "start_at",
+          "end_at"
+        ],
+        "title": "CalendarAvailabilitySelection",
+        "type": "object"
+      },
       "CalendarPreviewParams": {
         "additionalProperties": false,
         "properties": {
@@ -11330,6 +12251,40 @@
         "title": "CalendarPreviewParams",
         "type": "object"
       },
+      "CanonicalTemplateRef": {
+        "additionalProperties": false,
+        "properties": {
+          "store": {
+            "const": "artifact_templates",
+            "default": "artifact_templates",
+            "title": "Store",
+            "type": "string"
+          },
+          "template_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Template Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "version",
+          "sha256"
+        ],
+        "title": "CanonicalTemplateRef",
+        "type": "object"
+      },
       "CapabilityEntry": {
         "additionalProperties": false,
         "properties": {
@@ -11347,6 +12302,397 @@
           "name"
         ],
         "title": "CapabilityEntry",
+        "type": "object"
+      },
+      "CaptureBatchCommitParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "batch_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureBatchItem"
+            },
+            "maxItems": 25,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "preview_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Preview Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "batch_id",
+          "items",
+          "preview_digest"
+        ],
+        "title": "CaptureBatchCommitParams",
+        "type": "object"
+      },
+      "CaptureBatchCommitResult": {
+        "additionalProperties": false,
+        "properties": {
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "preview_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Preview Digest",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureBatchCommittedItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "originals_preserved": {
+            "const": true,
+            "title": "Originals Preserved",
+            "type": "boolean"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "scope": {
+            "const": "capture_metadata_only",
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "batch_id",
+          "project_id",
+          "preview_digest",
+          "items",
+          "originals_preserved",
+          "replayed",
+          "scope"
+        ],
+        "title": "CaptureBatchCommitResult",
+        "type": "object"
+      },
+      "CaptureBatchCommittedItem": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_id": {
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "filed_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Project Id"
+          },
+          "consolidated_into": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Into"
+          }
+        },
+        "required": [
+          "capture_id",
+          "revision",
+          "filed_project_id",
+          "consolidated_into"
+        ],
+        "title": "CaptureBatchCommittedItem",
+        "type": "object"
+      },
+      "CaptureBatchItem": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "maximum": 128,
+            "minimum": 0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "filed_project_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Project Id"
+          },
+          "consolidated_into": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Into"
+          }
+        },
+        "required": [
+          "capture_id",
+          "expected_revision",
+          "filed_project_id",
+          "consolidated_into"
+        ],
+        "title": "CaptureBatchItem",
+        "type": "object"
+      },
+      "CaptureBatchParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "batch_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureBatchItem"
+            },
+            "maxItems": 25,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "batch_id",
+          "items"
+        ],
+        "title": "CaptureBatchParams",
+        "type": "object"
+      },
+      "CaptureBatchPreviewItem": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_id": {
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "previous_filed_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Filed Project Id"
+          },
+          "filed_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Project Id"
+          },
+          "previous_consolidated_into": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Consolidated Into"
+          },
+          "consolidated_into": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Into"
+          },
+          "original_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Original Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capture_id",
+          "expected_revision",
+          "previous_filed_project_id",
+          "filed_project_id",
+          "previous_consolidated_into",
+          "consolidated_into",
+          "original_sha256"
+        ],
+        "title": "CaptureBatchPreviewItem",
+        "type": "object"
+      },
+      "CaptureBatchPreviewResult": {
+        "additionalProperties": false,
+        "properties": {
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "preview_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Preview Digest",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureBatchPreviewItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "originals_preserved": {
+            "const": true,
+            "title": "Originals Preserved",
+            "type": "boolean"
+          },
+          "scope": {
+            "const": "capture_metadata_only",
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "batch_id",
+          "project_id",
+          "preview_digest",
+          "items",
+          "originals_preserved",
+          "scope"
+        ],
+        "title": "CaptureBatchPreviewResult",
+        "type": "object"
+      },
+      "CaptureConsolidationHistory": {
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "consolidated_into": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Into"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "revision",
+          "consolidated_into",
+          "created_at"
+        ],
+        "title": "CaptureConsolidationHistory",
         "type": "object"
       },
       "CaptureCreateParams": {
@@ -11664,6 +13010,82 @@
         "title": "CaptureFileParams",
         "type": "object"
       },
+      "CaptureFilingHistory": {
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "filed_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Project Id"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "revision",
+          "filed_project_id",
+          "created_at"
+        ],
+        "title": "CaptureFilingHistory",
+        "type": "object"
+      },
+      "CaptureInspectResult": {
+        "additionalProperties": false,
+        "properties": {
+          "capture": {
+            "$ref": "#/components/schemas/CaptureRecord"
+          },
+          "processing": {
+            "$ref": "#/components/schemas/CaptureProcessingState"
+          },
+          "consolidated_into": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Into"
+          },
+          "filing_history": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureFilingHistory"
+            },
+            "title": "Filing History",
+            "type": "array"
+          },
+          "consolidation_history": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureConsolidationHistory"
+            },
+            "title": "Consolidation History",
+            "type": "array"
+          }
+        },
+        "required": [
+          "capture",
+          "processing",
+          "consolidated_into",
+          "filing_history",
+          "consolidation_history"
+        ],
+        "title": "CaptureInspectResult",
+        "type": "object"
+      },
       "CaptureListResult": {
         "additionalProperties": false,
         "properties": {
@@ -11724,6 +13146,131 @@
           "capture_id"
         ],
         "title": "CaptureParams",
+        "type": "object"
+      },
+      "CaptureProcessParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "capture_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "expected_extraction_sequence": {
+            "maximum": 32,
+            "minimum": 0,
+            "title": "Expected Extraction Sequence",
+            "type": "integer"
+          },
+          "source": {
+            "default": "original",
+            "enum": [
+              "original",
+              "latest_extraction"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "capture_id",
+          "expected_extraction_sequence"
+        ],
+        "title": "CaptureProcessParams",
+        "type": "object"
+      },
+      "CaptureProcessingState": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "not_indexed",
+              "indexed",
+              "metadata_only",
+              "stale"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "utf8_identity",
+              "supplied_text",
+              "none"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactVersionRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "extraction_sequence": {
+            "title": "Extraction Sequence",
+            "type": "integer"
+          },
+          "indexed_characters": {
+            "title": "Indexed Characters",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "indexed_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indexed At"
+          }
+        },
+        "required": [
+          "status",
+          "method",
+          "source_ref",
+          "extraction_sequence",
+          "indexed_characters",
+          "truncated",
+          "failure_code",
+          "indexed_at"
+        ],
+        "title": "CaptureProcessingState",
         "type": "object"
       },
       "CaptureReadParams": {
@@ -11861,6 +13408,150 @@
           "capture"
         ],
         "title": "CaptureResult",
+        "type": "object"
+      },
+      "CaptureSearchMatch": {
+        "additionalProperties": false,
+        "properties": {
+          "capture": {
+            "$ref": "#/components/schemas/CaptureRecord"
+          },
+          "processing": {
+            "$ref": "#/components/schemas/CaptureProcessingState"
+          },
+          "consolidated_into": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Into"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "matched_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Terms",
+            "type": "array"
+          },
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capture",
+          "processing",
+          "consolidated_into",
+          "score",
+          "matched_terms",
+          "excerpt"
+        ],
+        "title": "CaptureSearchMatch",
+        "type": "object"
+      },
+      "CaptureSearchParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "query": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "scan_limit": {
+            "default": 100,
+            "maximum": 500,
+            "minimum": 1,
+            "title": "Scan Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "query"
+        ],
+        "title": "CaptureSearchParams",
+        "type": "object"
+      },
+      "CaptureSearchResult": {
+        "additionalProperties": false,
+        "properties": {
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureSearchMatch"
+            },
+            "title": "Matches",
+            "type": "array"
+          },
+          "search_mode": {
+            "const": "lexical_fuzzy",
+            "title": "Search Mode",
+            "type": "string"
+          },
+          "scanned": {
+            "title": "Scanned",
+            "type": "integer"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "matches",
+          "search_mode",
+          "scanned",
+          "truncated",
+          "complete",
+          "limitations"
+        ],
+        "title": "CaptureSearchResult",
         "type": "object"
       },
       "CatalogAppState": {
@@ -12879,6 +14570,62 @@
         "title": "CommitmentCandidateParams",
         "type": "object"
       },
+      "CommitmentDeclineParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "candidate_id",
+          "command_id",
+          "expected_revision",
+          "reason"
+        ],
+        "title": "CommitmentDeclineParams",
+        "type": "object"
+      },
       "CommitmentDue": {
         "additionalProperties": false,
         "properties": {
@@ -13793,6 +15540,437 @@
           }
         },
         "title": "ConfigShowResult",
+        "type": "object"
+      },
+      "ConnectedSourcePrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GmailThreadSelection"
+              },
+              {
+                "$ref": "#/components/schemas/CalendarAvailabilitySelection"
+              }
+            ],
+            "title": "Selection"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "selection"
+        ],
+        "title": "ConnectedSourcePrepareParams",
+        "type": "object"
+      },
+      "ConnectedSourcePreviewParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "preparation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Preparation Id",
+            "type": "string"
+          },
+          "part": {
+            "enum": [
+              "original",
+              "projection"
+            ],
+            "title": "Part",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 65536,
+            "maximum": 65536,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "preparation_id",
+          "part"
+        ],
+        "title": "ConnectedSourcePreviewParams",
+        "type": "object"
+      },
+      "ConnectedSourcePreviewResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "data_base64": {
+            "title": "Data Base64",
+            "type": "string"
+          },
+          "next_offset": {
+            "title": "Next Offset",
+            "type": "integer"
+          },
+          "eof": {
+            "title": "Eof",
+            "type": "boolean"
+          },
+          "preview_mode": {
+            "enum": [
+              "plain_text",
+              "download_only"
+            ],
+            "title": "Preview Mode",
+            "type": "string"
+          },
+          "preparation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Preparation Id",
+            "type": "string"
+          },
+          "part": {
+            "enum": [
+              "original",
+              "projection"
+            ],
+            "title": "Part",
+            "type": "string"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "offset",
+          "data_base64",
+          "next_offset",
+          "eof",
+          "preview_mode",
+          "preparation_id",
+          "part",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "ConnectedSourcePreviewResult",
+        "type": "object"
+      },
+      "ConnectedSourcePublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "preparation_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Preparation Id",
+            "type": "string"
+          },
+          "original_approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Original Approval Id",
+            "type": "string"
+          },
+          "original_approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Original Approval Digest",
+            "type": "string"
+          },
+          "projection_approval_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Projection Approval Id"
+          },
+          "projection_approval_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Projection Approval Digest"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "preparation_id",
+          "original_approval_id",
+          "original_approval_digest"
+        ],
+        "title": "ConnectedSourcePublishParams",
+        "type": "object"
+      },
+      "ConnectedSourceResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "awaiting_approval",
+              "published",
+              "partial",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "preparation_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Preparation Id"
+          },
+          "source_kind": {
+            "enum": [
+              "gmail_thread",
+              "calendar_availability"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "account_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Account Id",
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Observed At"
+          },
+          "fresh_until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fresh Until"
+          },
+          "coverage": {
+            "enum": [
+              "complete",
+              "partial",
+              "unavailable"
+            ],
+            "title": "Coverage",
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "original": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactProposalResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "projection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactProposalResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "record_json": {
+            "maxLength": 65536,
+            "minLength": 2,
+            "title": "Record Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "state",
+          "source_kind",
+          "account_id",
+          "coverage",
+          "errors",
+          "record_json"
+        ],
+        "title": "ConnectedSourceResult",
         "type": "object"
       },
       "ConnectionActor": {
@@ -17044,6 +19222,762 @@
         "title": "CurrentSubscription",
         "type": "object"
       },
+      "DecisionOutcomeLabel": {
+        "additionalProperties": false,
+        "properties": {
+          "receipt_id": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "label": {
+            "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+            "title": "Label",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "correct",
+              "incorrect",
+              "unresolved",
+              "recovered"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "source_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Source Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receipt_id",
+          "label",
+          "outcome",
+          "source_digest"
+        ],
+        "title": "DecisionOutcomeLabel",
+        "type": "object"
+      },
+      "DecisionPlannerMiss": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "planner_miss",
+            "title": "Kind",
+            "type": "string"
+          },
+          "scope_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Scope Digest",
+            "type": "string"
+          },
+          "bundle_id": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bundle Id"
+          },
+          "catalog_version": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Catalog Version",
+            "type": "string"
+          },
+          "previous_catalog_version": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Previous Catalog Version",
+            "type": "string"
+          },
+          "tool_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Tool Digest",
+            "type": "string"
+          },
+          "recovered": {
+            "title": "Recovered",
+            "type": "boolean"
+          },
+          "reason": {
+            "enum": [
+              "authorized_reopen",
+              "not_authorized_or_unavailable"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "prefix_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Prefix Digest",
+            "type": "string"
+          },
+          "observation_only": {
+            "default": false,
+            "title": "Observation Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "scope_digest",
+          "bundle_id",
+          "catalog_version",
+          "previous_catalog_version",
+          "tool_digest",
+          "recovered",
+          "reason",
+          "prefix_digest"
+        ],
+        "title": "DecisionPlannerMiss",
+        "type": "object"
+      },
+      "DecisionPolicyRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "point_policy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "operation": {
+            "enum": [
+              "observer",
+              "promote",
+              "rollback"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "point_id": {
+            "pattern": "^DP(0[1-9]|1[0-6])$",
+            "title": "Point Id",
+            "type": "string"
+          },
+          "policy_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Policy Digest",
+            "type": "string"
+          },
+          "scope_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Scope Digest",
+            "type": "string"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "off",
+                  "shadow",
+                  "advisory",
+                  "enforce"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mode"
+          },
+          "thresholds_by_class": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+                      "type": "string"
+                    },
+                    {
+                      "maximum": 1,
+                      "minimum": 0,
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Thresholds By Class"
+          },
+          "timeout_seconds": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0.001,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Timeout Seconds"
+          },
+          "allowed_effects": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Allowed Effects"
+          },
+          "rollout_scope": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Rollout Scope"
+          },
+          "gate_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gate Digest"
+          },
+          "evidence_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Evidence Digest"
+          },
+          "approval_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Approval Digest"
+          },
+          "previous_policy_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Previous Policy Digest"
+          },
+          "bundle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionReleaseBundle"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recorded At"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "operator",
+                  "drift",
+                  "false_allow",
+                  "missed_direct_request",
+                  "stale_menu",
+                  "tool_recovery_failed",
+                  "budget_violation",
+                  "latency_regression"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "kind",
+          "operation",
+          "point_id",
+          "policy_digest",
+          "scope_digest"
+        ],
+        "title": "DecisionPolicyRecord",
+        "type": "object"
+      },
+      "DecisionReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "receipt_id": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "point_id": {
+            "pattern": "^DP(0[1-9]|1[0-6])$",
+            "title": "Point Id",
+            "type": "string"
+          },
+          "contract_version": {
+            "minimum": 1,
+            "title": "Contract Version",
+            "type": "integer"
+          },
+          "contract_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Contract Digest",
+            "type": "string"
+          },
+          "question_id": {
+            "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+            "title": "Question Id",
+            "type": "string"
+          },
+          "request_id": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "input_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Input Digest",
+            "type": "string"
+          },
+          "scope_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Scope Digest",
+            "type": "string"
+          },
+          "classification": {
+            "enum": [
+              "private",
+              "public",
+              "synthetic"
+            ],
+            "title": "Classification",
+            "type": "string"
+          },
+          "model_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Model Digest",
+            "type": "string"
+          },
+          "calibration_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Calibration Digest",
+            "type": "string"
+          },
+          "service_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Service Digest",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "off",
+              "shadow",
+              "advisory",
+              "enforce"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "thresholds": {
+            "patternProperties": {
+              "^[A-Za-z0-9_.:-]{1,96}$": {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              }
+            },
+            "title": "Thresholds",
+            "type": "object"
+          },
+          "point_gate_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point Gate Digest"
+          },
+          "live_options": {
+            "items": {
+              "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+              "type": "string"
+            },
+            "maxItems": 64,
+            "minItems": 2,
+            "title": "Live Options",
+            "type": "array"
+          },
+          "distribution": {
+            "anyOf": [
+              {
+                "patternProperties": {
+                  "^[A-Za-z0-9_.:-]{1,96}$": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distribution"
+          },
+          "selected": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected"
+          },
+          "unclear": {
+            "title": "Unclear",
+            "type": "boolean"
+          },
+          "actual_route": {
+            "enum": [
+              "incumbent",
+              "advisory",
+              "qualified_recommendation"
+            ],
+            "title": "Actual Route",
+            "type": "string"
+          },
+          "fallback": {
+            "anyOf": [
+              {
+                "enum": [
+                  "off",
+                  "privacy_not_qualified",
+                  "private_transport_unqualified",
+                  "private_destination_authorization_required",
+                  "point_gate_required",
+                  "durable_receipt_required",
+                  "transport_unconfigured",
+                  "deadline_exceeded",
+                  "node_capacity",
+                  "node_unavailable",
+                  "node_http_error",
+                  "circuit_open",
+                  "invalid_response_schema",
+                  "response_binding_mismatch",
+                  "bundle_mismatch",
+                  "invalid_distribution_options",
+                  "invalid_probability",
+                  "invalid_distribution_sum",
+                  "invalid_selection",
+                  "invalid_unclear",
+                  "selection_not_argmax",
+                  "invalid_latency",
+                  "unclear",
+                  "below_threshold",
+                  "shadow_observation",
+                  "receipt_unavailable"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback"
+          },
+          "incumbent": {
+            "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+            "title": "Incumbent",
+            "type": "string"
+          },
+          "latency_ms": {
+            "minimum": 0,
+            "title": "Latency Ms",
+            "type": "number"
+          },
+          "node_latency_ms": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Node Latency Ms"
+          },
+          "recorded_at": {
+            "minimum": 0,
+            "title": "Recorded At",
+            "type": "number"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "null"
+          },
+          "raw_state_retained": {
+            "const": false,
+            "title": "Raw State Retained",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schema_version",
+          "receipt_id",
+          "point_id",
+          "contract_version",
+          "contract_digest",
+          "question_id",
+          "request_id",
+          "input_digest",
+          "scope_digest",
+          "classification",
+          "model_digest",
+          "calibration_digest",
+          "service_digest",
+          "mode",
+          "thresholds",
+          "point_gate_digest",
+          "live_options",
+          "distribution",
+          "selected",
+          "unclear",
+          "actual_route",
+          "fallback",
+          "incumbent",
+          "latency_ms",
+          "node_latency_ms",
+          "recorded_at",
+          "outcome",
+          "raw_state_retained"
+        ],
+        "title": "DecisionReceipt",
+        "type": "object"
+      },
+      "DecisionReleaseBundle": {
+        "additionalProperties": false,
+        "properties": {
+          "model_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Model Digest",
+            "type": "string"
+          },
+          "calibration_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Calibration Digest",
+            "type": "string"
+          },
+          "service_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Service Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_digest",
+          "calibration_digest",
+          "service_digest"
+        ],
+        "title": "DecisionReleaseBundle",
+        "type": "object"
+      },
+      "DecisionToolPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "need": {
+            "enum": [
+              "no_tools",
+              "needs_tools",
+              "defer"
+            ],
+            "title": "Need",
+            "type": "string"
+          },
+          "effort_bucket": {
+            "enum": [
+              "one",
+              "two_three",
+              "four_plus",
+              "defer"
+            ],
+            "title": "Effort Bucket",
+            "type": "string"
+          },
+          "families": {
+            "items": {
+              "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+              "type": "string"
+            },
+            "maxItems": 16,
+            "title": "Families",
+            "type": "array"
+          },
+          "verified_tool_ids": {
+            "items": {
+              "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+              "type": "string"
+            },
+            "maxItems": 16,
+            "title": "Verified Tool Ids",
+            "type": "array"
+          },
+          "live_catalog_version": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Live Catalog Version",
+            "type": "string"
+          },
+          "bundle_id": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "reopen_policy": {
+            "const": "authorized_search_describe_call",
+            "title": "Reopen Policy",
+            "type": "string"
+          },
+          "scope_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Scope Digest",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "off",
+              "shadow",
+              "advisory",
+              "enforce"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "fallback": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback"
+          },
+          "decision_receipt_ids": {
+            "items": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Decision Receipt Ids",
+            "type": "array"
+          },
+          "elapsed_ms": {
+            "minimum": 0,
+            "title": "Elapsed Ms",
+            "type": "number"
+          }
+        },
+        "required": [
+          "need",
+          "effort_bucket",
+          "families",
+          "verified_tool_ids",
+          "live_catalog_version",
+          "bundle_id",
+          "reopen_policy",
+          "scope_digest",
+          "mode",
+          "fallback",
+          "decision_receipt_ids",
+          "elapsed_ms"
+        ],
+        "title": "DecisionToolPlan",
+        "type": "object"
+      },
       "DelegationPauseParams": {
         "additionalProperties": false,
         "properties": {
@@ -19665,6 +22599,42 @@
           "replay_epoch"
         ],
         "title": "GatewayReadyPayload",
+        "type": "object"
+      },
+      "GmailThreadSelection": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "gmail_thread",
+            "title": "Kind",
+            "type": "string"
+          },
+          "account_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Account Id",
+            "type": "string"
+          },
+          "mailbox": {
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Mailbox",
+            "type": "string"
+          },
+          "thread_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "account_id",
+          "mailbox",
+          "thread_id"
+        ],
+        "title": "GmailThreadSelection",
         "type": "object"
       },
       "GoalContractSnapshot": {
@@ -28088,6 +31058,265 @@
         "title": "ModelSaveKeyResult",
         "type": "object"
       },
+      "MonitorAvailablePayload": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Delivery Id",
+            "type": "string"
+          },
+          "attempt_token": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Attempt Token",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "notification_json": {
+            "maxLength": 131072,
+            "minLength": 2,
+            "title": "Notification Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "delivery_id",
+          "attempt_token",
+          "sha256",
+          "notification_json"
+        ],
+        "title": "MonitorAvailablePayload",
+        "type": "object"
+      },
+      "MonitorDismissParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "intent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Intent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "expected_revision",
+          "intent_id"
+        ],
+        "title": "MonitorDismissParams",
+        "type": "object"
+      },
+      "MonitorListParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "cursor_json": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor Json"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id"
+        ],
+        "title": "MonitorListParams",
+        "type": "object"
+      },
+      "MonitorPolicyParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "policy_json": {
+            "maxLength": 4096,
+            "minLength": 2,
+            "title": "Policy Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "expected_revision",
+          "policy_json"
+        ],
+        "title": "MonitorPolicyParams",
+        "type": "object"
+      },
+      "MonitorSnoozeParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "until_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until At"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "expected_revision",
+          "until_at"
+        ],
+        "title": "MonitorSnoozeParams",
+        "type": "object"
+      },
       "NoticePayload": {
         "additionalProperties": false,
         "description": "``tui_gateway/model_switch.py`` capability-refresh notice.",
@@ -28430,6 +31659,897 @@
         "title": "OpenRequestEntry",
         "type": "object"
       },
+      "OperationsApplyParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "plan_json": {
+            "maxLength": 262144,
+            "minLength": 2,
+            "title": "Plan Json",
+            "type": "string"
+          },
+          "authorization_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Authorization Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "plan_json",
+          "authorization_digest"
+        ],
+        "title": "OperationsApplyParams",
+        "type": "object"
+      },
+      "OperationsAuditParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cursor"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "OperationsAuditParams",
+        "type": "object"
+      },
+      "OperationsDeletionParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "memory_record_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Memory Record Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "OperationsDeletionParams",
+        "type": "object"
+      },
+      "OperationsRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "record_json": {
+            "maxLength": 262144,
+            "minLength": 2,
+            "title": "Record Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_json"
+        ],
+        "title": "OperationsRecord",
+        "type": "object"
+      },
+      "OperationsRepairParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "reconcile-effect",
+              "retry-delivery",
+              "revoke-lease",
+              "rebuild-index",
+              "restore-checkpoint"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "target_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Target Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "action",
+          "target_id"
+        ],
+        "title": "OperationsRepairParams",
+        "type": "object"
+      },
+      "OpportunityAction": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "review_artifact",
+              "review_commitment",
+              "evaluate_workflow"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Version"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "target_id",
+          "target_version",
+          "description"
+        ],
+        "title": "OpportunityAction",
+        "type": "object"
+      },
+      "OpportunityCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "authorized_project_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Authorized Project Refs",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "stale_artifact",
+              "waiting_check",
+              "workflow_draft"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "evidence_refs": {
+            "items": {
+              "$ref": "#/components/schemas/OpportunityEvidenceRef"
+            },
+            "title": "Evidence Refs",
+            "type": "array"
+          },
+          "evidence_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Evidence Digest",
+            "type": "string"
+          },
+          "suggested_action": {
+            "$ref": "#/components/schemas/OpportunityAction"
+          },
+          "benefit": {
+            "title": "Benefit",
+            "type": "string"
+          },
+          "effort": {
+            "title": "Effort",
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/OpportunityConfidence"
+          },
+          "disposition": {
+            "enum": [
+              "proposed",
+              "saved",
+              "dismissed",
+              "accepted"
+            ],
+            "title": "Disposition",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "changed_source_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed Source Reason"
+          },
+          "evidence_current": {
+            "title": "Evidence Current",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "number"
+          },
+          "execution_authorized": {
+            "const": false,
+            "title": "Execution Authorized",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "project_id",
+          "authorized_project_refs",
+          "kind",
+          "title",
+          "evidence_refs",
+          "evidence_digest",
+          "suggested_action",
+          "benefit",
+          "effort",
+          "confidence",
+          "disposition",
+          "revision",
+          "changed_source_reason",
+          "evidence_current",
+          "created_at",
+          "updated_at",
+          "execution_authorized"
+        ],
+        "title": "OpportunityCandidate",
+        "type": "object"
+      },
+      "OpportunityConfidence": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "const": "deterministic_rule_match",
+            "title": "Level",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "explanation"
+        ],
+        "title": "OpportunityConfidence",
+        "type": "object"
+      },
+      "OpportunityDiscoverParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_ids": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Project Ids",
+            "type": "array"
+          },
+          "limit": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "scan_limit_per_source": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Scan Limit Per Source",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_ids",
+          "request_id"
+        ],
+        "title": "OpportunityDiscoverParams",
+        "type": "object"
+      },
+      "OpportunityDiscoverResult": {
+        "additionalProperties": false,
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/OpportunityCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "project_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Project Ids",
+            "type": "array"
+          },
+          "scanned": {
+            "items": {
+              "$ref": "#/components/schemas/OpportunityScanBound"
+            },
+            "title": "Scanned",
+            "type": "array"
+          },
+          "suppressed_count": {
+            "title": "Suppressed Count",
+            "type": "integer"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "result_limit_reached": {
+            "title": "Result Limit Reached",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "discovery_mode": {
+            "const": "bounded_local_rules",
+            "title": "Discovery Mode",
+            "type": "string"
+          },
+          "observed_at": {
+            "title": "Observed At",
+            "type": "number"
+          },
+          "tasks_created": {
+            "const": false,
+            "title": "Tasks Created",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "candidates",
+          "project_ids",
+          "scanned",
+          "suppressed_count",
+          "limit",
+          "result_limit_reached",
+          "complete",
+          "discovery_mode",
+          "observed_at",
+          "tasks_created"
+        ],
+        "title": "OpportunityDiscoverResult",
+        "type": "object"
+      },
+      "OpportunityDispositionParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "expected_evidence_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Evidence Digest",
+            "type": "string"
+          },
+          "disposition": {
+            "enum": [
+              "saved",
+              "dismissed",
+              "accepted"
+            ],
+            "title": "Disposition",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "candidate_id",
+          "request_id",
+          "expected_revision",
+          "expected_evidence_digest",
+          "disposition"
+        ],
+        "title": "OpportunityDispositionParams",
+        "type": "object"
+      },
+      "OpportunityDispositionResult": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/OpportunityCandidate"
+          },
+          "tasks_created": {
+            "const": false,
+            "title": "Tasks Created",
+            "type": "boolean"
+          },
+          "execution_authorized": {
+            "const": false,
+            "title": "Execution Authorized",
+            "type": "boolean"
+          },
+          "next_step": {
+            "enum": [
+              "review_recorded",
+              "open_existing_review_control"
+            ],
+            "title": "Next Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate",
+          "tasks_created",
+          "execution_authorized",
+          "next_step"
+        ],
+        "title": "OpportunityDispositionResult",
+        "type": "object"
+      },
+      "OpportunityEvidenceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "store": {
+            "enum": [
+              "runtime_artifact_versions",
+              "accepted_commitments",
+              "workflow_versions"
+            ],
+            "title": "Store",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "store",
+          "project_id",
+          "record_id",
+          "version",
+          "revision",
+          "sha256",
+          "detail"
+        ],
+        "title": "OpportunityEvidenceRef",
+        "type": "object"
+      },
+      "OpportunityHistoryEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "event": {
+            "enum": [
+              "discovered",
+              "source_changed",
+              "saved",
+              "dismissed",
+              "accepted"
+            ],
+            "title": "Event",
+            "type": "string"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/OpportunityCandidate"
+          },
+          "recorded_at": {
+            "title": "Recorded At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "event",
+          "candidate",
+          "recorded_at"
+        ],
+        "title": "OpportunityHistoryEntry",
+        "type": "object"
+      },
+      "OpportunityHistoryParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "candidate_id"
+        ],
+        "title": "OpportunityHistoryParams",
+        "type": "object"
+      },
+      "OpportunityHistoryResult": {
+        "additionalProperties": false,
+        "properties": {
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/OpportunityHistoryEntry"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "result_limit_reached": {
+            "title": "Result Limit Reached",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "history",
+          "limit",
+          "result_limit_reached",
+          "complete"
+        ],
+        "title": "OpportunityHistoryResult",
+        "type": "object"
+      },
+      "OpportunityListParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_ids": {
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Project Ids",
+            "type": "array"
+          },
+          "limit": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "dispositions": {
+            "default": [
+              "proposed",
+              "saved"
+            ],
+            "items": {
+              "enum": [
+                "proposed",
+                "saved",
+                "dismissed",
+                "accepted"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Dispositions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_ids"
+        ],
+        "title": "OpportunityListParams",
+        "type": "object"
+      },
+      "OpportunityListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/OpportunityCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "project_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Project Ids",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "result_limit_reached": {
+            "title": "Result Limit Reached",
+            "type": "boolean"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "candidates",
+          "project_ids",
+          "limit",
+          "result_limit_reached",
+          "complete"
+        ],
+        "title": "OpportunityListResult",
+        "type": "object"
+      },
+      "OpportunityScanBound": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "stale_artifact",
+              "waiting_check",
+              "workflow_draft"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "scanned": {
+            "title": "Scanned",
+            "type": "integer"
+          },
+          "limit_reached": {
+            "title": "Limit Reached",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project_id",
+          "kind",
+          "scanned",
+          "limit_reached"
+        ],
+        "title": "OpportunityScanBound",
+        "type": "object"
+      },
       "OptionalProjectResult": {
         "additionalProperties": false,
         "properties": {
@@ -28446,6 +32566,561 @@
           }
         },
         "title": "OptionalProjectResult",
+        "type": "object"
+      },
+      "OutputContextParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "run_id"
+        ],
+        "title": "OutputContextParams",
+        "type": "object"
+      },
+      "OutputContextResult": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "backend": {
+            "enum": [
+              "builtin",
+              "personal_mcp"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
+          "namespace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Namespace Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/OutputReference"
+            },
+            "title": "References",
+            "type": "array"
+          },
+          "context_packet_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Context Packet Sha256",
+            "type": "string"
+          },
+          "immutable_prefix_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Immutable Prefix Sha256",
+            "type": "string"
+          },
+          "coverage": {
+            "const": "fresh_memory_context_only",
+            "title": "Coverage",
+            "type": "string"
+          },
+          "controls": {
+            "items": {
+              "$ref": "#/components/schemas/OutputDirective"
+            },
+            "title": "Controls",
+            "type": "array"
+          },
+          "degraded": {
+            "title": "Degraded",
+            "type": "boolean"
+          },
+          "state": {
+            "const": "supplied_to_provider_call",
+            "title": "State",
+            "type": "string"
+          },
+          "context_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Context Sha256",
+            "type": "string"
+          },
+          "latest": {
+            "title": "Latest",
+            "type": "boolean"
+          },
+          "causal_explanation": {
+            "const": false,
+            "title": "Causal Explanation",
+            "type": "boolean"
+          },
+          "historical_context_enumerated": {
+            "const": false,
+            "title": "Historical Context Enumerated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_id",
+          "backend",
+          "namespace_id",
+          "project_id",
+          "references",
+          "context_packet_sha256",
+          "immutable_prefix_sha256",
+          "coverage",
+          "controls",
+          "degraded",
+          "state",
+          "context_sha256",
+          "latest",
+          "causal_explanation",
+          "historical_context_enumerated"
+        ],
+        "title": "OutputContextResult",
+        "type": "object"
+      },
+      "OutputContextSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "context_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Context Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "context_sha256"
+        ],
+        "title": "OutputContextSummary",
+        "type": "object"
+      },
+      "OutputContextsResult": {
+        "additionalProperties": false,
+        "properties": {
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/OutputContextSummary"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "backend": {
+            "enum": [
+              "builtin",
+              "personal_mcp"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
+          "complete": {
+            "const": false,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "required": [
+          "outputs",
+          "backend",
+          "complete",
+          "unavailable_reason"
+        ],
+        "title": "OutputContextsResult",
+        "type": "object"
+      },
+      "OutputControlGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "control_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Control Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "control_id"
+        ],
+        "title": "OutputControlGetParams",
+        "type": "object"
+      },
+      "OutputControlParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "control_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Control Id",
+            "type": "string"
+          },
+          "context_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Context Sha256",
+            "type": "string"
+          },
+          "record_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Record Id",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "namespace_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Namespace Id",
+            "type": "string"
+          },
+          "action": {
+            "enum": [
+              "ignore",
+              "correct",
+              "remove"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "response",
+              "project",
+              "general"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Project Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Content"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "run_id",
+          "control_id",
+          "context_sha256",
+          "record_id",
+          "expected_version",
+          "namespace_id",
+          "action",
+          "scope"
+        ],
+        "title": "OutputControlParams",
+        "type": "object"
+      },
+      "OutputControlResult": {
+        "additionalProperties": false,
+        "properties": {
+          "control_id": {
+            "title": "Control Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "action": {
+            "enum": [
+              "ignore",
+              "correct",
+              "remove"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "response",
+              "project",
+              "general"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "status": {
+            "enum": [
+              "queued_next_turn",
+              "mutation_pending",
+              "memory_acknowledged",
+              "version_conflict",
+              "context_supplied",
+              "stale_not_applied",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "acknowledged_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged Version"
+          },
+          "applied_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Run Id"
+          },
+          "current_output_changed": {
+            "const": false,
+            "title": "Current Output Changed",
+            "type": "boolean"
+          },
+          "current_run_application": {
+            "enum": [
+              "not_applied",
+              "late_not_applied"
+            ],
+            "title": "Current Run Application",
+            "type": "string"
+          },
+          "deletion_semantics": {
+            "enum": [
+              "none",
+              "tombstone_not_physical_erasure"
+            ],
+            "title": "Deletion Semantics",
+            "type": "string"
+          }
+        },
+        "required": [
+          "control_id",
+          "run_id",
+          "action",
+          "scope",
+          "project_id",
+          "status",
+          "acknowledged_version",
+          "applied_run_id",
+          "current_output_changed",
+          "current_run_application",
+          "deletion_semantics"
+        ],
+        "title": "OutputControlResult",
+        "type": "object"
+      },
+      "OutputDirective": {
+        "additionalProperties": false,
+        "properties": {
+          "control_id": {
+            "title": "Control Id",
+            "type": "string"
+          },
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "action": {
+            "enum": [
+              "ignore",
+              "correct",
+              "expire"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "response",
+              "project",
+              "general"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "replacement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacement"
+          }
+        },
+        "required": [
+          "control_id",
+          "record_id",
+          "version",
+          "action",
+          "scope",
+          "replacement"
+        ],
+        "title": "OutputDirective",
+        "type": "object"
+      },
+      "OutputReference": {
+        "additionalProperties": false,
+        "properties": {
+          "record_id": {
+            "title": "Record Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "source_ref": {
+            "title": "Source Ref",
+            "type": "string"
+          },
+          "namespace_id": {
+            "title": "Namespace Id",
+            "type": "string"
+          },
+          "deletion_state": {
+            "title": "Deletion State",
+            "type": "string"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id",
+          "version",
+          "source_ref",
+          "namespace_id",
+          "deletion_state",
+          "scope"
+        ],
+        "title": "OutputReference",
         "type": "object"
       },
       "PaneRevealPayload": {
@@ -38940,6 +43615,11 @@
               "tool.started",
               "tool.completed",
               "tool.failed",
+              "decision.observed",
+              "decision.outcome",
+              "decision.tool_plan",
+              "decision.policy",
+              "decision.planner_miss",
               "operations.repair_started",
               "operations.repair_finished",
               "operations.deletion_requested",
@@ -38976,6 +43656,61 @@
         "additionalProperties": false,
         "description": "Safe correlation metadata only. Raw model/tool outputs stay off this wire.",
         "properties": {
+          "decision_receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "decision_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionOutcomeLabel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "decision_tool_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionToolPlan"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "decision_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionPolicyRecord"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "decision_planner_miss": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionPlannerMiss"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
           "command_id": {
             "anyOf": [
               {
@@ -40712,6 +45447,303 @@
           "import_json"
         ],
         "title": "ScheduleImportParams",
+        "type": "object"
+      },
+      "ScheduleOutputPrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "occurrence_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Occurrence Id",
+            "type": "string"
+          },
+          "output_index": {
+            "maximum": 15,
+            "minimum": 0,
+            "title": "Output Index",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "occurrence_id",
+          "output_index",
+          "command_id",
+          "expected_sha256"
+        ],
+        "title": "ScheduleOutputPrepareParams",
+        "type": "object"
+      },
+      "ScheduleOutputPublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "occurrence_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Occurrence Id",
+            "type": "string"
+          },
+          "output_index": {
+            "maximum": 15,
+            "minimum": 0,
+            "title": "Output Index",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Sha256",
+            "type": "string"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "occurrence_id",
+          "output_index",
+          "command_id",
+          "expected_sha256",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "ScheduleOutputPublishParams",
+        "type": "object"
+      },
+      "ScheduleOutputReadParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "occurrence_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Occurrence Id",
+            "type": "string"
+          },
+          "output_index": {
+            "maximum": 15,
+            "minimum": 0,
+            "title": "Output Index",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 65536,
+            "maximum": 65536,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "occurrence_id",
+          "output_index"
+        ],
+        "title": "ScheduleOutputReadParams",
+        "type": "object"
+      },
+      "ScheduleOutputReadResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "title": "Mime",
+            "type": "string"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "data_base64": {
+            "title": "Data Base64",
+            "type": "string"
+          },
+          "next_offset": {
+            "title": "Next Offset",
+            "type": "integer"
+          },
+          "eof": {
+            "title": "Eof",
+            "type": "boolean"
+          },
+          "preview_mode": {
+            "enum": [
+              "plain_text",
+              "download_only"
+            ],
+            "title": "Preview Mode",
+            "type": "string"
+          },
+          "draft_only": {
+            "const": true,
+            "title": "Draft Only",
+            "type": "boolean"
+          },
+          "occurrence_id": {
+            "title": "Occurrence Id",
+            "type": "string"
+          },
+          "occurrence_state": {
+            "title": "Occurrence State",
+            "type": "string"
+          },
+          "output_index": {
+            "title": "Output Index",
+            "type": "integer"
+          },
+          "workflow_run_id": {
+            "title": "Workflow Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "artifact_id",
+          "version",
+          "sha256",
+          "size",
+          "mime",
+          "offset",
+          "data_base64",
+          "next_offset",
+          "eof",
+          "preview_mode",
+          "draft_only",
+          "occurrence_id",
+          "occurrence_state",
+          "output_index",
+          "workflow_run_id"
+        ],
+        "title": "ScheduleOutputReadResult",
         "type": "object"
       },
       "ScheduleProjectParams": {
@@ -47203,6 +52235,724 @@
         "title": "SpawnTreeSaveResult",
         "type": "object"
       },
+      "SpecialistCatalog": {
+        "additionalProperties": false,
+        "properties": {
+          "specialists": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialistDescriptor"
+            },
+            "title": "Specialists",
+            "type": "array"
+          },
+          "unavailable": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialistUnavailable"
+            },
+            "title": "Unavailable",
+            "type": "array"
+          },
+          "teams_enabled": {
+            "const": false,
+            "default": false,
+            "title": "Teams Enabled",
+            "type": "boolean"
+          },
+          "execution": {
+            "const": "local_single_child",
+            "default": "local_single_child",
+            "title": "Execution",
+            "type": "string"
+          }
+        },
+        "required": [
+          "specialists",
+          "unavailable"
+        ],
+        "title": "SpecialistCatalog",
+        "type": "object"
+      },
+      "SpecialistCompletion": {
+        "additionalProperties": false,
+        "properties": {
+          "specialist_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "child_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Id"
+          },
+          "handoff_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Handoff Sha256"
+          },
+          "state": {
+            "enum": [
+              "completed",
+              "failed",
+              "blocked",
+              "cancelled",
+              "unknown"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 32768,
+            "title": "Summary",
+            "type": "string"
+          },
+          "summary_truncated": {
+            "title": "Summary Truncated",
+            "type": "boolean"
+          },
+          "schema_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Valid"
+          },
+          "parent_review_required": {
+            "const": true,
+            "default": true,
+            "title": "Parent Review Required",
+            "type": "boolean"
+          },
+          "execution_resumed": {
+            "const": false,
+            "default": false,
+            "title": "Execution Resumed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "specialist_id",
+          "manifest_sha256",
+          "project_id",
+          "child_id",
+          "handoff_sha256",
+          "state",
+          "summary",
+          "summary_truncated",
+          "schema_valid"
+        ],
+        "title": "SpecialistCompletion",
+        "type": "object"
+      },
+      "SpecialistDescriptor": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "responsibility": {
+            "title": "Responsibility",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "methods_ref": {
+            "$ref": "#/components/schemas/SpecialistReference"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SpecialistLimits"
+          },
+          "grants": {
+            "$ref": "#/components/schemas/SpecialistGrants"
+          },
+          "builtin_memory_namespace": {
+            "title": "Builtin Memory Namespace",
+            "type": "string"
+          },
+          "output_contract_json": {
+            "title": "Output Contract Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "responsibility",
+          "manifest_sha256",
+          "methods_ref",
+          "limits",
+          "grants",
+          "builtin_memory_namespace",
+          "output_contract_json"
+        ],
+        "title": "SpecialistDescriptor",
+        "type": "object"
+      },
+      "SpecialistGrants": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Tools",
+            "type": "array"
+          },
+          "project_grants": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Project Grants",
+            "type": "array"
+          },
+          "mcp_grants": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Mcp Grants",
+            "type": "object"
+          },
+          "memory_backend": {
+            "const": "builtin",
+            "title": "Memory Backend",
+            "type": "string"
+          },
+          "personal_memory_access": {
+            "const": false,
+            "default": false,
+            "title": "Personal Memory Access",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "allowed_tools",
+          "project_grants",
+          "mcp_grants",
+          "memory_backend"
+        ],
+        "title": "SpecialistGrants",
+        "type": "object"
+      },
+      "SpecialistHandoffParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/SpecialistSelection"
+          },
+          "preview_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Preview Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "idempotency_key",
+          "expected_revision",
+          "selection",
+          "preview_sha256"
+        ],
+        "title": "SpecialistHandoffParams",
+        "type": "object"
+      },
+      "SpecialistLimits": {
+        "additionalProperties": false,
+        "properties": {
+          "max_depth": {
+            "title": "Max Depth",
+            "type": "integer"
+          },
+          "max_total_children": {
+            "title": "Max Total Children",
+            "type": "integer"
+          },
+          "max_concurrent_children": {
+            "title": "Max Concurrent Children",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "max_depth",
+          "max_total_children",
+          "max_concurrent_children"
+        ],
+        "title": "SpecialistLimits",
+        "type": "object"
+      },
+      "SpecialistPreview": {
+        "additionalProperties": false,
+        "properties": {
+          "specialist": {
+            "$ref": "#/components/schemas/SpecialistDescriptor"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/SpecialistSelection"
+          },
+          "preview_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Preview Sha256",
+            "type": "string"
+          },
+          "runtime_revision": {
+            "title": "Runtime Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "specialist",
+          "selection",
+          "preview_sha256",
+          "runtime_revision"
+        ],
+        "title": "SpecialistPreview",
+        "type": "object"
+      },
+      "SpecialistPreviewParams": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "specialist_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "objective": {
+            "maxLength": 16384,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          },
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialistReference"
+            },
+            "maxItems": 32,
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialistReference"
+            },
+            "maxItems": 32,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "constraints": {
+            "items": {
+              "maxLength": 2048,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 16,
+            "title": "Constraints",
+            "type": "array"
+          },
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "specialist_id",
+          "objective",
+          "session_id",
+          "schema_version"
+        ],
+        "title": "SpecialistPreviewParams",
+        "type": "object"
+      },
+      "SpecialistProjectParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id"
+        ],
+        "title": "SpecialistProjectParams",
+        "type": "object"
+      },
+      "SpecialistReference": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "sha256"
+        ],
+        "title": "SpecialistReference",
+        "type": "object"
+      },
+      "SpecialistSelection": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "specialist_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "objective": {
+            "maxLength": 16384,
+            "minLength": 1,
+            "title": "Objective",
+            "type": "string"
+          },
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialistReference"
+            },
+            "maxItems": 32,
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialistReference"
+            },
+            "maxItems": 32,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "constraints": {
+            "items": {
+              "maxLength": 2048,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 16,
+            "title": "Constraints",
+            "type": "array"
+          },
+          "manifest_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "config_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Config Digest",
+            "type": "string"
+          },
+          "parent_policy_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Parent Policy Digest",
+            "type": "string"
+          },
+          "mission_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mission Id"
+          },
+          "mission_revision": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mission Revision"
+          },
+          "expires_at": {
+            "exclusiveMinimum": 0,
+            "title": "Expires At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "project_id",
+          "specialist_id",
+          "objective",
+          "manifest_sha256",
+          "config_digest",
+          "parent_policy_digest",
+          "mission_id",
+          "mission_revision",
+          "expires_at"
+        ],
+        "title": "SpecialistSelection",
+        "type": "object"
+      },
+      "SpecialistStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "specialist_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Specialist Id",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "claimed",
+              "completed",
+              "failed",
+              "blocked",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "pending",
+              "running",
+              "completed",
+              "failed",
+              "blocked",
+              "cancelled",
+              "unknown"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "completion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SpecialistCompletion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "execution_resumed": {
+            "const": false,
+            "default": false,
+            "title": "Execution Resumed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "command_id",
+          "run_id",
+          "specialist_id",
+          "manifest_sha256",
+          "project_id",
+          "status",
+          "outcome",
+          "completion"
+        ],
+        "title": "SpecialistStatus",
+        "type": "object"
+      },
+      "SpecialistStatusParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id"
+        ],
+        "title": "SpecialistStatusParams",
+        "type": "object"
+      },
+      "SpecialistUnavailable": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agent_id",
+          "code"
+        ],
+        "title": "SpecialistUnavailable",
+        "type": "object"
+      },
       "StatusUpdatePayload": {
         "additionalProperties": false,
         "description": "``server._status_update`` and the direct emitters (goal / loop / heartbeat / process).",
@@ -48856,6 +54606,26 @@
         "title": "TemplateListResult",
         "type": "object"
       },
+      "TemplateLock": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "title": "Anchor",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "anchor",
+          "sha256"
+        ],
+        "title": "TemplateLock",
+        "type": "object"
+      },
       "TemplateParams": {
         "additionalProperties": false,
         "properties": {
@@ -48898,9 +54668,333 @@
         "title": "TemplateParams",
         "type": "object"
       },
+      "TemplatePrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "template_ref": {
+            "$ref": "#/components/schemas/CanonicalTemplateRef"
+          },
+          "slot_values": {
+            "additionalProperties": {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            "title": "Slot Values",
+            "type": "object"
+          },
+          "locked_sections": {
+            "default": [],
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Locked Sections",
+            "type": "array"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "template_ref",
+          "slot_values",
+          "command_id",
+          "request_id"
+        ],
+        "title": "TemplatePrepareParams",
+        "type": "object"
+      },
+      "TemplatePrepareResult": {
+        "additionalProperties": false,
+        "properties": {
+          "proposal": {
+            "$ref": "#/components/schemas/ArtifactProposalResult"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/TemplatePreviewResult"
+          }
+        },
+        "required": [
+          "proposal",
+          "preview"
+        ],
+        "title": "TemplatePrepareResult",
+        "type": "object"
+      },
+      "TemplatePreviewParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "template_ref": {
+            "$ref": "#/components/schemas/CanonicalTemplateRef"
+          },
+          "slot_values": {
+            "additionalProperties": {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            "title": "Slot Values",
+            "type": "object"
+          },
+          "locked_sections": {
+            "default": [],
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Locked Sections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "template_ref",
+          "slot_values"
+        ],
+        "title": "TemplatePreviewParams",
+        "type": "object"
+      },
+      "TemplatePreviewResult": {
+        "additionalProperties": false,
+        "properties": {
+          "template_ref": {
+            "$ref": "#/components/schemas/CanonicalTemplateRef"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "mime": {
+            "const": "text/markdown",
+            "title": "Mime",
+            "type": "string"
+          },
+          "locked_sections": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateLock"
+            },
+            "title": "Locked Sections",
+            "type": "array"
+          },
+          "advisory_style_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Advisory Style Keys",
+            "type": "array"
+          },
+          "applied_style_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Applied Style Keys",
+            "type": "array"
+          },
+          "assets_mode": {
+            "const": "lineage_only",
+            "title": "Assets Mode",
+            "type": "string"
+          },
+          "baseline_copied": {
+            "const": false,
+            "title": "Baseline Copied",
+            "type": "boolean"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "exclusions_checked": {
+            "const": true,
+            "title": "Exclusions Checked",
+            "type": "boolean"
+          },
+          "publication_state": {
+            "const": "preview_only",
+            "title": "Publication State",
+            "type": "string"
+          },
+          "preview_mode": {
+            "const": "plain_text",
+            "title": "Preview Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_ref",
+          "project_id",
+          "content",
+          "sha256",
+          "size",
+          "mime",
+          "locked_sections",
+          "advisory_style_keys",
+          "applied_style_keys",
+          "assets_mode",
+          "baseline_copied",
+          "assets",
+          "exclusions_checked",
+          "publication_state",
+          "preview_mode"
+        ],
+        "title": "TemplatePreviewResult",
+        "type": "object"
+      },
+      "TemplatePublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "template_ref": {
+            "$ref": "#/components/schemas/CanonicalTemplateRef"
+          },
+          "slot_values": {
+            "additionalProperties": {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            "title": "Slot Values",
+            "type": "object"
+          },
+          "locked_sections": {
+            "default": [],
+            "items": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Locked Sections",
+            "type": "array"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "template_ref",
+          "slot_values",
+          "command_id",
+          "request_id",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "TemplatePublishParams",
+        "type": "object"
+      },
       "TemplateRecord": {
         "additionalProperties": false,
         "properties": {
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
           "template_id": {
             "title": "Template Id",
             "type": "string"
@@ -48964,6 +55058,7 @@
           }
         },
         "required": [
+          "sha256",
           "template_id",
           "version",
           "project_id",
@@ -51430,6 +57525,85 @@
         "title": "VerificationStatusResult",
         "type": "object"
       },
+      "VoiceAdmissionParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "request_id"
+        ],
+        "title": "VoiceAdmissionParams",
+        "type": "object"
+      },
+      "VoiceCaptureStartParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Request Id"
+          },
+          "budget_account_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Budget Account Id"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version"
+        ],
+        "title": "VoiceCaptureStartParams",
+        "type": "object"
+      },
       "VoiceFeedParams": {
         "additionalProperties": false,
         "properties": {
@@ -51566,6 +57740,34 @@
             "const": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Request Id"
+          },
+          "budget_account_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Budget Account Id"
           },
           "text": {
             "maxLength": 65536,
@@ -54460,6 +60662,18 @@
           "name": "payload",
           "schema": {
             "$ref": "#/components/schemas/ReviewSummaryPayload"
+          }
+        }
+      ]
+    },
+    {
+      "name": "runtime.monitor.available",
+      "summary": "",
+      "params": [
+        {
+          "name": "payload",
+          "schema": {
+            "$ref": "#/components/schemas/MonitorAvailablePayload"
           }
         }
       ]

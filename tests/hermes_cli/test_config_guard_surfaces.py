@@ -71,15 +71,24 @@ class TestCronRunJobGuard:
         assert "config.yaml" in error
         assert final_response == ""
 
-    def test_run_job_no_agent_exempt(self, tmp_path):
-        from cron.scheduler import run_job
+    @pytest.mark.parametrize("ignore_config", [False, True])
+    @pytest.mark.parametrize("no_agent", [False, True])
+    def test_corrupt_identity_policy_never_reaches_job_work(self, monkeypatch, tmp_path, ignore_config, no_agent):
+        from cron import scheduler
 
         _write_corrupt_config(tmp_path)
-
-        success, output_doc, final_response, error = run_job(
-            self._job(no_agent=True, script="true", deliver="none")
+        if ignore_config:
+            monkeypatch.setenv("HERMES_IGNORE_USER_CONFIG", "1")
+        calls = []
+        monkeypatch.setattr(scheduler, "_run_legacy_job", lambda *args, **kwargs: calls.append("unsafe"))
+        success, output_doc, final_response, error = scheduler.run_job(
+            self._job(no_agent=no_agent, script="true", deliver="none")
         )
-        assert "Hermes stopped because your settings file" not in (error or "")
+        assert success is False and final_response == ""
+        assert error is not None
+        expected = "Cron identity policy could not be read" if ignore_config else "Hermes stopped because your settings file"
+        assert expected in error
+        assert calls == [], "unreadable identity policy cannot authorize even script-only work"
 
 class TestServeGuard:
     def test_serve_headless_refuses_corrupt_config(self, tmp_path, capsys):

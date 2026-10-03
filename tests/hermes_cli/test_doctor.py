@@ -1346,16 +1346,19 @@ class TestDoctorStaleMaxIterationsDrift:
         else:
             monkeypatch.delenv("HERMES_MAX_ITERATIONS", raising=False)
 
-        # Short-circuit at the Tool Availability stage — the drift check runs
-        # well before it in the Configuration Files section.
-        fake_model_tools = types.SimpleNamespace(
-            check_tool_availability=lambda *a, **kw: (_ for _ in ()).throw(SystemExit(0)),
-            TOOLSET_REQUIREMENTS={},
+        # Exercise the real config checks without unrelated host repairs or
+        # connectivity probes, especially when --fix is enabled.
+        monkeypatch.setattr(
+            doctor_mod, "DOCTOR_CHECKS",
+            (
+                ("Configuration Files", doctor_config._check_env_file),
+                (None, doctor_config._check_config_file),
+                (None, doctor_config._check_config_drift),
+            ),
         )
-        monkeypatch.setitem(sys.modules, "model_tools", fake_model_tools)
 
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
+        with contextlib.redirect_stdout(buf):
             doctor_mod.run_doctor(Namespace(fix=fix))
         return buf.getvalue(), hermes_home
 

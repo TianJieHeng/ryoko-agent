@@ -1,6 +1,7 @@
 """Regression coverage for CLI async-delegation completion ownership."""
 
 import queue
+from types import SimpleNamespace
 
 from cli import HermesCLI
 
@@ -10,11 +11,14 @@ def test_cli_completion_drain_uses_visible_session_identity(monkeypatch):
     cli = HermesCLI.__new__(HermesCLI)
     cli.session_id = "visible-session"
     cli._pending_input = queue.Queue()
+    owner_context = object()
+    cli.agent = SimpleNamespace(runtime_context=owner_context)
 
     event = {
         "type": "async_delegation",
         "delegation_id": "deleg_visible",
         "session_key": "visible-session",
+        "owner_context": object(),  # an event field is never claim authority
     }
     calls = []
 
@@ -32,7 +36,7 @@ def test_cli_completion_drain_uses_visible_session_identity(monkeypatch):
     )
     monkeypatch.setattr(
         "tools.async_delegation.claim_event_delivery",
-        lambda evt, consumer: claimed.append((evt, consumer)) or "claim-token",
+        lambda evt, consumer, *, owner_context: claimed.append((evt, consumer, owner_context)) or "claim-token",
     )
     monkeypatch.setattr(
         "tools.async_delegation.complete_event_delivery",
@@ -43,7 +47,7 @@ def test_cli_completion_drain_uses_visible_session_identity(monkeypatch):
 
     assert calls == [("visible-session", True)]
     assert cli._pending_input.get_nowait() == "completion payload"
-    assert claimed == [(event, "cli-idle")]
+    assert claimed == [(event, "cli-idle", owner_context)]
     assert completed == [(event, "claim-token")]
 
 
@@ -74,3 +78,25 @@ def test_cli_completion_ownership_accepts_compression_lineage():
             "session_key": "pre-compression-session",
         }
     )
+
+
+def test_cli_denied_completion_claim_never_queues_or_acknowledges(monkeypatch):
+    cli = HermesCLI.__new__(HermesCLI)
+    cli.session_id = "visible-session"
+    cli.agent = SimpleNamespace(runtime_context=None)
+    cli._pending_input = queue.Queue()
+    event = {"type": "async_delegation", "delegation_id": "strict-delegation",
+             "session_key": cli.session_id, "owner_context": object()}
+    claims, completed = [], []
+    monkeypatch.setattr("tools.process_registry.process_registry", SimpleNamespace(
+        drain_notifications=lambda **kwargs: [(event, "unclaimed result")]))
+    monkeypatch.setattr("tools.async_delegation.claim_event_delivery",
+        lambda evt, consumer, *, owner_context: claims.append(owner_context))
+    monkeypatch.setattr("tools.async_delegation.complete_event_delivery",
+        lambda *args: completed.append(args))
+
+    cli._drain_process_notifications("cli-idle")
+
+    assert claims == [None]
+    assert cli._pending_input.empty()
+    assert completed == []

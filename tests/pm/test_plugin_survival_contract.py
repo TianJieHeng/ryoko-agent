@@ -109,9 +109,32 @@ def _local_conflict_members(home: Path) -> tuple[Path, Path, Path, Path]:
         path.mkdir(parents=True)
         (path / "pyproject.toml").write_text(
             "[project]\nname = \"sharedlib\"\n"
-            f'version = "{version}"\nrequires-python = ">=3.11"\n',
+            f'version = "{version}"\nrequires-python = ">=3.11"\n'
+            '\n[build-system]\nrequires=[]\nbuild-backend="local_backend"\nbackend-path=["."]\n',
             encoding="utf-8",
         )
+        # An implicit setuptools backend would fetch build dependencies and
+        # turn an offline admission conflict into an unrelated index failure.
+        (path / "local_backend.py").write_text('''
+from pathlib import Path
+import tomllib
+from zipfile import ZipFile
+
+def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+    version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+    dist = f"sharedlib-{version}.dist-info"
+    name = f"sharedlib-{version}-py3-none-any.whl"
+    entries = {
+        "sharedlib.py": f"__version__ = {version!r}\\n",
+        dist + "/METADATA": f"Metadata-Version: 2.1\\nName: sharedlib\\nVersion: {version}\\n",
+        dist + "/WHEEL": "Wheel-Version: 1.0\\nRoot-Is-Purelib: true\\nTag: py3-none-any\\n",
+    }
+    entries[dist + "/RECORD"] = "".join(path + ",,\\n" for path in entries)
+    with ZipFile(Path(wheel_directory) / name, "w") as wheel:
+        for path, body in entries.items():
+            wheel.writestr(path, body)
+    return name
+''', encoding="utf-8")
     plugins_dir = home / "plugins"
     members = []
     for name, pin, shared in (("plug-a", "1.0.0", shared1), ("plug-b", "2.0.0", shared2)):
@@ -136,6 +159,13 @@ def admission_env(tmp_path, monkeypatch):
     """Fake core repo + temp HERMES_HOME so the REAL pm.install.sync_venv
     transaction (lock, receipts, config publication) runs entirely under
     tmp — the production path, temp homes."""
+    # This fixture is also imported by CLI modules, outside tests/pm's
+    # autouse home isolation. Own every subprocess path before the first uv.
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path / "uv-cache"))
+    monkeypatch.setenv("UV_NO_INDEX", "1")
     core = tmp_path / "core"
     core.mkdir()
     (core / "pyproject.toml").write_text(
@@ -147,7 +177,7 @@ def admission_env(tmp_path, monkeypatch):
     # the venv package's stamp digest + lock seed read core/uv.lock —
     # produce a real one (no deps: uv lock resolves offline)
     subprocess.run(
-        [shutil.which("uv"), "lock"], cwd=core, check=True,
+        [shutil.which("uv"), "lock", "--offline", "--python", sys.executable], cwd=core, check=True,
         capture_output=True, text=True, timeout=120,
     )
     home = tmp_path / "home"
@@ -158,7 +188,6 @@ def admission_env(tmp_path, monkeypatch):
     ensure = importlib.import_module("pm.install")
     import pm.paths
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setenv("HERMES_HOME", str(home))
     monkeypatch.setattr(pm.paths, "repo_root", lambda: core)
     monkeypatch.setattr(ws.paths, "repo_root", lambda: core)

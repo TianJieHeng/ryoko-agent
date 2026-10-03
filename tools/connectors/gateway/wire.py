@@ -106,8 +106,9 @@ class ConnectorExecuteCall(_Wire):
     connector: str
     tool: str
     arguments: dict[str, Any] = Field(default_factory=dict)
-    # On the wire for the multi-account switch; never sent by hermes today, because the vendor answers
-    # 400 to any value while multi-account is off (contract probe F2).
+    # The general dispatcher omits this because the vendor answers 400 while
+    # multi-account is off (contract probe F2). Certified source reads require
+    # the exact pin and fail closed when that gateway capability is unavailable.
     account: Optional[str] = None
 
 

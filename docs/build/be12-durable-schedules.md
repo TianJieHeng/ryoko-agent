@@ -66,7 +66,9 @@ cancelled in the middle. A version cannot reset consumed lifetime check budget.
 ## Monitors and conditional work
 
 A monitor names its question, exact local artifact IDs, predicate version, cadence,
-expiry, budget and `record_only` notification policy. Each check resolves and verifies
+expiry, budget and `record_only` or explicitly authorized `local_runtime` notification
+policy. The latter uses [bounded same-client delivery](be12-local-notifications.md)
+with quiet hours, digests, expiring snooze and persistent dismissal. Each check resolves and verifies
 actual immutable current-head bytes under the owner's live project grant. Observed
 source versions/digests are retained.
 
@@ -145,7 +147,7 @@ losing evidence. Schedule status exposes bounded occurrence/intent windows.
 
 | Path | Execution receipt | Delivery capability / ambiguity |
 | --- | --- | --- |
-| BE12 finite local monitor/review | Canonical command + occurrence; claimed work never replayed | `record_only`, durable intent, `not_requested` delivery |
+| BE12 finite local monitor/review | Canonical command + occurrence; claimed work never replayed | `record_only` remains inert; explicitly human-granted `local_runtime` uses the BE06 owned outbox with separate attempt/client receipts |
 | Existing cron agent/script | Existing process-fenced execution and scheduled-instant ledger | Existing delivery queue and dead claimed-send policy retained; unknown sends are not blindly retried |
 | BE06 gateway outbox | Separate effect/execution records | Adapter acknowledgment can confirm; uncertain acceptance remains `outcome_unknown` and requires reconciliation |
 | Confirmed retry-safe adapter | Only the adapter's declared dedup/query guarantees apply | No global exactly-once label; delivery failure never turns completed execution into an unexecuted job |

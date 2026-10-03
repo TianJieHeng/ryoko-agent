@@ -113,7 +113,7 @@ def test_media_rpc_unconfigured_speech_owned_frames_and_foreign_transport(artifa
     class LocalSTT:
         declaration = SpeechDeclaration("fixture.local", 1, "stt", "local", True)
 
-        def transcribe(self, pcm, *, final):
+        def transcribe(self, pcm, *, final, cancelled):
             return "Ada at 12" if final else "Ada"
 
     artifacts.agents["a"]._bounded_voice_ingress = VoiceIngress(stt=LocalSTT())
@@ -165,3 +165,68 @@ def test_cross_channel_duplicate_and_confirmed_media_use_same_real_admission_que
         for session in server._sessions.values():
             server._release_active_session_slot(session)
         client.close()
+
+
+# Fixture packages are imported only by the test's controlled subprocess launch;
+# the real factory/config/profile/transport paths stay in production code.
+from tests.agent.test_speech_local import local_speech_packages, configured_home, _wait_for_file  # noqa: E402,F401
+
+
+@pytest.mark.platforms("posix")
+def test_configured_local_speech_rpc_same_client_exact_bytes_and_live_budget_denial(artifacts, local_speech_packages):
+    for label, text in (("a", "Ada at 12"), ("b", "Bea at 120")):
+        home = artifacts.homes[label]
+        original = json.loads((home / "config.yaml").read_text())
+        config = configured_home(home, text=text)
+        (home / "config.yaml").write_text(json.dumps({**original, **config}))
+    for label, expected in (("a", "Ada at 12"), ("b", "Bea at 120"), ("a", "Ada at 12")):
+        capabilities = media_result(artifacts.call("runtime.media.capabilities", label))["voice"]
+        assert capabilities["push_to_talk"] and capabilities["playback"] == "client"
+        assert not capabilities["stt"]["streaming"] and not capabilities["backend_playback"]
+        capture = media_result(artifacts.call("runtime.voice.capture.start", label))
+        denied(artifacts.call("runtime.voice.capture.feed", label, via=artifacts.peers["b" if label == "a" else "a"],
+            capture_id=capture["capture_id"], sequence=0, pcm_base64="AAA=", final=True))
+        transcript = media_result(artifacts.call("runtime.voice.capture.feed", label,
+            capture_id=capture["capture_id"], sequence=0, pcm_base64="AAA=", final=True))
+        assert transcript["text"] == expected and transcript["confirmation_required"] and not transcript["accepted_as_task"]
+        audio = media_result(artifacts.call("runtime.voice.speak", label, text=expected))
+        data = base64.b64decode(audio["audio"]["pcm_base64"], validate=True)
+        assert audio["audio"]["byte_length"] == len(data) and audio["audio"]["sha256"] == hashlib.sha256(data).hexdigest()
+        assert audio["audio"]["sample_rate"] == 22050 and audio["state"] == "ready"
+        assert not media_result(artifacts.call("runtime.voice.stop", label))["mission_cancelled"]
+        with artifacts.agents[label]._session_db._runtime_read() as conn:
+            assert conn.execute("SELECT COUNT(*) FROM runtime_admission_queue").fetchone()[0] == 0
+    # A reconnect while inference runs retires the old transport. Its result
+    # must be withheld even though local model computation itself succeeded.
+    import threading
+    from types import SimpleNamespace
+    from tui_gateway import server
+    home = artifacts.homes["a"]
+    (home / "whisper" / "started").unlink()
+    (home / "whisper" / "model.bin").write_text(json.dumps({"text": "private transcript", "wait_for_release": True}))
+    capture = media_result(artifacts.call("runtime.voice.capture.start"))
+    replies = []
+    thread = threading.Thread(target=lambda: replies.append(artifacts.call("runtime.voice.capture.feed",
+        capture_id=capture["capture_id"], sequence=0, pcm_base64="AAA=", final=True)))
+    thread.start()
+    _wait_for_file(home / "whisper" / "started")
+    server._sessions["live-a"]["transport"] = SimpleNamespace(write=lambda _frame: True)
+    (home / "whisper" / "release").touch()
+    thread.join(5)
+    assert not thread.is_alive() and len(replies) == 1
+    denied(replies[0])
+    assert "private transcript" not in json.dumps(replies[0])
+    server._sessions["live-a"]["transport"] = artifacts.peers["a"]
+    from agent.budget_account import parse_budget_policy
+    from tests.agent.test_budget_runtime import policy
+    artifacts.agents["a"]._runtime_budget_policy = parse_budget_policy({"runtime_budget": policy()})
+    denied(artifacts.call("runtime.voice.speak", text="private"), "speech_budget_unsupported")
+    del artifacts.agents["a"]._runtime_budget_policy
+    config = json.loads((home / "config.yaml").read_text())
+    config["runtime_budget"] = {"schema_version": 1}
+    (home / "config.yaml").write_text(json.dumps(config))
+    capabilities = media_result(artifacts.call("runtime.media.capabilities"))["voice"]
+    assert set(capabilities["unsupported_reasons"].values()) == {"speech_budget_unsupported"}
+    denied(artifacts.call("runtime.voice.capture.start"), "speech_budget_unsupported")
+    denied(artifacts.call("runtime.voice.speak", text="private"), "speech_budget_unsupported")
+    assert not media_result(artifacts.call("runtime.voice.stop"))["mission_cancelled"]

@@ -12,6 +12,7 @@ Covers the closed loop the rescoped PR is about:
 
 import argparse
 import json
+import subprocess
 
 import pytest
 
@@ -54,9 +55,10 @@ def hermes_home(tmp_path, monkeypatch):
 
 
 def _workspace(tmp_path, *, scripts=None, manifest_recipe=None):
-    """A marker-rooted workspace (package.json) with an optional saved recipe."""
+    """A workspace isolated from any enclosing Git checkout, with an optional recipe."""
     project = tmp_path / "project"
     project.mkdir()
+    subprocess.run(["git", "init", "--quiet", str(project)], check=True)
     (project / "package.json").write_text(
         json.dumps({"scripts": scripts} if scripts else {}), encoding="utf-8"
     )

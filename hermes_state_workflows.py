@@ -80,6 +80,8 @@ class WorkflowRegistry:
         require(isinstance(definition, WorkflowVersion), "invalid_workflow", "Typed workflow required")
         record, project = definition.to_record(), definition.project_id
         verify_provenance(run, record)
+        if record["template_ref"] and record["template_ref"].get("store") == "artifact_templates":
+            self.template(project, record["template_ref"])
         key = self.key(project, definition.workflow_id)
         with self.access.guard(project, self.actor, "write"):
             def write(conn):
@@ -129,6 +131,17 @@ class WorkflowRegistry:
             return self.db._execute_write(write)
 
     def _template_on_conn(self, conn, project_id, ref):
+        if ref.get("store") == "artifact_templates":
+            from hermes_cli.template_application import template_digest
+            row = conn.execute("SELECT * FROM artifact_templates WHERE template_id=? AND version=?",
+                               (ref["template_id"], ref["version"])).fetchone()
+            require(row is not None and row["project_id"] == project_id
+                    and row["principal_id"] == self.actor["principal_id"] and row["profile_id"] == self.actor["profile_id"],
+                    "workflow_template_mismatch", "Canonical template belongs to another project or owner scope")
+            record = self.db._template_result_on_conn(conn, row, self.actor, self.access)
+            require(template_digest(record) == ref["sha256"], "workflow_template_mismatch", "Canonical template digest differs")
+            return {"definition_json": canonical({key: value for key, value in record.items() if key != "owner_actor"}),
+                    "owner_json": canonical(record["owner_actor"]), "sha256": ref["sha256"]}
         row = conn.execute("SELECT * FROM workflow_templates WHERE template_key=? AND version=?",
                            (self.key(project_id, ref["template_id"]), ref["version"])).fetchone()
         require(row is not None and row["sha256"] == ref["sha256"] and hashlib.sha256(row["definition_json"].encode()).hexdigest() == ref["sha256"],
@@ -136,6 +149,9 @@ class WorkflowRegistry:
         return row
 
     def template(self, project_id, ref):
+        if ref.get("store") == "artifact_templates":
+            from hermes_cli.template_application import resolve_template
+            return resolve_template(self.context, self.db, project_id, ref)
         with self.access.guard(project_id, self.actor, "read"), self.db._runtime_read() as conn:
             return json.loads(self._template_on_conn(conn, project_id, ref)["definition_json"])
 

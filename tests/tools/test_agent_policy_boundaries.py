@@ -88,13 +88,21 @@ def test_unknown_and_hidden_direct_dispatch_deny_before_hooks(home, monkeypatch)
 def test_nonprimary_execution_requires_certified_boundary_even_if_granted(home, name):
     ctx = context(home, config("specialist", allowed=[name]))
     with bind_agent_context(ctx):
-        if name == "execute_code":
+        if name in {"execute_code", "memory"}:
             import tools.code_execution_tool  # noqa: F401
+            import tools.memory_tool  # noqa: F401
             from tools.registry import registry
             assert authorize_tool(name) is None
-            # Schema admission is not execution authority: no admitted live run.
-            denied = json.loads(registry.dispatch(name, {"code": "print('unreachable')"}))
+            # BE08 certifies the specialist's own built-in memory schema, just
+            # as BE05 certifies execute_code. Neither is execution authority.
+            arguments = ({"code": "print('unreachable')"} if name == "execute_code" else
+                         {"action": "add", "target": "memory", "content": "must not be written"})
+            before_paths = set(home.rglob("*"))
+            denied = json.loads(registry.dispatch(name, arguments))
             assert "durable command" in denied["error"]
+            assert set(home.rglob("*")) == before_paths
+            # A built-in memory grant never creates a primary personal-MCP grant.
+            assert json.loads(authorize_mcp("vault", "read"))["status"] == "denied"
         else:
             denied = json.loads(authorize_tool(name))
             assert denied["status"] == "unsupported"

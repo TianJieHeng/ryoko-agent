@@ -119,7 +119,7 @@ def _make_slow_agent(**kwargs):
     ready = threading.Event()
     interrupted = threading.Event()
 
-    mock_agent = MagicMock()
+    mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
 
     def _do_interrupt(message=None):
         interrupted.set()
@@ -145,7 +145,7 @@ def _make_scripted_agent():
     ready = threading.Event()
     release = threading.Event()
     callbacks = {}
-    mock_agent = MagicMock()
+    mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
 
     def create_agent(*args, **kwargs):
         callbacks["delta"] = kwargs["stream_delta_callback"]
@@ -238,7 +238,7 @@ class TestStartRun:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.run_conversation.return_value = {"final_response": "done"}
                 mock_agent.session_prompt_tokens = 10
                 mock_agent.session_completion_tokens = 5
@@ -270,7 +270,7 @@ class TestStartRun:
 
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
 
                 def _capture_run(user_message=None, conversation_history=None, task_id=None):
                     from tools.async_delegation import _current_origin_session_id
@@ -314,7 +314,7 @@ class TestStartRun:
 
     @staticmethod
     def _capturing_agent(captured):
-        agent = MagicMock()
+        agent = MagicMock(runtime_context=None, _memory_manager=None)
         agent.run_conversation.side_effect = lambda **kwargs: captured.update(kwargs) or {"final_response": "done"}
         agent.session_prompt_tokens = agent.session_completion_tokens = agent.session_total_tokens = 0
         return agent
@@ -411,7 +411,7 @@ class TestStartRun:
 
         def create_agent(**kwargs):
             interim = kwargs["interim_assistant_callback"]
-            agent = MagicMock()
+            agent = MagicMock(runtime_context=None, _memory_manager=None)
 
             def run_conversation(**_kw):
                 interim("Checking the docs first.", already_streamed=False)
@@ -447,7 +447,7 @@ class TestStartRun:
         model_options = {"reasoning_effort": "medium", "service_tier": "priority"}
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.run_conversation.return_value = {"final_response": "done"}
                 mock_agent.session_prompt_tokens = 0
                 mock_agent.session_completion_tokens = 0
@@ -523,7 +523,7 @@ class TestRunStatus:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.run_conversation.return_value = {"final_response": "done"}
                 mock_agent.session_prompt_tokens = 0
                 mock_agent.session_completion_tokens = 0
@@ -560,7 +560,7 @@ class TestRunStatus:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.run_conversation.return_value = {"final_response": "done"}
                 mock_agent.provider = "openai-codex"
                 mock_agent.model = "gpt-5.6-luna"
@@ -630,7 +630,7 @@ class TestRunEvents:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.run_conversation.return_value = {"final_response": "Hello!"}
                 mock_agent.session_prompt_tokens = 10
                 mock_agent.session_completion_tokens = 5
@@ -661,7 +661,7 @@ class TestRunEvents:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.run_conversation.return_value = {"final_response": "served"}
                 mock_agent.provider = "openai-codex"
                 mock_agent.model = "gpt-5.6-luna"
@@ -984,7 +984,7 @@ class TestSteerRun:
 
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.session_prompt_tokens = 0
                 mock_agent.session_completion_tokens = 0
                 mock_agent.session_total_tokens = 0
@@ -1034,7 +1034,7 @@ class TestSteerRun:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.session_prompt_tokens = 0
                 mock_agent.session_completion_tokens = 0
                 mock_agent.session_total_tokens = 0
@@ -1074,7 +1074,7 @@ class TestSteerRun:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.session_prompt_tokens = 0
                 mock_agent.session_completion_tokens = 0
                 mock_agent.session_total_tokens = 0
@@ -1275,7 +1275,7 @@ class TestStopRun:
 
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as mock_create:
-                mock_agent = MagicMock()
+                mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
                 mock_agent.session_prompt_tokens = 0
                 mock_agent.session_completion_tokens = 0
                 mock_agent.session_total_tokens = 0
@@ -1457,7 +1457,7 @@ class TestRunIdempotency:
                 "/v1/runs", json={"input": ""}, headers=headers
             )
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
                 agent.run_conversation.return_value = {"final_response": "done"}
                 agent.session_prompt_tokens = agent.session_completion_tokens = (
                     agent.session_total_tokens
@@ -1489,7 +1489,7 @@ class TestRunIdempotency:
                     "/v1/runs", json={"input": "valid"}, headers=headers
                 )
                 with patch.object(adapter, "_create_agent") as create:
-                    agent = MagicMock()
+                    agent = MagicMock(runtime_context=None, _memory_manager=None)
                     agent.run_conversation.return_value = {"final_response": "done"}
                     agent.session_prompt_tokens = agent.session_completion_tokens = (
                         agent.session_total_tokens
@@ -1508,7 +1508,7 @@ class TestRunIdempotency:
         calls = 0
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
 
                 def run(**kwargs):
                     nonlocal calls
@@ -1539,7 +1539,7 @@ class TestRunIdempotency:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
                 agent.run_conversation.return_value = {"final_response": "done"}
                 agent.session_prompt_tokens = agent.session_completion_tokens = (
                     agent.session_total_tokens
@@ -1564,7 +1564,7 @@ class TestRunIdempotency:
         calls = 0
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
 
                 def run(**kwargs):
                     nonlocal calls
@@ -1729,7 +1729,7 @@ class TestRunIdempotency:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
                 agent.run_conversation.return_value = {"final_response": "done"}
                 agent.session_prompt_tokens = agent.session_completion_tokens = (
                     agent.session_total_tokens
@@ -1748,7 +1748,7 @@ class TestRunIdempotency:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
                 agent.run_conversation.return_value = {"final_response": "done"}
                 agent.session_prompt_tokens = agent.session_completion_tokens = (
                     agent.session_total_tokens
@@ -1782,7 +1782,7 @@ class TestRunIdempotency:
         app = _create_runs_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
                 agent.run_conversation.return_value = {"final_response": "done"}
                 agent.session_prompt_tokens = agent.session_completion_tokens = (
                     agent.session_total_tokens
@@ -1821,7 +1821,7 @@ class TestRunIdempotency:
         first_app = _create_runs_app(first_adapter)
         async with TestClient(TestServer(first_app)) as cli:
             with patch.object(first_adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
                 agent.run_conversation.return_value = {"final_response": "done"}
                 agent.session_prompt_tokens = agent.session_completion_tokens = (
                     agent.session_total_tokens
@@ -2486,7 +2486,7 @@ class TestHostedRoomRuns:
                 "trace_id": "trace-room-1",
             }
             with patch.object(adapter, "_create_agent") as create:
-                agent = MagicMock()
+                agent = MagicMock(runtime_context=None, _memory_manager=None)
                 agent.run_conversation.return_value = {
                     "final_response": "Scoped room reply."
                 }

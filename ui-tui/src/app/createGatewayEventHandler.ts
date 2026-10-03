@@ -34,6 +34,7 @@ import { applyGoalSnapshot } from './goalStatus.js'
 import type { GatewayEventHandlerContext, NoticeLevel } from './interfaces.js'
 import { getOverlayState, patchOverlayState } from './overlayStore.js'
 import { flashGoodVibes, flashPet } from './petFlashStore.js'
+import { createMonitorNotificationReceiver } from './runtime/monitor-notifications.js'
 import { forgetServerRequest } from './serverRequestStore.js'
 import { reportStartupLatency } from './startupLatency.js'
 import { turnController } from './turnController.js'
@@ -791,6 +792,8 @@ export function createGatewayEventHandler(ctx: GatewayEventHandlerContext): (ev:
       })
   }
 
+  const receiveMonitor = createMonitorNotificationReceiver((method, params) => gw.request(method, { ...params }), () => getUiState().sid, sys)
+
   return (ev: AnyGatewayEvent) => {
     const sid = getUiState().sid
 
@@ -799,6 +802,11 @@ export function createGatewayEventHandler(ctx: GatewayEventHandlerContext): (ev:
     }
 
     switch (ev.type) {
+      case 'runtime.monitor.available':
+        if (sid && ev.session_id === sid && ev.payload) {void receiveMonitor(sid, ev.payload)}
+
+        return
+
       case 'connection.request':
         if (ev.payload) {
           applyConnectionRequest(ev.payload)

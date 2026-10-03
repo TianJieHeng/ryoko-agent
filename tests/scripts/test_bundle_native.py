@@ -19,7 +19,7 @@ import pytest
 from scripts.bundles import native
 
 
-def test_bundle_stages_git_tree_and_runs_native_children_before_manifest(tmp_path, monkeypatch):
+def test_bundle_stages_git_tree_and_runs_native_children_before_manifest(tmp_path, monkeypatch, request):
     import importlib
     import inspect
 
@@ -27,7 +27,7 @@ def test_bundle_stages_git_tree_and_runs_native_children_before_manifest(tmp_pat
     from pm.lock import Facts
     from pm.registry import get_package
     from pm.store import tree_digest
-    from tests.pm._fixtures import _wheel, stage_host_python
+    from tests.pm._fixtures import _wheel, stage_host_python, seed_pm_runtime_cache
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
@@ -120,6 +120,7 @@ def test_bundle_stages_git_tree_and_runs_native_children_before_manifest(tmp_pat
     canonical_facts = (canonical / "facts.json").read_bytes()
     env = {**os.environ, "UV_OFFLINE": "1", "UV_PYTHON_DOWNLOADS": "never",
            "UV_CACHE_DIR": str(tmp_path / "cache"), "HERMES_PAYLOAD_VERSION": "9.9.9"}
+    prepared_cache = seed_pm_runtime_cache(request, tmp_path / "cache")
     subprocess.run([uv, "lock", "--python", sys.executable], cwd=repo, env=env, check=True, capture_output=True)
     subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
@@ -139,6 +140,8 @@ def test_bundle_stages_git_tree_and_runs_native_children_before_manifest(tmp_pat
         assert kwargs["cache"] == tmp_path / "cache"
         assert kwargs["python"] == target_python
         assert kwargs["project"] == output / "hermes-agent/pm"
+        if prepared_cache:
+            kwargs["offline"] = True
         return real_stage(**kwargs)
 
     monkeypatch.setattr(pm, "stage_manager_runtime", stage)

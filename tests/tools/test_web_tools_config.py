@@ -427,11 +427,23 @@ class TestParallelClientConfig:
             assert client is not None
             assert isinstance(client, Parallel)
 
-    def test_no_key_raises_with_helpful_message(self):
-        """No PARALLEL_API_KEY → ValueError with guidance."""
-        from plugins.web.parallel.provider import _get_sync_client as _get_parallel_client
-        with pytest.raises(ValueError, match="PARALLEL_API_KEY"):
-            _get_parallel_client()
+    @pytest.mark.parametrize("getter", ["_get_sync_client", "_get_async_client"])
+    def test_no_key_raises_with_helpful_message(self, getter):
+        """A missing key must fail before any SDK acquisition, for both client kinds."""
+        from plugins.web.parallel import provider
+        with patch("pm.ensure_import", side_effect=AssertionError("unexpected SDK acquisition")) as ensure:
+            with pytest.raises(ValueError, match="PARALLEL_API_KEY"):
+                getattr(provider, getter)()
+        ensure.assert_not_called()
+
+    @pytest.mark.parametrize("getter", ["_get_sync_client", "_get_async_client"])
+    def test_keyed_sdk_failure_keeps_install_guidance(self, getter):
+        from plugins.web.parallel import provider
+        with patch.dict(os.environ, {"PARALLEL_API_KEY": "test-key"}), \
+             patch("pm.ensure_import", side_effect=RuntimeError("SDK unavailable offline")) as ensure:
+            with pytest.raises(ImportError, match="SDK unavailable offline"):
+                getattr(provider, getter)()
+        ensure.assert_called_once_with("parallel-web")
 
     def test_singleton_returns_same_instance(self):
         """Second call returns cached client."""

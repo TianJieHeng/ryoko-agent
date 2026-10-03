@@ -62,14 +62,16 @@ class ScheduleRegistry:
         imported = conn.execute("SELECT declaration_json FROM durable_schedule_imports WHERE schedule_key=?", (row["schedule_key"],)).fetchone()
         result["import_declaration"] = json.loads(imported[0]) if imported else None
         result["foreign_cutover_verified"] = False if imported else None
+        history_limit = 5 if result["definition"]["kind"] == "workflow_draft" else 20
         result["occurrences"] = [dict(item) for item in conn.execute(
             "SELECT occurrence_id,version,due_at,run_id,state,generation,delivery_state,result_json "
-            "FROM durable_occurrences WHERE schedule_key=? ORDER BY accepted_at DESC,occurrence_id DESC LIMIT 20", (row["schedule_key"],))]
+            "FROM durable_occurrences WHERE schedule_key=? ORDER BY accepted_at DESC,occurrence_id DESC LIMIT ?", (row["schedule_key"], history_limit))]
         for occurrence in result["occurrences"]:
             detail = json.loads(occurrence.pop("result_json") or "null")
             occurrence["result"] = {key: value for key, value in (detail or {}).items() if key in {
                 "error", "execution_scope", "source_scope", "baseline", "changed", "matched", "live_connection_verified",
-                "delivery_state", "purpose", "owner_agent_id", "source_refs", "workflow_ref", "semantic_review", "replayed"}}
+                "delivery_state", "purpose", "owner_agent_id", "source_refs", "workflow_ref", "semantic_review", "replayed",
+                "workflow_run_id", "mission_id", "draft_only", "publication_state", "outputs", "parameters_sha256", "bytes_read", "bytes_produced"}}
             occurrence["result_digest"] = digest(detail)
         result["intents"] = [json.loads(item[0]) | {"state": item[1], "kind": item[2], "intent_id": item[3]} for item in conn.execute(
             "SELECT i.record_json,i.state,i.kind,i.intent_id FROM durable_monitor_intents i JOIN durable_occurrences o USING(occurrence_id) "
@@ -97,6 +99,9 @@ class ScheduleRegistry:
         record = validate_definition(definition)
         now, key, project = time.time(), self.key(record["schedule_id"]), record["project_id"]
         require(record["expires_at"] > now, "Cannot create an expired schedule")
+        if record["kind"] == "workflow_draft":
+            from cron.durable_workflow_contract import resolve_workflow
+            resolve_workflow(self.context, self.db, record)
         if imported is not None:
             from cron.durable_contract import exact, identifier
             exact(imported, "authority source_id source_state unresolved_occurrences")
@@ -165,6 +170,9 @@ class ScheduleRegistry:
                     record = json.loads(self._version(conn, row)["definition_json"])
                     require(record["expires_at"] > time.time() and row["remaining_checks"] > 0,
                             "Schedule expired or exhausted", "schedule_expired")
+                    if record["kind"] == "workflow_draft":
+                        from cron.durable_workflow_contract import available_grant
+                        available_grant(conn, row, record, time.time())
                     owner = json.loads(row["owner_binding_json"])
                     require(all(owner[field] == self.context.identity.to_record()[field] for field in
                         ("principal_id", "profile_id", "agent_id", "policy_digest", "profile_home_digest", "lifecycle")),
@@ -202,9 +210,10 @@ class ScheduleRegistry:
                 require(row["project_id"] == project_id and row["revision"] == expected_revision and row["state"] != "revoked",
                         "Schedule revision changed", "schedule_revision_conflict")
                 definition = json.loads(self._version(conn, row)["definition_json"])
-                action = definition["specification"].get("condition_action")
-                require(definition["kind"] == "monitor" and action is not None, "No exact local action is declared")
-                target = digest({"project_id": project_id, "action": action, "schedule_sha256": digest(definition)})
+                from cron.durable_workflow_contract import grant_target, resolve_workflow
+                if definition["kind"] == "workflow_draft":
+                    resolve_workflow(self.context, self.db, definition)
+                target = grant_target(definition)
                 grant_id = "grant_" + digest({"command": run.command_id, "target": target})[:40]
                 conn.execute("INSERT INTO durable_condition_grants VALUES(?,?,?,?,?,?,?,'active',?)",
                     (grant_id, row["schedule_key"], row["version"], target, expires_at, max_age_seconds, max_fires, now))
@@ -260,6 +269,9 @@ class ScheduleRegistry:
             conn.execute("INSERT INTO durable_occurrences(occurrence_id,schedule_key,version,due_at,session_id,command_id,run_id,state,"
                 "accepted_at,deadline_at) VALUES(?,?,?,?,?,?,?,'accepted',?,?)", (oid, key, live["version"], due, session_id,
                 oid, receipt["run_id"], now, min(now + definition["budget"]["deadline_seconds"], definition["expires_at"])))
+            if definition["kind"] == "workflow_draft":
+                from cron.durable_workflow_contract import admit_workflow_grant
+                admit_workflow_grant(conn, live, definition, oid, now)
             next_at = next_due(definition, max(due, now))
             conn.execute("UPDATE durable_schedules SET next_due=?,remaining_checks=remaining_checks-1,revision=revision+1 WHERE schedule_key=?",
                          (next_at, key))

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "producer_only_synthetic_contract_examples",
+  "protocol_version": 1,
+  "generated_types": "apps/shared/src/gateway-contract.generated.ts",
+  "openrpc": "apps/shared/src/gateway-contract.openrpc.json",
+  "consumer_validation": {"dots_adapter_commit": null, "OD00": "not_run", "FE13": "not_run"},
+  "examples": {
+    "command": {"schema_version": 1, "session_id": "owned-live-session", "command_id": "intent-1", "idempotency_key": "intent-1", "expected_revision": 0, "operation": "submit", "payload": {"text": "Prepare the granted project brief"}},
+    "receipt": {"schema_version": 1, "command_id": "intent-1", "status": "accepted", "durable_revision": 1, "run_id": "run-1", "conflict": null},
+    "replay_request": {"schema_version": 1, "session_id": "owned-live-session", "cursor": "synthetic-epoch:1", "limit": 100},
+    "event": {"schema_version": 1, "event_id": "synthetic-event-1", "session_id": "owned-live-session", "seq": 1, "cursor": "synthetic-epoch:1", "generation": 1, "mission_id": null, "run_id": "run-1", "operation_id": null, "effect_id": null, "delivery_id": null, "approval_id": null, "occurred_at": 1.0, "type": "command.accepted", "payload": {"command_id": "intent-1", "operation": "submit"}},
+    "artifact_ref": {"artifact_id": "artifact-1", "version": 1},
+    "delivery_ack": {"schema_version": 1, "session_id": "owned-live-session", "delivery_id": "delivery-1", "attempt_token": "synthetic-attempt-1", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "text_received": true, "artifact_received": false}
+  },
+  "required_consumer_invariants": [
+    "Resolve ownership from the authenticated transport; client intent never supplies principal, agent or credentials",
+    "Retry the exact command/idempotency key after disconnect; changed intent must use a new key",
+    "Accepted command receipts are not completion, effect confirmation or delivery acknowledgment",
+    "On snapshot_required replace the projection with the returned snapshot and resume from its cursor",
+    "Cancel is a command; a transport timeout never ends or restarts a mission",
+    "Artifact versions and byte digests are immutable; current heads use expected-version CAS",
+    "Approval binds exact content, target, owner generation and live authority; stale or revoked approvals fail closed",
+    "Delivery retry never reexecutes the mission; missing artifact acknowledgment is partial delivery",
+    "Keep one runtime owner and one scheduler per mission; Dots remains a later transport/projection consumer"
+  ]
+}

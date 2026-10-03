@@ -363,9 +363,7 @@ def test_chat_multimodal_note_persists_clean_input_once(tmp_path, monkeypatch):
 
     assert captured["persist_user_message"] == clean_parts
     assert captured["user_message"][0]["text"] == "[MODEL SWITCH NOTE]\n\nDescribe this screenshot"
-    assert [m["content"] for m in db.get_messages_as_conversation(session_id)] == [
-        "Describe this screenshot\n[screenshot]"
-    ]
+    assert [m["content"] for m in db.get_messages_as_conversation(session_id)] == [clean_parts]
 
 
 def test_chat_clears_previous_turn_persistence_override_before_staging():

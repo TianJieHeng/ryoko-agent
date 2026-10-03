@@ -760,15 +760,18 @@ def test_recovery_regenerates_rather_than_copies_derived_fts_meta(tmp_path: Path
 
 
 def test_recovery_without_delivery_ledger_is_not_lossy(tmp_path: Path) -> None:
-    """CLI-only stores never created the lazy table; that is not data loss."""
+    """Legacy CLI-only stores without the delivery table can still be recovered."""
 
     source = tmp_path / "state.db"
     output = tmp_path / "recovered.db"
     _make_source(source)
 
+    with sqlite3.connect(source) as conn:
+        conn.execute("DROP TABLE delivery_obligations")
+
     report = recover_session_database(source, output, work_dir=tmp_path)
     assert report["copy"]["delivery_obligations"]["status"] == "missing"
-    assert "delivery_obligations" not in report["verification"]["table_counts"]
+    assert report["verification"]["table_counts"]["delivery_obligations"] == 0
     assert report["complete"] is True
     assert report["verified"] is True
 
@@ -823,7 +826,7 @@ def test_recovery_flags_delivery_obligation_count_mismatch_as_loss(
 
 
 def test_lost_and_found_direct_copy_creates_lazy_delivery_ledger(tmp_path: Path) -> None:
-    """The .recover lane copies the ledger even though SessionDB never made it."""
+    """The .recover lane creates and copies the ledger when the destination lacks it."""
 
     from hermes_cli.session_lost_and_found import _copy_direct_tables
 
@@ -838,6 +841,8 @@ def test_lost_and_found_direct_copy_creates_lazy_delivery_ledger(tmp_path: Path)
     )
     output = tmp_path / "rebuilt.db"
     SessionDB(db_path=output).close()
+    with sqlite3.connect(output) as conn:
+        conn.execute("DROP TABLE delivery_obligations")
 
     lf_conn = sqlite3.connect(str(recovered_source), isolation_level=None)
     dest = sqlite3.connect(str(output), isolation_level=None)
@@ -939,7 +944,10 @@ def test_salvage_bounds_damaged_low_edge_from_the_aggregate_not_the_int64_domain
 
 def test_recover_carries_message_identity_columns(tmp_path):
     """``hermes sessions recover`` copies the compatible columns of ``messages`` into a current-schema
-    database: the durable ids (``message_uid``, the merge witness, the tool-call uids) survive with the rows."""
+    database: durable ids, provider replay state and owner generations survive with the rows."""
+    sidecar = json.dumps({"schema_version": 1, "fields": {"anthropic_content_blocks": [
+        {"type": "thinking", "thinking": "private", "signature": "exact-α/+=\n"},
+    ]}})
     source = tmp_path / "source.db"
     db = SessionDB(db_path=source)
     try:
@@ -949,10 +957,12 @@ def test_recover_carries_message_identity_columns(tmp_path):
         db._conn.commit()
         db.append_message(
             session_id="s", role="assistant", content="",
-            tool_calls=[{"id": "call_1", "type": "function", "function": {"name": "t", "arguments": "{}"}}])
+            tool_calls=[{"id": "call_1", "type": "function", "function": {"name": "t", "arguments": "{}"}}],
+            provider_sidecar=sidecar)
         db.append_message(session_id="s", role="tool", content="r", tool_call_id="call_1", tool_name="t")
+        db._write_sql("UPDATE sessions SET turn_owner_generation = 17 WHERE id = ?", ("s",))
         expected = [dict(r) for r in db._conn.execute(
-            "SELECT role, message_uid, absorbed_message_uids, tool_call_uids, tool_call_uid "
+            "SELECT role, message_uid, absorbed_message_uids, tool_call_uids, tool_call_uid, provider_sidecar "
             "FROM messages WHERE session_id = 's' ORDER BY id")]
     finally:
         db.close()
@@ -965,11 +975,13 @@ def test_recover_carries_message_identity_columns(tmp_path):
     recovered = SessionDB(db_path=output)
     try:
         got = [dict(r) for r in recovered._conn.execute(
-            "SELECT role, message_uid, absorbed_message_uids, tool_call_uids, tool_call_uid "
+            "SELECT role, message_uid, absorbed_message_uids, tool_call_uids, tool_call_uid, provider_sidecar "
             "FROM messages WHERE session_id = 's' ORDER BY id")]
         assert got == expected
+        assert recovered.get_session("s")["turn_owner_generation"] == 17
         restored = recovered.get_messages_as_conversation("s")
         assert [m["message_uid"] for m in restored] == [r["message_uid"] for r in expected]
+        assert restored[1]["anthropic_content_blocks"] == json.loads(sidecar)["fields"]["anthropic_content_blocks"]
         assert restored[0]["_absorbed_message_uids"] == ["b" * 32]
         assert restored[2]["_tool_call_uid"] == restored[1]["_tool_call_uids"]["call_1"]
     finally:

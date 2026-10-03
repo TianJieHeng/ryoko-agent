@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "phase": "BE10/BE12 connected source read bridges",
+  "status": "implemented_offline_qualified_live_unqualified",
+  "observed_head": "18071c8c45b6d269cceb98c03b162de22abc0415",
+  "validated_at_utc": "2026-10-03T05:40:08.044141+00:00",
+  "scope": {
+    "gmail": "One explicit thread and mailbox, mandatory exact gateway account selector; <=100 messages; plain UTF-8 bodies, participant headers and attachment metadata",
+    "calendar": "Up to20 exact calendar IDs, <=7-day offset-checked IANA-timezone window, no group expansion, <=1000 total busy intervals",
+    "research": "Retained original and separate projection use canonical project_artifact refs; both source kinds reopened jointly with exact citation proof",
+    "http": "At most2 physical gateway POST requests; no client retries, redirects, proxy inheritance, provider fallback, broad search, pagination or implicit authentication refresh",
+    "artifacts": "Separate exact original/projection approvals; immutable history; publish never refetches; source bytes never accepted from client; pending bundle loss requires new explicit refresh"
+  },
+  "validation": {
+    "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/tools/test_connected_source_reads.py tests/tools/test_egress_policy.py tests/tools/test_connectors_gateway_client.py tests/tools/test_connectors_gateway_wire.py tests/tools/test_connector_bridge_wiring.py tests/tui_gateway/test_research_rpc.py tests/hermes_cli/test_domain_research.py tests/tui_gateway/contracts/test_generated.py --scratch-parent /workspace/shared -j 2",
+    "files": 8,
+    "tests_passed": 144,
+    "tests_failed": 0,
+    "bridge_tests": 36,
+    "log": "/tmp/be10-connected-sources-tests.log",
+    "log_sha256": "e8102aa468c3ee1d62a24888cdac59d5d424c0c7d3f831132639fde7db962755",
+    "lint_log": "/tmp/be10-connected-sources-lint.log",
+    "lint": "passed",
+    "git_diff_check": "passed",
+    "full_repository_campaign": "not_run_by_this_worker"
+  },
+  "security_checks": [
+    "actual registered RPC and strict DTO roundtrip",
+    "selected account included in existing gateway wire; rejection has no fallback",
+    "live actor/project/policy/run/deadline checks at egress admission and every HTTP edge",
+    "existing guarded httpx recipient plan with narrow source-control purpose",
+    "existing durable BE03 reservations for every physical gateway attempt",
+    "timeout or malformed execute completion retains unknown usage and remote slot; no automatic retry",
+    "cost mode unsupported before any HTTP; tokens mode explicitly untracked spend",
+    "no $ref retrieval, remote regex execution or recursive schema validators",
+    "provider/tool/schema identity mismatch denied",
+    "cross-thread data discarded instead of retained as partial",
+    "A-to-B-to-A profile isolation and foreign preparation denial",
+    "newer original preserves prior versions and derivative linkage",
+    "partial local publication retains exact bundle for idempotent retry",
+    "source instructions remain inert data and cannot accept commitments",
+    "separate inbox and calendar contracts; no sends/events/invitations"
+  ],
+  "limits": [
+    "Live gateway account selector support remains unqualified; existing wire contract probe F2 records400 rejection while multi-account is disabled. No selector omission or guessed alternate route was added.",
+    "Gateway HTTP attempt accounting does not certify vendor-internal attempts, retries, usage or invoice cost. Only the documented finite read envelopes are admitted; no search/opaque model loop adapter.",
+    "Only the documented Composio successful/data envelope with underlying Google resource shapes is supported; unknown vendor normalization/schema constraints return unavailable or partial.",
+    "Gmail HTML-only/non-UTF-8/large-body cases retain a bounded correctly scoped original as partial, without inventing decoded text. Attachment bytes are not fetched.",
+    "Calendar identity is explicit calendar IDs, not person identity verification. Existing agenda preview still labels supplied snapshots and freshness; no calendar writes.",
+    "Pending prepared bytes are volatile, per-agent and bounded. Command audit survives restart and prevents silent refetch; published originals/projections are durable.",
+    "Generic web search, broad inbox time-range discovery, sends/calendar mutations, live P08 acceptance, production activation and cost-mode certification are outside this implementation."
+  ],
+  "no_live_changes": [
+    "No connected account request was made",
+    "No credentials, installs, API/model use, live config, deployment or external write",
+    "No Git staging or commits; no root journal/build-plan edits",
+    "Separate full-suite worktree/interpreter untouched"
+  ],
+  "sources": [
+    {
+      "url": "https://docs.composio.dev/toolkits/gmail",
+      "supports": "Tool slug GMAIL_FETCH_MESSAGE_BY_THREAD_ID; vendor input fields verified in official indexed tool reference at https://v3.docs.composio.dev/tools/gmail"
+    },
+    {
+      "url": "https://docs.composio.dev/toolkits/googlecalendar",
+      "supports": "Tool slug GOOGLECALENDAR_FREE_BUSY_QUERY; camel-case free/busy inputs verified in official indexed tool reference at https://v3.docs.composio.dev/tools/googlecalendar"
+    },
+    {
+      "url": "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.threads/get",
+      "supports": "Exact thread and mailbox scope and full payload semantics"
+    },
+    {
+      "url": "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages",
+      "supports": "Message IDs, history IDs, internalDate, payload headers and MIME body structure"
+    },
+    {
+      "url": "https://developers.google.com/calendar/api/v3/reference/freebusy/query",
+      "supports": "Exact calendar IDs, interval endpoints, calendar errors, busy intervals and expansion bounds"
+    }
+  ],
+  "repository_contract_evidence": {
+    "path": "tools/connectors/gateway/wire.py",
+    "symbol": "ConnectorExecuteCall.account",
+    "existing_comment": "contract probe F2: vendor answers400 to any account value while multi-account is off",
+    "change": "General dispatcher unchanged; finite source adapter now requires the selector and returns unavailable if rejected"
+  },
+  "file_sha256": {
+    "agent/artifact_commands.py": "6acab9cd71102c0a50d205408e05f216edcf612245910910cac1aeabe798f454",
+    "agent/connected_sources.py": "0b28807671588d6bd1025f401a5a375d20d993f9bf3874e46cc19a5f92f04079",
+    "hermes_cli/connected_sources.py": "16ff5526d36d9f3e4dd170f28934c586a9dd1943ceab5a749d059b8a88a4e0e6",
+    "tools/connectors/source_reads.py": "82ca20847721eb0289c1dbfee2621503f8b1fecb22fe10b394d5773b37f0e997",
+    "tools/connectors/gateway/client.py": "4523723d50144ced66d59ed2526de47184e771bd729d55527cda7c1081f6b8b3",
+    "tools/connectors/gateway/wire.py": "ecc03f3c861ef5eb92adb14f16925fb0ae2083a43664765b6d8e3193f5f46686",
+    "tools/egress_policy.py": "dc3255d00adcb4032163ba676baaf7ba58e31198ab25e674c04992f26abe3dcb",
+    "tui_gateway/contracts/connected_sources.py": "654b9366c97ec1c70719b07866919cf742bf55c91343a09d718a0841aa22cfec",
+    "tui_gateway/methods_connected_sources.py": "b455e48913821e35b7c1ef0a11e7c49e9c7aecbc5a817379442491a5e03d07ce",
+    "tests/tools/test_connected_source_reads.py": "5cfff770b8d60652864c7d113dcb3c757bd3a656cba55655ad823c6b6dd1c8d8",
+    "tests/tools/test_egress_policy.py": "287823d0b01df8912423f98f6f608ad2224c3955aad61d8863306b4912604a0d"
+  },
+  "central_integration_owned_by_parent": [
+    "tui_gateway/contracts/__init__.py",
+    "tui_gateway/server.py",
+    "apps/shared/src/gateway-contract.generated.ts",
+    "apps/shared/src/gateway-contract.openrpc.json"
+  ],
+  "shared_file_note": "agent/artifact_commands.py includes the coordinated runtime.voice.admit change from the speech worker; this worker added only source RPC allowance and clarified its header."
+}

@@ -73,6 +73,8 @@ def test_container_backend_task_leaves_host_store_untouched(tmp_path, manager, c
     host_file = tmp_path / "workspace" / "project" / "a.txt"
     host_file.parent.mkdir(parents=True)
     host_file.write_text("host content\n", encoding="utf-8")
+    # A local checkpoint control needs its own project boundary below any host checkout.
+    (host_file.parent / "pyproject.toml").write_text("[project]\nname = 'fixture'\n")
     path = str(host_file)
     agent = SimpleNamespace(
         _checkpoint_mgr=manager, _turn_failed_file_mutations={}, _turn_file_mutation_paths=set(),

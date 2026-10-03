@@ -33,6 +33,8 @@ def _schedule_operation(agent, db, request, name):
             json.loads(request.source_ref_json), json.loads(request.selection_json)),
         "runtime.commitment.accept": lambda run: commitments.accept(run, request.project_id, request.candidate_id,
             request.expected_revision, request.owner, request.outcome, request.due_or_check_at.model_dump() if request.due_or_check_at else None),
+        "runtime.commitment.decline": lambda run: commitments.decline(run, request.project_id, request.candidate_id,
+            request.expected_revision, request.reason),
         "runtime.commitment.update": lambda run: commitments.update(run, request.project_id, request.commitment_id,
             request.expected_revision, request.state, json.loads(request.evidence_ref_json), request.superseded_by, request.due_or_check_at.model_dump() if request.due_or_check_at else None),
     }
@@ -47,6 +49,10 @@ def _schedule_operation(agent, db, request, name):
         "runtime.calendar.preview": lambda: commitments.preview_calendar(request.project_id,
             json.loads(request.availability_ref_json), timezone=request.timezone, participants=request.participants, start_at=request.start_at,
             end_at=request.end_at, duration_minutes=request.duration_minutes),
+        "runtime.agenda.plan": lambda: commitments.plan_agenda(request.project_id,
+            json.loads(request.availability_ref_json), timezone=request.timezone, participants=request.participants,
+            windows=[row.model_dump() for row in request.windows], work=[row.model_dump() for row in request.work],
+            buffer_minutes=request.buffer_minutes, daily_capacity_minutes=request.daily_capacity_minutes),
     }
     if name in reads:
         with agent_runtime_scope(context):

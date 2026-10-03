@@ -1,0 +1,27 @@
+{
+  "phase": "BE18 prepared-environment doctor fixture qualification",
+  "status": "fixture_only_correction_qualified",
+  "base_commit": "d6eca2d648edc8e036f8a040931f62244ea89d06",
+  "source_sha256": {
+    "tests/hermes_cli/test_doctor.py": "4d45716e32f7f4c96fab7627ae2975d99ed525bf8a491f69b65cbd344f7370d7"
+  },
+  "cause": "Config-only doctor helper ran unrelated command installation before its late Tool Availability stop. PM-prepared environment exposed the real launcher, leading fix=True toward read-only host .local/bin.",
+  "change": "Limit this helper to the three existing real Configuration Files checks; temp-file config behavior preserved, no production/home/permission changes.",
+  "validation": {
+    "files": 2,
+    "passed": 73,
+    "failed": 0,
+    "skipped": 8,
+    "skip_scope": "macOS-only cases on Linux",
+    "seconds": 58.5,
+    "tests": [
+      "tests/hermes_cli/test_doctor.py",
+      "tests/hermes_cli/test_doctor_command_install.py"
+    ],
+    "runner": "scripts/run_tests.sh --scratch-parent /workspace/shared -j1 --file-retries 0",
+    "python": "/workspace/shared/ryoko-extra-test-env/bin/python",
+    "log": "/workspace/shared/ryoko-doctor-config-fixture-validation.log",
+    "sha256": "718bc6a973281d8dc10f1a1ea0231b4eb338527f8d15507ef2c72b59a4d3d2da"
+  },
+  "full_campaign": "b323e73f remains unchanged; this affected-suite rerun supplements its original failure"
+}

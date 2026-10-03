@@ -84,6 +84,7 @@ class TurnFacadeMixin:
         # the finally resets each one unconditionally.
         token = affinity_token = acct_token = None
         runtime_run = runtime_token = None
+        specialist_witness = None
         runtime_finished = False
         task_started = task_finished = False
         relay_outcome = "failed"
@@ -112,6 +113,8 @@ class TurnFacadeMixin:
                 if runtime_run is None:
                     return recorded_turn_result(self, read_command_state(self, command["receipt"]["command_id"]))
                 runtime_token = bind_runtime_run(runtime_run)
+                from agent.specialist_control import prepare_specialist_turn
+                specialist_witness = prepare_specialist_turn(self, command)
                 from agent.mission_runtime import begin_mission_turn
                 begin_mission_turn(runtime_run)
 
@@ -163,16 +166,23 @@ class TurnFacadeMixin:
                 try:
                     if lease is not None:
                         lease.start()
-                    result = run_conversation(
-                        self, user_message, system_message, conversation_history, effective_task_id,
-                        stream_callback, persist_user_message,
-                        persist_user_timestamp=persist_user_timestamp,
+                    from agent.specialist_control import execute_specialist_turn
+                    result = execute_specialist_turn(runtime_run, command, mission_witness=specialist_witness,
+                        persist_user_message=persist_user_message, persist_user_timestamp=persist_user_timestamp,
+                        persist_user_platform_id=persist_user_platform_id,
                         persist_user_display_kind=persist_user_display_kind,
-                        persist_user_display_metadata=persist_user_display_metadata,
-                        persist_user_platform_id=persist_user_platform_id, moa_config=moa_config,
-                        turn_author=turn_author,
-                        title_user_message=title_user_message,
-                    )
+                        persist_user_display_metadata=persist_user_display_metadata)
+                    if result is None:
+                        result = run_conversation(
+                            self, user_message, system_message, conversation_history, effective_task_id,
+                            stream_callback, persist_user_message,
+                            persist_user_timestamp=persist_user_timestamp,
+                            persist_user_display_kind=persist_user_display_kind,
+                            persist_user_display_metadata=persist_user_display_metadata,
+                            persist_user_platform_id=persist_user_platform_id, moa_config=moa_config,
+                            turn_author=turn_author,
+                            title_user_message=title_user_message,
+                        )
                     if runtime_run is not None:
                         from agent.mission_runtime import finalize_mission_result
                         result = finalize_mission_result(runtime_run, result)

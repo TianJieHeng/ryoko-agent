@@ -16,6 +16,7 @@
 # Usage:
 #   scripts/run_tests.sh                            # full suite
 #   scripts/run_tests.sh -j 4                       # cap parallelism
+#   scripts/run_tests.sh --scratch-parent /disk/tmp # explicit disk-backed test storage
 #   scripts/run_tests.sh tests/agent/               # discover only here
 #   scripts/run_tests.sh tests/agent/ tests/acp_adapter/    # multiple roots
 #   scripts/run_tests.sh tests/foo.py               # single file

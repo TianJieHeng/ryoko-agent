@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "provenance": "synthetic_protocol_only_not_model_quality",
+  "rows": [
+    {
+      "point_id": "DP01",
+      "question_id": "addressed",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP01",
+      "question_id": "urgency",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP02",
+      "question_id": "input_policy",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP03",
+      "question_id": "task_type",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP04",
+      "question_id": "candidate",
+      "state": {
+        "menu": []
+      },
+      "live_options": [
+        "none",
+        "unclear"
+      ],
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP05",
+      "question_id": "needs_context",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP05",
+      "question_id": "scope",
+      "state": {
+        "menu": [
+          "project"
+        ]
+      },
+      "live_options": [
+        "none",
+        "project",
+        "unclear"
+      ],
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP06",
+      "question_id": "destructive",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP06",
+      "question_id": "irreversible",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP06",
+      "question_id": "secret",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP06",
+      "question_id": "outside_root",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP06",
+      "question_id": "egress",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP06",
+      "question_id": "intent",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP07",
+      "question_id": "content",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP07",
+      "question_id": "credential_lure",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP08",
+      "question_id": "directive",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP09",
+      "question_id": "done",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP10",
+      "question_id": "review",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP11",
+      "question_id": "importance",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP11",
+      "question_id": "notify",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP11",
+      "question_id": "needs_reply",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP12",
+      "question_id": "outbound",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP13",
+      "question_id": "progress",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP14",
+      "question_id": "anchor",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP15",
+      "question_id": "assignee",
+      "state": {
+        "menu": []
+      },
+      "live_options": [
+        "none",
+        "unclear"
+      ],
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP16",
+      "question_id": "need",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP16",
+      "question_id": "effort",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP16",
+      "question_id": "family",
+      "state": {},
+      "live_options": null,
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP16",
+      "question_id": "tool",
+      "state": {
+        "menu": [
+          "synthetic_tool"
+        ],
+        "selected_family": "synthetic_family"
+      },
+      "live_options": [
+        "synthetic_tool",
+        "unclear"
+      ],
+      "expected_fallback": "unclear"
+    },
+    {
+      "point_id": "DP16",
+      "question_id": "verify",
+      "state": {
+        "selected_family": "synthetic_family",
+        "menu": [
+          "synthetic_tool"
+        ],
+        "selected_tool": "synthetic_tool"
+      },
+      "live_options": null,
+      "expected_fallback": "unclear"
+    }
+  ]
+}

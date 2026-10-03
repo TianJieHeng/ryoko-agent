@@ -495,9 +495,8 @@ async def test_unclean_restart_resumes_only_the_turn_left_in_flight(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_unclean_restart_delivers_a_persisted_unledgered_reply_instead_of_regenerating(tmp_path):
-    """Killed after the reply was persisted but before it reached the delivery ledger: the stored
-    reply is ledgered for this boot's sweep (marked, it may already be on screen), not resumed."""
+async def test_unclean_restart_retains_a_persisted_unledgered_reply_without_replay(tmp_path):
+    """A persisted reply may already have streamed; retain its exact output and hold replay."""
     from gateway.delivery_ledger import sweep_recoverable
 
     runner, store = _db_runner(tmp_path)
@@ -507,9 +506,12 @@ async def test_unclean_restart_delivers_a_persisted_unledgered_reply_instead_of_
 
     entry = _entry_for(store, source)
     assert (entry.resume_pending, entry.active_turn_token) == (False, None)
-    rows = sweep_recoverable(deliverable_platforms={"discord"})
-    assert [(r["content"], r["needs_marker"], r["chat_id"], r["thread_id"]) for r in rows] == [
-        ("the stored answer", True, "replied", "thread-1")]
+    assert sweep_recoverable(deliverable_platforms={"discord"}) == []
+    from gateway.delivery_ledger import _connect, retained_output_sessions
+    with _connect() as conn:
+        rows = conn.execute("SELECT content,state,chat_id,thread_id,attempts FROM delivery_obligations").fetchall()
+    assert [tuple(row) for row in rows] == [("the stored answer", "outcome_unknown", "replied", "thread-1", 0)]
+    assert entry.session_key in retained_output_sessions()
     _close_store_db(store)
 
 
@@ -540,7 +542,11 @@ async def test_unclean_restart_never_redelivers_a_reply_live_delivery_suppressed
 
     entry = _entry_for(store, source)
     assert (entry.resume_pending, entry.active_turn_token) == (False, None)
-    assert [r["content"] for r in sweep_recoverable(deliverable_platforms={"discord"})] == owed
+    assert sweep_recoverable(deliverable_platforms={"discord"}) == []
+    from gateway.delivery_ledger import _connect
+    with _connect() as conn:
+        rows = conn.execute("SELECT content,state,attempts FROM delivery_obligations").fetchall()
+    assert [tuple(row) for row in rows] == [(content, "outcome_unknown", 0) for content in owed]
     _close_store_db(store)
 
 

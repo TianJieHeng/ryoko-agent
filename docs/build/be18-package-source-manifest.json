@@ -1,0 +1,142 @@
+{
+  "edit_whitelist": [
+    {
+      "path": "tests/conftest.py",
+      "sha256": "863393d50c6db86ab664ba32c179bde02791498dbe3e2ea4432ed08bb8f27088",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/_fixtures.py",
+      "sha256": "7b617d567a8c554d3ff66e40fc8200f2fc3763786a57ba7f82ec6850ec2263e9",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_activation_setup.py",
+      "sha256": "8b3ee94d7f91a40870f3bf6a31ee4845989bfee580cbc83ee375450f4ba607ab",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_cold_runtime_e2e.py",
+      "sha256": "d7afa406e7df446c2eae4cece177022c0bcab69c2e5dab78bf301832fec16fed",
+      "owner": "cold-runtime helper documentation only after lane code"
+    },
+    {
+      "path": "tests/pm/test_plugin_survival_contract.py",
+      "sha256": "eb0d920995b09d3456f835fc75daa0e86577f894e4456959bc658ed4f1a9a5f8",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_runtime.py",
+      "sha256": "4d8050d74aadf49fdafcd57426ca1653ebbaacbb4671f8395bb6812912a9a85e",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_runtime_bootstrap_tls.py",
+      "sha256": "c5818e2f0a98e959f55e101d1098fb2874f5f69365fd78f47898da61ba1e3895",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_runtime_fixture_cache.py",
+      "sha256": "61cf2ef6a20d409e41dd129aa7d1389d3ff6f8d580d71ef6de90d8efb3adb8a3",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_runtime_wheelhouse.py",
+      "sha256": "ef8c922ec7050a72b00344c4893231075a85446f0affc1a98779b2a218f55ed1",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_startup_recovery.py",
+      "sha256": "11edde63fe9e6eafbaecaf3f5f19fec7aba7a6c0b6245f24ddeb66574aed1934",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/pm/test_takeover_preparation.py",
+      "sha256": "d9249b6a1e3673c8ddc73c3b18a2b97d66b35aa6904acc9508e27b938e257f42",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/scripts/test_bundle_native.py",
+      "sha256": "4c315ee7731c1f50120619fa2c0c156cae2c1ad3e3d1ad0a8af55e92c881b26f",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/scripts/test_fresh_source_install.py",
+      "sha256": "17fbab20d3097b0dc0e8f45a51ac4cb35bff2d82dc700fd43e63360702f8ff47",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/scripts/test_icon_flavors.py",
+      "sha256": "817e483e2e8d3e8fc420ffec8114dfb846c6b2c9af9877ac99be4e9ff67b9c20",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/scripts/test_pm_runtime_bundle.py",
+      "sha256": "d628dc50182217955bfeb9705c2cb96c7b1e9ca58fe46899acb413f5f6a11295",
+      "owner": "PM/scripts lane"
+    },
+    {
+      "path": "tests/scripts/test_termux_build_wheels.py",
+      "sha256": "c4b203c06b05ef930ce8f92028686d0e85454bea551080291d1099a77b3d6cb1",
+      "owner": "PM/scripts lane"
+    }
+  ],
+  "artifact_hashes": [
+    {
+      "path": "/workspace/shared/ryoko-cold-runtime-qualification-final.log",
+      "sha256": "afca51b7fb939df9f52a7982a597254baff6ccc0e19b47f2d29642808d77369e"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-admission-final.log",
+      "sha256": "649dc392869ae69f38427da97379642b04685fe9cf51ac12b3cd226a0cb09953"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-bootstrap-uv-retrieval.log",
+      "sha256": "3107c3273d3e5d6a5f1c23498c063b84b72952123b42a36d0fd151af66d72acb"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-cache-verification.json",
+      "sha256": "72579c4be46f0f0f11d6a99f096ca47d80e10a7efabc36f3172f22643ccbe325"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-cold-staging.log",
+      "sha256": "8cdf5e467bf7bcbd08c93185d2ed069496480b046299c52454ea4a3427733f17"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-direct-staging.log",
+      "sha256": "feb214c03a81d0cbe7bd955fb151ead79ab55f939ff7c7a0f8374144d6216a94"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-final-fixtures.log",
+      "sha256": "b4a341d9799faf14bcb658cd34d21fdbcb0f466532104d7e9ab1f2defecec15e"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-fresh-installer-final.log",
+      "sha256": "23eb848e2ed2d10ef62c0547546227dae85187748edb3fad47c20ddd248bf5b5"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-gpg-diagnostic.log",
+      "sha256": "4e452a4fc8c88e9c062091626b758817cddf0b7fd51431e587808f1dee5f53c0"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-gpg-qualification.log",
+      "sha256": "0284967456272f197820dd1a20f07f3e36f08c46c218d00ee4bbed100bcd7074"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-idna310-retrieval.log",
+      "sha256": "bea2029b7a0ff079cdde213ee3cd5de6890391f9446323f810615090579f7f29"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-locked-wheel-retrieval.log",
+      "sha256": "f8aee86906075fad35cd10c975e0bd829c3b216ae67a213b6a4feec12ee07209"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-offline-seam.log",
+      "sha256": "0d79839a149f889fd975d23a947714769c1460e8d95ec27719fe7af6fae1832e"
+    },
+    {
+      "path": "/workspace/shared/ryoko-package-shared-cache.log",
+      "sha256": "d2554a678609e614dd5cdf1c819aec56f039d5671592a43492b32e4e4860777e"
+    }
+  ]
+}

@@ -119,6 +119,7 @@ class TemplateParams(RuntimeSessionParams):
 
 
 class TemplateRecord(Result):
+    sha256: Digest
     template_id: str
     version: int
     project_id: str

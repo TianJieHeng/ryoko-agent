@@ -114,6 +114,8 @@ export {
   reconnectBackoffDelayMs,
   type ReconnectBackoffOptions
 } from './reconnect-backoff'
+export { RuntimeControl, runtimeError, runtimeOperationBlock, runtimeWorkLabel } from './runtime-control'
+export type { RuntimeControlState, RuntimeRequest } from './runtime-control'
 export { skillInvocationText } from './skill-scaffold'
 export {
   type HermesSkin,

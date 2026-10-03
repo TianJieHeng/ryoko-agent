@@ -85,6 +85,32 @@ class CommitmentUpdateParams(CommitmentGetParams):
     due_or_check_at: CommitmentDue | None = None
 
 
+class CommitmentDeclineParams(CommitmentCandidateParams):
+    command_id: RuntimeIdentifier
+    expected_revision: Annotated[StrictInt, Field(ge=1)]
+    reason: Annotated[str, Field(min_length=1, max_length=2000)]
+
+
+class AgendaWindow(Params):
+    start_at: str
+    end_at: str
+
+
+class AgendaWork(Params):
+    item_id: RuntimeIdentifier
+    duration_minutes: Annotated[StrictInt, Field(ge=1, le=720)]
+
+
+class AgendaPlanParams(ScheduleProjectParams):
+    availability_ref_json: Annotated[str, Field(min_length=2, max_length=2048)]
+    timezone: Annotated[str, Field(min_length=1, max_length=128)]
+    participants: Annotated[list[str], Field(min_length=1, max_length=50)]
+    windows: Annotated[list[AgendaWindow], Field(min_length=1, max_length=7)]
+    work: Annotated[list[AgendaWork], Field(max_length=100)]
+    buffer_minutes: Annotated[StrictInt, Field(ge=0, le=120)] = 10
+    daily_capacity_minutes: Annotated[StrictInt, Field(ge=1, le=720)] = 360
+
+
 class CalendarPreviewParams(ScheduleProjectParams):
     availability_ref_json: Annotated[str, Field(min_length=2, max_length=2048)]
     timezone: Annotated[str, Field(min_length=1, max_length=128)]
@@ -114,13 +140,14 @@ _SPECS = {
     "runtime.schedule.create": (ScheduleCreateParams, "Create a paused immutable owner-bound local schedule"),
     "runtime.schedule.import": (ScheduleImportParams, "Import a declared paused reconciled foreign schedule with deterministic identity"),
     "runtime.schedule.update": (ScheduleUpdateParams, "Pause, resume or revoke an exact schedule revision"),
-    "runtime.schedule.grant": (ScheduleGrantParams, "Grant bounded fresh local review authority separate from observation"),
+    "runtime.schedule.grant": (ScheduleGrantParams, "Grant exact bounded local review or draft-production authority separately from scheduling"),
     "runtime.schedule.reconcile": (ScheduleReconcileParams, "Retain manual evidence for an unknown occurrence without replaying it"),
     "runtime.schedule.get": (ScheduleGetParams, "Read owned schedule health, occurrences and retained notification intents"),
     "runtime.schedule.list": (ScheduleProjectParams, "List owned project schedules"),
     "runtime.inbox.prepare": (InboxPrepareParams, "Classify selected immutable imported inbox messages as nonbinding candidates"),
     "runtime.commitment.candidate": (CommitmentCandidateParams, "Read an imported nonbinding commitment candidate"),
     "runtime.commitment.accept": (CommitmentAcceptParams, "Human-accept a sourced obligation"),
+    "runtime.commitment.decline": (CommitmentDeclineParams, "Retain human decline without creating an obligation"),
     "runtime.commitment.update": (CommitmentUpdateParams, "Record sourced waiting or terminal commitment evidence"),
     "runtime.commitment.get": (CommitmentGetParams, "Read an accepted obligation"),
     "runtime.commitment.list": (ScheduleProjectParams, "Read authoritative accepted obligations"),
@@ -129,6 +156,7 @@ _SPECS = {
     "runtime.correspondence.receipt": (CorrespondenceReceiptParams, "Associate existing exact confirmed send evidence; never sends a message"),
     "runtime.correspondence.get": (CorrespondenceGetParams, "Read draft versus sent proof and exact correspondence recipients"),
     "runtime.calendar.preview": (CalendarPreviewParams, "Preview supplied availability; no live calendar certification or invitation"),
+    "runtime.agenda.plan": (AgendaPlanParams, "Preview fixed/flexible/overflow day or week capacity without calendar writes"),
 }
 for name, (params, doc) in _SPECS.items():
     method(name, params=params, result=ScheduleRecordResult, doc=doc)

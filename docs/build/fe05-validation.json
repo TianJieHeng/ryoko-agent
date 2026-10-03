@@ -1,0 +1,64 @@
+{
+  "phase": "FE05",
+  "status": "verifying",
+  "base": "88733e53981b442a26470cf78e51e2bab8a88e09",
+  "checks": [
+    {
+      "command": "vitest run apps/shared/src/runtime-research.test.ts",
+      "result": "passed",
+      "tests": 4,
+      "files": 1
+    },
+    {
+      "command": "desktop vitest run src/app/runtime/research-panel.test.tsx",
+      "result": "passed",
+      "tests": 12,
+      "files": 1
+    },
+    {
+      "command": "clean shared/TUI/Electron renderer typechecks",
+      "result": "passed"
+    },
+    {
+      "command": "scoped ESLint research panel/actions/input/view/types/copy/test",
+      "result": "passed"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe05-tests.log",
+      "sha256": "8bbce85708f39f2edd732050f4ad0297fd8b7e2665c06184162c552aa5180f49"
+    },
+    {
+      "path": "/tmp/fe05-desktop-tests.log",
+      "sha256": "db5377775ac9c63493a62ae0d51a6731044426f8650bc2d5b58e83bc2d0694ef"
+    },
+    {
+      "path": "/tmp/fe05-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe05-clean-tui.log",
+      "sha256": "2ed66b05e3ec0f9498a06ef07cec67b41ea4b170be959bf7ad34915a4c7854a7"
+    },
+    {
+      "path": "/tmp/fe05-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/fe05-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "Only retained authorized project_artifact and capture_original sources; no connected live search P08 claim",
+    "Bounded one claim update and one evidence range per source in typed form; advanced typed commands support fuller source specs",
+    "No decision/scenario engine or automatic monitoring",
+    "No live-source/native/visual product acceptance; independent claim verification and delivery remain separate"
+  ],
+  "post_validation_eof_normalization": {
+    "apps/desktop/src/app/runtime/research-actions.ts": "1c19d26f1be5a95817141fd0af6a5f8b9d94799bbe7f6dd46b178c3050aa708e",
+    "apps/desktop/src/app/runtime/research-copy.ts": "99151b978e55c10749ee6bf60f6c914a981d86f54720e2a603736c95fff04471",
+    "apps/desktop/src/app/runtime/research-input.ts": "2717cb029dd28de948e425ee9657709463ebdf387af302f06fc9905e9b6f5315"
+  }
+}

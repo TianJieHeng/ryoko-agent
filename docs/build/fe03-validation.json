@@ -1,0 +1,62 @@
+{
+  "phase": "FE03",
+  "status": "verifying",
+  "base": "676f8bad22fb9d4b9cce67f5f48b11f24ee165b2",
+  "checks": [
+    {
+      "command": "vitest run runtime-artifacts/runtime-templates/runtime-markdown tests plus TUI runtime-command/artifact-download tests",
+      "result": "passed",
+      "tests": 8,
+      "files": 5
+    },
+    {
+      "command": "desktop vitest run artifact-workbench/artifact-download/feature-panel/inspector tests",
+      "result": "passed",
+      "tests": 5,
+      "files": 4
+    },
+    {
+      "command": "clean shared typecheck + TUI typecheck + Electron renderer tsc",
+      "result": "passed"
+    },
+    {
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/tui_gateway/test_artifact_rpc.py",
+      "result": "passed",
+      "tests": 10,
+      "files": 1
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe03-tests.log",
+      "sha256": "ed4c8fdbf8753cb72e2e19ad2a94fa3f846b47cf0698983dfdb7096fcdb96525"
+    },
+    {
+      "path": "/tmp/fe03-desktop-tests.log",
+      "sha256": "a36fc6b3827f68e63f2c98e34c8b5397523410c579c50ea318e8b493075997a6"
+    },
+    {
+      "path": "/tmp/fe03-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe03-clean-tui.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe03-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/fe03-backend-tests.log",
+      "sha256": "9b5440c7d61f83bfc2466487466a753365d7368b0f0bd8d7eaa8c9169a46e805"
+    }
+  ],
+  "limitations": [
+    "Markdown first; other formats download only and not visually validated",
+    "Exact compare/revise supported; polished branch-merge chooser not implemented",
+    "Template storage/input review implemented; varied-topic workflow quality still requires FE06 and pilot",
+    "New detailed form copy currently English; complete localization and visual/accessibility aggregate gate pending FE13",
+    "No native Electron/live-service/full-product acceptance claim; local Git only"
+  ]
+}

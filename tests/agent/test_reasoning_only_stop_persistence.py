@@ -13,6 +13,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from tests.agent.tool_view_fixtures import tool_definitions_with_view
 
 REASONING = "嗯，长度合适。Let me check the file first."
 
@@ -21,7 +22,7 @@ REASONING = "嗯，长度合适。Let me check the file first."
 def loop_agent():
     from run_agent import AIAgent
     with (
-        patch("model_tools.get_tool_definitions", return_value=[]),
+        patch("model_tools.get_tool_definitions_with_view", return_value=tool_definitions_with_view([])),
         patch("model_tools.check_toolset_requirements", return_value={}),
         patch("agent.process_bootstrap.OpenAI"),
     ):

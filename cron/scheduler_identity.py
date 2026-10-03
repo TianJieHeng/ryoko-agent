@@ -7,7 +7,14 @@ def job_identity_scope(job):
     from agent.agent_identity import IdentityPolicyError, parse_agent_identity_config, resolve_owned_agent_context
     from agent.identity_lifecycle import agent_runtime_scope, identity_config
     from hermes_constants import get_hermes_home
-    config = identity_config()
+    from hermes_cli.config import require_parseable_user_config
+    # Script-only jobs also need a readable policy before legacy execution can
+    # be authorized. An unreadable strict profile must never become unbound.
+    require_parseable_user_config()
+    try:
+        config = identity_config()
+    except Exception as exc:
+        raise IdentityPolicyError("Cron identity policy could not be read; repair the settings file") from exc
     parsed = parse_agent_identity_config(config)
     if parsed is None:
         if job.get("owner_binding") is not None:

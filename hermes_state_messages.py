@@ -1488,13 +1488,14 @@ class SessionMessagesMixin:
         return int(row[0])
 
     def _display_messages_from_conn(self, conn, session_id: str) -> Optional[List[Dict[str, Any]]]:
-        """Exact display snapshot on an already-held transaction; None means fail closed."""
+        """Exact export snapshot, including private replay state, under the deletion transaction."""
         if conn.execute("SELECT 1 FROM sessions WHERE id = ? LIMIT 1", (session_id,)).fetchone() is None:
             return None
         if conn.execute(_DISPLAY_INDEX_MISSING_SQL, (session_id,)).fetchone():
             return None
         return [
-            self._row_to_message_dict(row, warn_context="verified delete", summary_flag=True)
+            self._row_to_message_dict(
+                row, warn_context="verified delete", summary_flag=True, include_provider_state=True)
             for row in self._display_rows_from_conn(conn, session_id)
         ]
 

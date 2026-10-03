@@ -3,6 +3,7 @@ import types
 from types import SimpleNamespace
 
 import pytest
+from tests.agent.tool_view_fixtures import tool_definitions_with_view
 
 
 sys.modules.setdefault("fire", types.SimpleNamespace(Fire=lambda *a, **k: None))
@@ -24,8 +25,8 @@ def _no_codex_backoff(monkeypatch):
 
 def _patch_agent_bootstrap(monkeypatch):
     monkeypatch.setattr(
-        "model_tools.get_tool_definitions",
-        lambda **kwargs: [
+        "model_tools.get_tool_definitions_with_view",
+        lambda **kwargs: tool_definitions_with_view([
             {
                 "type": "function",
                 "function": {
@@ -34,7 +35,7 @@ def _patch_agent_bootstrap(monkeypatch):
                     "parameters": {"type": "object", "properties": {}},
                 },
             }
-        ],
+        ]),
     )
     monkeypatch.setattr("model_tools.check_toolset_requirements", lambda: {})
 

@@ -1,0 +1,68 @@
+{
+  "phase": "FE01",
+  "status": "verifying",
+  "base": "91fd20f842ef9b7184fa9b827ffbbd087767a237",
+  "checks": [
+    {
+      "command": "node_modules/.bin/vitest run apps/shared/src/runtime-identity.test.ts ui-tui/src/app/runtime/runtime-command.test.ts",
+      "result": "passed",
+      "tests": 4,
+      "files": 2
+    },
+    {
+      "command": "npm run --workspace ui-tui typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "cd apps/desktop && ../../node_modules/.bin/vitest run src/app/runtime/inspector.test.tsx",
+      "result": "passed",
+      "tests": 1,
+      "files": 1
+    },
+    {
+      "command": "cd apps/desktop && ../../node_modules/.bin/tsc -p . --noEmit",
+      "result": "passed",
+      "environment": "/workspace/shared/ryoko-frontend-validation"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe01-tests.log",
+      "sha256": "cb8f39bd917a25b5066b4d763056674b6b50941ff6f8c8af58afa4bc050efcc4"
+    },
+    {
+      "path": "/tmp/fe01-tui-types.log",
+      "sha256": "2ed66b05e3ec0f9498a06ef07cec67b41ea4b170be959bf7ad34915a4c7854a7"
+    },
+    {
+      "path": "/tmp/fe01-desktop-tests.log",
+      "sha256": "ca3921c8e3609959306b2b0c6499b86596624591dc2a2974f306ad43932b1548"
+    },
+    {
+      "path": "/tmp/fe01-desktop-types.log",
+      "sha256": "b456e683a913cb3b470d1f62183f00be7be022aa909a29ac9d488a9bebf4d42b"
+    },
+    {
+      "path": "/tmp/fe01-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe01-clean-tui.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe01-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "Runtime identity/adapter projections are actual read probes, not live provider or memory harness certification",
+    "No credential inputs, permissions/config editor, true end-to-end external connection setup, native Electron hardware or visual QA claimed",
+    "Chrome labels localized across bundled locales; backend diagnostic wording retained",
+    "Existing backend does not expose complete redacted override provenance; that inspection remains unavailable"
+  ]
+}

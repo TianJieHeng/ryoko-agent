@@ -1,0 +1,315 @@
+{
+  "files": [
+    {
+      "path": "evals/api_delegation_http_probe.py",
+      "sha256": "aa59379b30866e0e9b86da203c8106a01afa98ce552bcd0a3aaa9ce69a747051"
+    },
+    {
+      "path": "tests/agent/conftest.py",
+      "sha256": "f098b3a72d34c264ffc03b71fc9ff2b54919989f8362bee6f1d547dee357ea08"
+    },
+    {
+      "path": "tests/agent/lsp/test_broken_set.py",
+      "sha256": "9bd6cddadf552747bd62018ca63e4822216ca6ab4261c6b0ade5b570a3742db7"
+    },
+    {
+      "path": "tests/agent/lsp/test_install_and_lint_fixes.py",
+      "sha256": "d377995e24fd702eeba4d7f25f2106199590eedf91988ab32663e78f733fecee"
+    },
+    {
+      "path": "tests/agent/lsp/test_workspace.py",
+      "sha256": "ec3e4014cad27985f8acfe0be52995efa820e7fdc9dc37cd5f6c067f9e94fe54"
+    },
+    {
+      "path": "tests/agent/test_coding_context.py",
+      "sha256": "b618772b3c1bf68be46d11a95bd35ea485cd1c595acc6a93af707f2e86b80613"
+    },
+    {
+      "path": "tests/agent/test_credential_pool_anthropic_refresh_race.py",
+      "sha256": "a11ee994d725d0d0e2a3c7a612f2c776263bb8267601d170ce6cf57194c84660"
+    },
+    {
+      "path": "tests/agent/test_project_skills.py",
+      "sha256": "99fdc4b1577e4803d3c7bd6a588458123eca324e8e0ca5da178e2e7e8e9f0d94"
+    },
+    {
+      "path": "tests/agent/test_prompt_builder.py",
+      "sha256": "ade4d7e21172079a4cac8b5983cfa232768f8b2381ba73b740ad720ea374055f"
+    },
+    {
+      "path": "tests/agent/test_tool_executor_checkpoint_paths.py",
+      "sha256": "6eec607c0b2433cd34377737a3614cf0e7011765c411d35e87a7075342363ecf"
+    },
+    {
+      "path": "tests/agent/test_verification_evidence.py",
+      "sha256": "77e1213db9246861c41c019ca8a428a84a4d01cfabbacf69c20043b92dbb8ff4"
+    },
+    {
+      "path": "tests/agent/test_verification_evidence_disabled.py",
+      "sha256": "75fc367a20ac534025ea624565528fffadf4621c7e583a8b88251160477b799e"
+    },
+    {
+      "path": "tests/agent/test_verification_stop.py",
+      "sha256": "d599004f330f1f9075195d62431078198a1d30e9700518322d96b98dd0743551"
+    },
+    {
+      "path": "tests/agent/test_vision_routing.py",
+      "sha256": "e07c24f67e12b015b3e20baf9862aed0c8a68889f2848bfd827da3e2d41ac0f2"
+    },
+    {
+      "path": "tests/gateway/test_media_download_retry.py",
+      "sha256": "20a8d561562ecadd173a31c798dc3105781ac680dce958d48d3ab85036f0c434"
+    },
+    {
+      "path": "tests/tui_gateway/test_projects_rpc.py",
+      "sha256": "f10f7727bd867583fd5de031685949890250fb2e5e3f328f09dd8b87ade9439d"
+    },
+    {
+      "path": "tests/tui_gateway/test_tui_gateway_server.py",
+      "sha256": "f550016a4033ea3b3249229bfa82f10a7f3edfec0c1e0aa489806d410c1c4c0a"
+    }
+  ],
+  "production_files_changed": false,
+  "validation": {
+    "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log",
+    "status": "passed",
+    "receipts_directory": "/workspace/shared/ryoko-runtime-repair-receipts",
+    "passed": 883,
+    "failed": 0,
+    "files": 16,
+    "log_sha256": "01339bb40b62e8c504290ec33f551bb017ef76c574b3574fe11bb18a7c1a14ad",
+    "receipt_files": [
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/36-979f7f54edc04e60b0c0cf6eeddef625.json",
+        "sha256": "229ce0197503a0c09939a174bce87dbd74de48e15286cf098eb052a711f3d7de",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/lsp/test_workspace.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 7,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/37-dae89db94fd74559a5eff979b78b3715.json",
+        "sha256": "ec40a9bb0b0ec3692ffd84a69e05dd51a304f68777aeb0ed84a55e2a1853ead6",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_coding_context.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 24,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/178-b40516e4213b4eb4837cd6ffddb805c2.json",
+        "sha256": "c9cb07683c7f00d25212f40c931601c7e7caf8819670f592ee9f0c8adae9886f",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_tool_executor_checkpoint_paths.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 3,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/561-b83052aea01e4d96b06ec90e0a99025a.json",
+        "sha256": "7577ed83eab350250d5b9ef33c874083b0f6bdf5c673cdf24826180bd1de54ef",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/gateway/test_api_delegation_delivery_contract.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 2,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/143-8662677cea724b8db55b60244f074f22.json",
+        "sha256": "33f56c752a59266415391e9688fa26ec55a2c753980ef5c0070df5191bb203ad",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_credential_pool_anthropic_refresh_race.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 2,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/578-95852e4355044b65960254c67ab17c2c.json",
+        "sha256": "dcb082a1de7b38514a71e8701a161089496d7ce588f8ddb7c1ddbe08f8a3ddf0",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/tui_gateway/test_projects_rpc.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 27,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/23-9a4a1012848e4390968f4493e6b8b60e.json",
+        "sha256": "74b965e67585baeb3f9c92784c1fc7f28da6b5c1b468bb476348dc7a4daa7945",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/lsp/test_install_and_lint_fixes.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 3,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/148-832afbad912a4575afdf858581e7fab8.json",
+        "sha256": "c0da58b3e1511e8ee7aef5d07f4b03c5421e6955d64d8519ef9de84ade2ed3bc",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_project_skills.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 22,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/17-b43f33a561b5463cbb80ad76edbe910d.json",
+        "sha256": "f8e29a411bd3f0b998ba47f6790e23b4829a5b09ec5c615bfac3f4c35e1cbc6a",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/lsp/test_broken_set.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 5,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/311-b99921217d414a14a94bf1241b7323cb.json",
+        "sha256": "cd3a27b4ef23a2e59a22a0512c146fd71b020bf79e98e65dd7d315539e1a82b8",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_verification_stop.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 12,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/312-9ff773da4d19479d8735bb27a816c327.json",
+        "sha256": "8aa249f3e11419d50bf1783974f208b22c43364ab899280c11b155082777cef6",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_vision_routing.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 9,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/310-a587af9ff4ea4fb4b9243d20e23d0fb6.json",
+        "sha256": "833f77e26f88b90ebdaaf53eff235c592c79b836cbb3ec2fb9f024c7e84eb71c",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_verification_evidence_disabled.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 2,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/149-76373f7a365e425499515838f932658c.json",
+        "sha256": "8d2d190f3029b1681c597a3afc45f0a5658c93ddcce6d065a9cf3ca86da651b1",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_prompt_builder.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 58,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/569-c8f115256cb64958887cbb92228b65ec.json",
+        "sha256": "a3a6ceb6e28b20d35f8838b00a601b9a5ef9e1566abbc6358e398bb80cbfdd06",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/gateway/test_media_download_retry.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 11,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/266-1d67e88375354fc794a3a1d209f88b3e.json",
+        "sha256": "7cd4d04ef495e06db8109a96f6b4009e24096c039755cb4283e42b2e1a4c7ed8",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/test_verification_evidence.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 28,
+          "skipped": 0
+        }
+      },
+      {
+        "path": "/workspace/shared/ryoko-runtime-repair-receipts/624-0f32fe87b64f4f8ca4ad02943834e64b.json",
+        "sha256": "a596f2c8298749af4920e570015fc75eef738e6a0ccfda03121d126a319f3aee",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/tui_gateway/test_tui_gateway_server.py"
+        ],
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 668,
+          "skipped": 0
+        }
+      }
+    ]
+  },
+  "lint": "ruff check all 17 owned changed files: All checks passed",
+  "diff_check": "git diff --check passed",
+  "notes": [
+    "Whitelist frozen after source edits. Parent alone commits.",
+    "No optional dependency install, live API, security guard change, live-system bypass or protected PID signal.",
+    "tests/agent/conftest.py fixture is non-autouse and requested explicitly only by five scoped modules."
+  ]
+}

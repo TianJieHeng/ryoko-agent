@@ -17,7 +17,7 @@ from agent.result_artifacts import artifact_actor
 from hermes_state_runtime import RuntimeStoreError
 from tools.capability_broker import require_live_policy
 
-_REPAIRS = {"reconcile-effect", "retry-delivery", "revoke-lease", "rebuild-index"}
+_REPAIRS = {"reconcile-effect", "retry-delivery", "revoke-lease", "rebuild-index", "restore-checkpoint"}
 
 
 class OperationsError(RuntimeStoreError):
@@ -89,66 +89,52 @@ def inspect_runtime(db, context):
 
 
 def qualify_checkpoint_restore(db, context):
-    """Read-only structural/version checks, never history rewind or effect replay."""
-    from hermes_state_runtime import _checkpoint_metadata
-    sid, _ = authority(db, context)
-    with db._runtime_read() as conn:
-        row = conn.execute("SELECT * FROM runtime_checkpoints WHERE session_id=?", (sid,)).fetchone()
-        if row is None:
-            return {"status": "unavailable", "restore_allowed": False, "checks": {},
-                    "blocking_gates": ["checkpoint_missing", "history_restore_not_certified"]}
-        state = db._runtime_state_on_conn(conn, sid)
-        saved = json.loads(row["checkpoint_json"])
-        metadata = _checkpoint_metadata({key: value for key, value in saved.items()
-                                         if key not in {"snapshot", "context_projection_ref"}})
-        checks = {"schema": row["schema_version"] == metadata["schema_version"] == 1,
-            "config": metadata["config_version"] == context.config_digest,
-            "policy": metadata["policy_version"] == context.policy.digest,
-            "runtime_version": metadata["runtime_version"] == "be08.v1",
-            "prompt_projection_version": metadata["prompt_projection_version"] == "1",
-            "watermark": 0 <= row["included_seq"] < row["published_seq"] <= state["revision"],
-            "replay_retained": state["cursor_floor"] <= row["included_seq"]}
-        ref = saved.get("context_projection_ref")
-        if ref is not None:
-            projection = conn.execute("SELECT projection_id,checkpoint_id,included_seq,schema_version "
-                "FROM runtime_context_projections WHERE session_id=?", (ref.get("session_id"),)).fetchone()
-            checks["context_projection"] = (projection is not None and projection["schema_version"] == 1
-                and projection["projection_id"] == ref.get("projection_id")
-                and projection["checkpoint_id"] == row["checkpoint_id"]
-                and projection["included_seq"] == row["included_seq"])
-    return {"status": "qualified_for_isolated_drill" if all(checks.values()) else "incompatible",
-        "checkpoint_id": row["checkpoint_id"], "included_seq": row["included_seq"], "checks": checks,
-        "restore_allowed": False, "blocking_gates": ["history_restore_not_certified",
-            "preserve_effect_and_approval_generations", "all_owning_stores_required"]}
+    """Qualify a local derived-projection repair, never a history/profile rewind."""
+    from agent.operations_checkpoint_recovery import qualify
+    return qualify(db, context)
 
 
 def _target(db, context, action, target_id):
     sid, actor = authority(db, context)
-    if action == "reconcile-effect":
-        effect = db.get_effect(target_id, actor)
-        require(effect is not None and effect["session_id"] == sid, "operations_target_mismatch")
-        return {key: effect[key] for key in ("effect_id", "state", "updated_at", "operation_type")}
-    if action == "retry-delivery":
+
+    def checkpoint():
+        from agent.operations_checkpoint_recovery import reconstruct_on_conn
+        require(target_id == sid, "operations_target_mismatch")
+        with db._runtime_read() as conn:
+            return reconstruct_on_conn(db, conn, sid, context)[1]
+
+    def effect():
+        row = db.get_effect(target_id, actor)
+        require(row is not None and row["session_id"] == sid, "operations_target_mismatch")
+        return {key: row[key] for key in ("effect_id", "state", "updated_at", "operation_type")}
+
+    def delivery():
         row = db.read_runtime_delivery(sid, actor, target_id)
         return {key: row[key] for key in ("delivery_id", "state", "attempt_count", "max_attempts", "deadline_at")}
-    if action == "revoke-lease":
+
+    def lease():
         require(target_id == sid, "operations_target_mismatch")
-        lease = db.get_session_turn_lease(sid)
-        require(lease is not None, "operations_no_live_lease")
-        return {"generation": lease["generation"], "holder_digest": digest(lease["holder"])}
-    require(action == "rebuild-index" and target_id == sid, "operations_target_mismatch")
-    # FTS is profile-wide. Certify only bounded, single-actor databases; a
-    # session-scoped operator may not silently repair another agent's indexes.
-    with db._runtime_read() as conn:
-        rows = conn.execute("SELECT id,model_config FROM sessions LIMIT 101").fetchall()
-        require(len(rows) <= 100, "operations_index_scope_too_large")
-        for row in rows:
-            identity = json.loads(row["model_config"] or "{}").get("agent_identity", {})
-            require(all(identity.get(key) == value for key, value in actor.items()), "operations_index_scope_mismatch")
-        count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
-        require(count <= 10000 and Path(db.db_path).stat().st_size <= 64 * 1024 * 1024,
-                "operations_index_scope_too_large")
-    return {"session_ids": sorted(row["id"] for row in rows), "message_count": count}
+        row = db.get_session_turn_lease(sid)
+        require(row is not None, "operations_no_live_lease")
+        return {"generation": row["generation"], "holder_digest": digest(row["holder"])}
+
+    def index():
+        require(target_id == sid, "operations_target_mismatch")
+        # FTS is profile-wide. A session-scoped operator may not silently repair
+        # another actor's indexes; only bounded single-actor stores qualify.
+        with db._runtime_read() as conn:
+            rows = conn.execute("SELECT id,model_config FROM sessions LIMIT 101").fetchall()
+            require(len(rows) <= 100, "operations_index_scope_too_large")
+            for row in rows:
+                identity = json.loads(row["model_config"] or "{}").get("agent_identity", {})
+                require(all(identity.get(key) == value for key, value in actor.items()), "operations_index_scope_mismatch")
+            count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+            require(count <= 10000 and Path(db.db_path).stat().st_size <= 64 * 1024 * 1024,
+                    "operations_index_scope_too_large")
+        return {"session_ids": sorted(row["id"] for row in rows), "message_count": count}
+
+    return {"restore-checkpoint": checkpoint, "reconcile-effect": effect, "retry-delivery": delivery,
+            "revoke-lease": lease, "rebuild-index": index}[action]()
 
 
 def preview_repair(db, context, action, target_id, *, expires_at=None):
@@ -159,14 +145,17 @@ def preview_repair(db, context, action, target_id, *, expires_at=None):
             and time.time() < expiry <= time.time() + 301, "operations_preview_expired")
     sid, actor = authority(db, context)
     target = _target(db, context, action, target_id)
+    with db._runtime_read() as conn:
+        before_revision = db._runtime_state_on_conn(conn, sid)["revision"]
     plan = {"schema_version": 1, "action": action, "actor": actor, "session_id": sid,
         "target_id": target_id, "affected_ids": target.get("session_ids", [target_id]),
-        "before_revision": db.read_runtime_snapshot(sid)["revision"], "target": target,
+        "before_revision": before_revision, "target": target,
         "invariant_checks": ["live_policy", "exact_actor", "owning_profile", "preview_cas", "mandatory_journal"],
         "expected_after": {"reconcile-effect": "evidence_only_no_redispatch",
             "retry-delivery": "same_outbox_same_attempt_budget_no_send",
             "revoke-lease": "old_generation_cannot_dispatch_remote_work_may_continue",
-            "rebuild-index": "derived_indexes_rebuilt_no_source_change"}[action],
+            "rebuild-index": "derived_indexes_rebuilt_no_source_change",
+            "restore-checkpoint": "derived_projection_reconstructed_no_history_or_effect_rewind"}[action],
         "expires_at": expiry}
     return {**plan, "plan_digest": digest(plan)}
 
@@ -230,6 +219,9 @@ def apply_repair(db, context, plan, *, authorization_digest):
         return _revoke(db, context, plan)
     sid, actor = authority(db, context)
     with maintenance_lease(db, context) as (holder, generation):
+        if plan["action"] == "restore-checkpoint":
+            from agent.operations_checkpoint_recovery import restore_projection
+            return restore_projection(db, context, plan, holder=holder, generation=generation)
         # The first required write happens before any adapter runs. A journal
         # outage blocks the repair; after-write failure leaves a started receipt.
         require(_target(db, context, plan["action"], plan["target_id"]) == plan["target"],

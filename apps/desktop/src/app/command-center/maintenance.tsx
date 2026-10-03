@@ -27,6 +27,8 @@ import { confirm } from '@/store/confirm'
 import { notify, notifyError } from '@/store/notifications'
 import type { ActionStatusResponse } from '@/types/hermes'
 
+import { RuntimeInspector } from '../runtime/inspector'
+
 const ACTION_POLL_MS = 1200
 const ACTION_POLL_LIMIT = 240 // ~5 minutes of polling before giving up.
 
@@ -194,6 +196,7 @@ export function MaintenancePanel() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-2">
+      <RuntimeInspector />
       {error && (
         <span className="inline-flex items-center gap-1 text-[length:var(--conversation-caption-font-size)] text-destructive">
           <AlertCircle className="size-3.5" />

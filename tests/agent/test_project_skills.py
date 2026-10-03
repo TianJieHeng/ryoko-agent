@@ -8,6 +8,9 @@ import pytest
 import agent.skill_utils as su
 
 
+pytestmark = pytest.mark.usefixtures("isolated_git_ancestors")
+
+
 @pytest.fixture
 def project_env(tmp_path, monkeypatch):
     """A temp HERMES_HOME + a git-marked project with skills in both subdirs."""

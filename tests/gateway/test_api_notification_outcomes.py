@@ -20,6 +20,8 @@ async def test_notification_projection_preserves_source_outcome(tmp_path, monkey
               "error": "failure details", "messages": [{"role": "assistant", "content": "execution evidence"}]}
     expected = copy.deepcopy(source)
     agent = MagicMock()
+    agent.runtime_context = None
+    agent._memory_manager = None  # no routed memory exists in this presentation fixture
     agent.session_id = "session"
     agent._last_compaction_in_place = False
     agent.session_prompt_tokens = 3
@@ -91,6 +93,8 @@ async def test_http_diagnostic_projection_keeps_source_and_terminal_flags(tmp_pa
     source = {"final_response": "private diagnostic evidence", "completed": False, "partial": True,
               "failed": False, "error": "private diagnostic detail", "messages": []}
     agent = MagicMock()
+    agent.runtime_context = None
+    agent._memory_manager = None  # no routed memory exists in this presentation fixture
     agent.session_id = "session"
     agent._last_compaction_in_place = False
     agent.session_prompt_tokens = 3
@@ -181,6 +185,8 @@ async def test_http_idempotency_does_not_replay_opposite_presentation(tmp_path, 
     app = web.Application()
     app.router.add_post("/v1/chat/completions", adapter._handle_chat_completions)
     agent = MagicMock()
+    agent.runtime_context = None
+    agent._memory_manager = None  # no routed memory exists in this presentation fixture
     agent.session_id = "session"
     agent._last_compaction_in_place = False
     agent.session_prompt_tokens = agent.session_completion_tokens = agent.session_total_tokens = 0

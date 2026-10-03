@@ -113,6 +113,11 @@ def server(*, redirect=None):
 def test_all_outbound_purposes_require_exact_explicit_recipient(purpose, runtime):
     endpoint = "http://192.168.10.8:8000/v1"
     with runtime(endpoint, recipient_plan=plan(endpoint, purposes=(purpose,))):
+        if purpose == "connected_source":
+            from agent.connected_sources import ConnectedSourceError
+            with pytest.raises(ConnectedSourceError, match="source_read_control_required"):
+                prepare_recipient(purpose, endpoint, recipient_id="fixture", require_run=False)
+            return
         authorization = prepare_recipient(purpose, endpoint, recipient_id="fixture")
         assert authorization.grant.purpose == purpose
         with pytest.raises(EgressDenied, match="not_granted"):

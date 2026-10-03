@@ -1,0 +1,29 @@
+{
+  "scope": "BE14/FE11 owned operator repair/privacy RPC seam",
+  "status": "focused_verified_generated_integration_pending",
+  "command": "scripts/run_tests.sh tests/tui_gateway/test_operations_control_rpc.py tests/agent/test_operations_control.py --scratch-parent /workspace/shared -j 2 --file-retries 0",
+  "passed": 21,
+  "failed": 0,
+  "log": "/workspace/shared/ryoko-operator-rpc.log",
+  "log_sha256": "f547e922c292458da2ad6d1d64674b5abac0eb6fe8e0612414c9342216e6270f",
+  "source_sha256": {
+    "tui_gateway/contracts/operations_control.py": "8db14493ed33d07d15f9fea9cb988bf491189f4e0c434409767a3c886f854d5f",
+    "tui_gateway/methods_operations_control.py": "c190633912e70911e60cb87b86ea16607ae43e7837b47a926b8dace272996ed2",
+    "tests/tui_gateway/test_operations_control_rpc.py": "935c3982b991b179f0eba3ccd7b4e17fdcda84cc5f4467c3f5d16659e08f6101"
+  },
+  "lint": "passed",
+  "boundaries": [
+    "Same existing local maintenance broker, exact live transport/session identity and scoped policy",
+    "Complete preview digest/revision/target revalidation; no client paths/credentials/arbitrary repair code",
+    "No model-runtime origin permitted",
+    "Repair revoke cannot claim remote execution stopped",
+    "Deletion requires exact fresh manifest; logical and partial only; retained stores and backups disclosed",
+    "Primary personal harness mutation remains unsupported",
+    "Only synthetic temporary state was repaired/deleted in tests; no live operations"
+  ],
+  "pending": [
+    "combined generated contracts",
+    "typed frontend consumer",
+    "aggregate qualification"
+  ]
+}

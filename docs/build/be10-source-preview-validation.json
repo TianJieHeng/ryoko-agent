@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "phase": "BE10 prepared source review seam",
+  "status": "implemented_offline_qualified",
+  "base_commit": "2244f515a1a1dfb50f9e735865d9c05a966dc77e",
+  "validated_at_utc": "2026-10-03T06:23:11.844572+00:00",
+  "prior_receipt": "docs/build/be10-connected-sources-validation.json",
+  "rpc": "runtime.sources.preview",
+  "request_contract": {
+    "authority": "existing owned session/project/command/preparation",
+    "part": [
+      "original",
+      "projection"
+    ],
+    "offset": "nonnegative strict integer",
+    "limit": "strict integer1..65536, default65536"
+  },
+  "response_contract": "ArtifactReadResult plus preparation_id, part, approval_id, approval_digest; sha256 and size cover complete prepared bytes, data_base64 covers only requested chunk",
+  "behavior": [
+    "Only existing live preparation and original command/lease generation are accepted",
+    "Full cached bytes are checked against exact proposal digest and size before each chunk",
+    "Durable artifact reservation actor/session/run/command/project and exact durable approval binding are revalidated",
+    "Denied/expired approval, lost bundle, cancelled/completed control, replaced lease or revoked scope returns no bytes",
+    "Reuses inert artifact chunk validation; no source refetch, source fallback, publication or approval mutation",
+    "Client must assemble all chunks, verify total size and full SHA against exact original/projection proposal, then offer publication"
+  ],
+  "validation": {
+    "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/tools/test_connected_source_reads.py tests/tui_gateway/contracts/test_generated.py tests/tui_gateway/test_artifact_rpc.py --scratch-parent /workspace/shared -j 2",
+    "files": 3,
+    "passed": 58,
+    "failed": 0,
+    "source_tests": 46,
+    "generated_parity_tests": 2,
+    "artifact_rpc_regression_tests": 10,
+    "log": "/tmp/be10-source-preview-tests.log",
+    "log_sha256": "011920a82e417c640ad427cc4f5c4cfc507642b76ead6a9c8b411ea80be5d645",
+    "lint": "passed",
+    "lint_log": "/tmp/be10-source-preview-lint.log",
+    "scoped_diff_check": "passed"
+  },
+  "focused_tests": [
+    "Complete original and projection chunks assemble to exact size/SHA and match later published bytes",
+    "Approval remains pending and command/budget remain unchanged during review",
+    "Actual registered RPC and generated DTO validation",
+    "Forged principal/content fields and oversized/noninteger bounds rejected",
+    "Cross-profile foreign bundle and stolen-session RPC denied",
+    "Tampered cached bytes rejected",
+    "Published, cancelled, replaced-lease, expired-bundle and denied-approval states expose no bytes",
+    "Missing projection, lost project grant and overrun offsets denied",
+    "Synthetic HTTP request count remains exactly2; review never dispatches"
+  ],
+  "file_sha256": {
+    "agent/artifact_commands.py": "31ba74002f63acf35c88dbb958a7e78982999152707f675416c2ac2759c98920",
+    "hermes_cli/connected_sources.py": "9a4dab2a692b3f70b50247df4453702eaf89a64b2725880f3511c3d57870fbb9",
+    "tui_gateway/contracts/connected_sources.py": "4a505a4d2361e430fee5bbcff4daf5551b30a86f0743cea3c59af9f758f3294b",
+    "tui_gateway/methods_connected_sources.py": "5b50eca640acd04a571987ef8d68c41ba3d2576bd383f9fddfa114cadb41a7fb",
+    "tests/tools/test_connected_source_reads.py": "22e514128c578fa981a3c0c3495a0e94ff761c70cdee8e59f206baaec2bbdfc5",
+    "apps/shared/src/gateway-contract.generated.ts": "73f089aeca65cbc1e90c8a54da0f7d11c144fc160e8d8cc99e28043e9eef1839",
+    "apps/shared/src/gateway-contract.openrpc.json": "1d3151320c621de5b7032a4e5fb4ba170fe09fa5400fd762df832bca09622909"
+  },
+  "scope_limits": [
+    "No live account/API/model/credential use",
+    "Existing gateway account pin and opaque upstream retry/cost limitations unchanged",
+    "Frontend assembly/rendering remains frontend-owned; backend supplies exact bounded bytes and verification metadata",
+    "No Git staging/commits or root journal/build-plan edits"
+  ]
+}

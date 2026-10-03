@@ -26,7 +26,7 @@ def test_refused_input_commits_failed_mailbox_receipt(tmp_path):
     retired = []
     noop = lambda *args, **kwargs: None
     submit = rebind(prompt_turn._run_prompt_submit, {
-        "threading": threading, "time": time, "logger": logging.getLogger(__name__),
+        "contextlib": contextlib, "threading": threading, "time": time, "logger": logging.getLogger(__name__),
         "_start_session_work": _start_session_work,
         "_sessions_lock": threading.RLock(), "_sessions": {},
         "_admit_prompt_turn": lambda *args: ([], agent),

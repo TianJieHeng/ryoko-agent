@@ -1,0 +1,50 @@
+{
+  "scope": "BE18 isolated declared optional test extras",
+  "source_commit": "009255ecaf4adfe81ea114561a5f923ae9dfe605",
+  "source_tree": "0948d430abe4d00be907e46c791d61b205331457",
+  "environment": "/workspace/shared/ryoko-extra-test-env",
+  "manager": "python -m pm.build_env; frozen project lock; --group dev --group test --extra acp --extra fal --extra sms",
+  "extra_note": "The declared sms extra installs aiohttp only; no SMS account, app or runtime feature was configured",
+  "versions": {
+    "agent-client-protocol": "0.9.0",
+    "aiohttp": "3.14.3",
+    "fal-client": "0.13.1",
+    "pytest": "9.1.1",
+    "openai": "2.24.0",
+    "anthropic": "0.87.0"
+  },
+  "pyproject_sha256": "d09cd0a47109e5abb9abeb326224208b857faa0d1e921c515d7f0bc6031d2d73",
+  "lock_sha256": "de17d70bc999fb0f8fe50dbf8590ac979f43b5a84cd8320caeac1c695ce63c01",
+  "checks": {
+    "files": 32,
+    "passed": 360,
+    "failed": 0,
+    "skipped": 1,
+    "seconds": 33.4,
+    "selection": [
+      "tests/acp_adapter",
+      "tests/gateway/test_api_notification_outcomes.py",
+      "tests/tools/test_fal_sdk.py",
+      "tests/tools/test_fal_common.py",
+      "tests/plugins/video_gen/test_fal_plugin.py",
+      "tests/tools/test_image_generation.py"
+    ],
+    "runner": "scripts/run_tests.sh --scratch-parent /workspace/shared -j 2 --file-retries 0"
+  },
+  "logs": [
+    {
+      "path": "/workspace/shared/ryoko-extra-test-env-build.log",
+      "sha256": "bbc659f4c04d0edca2b52fce2068b5573f0436261210cce2fc11c4d9dd421738"
+    },
+    {
+      "path": "/workspace/shared/ryoko-optional-extras-tests.log",
+      "sha256": "28c2696de715003b87b9e7f4dbe3597b58f70aae4ee31df3b5c88b9f963b645d"
+    }
+  ],
+  "limits": [
+    "Running original full-campaign interpreter was not mutated",
+    "No project dependency/version/lockfile changes",
+    "Not live ACP/provider/notification qualification",
+    "One skip retained in log; focused selection is not a full-suite pass"
+  ]
+}

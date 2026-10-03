@@ -61,7 +61,7 @@ def _entry(*, id: str, access_token: str, refresh_token: str, source: str) -> Po
 
 
 @pytest.fixture(autouse=True)
-def _fake_pool_store(monkeypatch):
+def _fake_pool_store(monkeypatch, tmp_path):
     """Back write/read_credential_pool with a shared in-memory dict.
 
     This stands in for ``~/.hermes/auth.json`` so the two "process-local"
@@ -69,6 +69,8 @@ def _fake_pool_store(monkeypatch):
     other's persisted writes (exactly what the real cross-process recovery
     path depends on), without touching the real filesystem.
     """
+    # The production refresh lock remains real but belongs to this synthetic home.
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "claude"))
     store: Dict[str, list] = {}
 
     def _write(provider, entries, *, removed_ids=None, status_cleared_ids=None, token_bases=None):

@@ -50,6 +50,16 @@ class ChannelSubmitParams(RuntimeSessionParams):
         return values
 
 
+class VoiceAdmissionParams(RuntimeSessionParams):
+    request_id: RuntimeIdentifier
+
+
+class VoiceCaptureStartParams(RuntimeSessionParams):
+    # Optional for legacy/non-budgeted clients; strict speech requires both.
+    request_id: RuntimeIdentifier | None = None
+    budget_account_id: RuntimeIdentifier | None = None
+
+
 class VoiceFeedParams(RuntimeSessionParams):
     capture_id: RuntimeIdentifier
     sequence: Annotated[StrictInt, Field(ge=0)]
@@ -57,7 +67,7 @@ class VoiceFeedParams(RuntimeSessionParams):
     final: bool = False
 
 
-class VoiceSpeakParams(RuntimeSessionParams):
+class VoiceSpeakParams(VoiceCaptureStartParams):
     text: Annotated[str, Field(min_length=1, max_length=65536)]
 
 
@@ -96,7 +106,8 @@ for name, params, doc in (
     ("runtime.services.status", ServicePipelineParams, "Read committed per-stage digest/transfer receipts, without replay."),
     ("runtime.services.output", ServicePipelineParams, "Read digest-verified private staged output; publication needs the artifact approval path."),
     ("runtime.media.capabilities", RuntimeSessionParams, "Report unconfigured speech and the bounded selected-frame workflow honestly."),
-    ("runtime.voice.capture.start", RuntimeSessionParams, "Explicit bounded client-PCM push-to-talk; fail closed without a local STT adapter."),
+    ("runtime.voice.admit", VoiceAdmissionParams, "Explicit finite offline speech budget admission; reuses the current tree and never starts inference or capture."),
+    ("runtime.voice.capture.start", VoiceCaptureStartParams, "Explicit bounded client-PCM push-to-talk; fail closed without a local STT adapter."),
     ("runtime.voice.capture.feed", VoiceFeedParams, "Sequenced bounded PCM and partial/final transcript feedback; never accepts a task."),
     ("runtime.voice.capture.cancel", RuntimeSessionParams, "Discard this transport's captured audio, without cancelling a mission."),
     ("runtime.voice.speak", VoiceSpeakParams, "Interruptible declared local TTS; fail closed when unconfigured."),

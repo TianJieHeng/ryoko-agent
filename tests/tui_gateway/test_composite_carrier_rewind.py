@@ -417,8 +417,8 @@ def test_retry_rejects_durable_media_before_rewind_when_warm_view_is_text(
     sid, session_key, session = install(
         [durable_carrier, {"role": "assistant", "content": "failed"}]
     )
-    # The warm projection can be a degraded text-only view that compares equal
-    # to the durable media payload. Durable retryability must still be checked
+    # The warm projection can be a degraded text-only view. Durable retryability
+    # must be checked using the lossless stored payload
     # before the physical carrier and tail are archived.
     warm_carrier = carrier.copy()
     warm_carrier["content"] = handoff + "\n\n[screenshot]"

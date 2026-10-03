@@ -115,8 +115,15 @@ def _owned_transport(agent, ui_session_id, transport):
 
 
 def deliver_result(agent, delivery_id, ui_session_id, transport):
-    """Send one result reference over the actual attached JSON-RPC transport."""
-    _context, db, sid, actor = _authority(agent)
+    """Send one immutable result/notice over its actual owned JSON-RPC transport."""
+    from gateway.monitor_notification_outbox import notification_delivery_scope
+    context, db, sid, actor = _authority(agent)
+    with notification_delivery_scope(context, db, sid, actor, delivery_id):
+        return _deliver_owned(agent, db, sid, actor, delivery_id, ui_session_id, transport)
+
+
+def _deliver_owned(agent, db, sid, actor, delivery_id, ui_session_id, transport):
+    from gateway.monitor_notification_outbox import notification_payload
     server = _owned_transport(agent, ui_session_id, transport)
     claim = db.claim_runtime_delivery(sid, actor, delivery_id)
     if claim is None:
@@ -127,9 +134,9 @@ def deliver_result(agent, delivery_id, ui_session_id, transport):
                    "artifact_id", "version", "sha256", "size", "mime")}}
     try:
         _owned_transport(agent, ui_session_id, transport)
-        # Use the same validated frame and replay stamping as ordinary TUI events,
-        # but write only to the authenticated destination captured for this attempt.
-        frame = server._event_frame("runtime.result.available", ui_session_id, payload)
+        notice = notification_payload(db, claim)
+        frame = (server._event_frame("runtime.monitor.available", ui_session_id, notice) if notice is not None
+                 else server._event_frame("runtime.result.available", ui_session_id, payload))
         from tui_gateway.event_replay import _stamp_event
         _stamp_event(frame)
         accepted = transport.write(frame) is True
@@ -142,6 +149,8 @@ def deliver_result(agent, delivery_id, ui_session_id, transport):
 
 def retry_delivery(agent, delivery_id, ui_session_id, transport):
     _owned_transport(agent, ui_session_id, transport)
-    _context, db, sid, actor = _authority(agent)
-    db.repair_runtime_delivery(sid, actor, delivery_id)
-    return deliver_result(agent, delivery_id, ui_session_id, transport)
+    context, db, sid, actor = _authority(agent)
+    from gateway.monitor_notification_outbox import notification_delivery_scope
+    with notification_delivery_scope(context, db, sid, actor, delivery_id):
+        db.repair_runtime_delivery(sid, actor, delivery_id)
+        return deliver_result(agent, delivery_id, ui_session_id, transport)

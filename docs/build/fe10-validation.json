@@ -1,0 +1,62 @@
+{
+  "phase": "FE10",
+  "status": "verifying",
+  "base": "ca5902f27f3f7aadbb6c65f59f68b1a8ab26c047",
+  "checks": [
+    {
+      "command": "./node_modules/.bin/vitest run apps/shared/src/runtime-specialists.test.ts",
+      "result": "passed",
+      "tests": 15
+    },
+    {
+      "command": "cd apps/desktop && ../../node_modules/.bin/vitest run src/app/runtime/specialist-panel.test.tsx",
+      "result": "passed",
+      "tests": 4
+    },
+    {
+      "command": "npm run --workspace apps/shared typecheck && npm run --workspace ui-tui typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "cd apps/desktop && ../../node_modules/.bin/tsc -p . --noEmit",
+      "result": "blocked",
+      "reason": "Node default 2GB heap exhausted; not a type error"
+    },
+    {
+      "command": "cd apps/desktop && NODE_OPTIONS=--max-old-space-size=4096 ../../node_modules/.bin/tsc -p . --noEmit",
+      "result": "passed"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe10-shared.log",
+      "sha256": "2a55163521a500af1d21f11ca0f20ec7223c8013bfe36d475393cb5c556f226e"
+    },
+    {
+      "path": "/tmp/fe10-desktop.log",
+      "sha256": "b517c9689cc7c84f1ce1b4ad1ae7f419e4a4236c5e4c4162ba5480849cb64545"
+    },
+    {
+      "path": "/tmp/fe10-shared-type.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe10-tui-type.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe10-renderer-type.log",
+      "sha256": "97f36f0129643a914a6534402a85e58e56496c95839cf4a85e2f9e0aae0a941b"
+    },
+    {
+      "path": "/tmp/fe10-renderer-type-retry.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "No named manifest/team dependency/budget gateway RPC exposed",
+    "No actual microphone capture/playback UI yet; adapter construction is being qualified separately",
+    "No live cross-device/channel handoff, speech hardware or screenshot acquisition timestamp evidence",
+    "English chrome and native/visual/performance qualification pending"
+  ]
+}

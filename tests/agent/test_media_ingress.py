@@ -4,7 +4,7 @@ import io
 import pytest
 from PIL import Image
 
-from agent.media_ingress import ScreenIngress, SpeechDeclaration, VoiceIngress
+from agent.media_ingress import ScreenIngress, SpeechAudio, SpeechDeclaration, VoiceIngress
 from hermes_state_runtime import RuntimeStoreError
 
 
@@ -25,25 +25,24 @@ def test_unconfigured_and_owned_bounded_streaming_speech_is_not_task_acceptance(
     class LocalSTT:
         declaration = SpeechDeclaration("test.local.stt", 1, "stt", "local", True, max_bytes=8)
 
-        def transcribe(self, pcm, *, final):
+        def transcribe(self, pcm, *, final, cancelled):
             calls.append((pcm, final))
             return "Book for Ada at 12" if final else "Book for Ada"
 
     class LocalTTS:
         declaration = SpeechDeclaration("test.local.tts", 1, "tts", "local", False)
 
-        def start(self, text):
+        def synthesize(self, text, *, cancelled):
             calls.append(("speak", text))
-
-        def stop(self):
-            calls.append(("stop",))
+            self.cancelled = cancelled
+            return SpeechAudio(b"\0\0", 16000)
 
     voice = VoiceIngress(stt=LocalSTT(), tts=LocalTTS())
     voice.speak(owner, "Listening")
     with pytest.raises(RuntimeStoreError, check=lambda error: error.code == "speech_not_owned"):
         voice.stop_speech(foreign)
     capture = voice.begin(owner)["capture_id"]
-    assert calls[-1] == ("stop",)
+    assert voice.tts.cancelled.is_set()
     partial = voice.feed(owner, capture, 0, b"\0\0")
     assert partial["text"] and not partial["accepted_as_task"] and partial["confirmation_required"]
     with pytest.raises(RuntimeStoreError, check=lambda error: error.code == "speech_sequence_conflict"):

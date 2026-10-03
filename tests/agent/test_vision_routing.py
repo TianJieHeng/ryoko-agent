@@ -180,6 +180,16 @@ model:
 """)
         monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
         _fresh_modules()
+        from types import SimpleNamespace
+
+        # The text-only catalog premise is synthetic, as are the credentials.
+        # Keep the real capability lookup chain, without relying on a live models.dev fetch.
+        def capabilities(provider, model, **kwargs):
+            if (provider, model) == ("deepseek", "deepseek-v4-pro"):
+                return SimpleNamespace(supports_vision=False)
+            return None
+
+        monkeypatch.setattr("agent.models_dev.get_model_capabilities", capabilities)
 
         from agent.auxiliary_client import resolve_vision_provider_client
         provider, client, _model = resolve_vision_provider_client(provider="auto")

@@ -94,20 +94,26 @@ def create_template(context, db, *, project_id, baseline_ref, structure, style, 
                     exclusions, template_id=None, version=1, parent_version=None):
     """Only explicit reusable components are stored; no incidental text is copied."""
     actor, access = source_authority(context, db)
-    return db.create_template(actor, template_id=template_id or "template_" + uuid.uuid4().hex,
+    from hermes_cli.template_application import template_digest
+    row = db.create_template(actor, template_id=template_id or "template_" + uuid.uuid4().hex,
         version=version, project_id=project_id, baseline_ref=baseline_ref, structure=structure,
         style=style, assets=assets, slots=slots, exclusions=exclusions,
         parent_version=parent_version, access=access)
+    return {**row, "sha256": template_digest(row)}
 
 
 def get_template(context, db, template_id, *, version=None):
     actor, access = source_authority(context, db)
-    return db.get_template(template_id, actor, version=version, access=access)
+    from hermes_cli.template_application import template_digest
+    row = db.get_template(template_id, actor, version=version, access=access)
+    return {**row, "sha256": template_digest(row)}
 
 
 def list_templates(context, db, project_id, *, limit=100):
     actor, access = source_authority(context, db)
-    return db.list_templates(project_id, actor, limit=limit, access=access)
+    from hermes_cli.template_application import template_digest
+    return [{**row, "sha256": template_digest(row)}
+            for row in db.list_templates(project_id, actor, limit=limit, access=access)]
 
 
 def propose_capture_duplicates(context, db, project_id, *, limit=100):

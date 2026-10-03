@@ -1,0 +1,473 @@
+{
+  "phase": "FE13",
+  "status": "verifying",
+  "base": "7f445ee652d9647f2ca3ff46c9d4aa508af36487",
+  "validation_checkout": "/workspace/shared/ryoko-frontend-validation",
+  "publication": "local_only",
+  "checks": [
+    {
+      "stage": "shared-tests",
+      "command": "./node_modules/.bin/vitest run apps/shared/src --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": "0",
+      "log": "/tmp/fe13-final-shared-tests.log",
+      "log_sha256": "2d8f154543d0842374a1f85e38de6b5678b992a7e6d6a23f3a0da09861f6623c"
+    },
+    {
+      "stage": "shared-type",
+      "command": "npm run --workspace apps/shared typecheck",
+      "exit": "0",
+      "log": "/tmp/fe13-final-shared-type.log",
+      "log_sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "stage": "shared-lint",
+      "command": "npm run --workspace apps/shared lint",
+      "exit": "1",
+      "log": "/tmp/fe13-final-shared-lint.log",
+      "log_sha256": "f1373cb0f713f277c460009664b6260982b20f1a65230dcfa82a7e07e1760be4"
+    },
+    {
+      "stage": "tui-ink",
+      "command": "npm run --workspace ui-tui build:ink",
+      "exit": "0",
+      "log": "/tmp/fe13-final-tui-ink.log",
+      "log_sha256": "1e7f9e81224abeba19682de908f500e327b8aa5c145360292203e006d1d34162"
+    },
+    {
+      "stage": "tui-type",
+      "command": "npm run --workspace ui-tui typecheck",
+      "exit": "0",
+      "log": "/tmp/fe13-final-tui-type.log",
+      "log_sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "stage": "tui-i18n",
+      "command": "npm run --workspace ui-tui i18n:keys:check",
+      "exit": "1",
+      "log": "/tmp/fe13-final-tui-i18n.log",
+      "log_sha256": "3606d3888dc9c2adcededa49d2974958125ac7a23b89fd16736c318dd21ec410"
+    },
+    {
+      "stage": "desktop-type",
+      "command": "npm run --workspace apps/desktop typecheck",
+      "exit": "0",
+      "log": "/tmp/fe13-final-desktop-type.log",
+      "log_sha256": "4fbe6a2b1896cbf54b704ef36f1e108f2aa2a874795e613e977b591a0d8a5263"
+    },
+    {
+      "stage": "desktop-lint",
+      "command": "npm run --workspace apps/desktop lint",
+      "exit": "1",
+      "log": "/tmp/fe13-final-desktop-lint.log",
+      "log_sha256": "c3e19b470c78c2dad559cb487e0333fafe6c1733befa1977d28a447a5263e495"
+    },
+    {
+      "stage": "tui-tests",
+      "command": "npm run --workspace ui-tui test -- --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": "blocked_unexpected_external_geolocation",
+      "log": "/tmp/fe13-final-tui-tests.log",
+      "log_sha256": "667e1f489f9ae1ce73b476780a35c92bd6b620d02f800a26bfe6099a65db787f"
+    },
+    {
+      "stage": "shared-lint-retry",
+      "command": "npm run --workspace apps/shared lint",
+      "exit": "0",
+      "log": "/tmp/fe13-final-shared-lint-retry.log",
+      "log_sha256": "0cea67304f0df84f71077c567128bff3b74f57d2248939951eb2e4aa5b66e39d"
+    },
+    {
+      "stage": "desktop-lint-retry",
+      "command": "npm run --workspace apps/desktop lint",
+      "exit": "0",
+      "log": "/tmp/fe13-final-desktop-lint-retry.log",
+      "log_sha256": "3b22eb8b819ba0102587ff51741b40b8c5646e335d2d49a9197aa035f30c9cc6"
+    },
+    {
+      "stage": "tui-tests-offline",
+      "command": "npm run --workspace ui-tui test -- --maxWorkers=1 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": "0",
+      "log": "/tmp/fe13-final-tui-tests-offline.log",
+      "log_sha256": "617ef1c9d72d3a7257d4144f1596d7afa912376a029ce4c2d1488df585478bca"
+    },
+    {
+      "stage": "tui-lint",
+      "command": "npm run --workspace ui-tui lint",
+      "exit": "1",
+      "log": "/tmp/fe13-final-tui-lint.log",
+      "log_sha256": "eebc5b30cfbc095195a09c01b08bdcba36ef987d9f678ef05d8fcac38ac7358c"
+    },
+    {
+      "stage": "tui-build",
+      "command": "npm run --workspace ui-tui build",
+      "exit": "0",
+      "log": "/tmp/fe13-final-tui-build.log",
+      "log_sha256": "95aacfacb158813fd6b2673b230f25e17d4b78fa48daaabcfef1e2f1df7cb2af"
+    },
+    {
+      "stage": "web-type",
+      "command": "npm run --workspace web typecheck",
+      "exit": "0",
+      "log": "/tmp/fe13-final-web-type.log",
+      "log_sha256": "661ce8e5691d26eb32149dd35f516b3b0be709cf3ad483eedf6c73ecbbc72789"
+    },
+    {
+      "stage": "web-tests",
+      "command": "npm run --workspace web test -- --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": "0",
+      "log": "/tmp/fe13-final-web-tests.log",
+      "log_sha256": "f3cb6a83c6ccfbfcbc663deb3f05a849dbafbe4acfc62dc7cfc336dc5f7e3042"
+    },
+    {
+      "stage": "web-lint",
+      "command": "npm run --workspace web lint",
+      "exit": "0",
+      "log": "/tmp/fe13-final-web-lint.log",
+      "log_sha256": "7751d6b3b7e64c39a2c068d7fc25554cdb0e044c2612c9f1e62acf217be1cabb"
+    },
+    {
+      "stage": "web-build",
+      "command": "npm run --workspace web build",
+      "exit": "1",
+      "log": "/tmp/fe13-final-web-build.log",
+      "log_sha256": "6a4d19dac92ce758197fe82e50c8c4583a34ff83c74817c2c70ad0ec344bb294"
+    },
+    {
+      "stage": "desktop-ui",
+      "command": "npm run --workspace apps/desktop test:ui -- --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": "0",
+      "log": "/tmp/fe13-final-desktop-ui.log",
+      "log_sha256": "5ac7129b98f36a0a4685e80bf8361fe975a58dc77c9687b678523a5e6662c8c5"
+    },
+    {
+      "stage": "shared-type-final",
+      "command": "npm run --workspace apps/shared typecheck",
+      "exit": "0",
+      "log": "/tmp/fe13-final-shared-type-final.log",
+      "log_sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "stage": "shared-lint-final",
+      "command": "npm run --workspace apps/shared lint",
+      "exit": "0",
+      "log": "/tmp/fe13-final-shared-lint-final.log",
+      "log_sha256": "0093dc34dc1da0f297682cee3d1fc4520ccfad02f7805d3e213b26e44e2f4527"
+    },
+    {
+      "stage": "compatibility-tests",
+      "command": "./node_modules/.bin/vitest run apps/shared/src/runtime-control.test.ts apps/shared/src/runtime-feature-session.test.ts apps/shared/src/runtime-capture-review.test.ts ui-tui/src/app/runtime --maxWorkers=2",
+      "exit": "0",
+      "log": "/tmp/fe13-final-compatibility-tests.log",
+      "log_sha256": "bdc35f38c9060d0034105927d814b6054e4d7d13f6ad673ffe133b684ec1b2da"
+    },
+    {
+      "stage": "tui-type-final",
+      "command": "npm run --workspace ui-tui typecheck",
+      "exit": "0",
+      "log": "/tmp/fe13-final-tui-type-final.log",
+      "log_sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "stage": "tui-lint-retry",
+      "command": "npm run --workspace ui-tui lint",
+      "exit": "0",
+      "log": "/tmp/fe13-final-tui-lint-retry.log",
+      "log_sha256": "90a89396bc6fe1dc254f514d38bf89998f380e59da84604c302b10e6650fa11b"
+    },
+    {
+      "stage": "tui-build-final",
+      "command": "npm run --workspace ui-tui build",
+      "exit": "0",
+      "log": "/tmp/fe13-final-tui-build-final.log",
+      "log_sha256": "9dbb58fe0999e7023365fc6af89f6437b3777c37f96226d23b0da18a4b36a660"
+    },
+    {
+      "stage": "web-build-retry",
+      "command": "npm run --workspace web build",
+      "exit": "0",
+      "log": "/tmp/fe13-final-web-build-retry.log",
+      "log_sha256": "a6afb9a566fb96afba59fb52f022e62e547f3c4ec79c0d34fcc1437d11c3b91e"
+    },
+    {
+      "stage": "desktop-platforms",
+      "command": "npm run --workspace apps/desktop test:desktop:platforms -- --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": "1",
+      "log": "/tmp/fe13-final-desktop-platforms.log",
+      "log_sha256": "cc43ec3b448f5e7a19080ee86b09f385328f23e59363eb95f041d2d9662a59bb"
+    },
+    {
+      "stage": "desktop-packaged",
+      "command": "env HERMES_DESKTOP_SKIP_BUILD=1 npm run --workspace apps/desktop test:desktop:all",
+      "exit": "1",
+      "log": "/tmp/fe13-final-desktop-packaged.log",
+      "log_sha256": "80613ee12380d374cd71c2143d3e44bdd5ac13442bc98dc265eac7fc53494c4d"
+    },
+    {
+      "stage": "renderer-build",
+      "command": "../../node_modules/.bin/vite build --outDir /workspace/shared/fe13-build/renderer",
+      "exit": "0",
+      "log": "/tmp/fe13-final-renderer-build.log",
+      "log_sha256": "f4f78f14835774b3a6f96449cc4c7dedb92356ce4854dbb92658c25608f82d39"
+    },
+    {
+      "stage": "desktop-python-helpers",
+      "command": "npm run --workspace apps/desktop test:desktop:platforms -- electron/backend-probes-runtime.test.ts electron/source-backend.test.ts electron/updater/checkout-source.test.ts scripts/mac-sign.test.mjs --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": "0",
+      "log": "/tmp/fe13-final-desktop-python-helpers.log",
+      "log_sha256": "b3e350e28b9a01528bd6af1df48ff06ac53b8a4bb4f2aec2c06a52dbf897e643"
+    }
+  ],
+  "aggregate_results": {
+    "shared": {
+      "files_passed": 36,
+      "tests_passed": 277
+    },
+    "tui_offline": {
+      "files_passed": 179,
+      "tests_passed": 1618
+    },
+    "web": {
+      "files_passed": 50,
+      "tests_passed": 359
+    },
+    "desktop_ui": {
+      "files_passed": 1204,
+      "tests_passed": 10635
+    },
+    "desktop_platforms_original": {
+      "files_passed": 339,
+      "files_failed": 7,
+      "files_skipped": 7,
+      "tests_passed": 3261,
+      "tests_failed": 6,
+      "tests_skipped": 15
+    },
+    "desktop_python_helpers_targeted": {
+      "files_passed": 4,
+      "tests_passed": 6
+    }
+  },
+  "corrections": [
+    "Initial shared/desktop/TUI lint failures corrected only in owned files; final lint passed with 246 inherited desktop warnings and 2 inherited TUI warnings.",
+    "Initial web build rejected TypeScript parameter properties. RuntimeControl, RuntimeFeatureSession and CaptureReviewSession now use explicit fields/assignments. The full desktop aggregate preceded that compatibility-only correction; affected shared 15 and compiled UI 17 tests passed separately (32 total). Clean validation additionally passed 7 files/23 compatibility tests and final shared/TUI types/lint/build plus web build.",
+    "Initial TUI i18n tsx launcher failed with IPC EPERM; the same read-only checker passed via node --import tsx (1244 keys).",
+    "Initial full TUI aggregate was blocked by unexpected ipwho.is geolocation request in widgetSdk fixture. A rejecting fetch mock and assertions isolate the fixture; production weather was unchanged. The two affected files passed 14 tests, then the offline full TUI aggregate passed."
+  ],
+  "native_classification": {
+    "unchanged_test_file_proof": [
+      {
+        "path": "apps/desktop/electron/app-icon.test.ts",
+        "sha256": "70977ce3bd13084e4693cd6dfbdb0951526d8d33390ca5798c1fe6762d7d2162",
+        "unchanged_from_base": true
+      },
+      {
+        "path": "apps/desktop/electron/window-below.test.ts",
+        "sha256": "44c2ea5cb28a596dab5ac8fdc8010e89e0810fd053192520a6353c573ebc7291",
+        "unchanged_from_base": true
+      },
+      {
+        "path": "apps/desktop/scripts/mac-sign.test.mjs",
+        "sha256": "e1f6f591d81cdd99ab576e8ad082a14eae4babc0b11ca3ed2a5c6a62520f1c6f",
+        "unchanged_from_base": true
+      },
+      {
+        "path": "apps/desktop/electron/backend-probes-runtime.test.ts",
+        "sha256": "154274b7a87b2a1f6153a048fc4384f7c0f3f50a4b045b89a4a70558cbca05eb",
+        "unchanged_from_base": true
+      },
+      {
+        "path": "apps/desktop/electron/source-backend.test.ts",
+        "sha256": "90769e03ec41bfcd776e12a2d1392eace747eeb45b71dd44299bf569d399e2e4",
+        "unchanged_from_base": true
+      },
+      {
+        "path": "apps/desktop/electron/ssh-connection.test.ts",
+        "sha256": "ffec86dbfc8a7379e427ac420762b6825be205ab57285938c740d28c25619022",
+        "unchanged_from_base": true
+      },
+      {
+        "path": "apps/desktop/electron/updater/checkout-source.test.ts",
+        "sha256": "1d1ddf9ead38d4e580b16c58087a8c33e5c9531cabe08500d3541f5036b76d4e",
+        "unchanged_from_base": true
+      }
+    ],
+    "resolved_by_prepared_runtime": "Four Python-dependent helper files passed all 6 tests using existing Python 3.14 via HERMES_PYTHON/PYTHON. Original failures included missing prepared interpreter, Python 3.12 mismatch and missing ruamel. No source/lock/runtime edits. Bootstrap fixtures used only their existing isolated temporary environments.",
+    "remaining": "app-icon and window-below cannot collect because Electron install scripts were disabled; ssh-connection real Unix listener returns EPERM. Seven skipped files/15 skipped tests remain skipped, not passed. No native install/rebuild retry or listener permission workaround.",
+    "packaging_attempt": "HERMES_DESKTOP_SKIP_BUILD=1 was mistakenly assumed to skip build unconditionally. With no existing packaged app, test:desktop:all ran npm pack and attempted native rebuild. get-windows/node-pty rebuild failed at missing /home/agent/.electron-gyp and node-gyp exit 255. No binding/package produced. The failed attempt is retained, not labeled never attempted. No retry.",
+    "successful_builds": [
+      "pure Vite renderer",
+      "web client",
+      "TUI bundle"
+    ],
+    "unqualified": [
+      "packaged Electron launch",
+      "cross-platform packaging",
+      "microphone permissions/hardware",
+      "live local speech models"
+    ]
+  },
+  "visual": {
+    "fixture": "apps/desktop/tests/visual/runtime-preview.html",
+    "vite": "started successfully on the declared loopback port",
+    "cloud_browser": "blocked",
+    "first_error": "net::ERR_BLOCKED_BY_CLIENT",
+    "confirmed_error": "Browser Use rejected this action due to browser security policy. The browser URL policy blocks this action.",
+    "screenshots": 0,
+    "keyboard_visual_qa": "not_run",
+    "narrow_viewport_visual_qa": "not_run",
+    "actions": "No alternate browser/network route or public exposure attempted; Vite server stopped after the blocked attempt."
+  },
+  "security_block": {
+    "destination": "https://ipwho.is/",
+    "reviewer_message": "The validation command is authorized, but this unexpected request to ipwho.is may disclose the environment\u2019s public IP or related metadata to an untrusted external destination without specific user authorization.",
+    "resolution": "No live request retry or alternative network route. Only test fixture mock changed; production weather untouched."
+  },
+  "supplementary_logs": [
+    {
+      "path": "/tmp/fe13-erasable-shared-tests.log",
+      "sha256": "ebae8d208e860385ae05505bde7eccce97fb8dcb4d2a4e5a0e0b793d7ac2dbfd"
+    },
+    {
+      "path": "/tmp/fe13-erasable-ui-tests.log",
+      "sha256": "9fd329729f96e9d2be335c067c98f42c9fdec546a34543b4f8505f94625e26ea"
+    },
+    {
+      "path": "/tmp/fe13-tui-offline-weather-proof.log",
+      "sha256": "18df31d9aebd1e7a0a1ce2f979fafa5ded90f4fd14c0f03100d73d78db41b7fb"
+    }
+  ],
+  "scope": [
+    "Typed branch merge/template application/output influence/capture review/scheduled draft/monitor/agenda/decline and owned audio consumers.",
+    "Same-object reconnect/session/profile fencing, StrictMode/compiler-safe ownership, bounded passive recovery identifiers, nine-locale chrome using existing i18n authority.",
+    "No separate memory, policy, agent loop or scheduler. No LAYA activation or Dots code changes."
+  ],
+  "remaining_required_additive_consumers": [
+    "operator repair/privacy review",
+    "strict voice admission/accounting",
+    "connected account-pinned source snapshots",
+    "named configured specialist handoff",
+    "bounded on-demand opportunity review"
+  ],
+  "remaining_qualification": [
+    "browser screenshots/keyboard/narrow viewport blocked by URL policy",
+    "native/platform and hardware gates listed above",
+    "six complete live-source journeys and matched ten-task human-effort pilot",
+    "verified personal harness mutation/credential contract",
+    "remote publication authentication"
+  ],
+  "source_hashes": {
+    "FrontEnd_BuildPlan.md": "375454c1a1fb06d2f53800e71adeb82620f2a97e6ae63cd5beaac97c4bf28624",
+    "apps/desktop/src/app/chat/index.tsx": "3e0db2341e411ef58635a7628d22e8b574ad2d1310188f0fac8b639ad548088e",
+    "apps/desktop/src/app/command-center/maintenance.tsx": "7f5da7bdaf11c51d3845316bc6e698555b54fe1a3df59cc0e0cab5d9695add49",
+    "apps/desktop/src/app/runtime/agenda-panel.test.tsx": "0c81c340d8b90a3883e45d8ea93733cc62d6e0e935c81a03d4e763b1422ffc4e",
+    "apps/desktop/src/app/runtime/agenda-panel.tsx": "d91a0874d75bf5f8c49ce076d0416baeaeb7a515953f81caef7a2bf48d31ef6f",
+    "apps/desktop/src/app/runtime/artifact-download.test.tsx": "8dd82e1564101059fb1e549d68c964efa95d200dfc971802c93b3e0d63a8f09a",
+    "apps/desktop/src/app/runtime/artifact-download.tsx": "46f4d7a72d147a485152c611225c3c5627b281eb45b21760a9ebd24a6d3f0e54",
+    "apps/desktop/src/app/runtime/artifact-workbench.test.tsx": "b9687090d52301d5b05122100811d3533a3dc056e3c55bbcd48d8318186ec620",
+    "apps/desktop/src/app/runtime/artifact-workbench.tsx": "06fd6f894d0bb1bb940da440bde9cadb5a0c538d0da93bc43e7ee7f2ce85cc08",
+    "apps/desktop/src/app/runtime/branch-merge-panel.test.tsx": "a09079d1f9f958fce98307b9936d2e7fbd43c2bcad20921511d3bb78ed9acc68",
+    "apps/desktop/src/app/runtime/branch-merge-panel.tsx": "193f303d16fb51bf88e8cdd8889afc1c6521c5121b3e800e4036e520a3d703ba",
+    "apps/desktop/src/app/runtime/capture-review-panel.test.tsx": "34df94efbb0e15a319efa9da3145ac88030b6df4d8535180fe0e770bd66fd86e",
+    "apps/desktop/src/app/runtime/capture-review-panel.tsx": "250ce4eeaba5c5c034c8e6bb27fc7e1a2d8399abe49fa9a156a5489a6a13c96b",
+    "apps/desktop/src/app/runtime/conversation-mission.test.tsx": "7ebeaa8dcb0f4f7376946ed9bc4c65135633a11634acd810dc9f99825c5a152b",
+    "apps/desktop/src/app/runtime/conversation-mission.tsx": "771f621b32ff4dddbd955388f82c432cec2f781ec84979ed6fe00a989ba37185",
+    "apps/desktop/src/app/runtime/conversation-notifications.test.tsx": "6c49a0b658b8ea1637a58aa7c1efa1963f265a8fababd05f3ab2b11e113bfe37",
+    "apps/desktop/src/app/runtime/conversation-notifications.tsx": "9bf1f397a5fe23988d5ab86122d7fbfe4b90017210623e45b58b1ab680429ee9",
+    "apps/desktop/src/app/runtime/copy.ts": "6438b767679de603d534a7dfa4c4794405ad86b940270d3c71a12c09a8b52873",
+    "apps/desktop/src/app/runtime/decision-panel.tsx": "dc26b66e49e728cde29423bad6ebf86443b0b6b9ab87edb22ad763e0cc10809f",
+    "apps/desktop/src/app/runtime/delivery-panel.tsx": "6a7819dce0059cbb963fd3dede299350e9dc65e22a0832f0338a8aeb9326b829",
+    "apps/desktop/src/app/runtime/execution-panel.tsx": "9378a96c329ea18539b249af66ee58ca0305a1b5254ab5c4c45b46ab18a24ab8",
+    "apps/desktop/src/app/runtime/feature-panel.test.tsx": "8e212221a5bb8a113604abbdf0fd4b2cd9830892715500b5b5e1c1693ae38df6",
+    "apps/desktop/src/app/runtime/feature-panel.tsx": "6ad7a8f71a8afe5ddd513ecab7757c2dc32dfe985ec8ad6310d3d299cbeb16bd",
+    "apps/desktop/src/app/runtime/followthrough-panel.test.tsx": "9604379ddfc242e28c4e69c2b0beda491b0392f8c2841011fd9c05a315a0fa77",
+    "apps/desktop/src/app/runtime/followthrough-panel.tsx": "7a08fd85b531b1845e62d395fc22494141e6a9ecfcee3f8dcfaedb4725397ee8",
+    "apps/desktop/src/app/runtime/inspector.test.tsx": "bce6db16fe4dbb411287e4f49579a9ff412891cad27cfa50c6e76ba5f68f2bc7",
+    "apps/desktop/src/app/runtime/inspector.tsx": "3b93fa40c8277631595215990e0d8d0adff5e0ee53f1a701717edd394ff08c04",
+    "apps/desktop/src/app/runtime/mission-panel.test.tsx": "e1b3c6fc1c9306314ff7e110f46f0828e84f32e3ede9d60bb229951706ae71da",
+    "apps/desktop/src/app/runtime/mission-panel.tsx": "aef97c182537f5feb30a7f80d8af36a410245a131add5b3c4f0c9db954eae6cc",
+    "apps/desktop/src/app/runtime/monitor-create-panel.test.tsx": "6635f8d0ccbc61189e69ec31611189f072302d1e8902ab242345ea1b0701d1c3",
+    "apps/desktop/src/app/runtime/monitor-create-panel.tsx": "b9cfc9b26f486bc3da5afb6c7754278ba34cb98826fcbd21aa7badec0155453c",
+    "apps/desktop/src/app/runtime/monitor-policy-panel.test.tsx": "4e1f64d8d209a7937a48e484ad9bf2e0d892e349f606274fa0a6760ac0c01d1d",
+    "apps/desktop/src/app/runtime/monitor-policy-panel.tsx": "9fc50f175cf22a875ffabc632f4577f296d3baec44070c88b2d25fe5039dce85",
+    "apps/desktop/src/app/runtime/output-influence-panel.test.tsx": "df92a10c1680855a4d7ac6bb4f6943f08c1e691522ce1af157a2e08bfe0d5585",
+    "apps/desktop/src/app/runtime/output-influence-panel.tsx": "9e4e1546409375f38f6cb2b044078e6554fd91e201ce962326ca45b28df03637",
+    "apps/desktop/src/app/runtime/owned-runtime-scope.test.ts": "6e6f8e264dc1347397079f82b0b611c5d24d4ccc4f9ab6d1ff3038d3d0e09c49",
+    "apps/desktop/src/app/runtime/owned-runtime-scope.ts": "d250b8ceb2a97c901846a2206273fa052458de955ce1ea3a85e0f0d702ab08b9",
+    "apps/desktop/src/app/runtime/recovery-references.tsx": "784d399cbe88a2e4ba4040211834ddf956e9f65b5524da81aa0805baf0895633",
+    "apps/desktop/src/app/runtime/runtime-ui-copy.test.ts": "198d31a3aaef2e4637665755103436176a497e8b61f539f42f7882aabfe4acae",
+    "apps/desktop/src/app/runtime/runtime-ui-copy.ts": "ed520c8be8886b36c14eb7227cf0ae34bfaa7a0beb012854154330c09a439ce9",
+    "apps/desktop/src/app/runtime/scheduled-draft-panel.test.tsx": "b6dc1d89c75fb5608948c98256bfc1502e23219f8673045c81a6335c316b8557",
+    "apps/desktop/src/app/runtime/scheduled-draft-panel.tsx": "f13232f83f72eacc05c8cb2379bb463814ccefcef47d73853ec60956fe4cadc2",
+    "apps/desktop/src/app/runtime/specialist-panel.tsx": "1bc7d394217578875735258195498854e104638356689a1b76c8345b520d4a92",
+    "apps/desktop/src/app/runtime/status-panel.tsx": "b646d3d5df7da6461b701e613d097c7d14c243dc5e7c6e1e9249994e53b97ca7",
+    "apps/desktop/src/app/runtime/template-application-panel.test.tsx": "abfc9d74e8e9a364ac471e21435af543ddc5d2ad7ac54174445bc25eef511165",
+    "apps/desktop/src/app/runtime/template-application-panel.tsx": "b1f608edcdc905d9329fca5c07f69b5a8b528ea29d6b3d4b1d29e1d4f55e1339",
+    "apps/desktop/src/app/runtime/template-panel.tsx": "17d7f3111027562a52383a9fdce6c1ae2decdb2b43ba65fde7b05a4a3529d8cc",
+    "apps/desktop/src/app/runtime/voice-audio.test.ts": "37d67df09fccdbd6f9f7e8f7542cc22486e1a643b423f15f11334a1675432f36",
+    "apps/desktop/src/app/runtime/voice-audio.ts": "2f0c31f81682b1c226b02c5fa035f153f8909ea1f0a756402396ea144aaae440",
+    "apps/desktop/src/app/runtime/voice-panel.test.tsx": "fabe21d40965e12e5d448d388fd042afe8639d4a1b10ab9a436fbdd8cf86283b",
+    "apps/desktop/src/app/runtime/voice-panel.tsx": "b78d958c7cdc6afcda1b8dfd75b7b74eb999f7f2fa7f1ee0475689a0e3fd84a5",
+    "apps/desktop/src/app/runtime/workflow-panel.tsx": "975ada3a4da5f93edfb05cb87287c13982a10c7b247f4d3e6e2da67ab7399d40",
+    "apps/desktop/src/lib/voice-playback.test.ts": "e5d885100b855d8d84a43d01dabbbd6599e3dfd80436cfc077e75196bd54dafa",
+    "apps/desktop/src/lib/voice-playback.ts": "e010394ef0b1aa1782433c34fdaeeedec1dcea9579f7082d08af3d219e7926f2",
+    "apps/desktop/tests/visual/runtime-preview.html": "a2a11ea931e9af25e6145b80da69c12afab8183bde76b5540e9d67f760dd573b",
+    "apps/desktop/tests/visual/runtime-preview.tsx": "dd2b9ca6124738a83fce9e04dcf7649c78cb23802c0201901ef9849cd92c0e8f",
+    "apps/shared/package.json": "c160e3fd8ae30242cba05fd68d7fb387a1569e835af07af31e59115aeb1683d4",
+    "apps/shared/src/index.ts": "8c75db5449701d55a471d116524d4735a2cf9907fb3539a8a54512287e18d5e7",
+    "apps/shared/src/runtime-artifacts.test.ts": "1d1ed194c57312b083fd1e2a31c7cd4fb4a6257649c1e5d7b52f906444cb5f72",
+    "apps/shared/src/runtime-artifacts.ts": "f2a04e591a2749def82de9826220dfafeba872c092ce614238e096e75e5a9226",
+    "apps/shared/src/runtime-capture-review.test.ts": "6cc87f66fae4bef9f950ebd926d93fd738386fa0ee68c34ca7f098b4345fbe86",
+    "apps/shared/src/runtime-capture-review.ts": "c302bd6222229d8d8a3de2091d52fd15330187682e2e174cedac4cf1d53244a7",
+    "apps/shared/src/runtime-control.test.ts": "a7f727673ab6280fac34ddb38e07bb9a6d542e99b1561272ee25259db54c12d2",
+    "apps/shared/src/runtime-control.ts": "6b61446067775619085fa7193bdd2340ddfa85e4a881b9d9446bbabbbd63f2d3",
+    "apps/shared/src/runtime-dispatch.test.ts": "e88eb838780aa68234f1cf4f20a2d4d8bcea62c6b05ee41e43a94f67905699c3",
+    "apps/shared/src/runtime-domains.ts": "de39bee46d56834847de6f108b1a0cb36d82e519af4ec9575a429def3d4aab41",
+    "apps/shared/src/runtime-execution.ts": "c4b4c8fe583cbb7a98bda2aa6cec3ba348b4c3e79d79b35780a012c6eef700f5",
+    "apps/shared/src/runtime-feature-session.test.ts": "f2e8720afb11792c310c7a394421453481c5eb7ebc186e828f64f8e3520d0035",
+    "apps/shared/src/runtime-feature-session.ts": "74e42670e10f52b27d2e10f3f33ed88748b605b2cb170f05facbafe89e1766a2",
+    "apps/shared/src/runtime-features.ts": "ee487a02b3e82b13b180595d27034593bbd53b36deb00832180af6e617e64d51",
+    "apps/shared/src/runtime-followthrough.test.ts": "f1684eb3a5d5b4e1b788dd3024cb4520256155e18fd12a8f3c45edb59f9e79c0",
+    "apps/shared/src/runtime-followthrough.ts": "1f1577b4719cded27f5280e11e4fe705cea6e4a506e5871aacac2cdb650c3099",
+    "apps/shared/src/runtime-identity.test.ts": "f5ae47528aa1fe8a95ede0afd76e714ab51e4e0294a80abc4ad662dc0af2f645",
+    "apps/shared/src/runtime-identity.ts": "54cb479fcd5c2ccb1c313cca562b7fbd7070f7bbb04351f66c34786daff9505b",
+    "apps/shared/src/runtime-markdown.test.ts": "0ba462647262ae16600220c5cc5d6f767d410c23c169de351c3bf6eb6aad657b",
+    "apps/shared/src/runtime-markdown.ts": "4a2b4627c2575afa70115070be070a60c43129287a2482658d7fb2eb1887d0b1",
+    "apps/shared/src/runtime-missions.test.ts": "456c04f99126808ff21cc81ec333dca0ef71abc971eb1f7dd41038af1f5601fb",
+    "apps/shared/src/runtime-missions.ts": "e2a18e5e656e70c97c871967ab6a5961d606ca032cb4a5869ecb235a68ccf128",
+    "apps/shared/src/runtime-notifications.test.ts": "07689374ed40bc5f72e9a1eb7bdd15f74e153d90516c188702bc98668c0cc785",
+    "apps/shared/src/runtime-notifications.ts": "908245a181e14f8910bdecc8805af8a70be23296e594394e9cb670ef9fde519c",
+    "apps/shared/src/runtime-output-influences.test.ts": "0d5dff80fd01b311c61a875153a57eceba5b7a9ff8ef8966e537cfd124b672be",
+    "apps/shared/src/runtime-output-influences.ts": "a653f50497ccf9f359d87d4a47ec56d5bb75f6371249f826e8d685e6c92123dc",
+    "apps/shared/src/runtime-projects.test.ts": "5bae685b4eb23fb63244d56b0fb84f9d756f29b58fa7d4acdfd8feb8c8f4f40a",
+    "apps/shared/src/runtime-projects.ts": "b07352a3e489643ca18c7b16b6f9eb955cd40779d255366e429f78dfe2afb770",
+    "apps/shared/src/runtime-research.ts": "ad52c4d34ccebc1ccb939e4bc25e680a1c1f2b15d53da79a22c93c97c404429d",
+    "apps/shared/src/runtime-scheduled-drafts.test.ts": "6c28372309032e197703b885eef89621c953b15d86b3f0590d182019f9d8a6e7",
+    "apps/shared/src/runtime-scheduled-drafts.ts": "cff53f9f50cc6fcf0657f9502bda15fe8b2529cda548047bc3ccdd5cde250fd3",
+    "apps/shared/src/runtime-specialists.ts": "2060d0453c5606feb6ec731793df87160259be7dae2d1a7efa2d070a3df08b3d",
+    "apps/shared/src/runtime-template-application.test.ts": "b21960f089dfa67a80092b96c5353e72eca5d3dfed083f8fb4a0aa00beb2acad",
+    "apps/shared/src/runtime-template-application.ts": "8040dd19e056ded919b2a1820483b90c6f57c884500ece8664e7668622fa87b7",
+    "apps/shared/src/runtime-templates.test.ts": "05f9ea8a713aacc67747443d5b1018454352fcc0c7833a104bbdf11a8bd0e7a6",
+    "apps/shared/src/runtime-templates.ts": "994c0adfaa53ee026273f25a7552686f1ded8abc84543ec3dd03a31de5bc0c10",
+    "apps/shared/src/runtime-voice.test.ts": "4883134425a7ee0de9f54caee06211227a9c27209fb5bb89b6a927f4d03699ef",
+    "apps/shared/src/runtime-voice.ts": "d57b1779d9b76fa718fb31e7e81d9bb96706b7f2f081459f70e675d400942d94",
+    "apps/shared/src/runtime-workflows.test.ts": "65c7c2d1b8479015c8c1d9238116a44b381ede76565be0c4166fa2f8a4375e5e",
+    "apps/shared/src/runtime-workflows.ts": "0fdf6f50bb2f9e558c5e696e620c5938de7aab8dd9187723fd151bdd73e45b49",
+    "docs/build/frontend-execution.md": "e13ade7f81df8acc7cec5fbdce7f30d78ce9e7725a2ba3488cd215d17e1d02e0",
+    "docs/build/frontend-release-scope.md": "483bf684822f379272fdb371d1cd794486dc6b621f0f36e107c5b56cb3bfdbb8",
+    "ui-tui/src/__tests__/widgetSdk.test.ts": "7cc237cec323cc2ce1d8f9850dda1f91cbb41e601a6163488cde6a0137a07131",
+    "ui-tui/src/app/createGatewayEventHandler.ts": "5139d79eab142c4edd7451625e2c6adba772ab4bfc98d826a5426becd349a9ba",
+    "ui-tui/src/app/runtime/artifact-download.test.ts": "e15c5d4c31a6e3b3944371782c808cfc54fd3100ed4cd70e1a39873604369601",
+    "ui-tui/src/app/runtime/artifact-download.ts": "aa66e9062b7dc1b444c4e0b82fa81acaddb51dba47d4abad206667963333f8f2",
+    "ui-tui/src/app/runtime/feature-commands.test.ts": "f9e00f5bb11705a7771b9e5d1bf151fbf523963a15b1adc5666b0e0231757476",
+    "ui-tui/src/app/runtime/feature-commands.ts": "8c7b539b8802168a4eba9be8792f08f5d6fe6f44e38f1147e2c58cfc06d18379",
+    "ui-tui/src/app/runtime/monitor-notifications.test.ts": "c0fe0bdd06c6cf32eb486a9d78aeeb00cedd8e0767bea1919fb319efacf781d6",
+    "ui-tui/src/app/runtime/monitor-notifications.ts": "2b91f7040d1e24767e026c37cd9cb4927410da9ad8a0697db5852b36ba3ca084",
+    "ui-tui/src/app/runtime/runtime-command.test.ts": "38b4f0a2eb5e9e3c71faacf1ebf9cad32ce36816ace0c56156acda4eebe434ba",
+    "ui-tui/src/app/runtime/summary.ts": "ad368ed8f613dfbf7313174de5846f4d15be50539af4c1df7262fb9b318d4f8d",
+    "ui-tui/src/app/slash/commands/runtime.ts": "e2f74db050def3ebe80d74c541f462dd4e01cfb227407a7b8fa8743760ac2378"
+  },
+  "source_hash_note": "Final owned source hashes after corrections; metadata documents were updated after tests. Receipt excludes itself. All implementation files match the isolated validation overlay.",
+  "initial_candidate_hash_receipt": {
+    "path": "/tmp/fe13-candidate-source-hashes.txt",
+    "sha256": "e0fddd934230b45a2bcb06a3a688e2403d86c7047c4418094c7dd67b5e3bc79f"
+  }
+}

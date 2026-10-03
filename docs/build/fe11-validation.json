@@ -1,0 +1,55 @@
+{
+  "phase": "FE11",
+  "status": "verifying",
+  "base": "d3e6224cefc799db708607c446060920dda27ad9",
+  "checks": [
+    {
+      "command": "./node_modules/.bin/vitest run apps/shared/src/runtime-status.test.ts",
+      "result": "passed",
+      "tests": 2
+    },
+    {
+      "command": "cd apps/desktop && ../../node_modules/.bin/vitest run src/app/runtime/status-panel.test.tsx",
+      "result": "passed",
+      "tests": 2
+    },
+    {
+      "command": "npm run --workspace apps/shared typecheck && npm run --workspace ui-tui typecheck && (cd apps/desktop && NODE_OPTIONS=--max-old-space-size=4096 ../../node_modules/.bin/tsc -p . --noEmit)",
+      "result": "passed",
+      "environment": "clean phase-only validation checkout"
+    },
+    {
+      "command": "eslint status/decision/branch panels; status/decision shared helpers/tests",
+      "result": "passed",
+      "note": "Scoped lint, no warnings; later-phase files remain outside this checkpoint"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe11-shared.log",
+      "sha256": "4eff86279c7ae1b303e95397f41595298b001250ee935c00ac6e810d50a5e38b"
+    },
+    {
+      "path": "/tmp/fe11-desktop.log",
+      "sha256": "fe34f5a0529d37c94cb958beb2b5238b9d29f07fefd59a7ace1b5be590037f48"
+    },
+    {
+      "path": "/tmp/fe11-shared-type.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe11-tui-type.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe11-renderer-type.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "Queues are bounded projections; absence is not all-clear",
+    "No durable opportunity proposal/dismissal or authorized repair-plan gateway APIs implemented",
+    "No bulk memory export/retention/deletion-manifest UI; one-record tombstone remains distinct from physical erasure",
+    "No full setup/repair user-journey or live harness/native visual qualification"
+  ]
+}

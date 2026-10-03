@@ -1,0 +1,130 @@
+{
+  "phase": "BE13 configured local speech bridge",
+  "status": "implemented_nonbudgeted_local_route_isolated_canonical_validation_passed_live_qualification_pending",
+  "observed_head": "04c0319ce33f8c51e4b165c3728de5732b49cb5e",
+  "schema_migration": "none",
+  "modified_paths": [
+    "agent/speech_local.py",
+    "agent/speech_local_worker.py",
+    "agent/media_ingress.py",
+    "tui_gateway/methods_media.py",
+    "tests/agent/test_speech_local.py",
+    "tests/agent/test_media_ingress.py",
+    "tests/tui_gateway/test_media_rpc.py",
+    "docs/build/be13-local-speech.md",
+    "docs/build/be13-speech-validation.json"
+  ],
+  "source_sha256": {
+    "agent/speech_local.py": "de5b1f5cd3d86107fdcbc240be46609c6011a3f351652df5f522587d71982ae9",
+    "agent/speech_local_worker.py": "29cd370d2f8b8b6dcd8ff32072c7b83dce334d3b45feb3a1af56c5d989142540",
+    "agent/media_ingress.py": "f573a5fee700a934f5c18988f0a7c7c335bc078a3c14c4d7c187e431eb8c1a63",
+    "tui_gateway/methods_media.py": "047afbc1d2761be82b9b354fe031ed804ff0767178a0b1e278f13190ab21c53f",
+    "tests/agent/test_speech_local.py": "ae3dba026e90f7bc976f44fff0cbb83639675c1899419fe49698fe3ac1e12ea0",
+    "tests/agent/test_media_ingress.py": "ee629eaa92c791f048625b02a5898719f95e8f0cb305f8db05e1313628ccbb66",
+    "tests/tui_gateway/test_media_rpc.py": "eaa092f2b5e2b26a7cebb243d1d0dc5f653f179523ca31af54190028f40377b0",
+    "docs/build/be13-local-speech.md": "b410ff35fdcbc14a85e0fd9a19158b202f093503cb659c3ff26860eec71f8f1b"
+  },
+  "validated_scope": [
+    "real served-profile configured factory and fixed offline worker",
+    "controlled installed-package fixtures only, no live models",
+    "A-to-B-to-A config and output isolation",
+    "same-client exact PCM bytes, length and SHA256",
+    "no automatic task admission or mission cancellation",
+    "missing package/model/unsupported route denial",
+    "CPU/wall/output bounds, cancellation and child reaping",
+    "Python network/subprocess guard and credential-free child environment",
+    "model load failures remain honest after prerequisite-only capability check",
+    "strict runtime_budget remains unsupported and fails closed"
+  ],
+  "campaigns": [
+    {
+      "log": "/tmp/be13-speech-focused-tests.log",
+      "sha256": "6313bdf2f64dcaca9e9ebef3d48896e1ea1c00c33be3c737c35cc33916b20832",
+      "passed": 9,
+      "failed": 0,
+      "files": 3,
+      "scope": "media ingress, configured worker/factory, real media RPC including A-B-A and exact returned audio"
+    },
+    {
+      "log": "/tmp/be13-speech-final-tests.log",
+      "sha256": "cc2bdb155640d44a1f405c0ebe406c6118f6689670ae63fc2b31d4694565ab8f",
+      "passed": 10,
+      "failed": 1,
+      "setup_or_collection_errors": 6,
+      "files": 6,
+      "scope": "final source confirmation including budget, generated contracts, legacy voice",
+      "blockers": [
+        "Concurrent hermes_state.py references hermes_state_captures before that new module exists; media RPC fixtures and budget collection cannot run",
+        "Concurrent contract additions made generated files stale; speech RPC models were not changed"
+      ],
+      "result": "not a green final integration campaign",
+      "resolution": "Superseded by canonical isolated 51/51 run on exact same frozen speech source; no workaround or changes to shared capture files"
+    }
+  ],
+  "checks": [
+    {
+      "command": "python -m ruff check owned Python paths",
+      "log": "/tmp/be13-speech-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check -- owned paths",
+      "log": "/tmp/be13-speech-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "result": "passed"
+    },
+    {
+      "command": "scripts/check_profile_scope_patterns.py --files production paths",
+      "log": "/tmp/be13-speech-scope.log",
+      "sha256": "38be9ede68ea9a1a2ba8abd2613fefa71791298b3ca50700c48821eb567ef884",
+      "result": "18 existing profile-decorator advisory matches; handlers enter full agent_runtime_scope and worker uses served_profile_child_env, proven by A-B-A tests"
+    },
+    {
+      "command": "python -m ruff check owned Python paths in isolated worktree",
+      "log": "/tmp/be13-speech-isolated-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check -- owned paths in isolated worktree",
+      "log": "/tmp/be13-speech-isolated-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "result": "passed"
+    }
+  ],
+  "remaining_code_or_certification_gates": [
+    "Certified BE03 aggregate speech budget reservation adapter remains absent; runtime_budget sessions are deliberately unavailable",
+    "Streaming STT remains unsupported for this configured local adapter",
+    "Native Windows CPU/file process-bound support remains unavailable",
+    "Whisper Hub alias/cache discovery is unsupported; complete existing local model directory is required"
+  ],
+  "remaining_live_qualification": [
+    "Real configured model quality and latency",
+    "Physical client microphone permission and audio playback",
+    "Cross-device UX and measured benefit"
+  ],
+  "prohibited_actions_taken": false,
+  "not_performed": [
+    "model download/install/training/live inference",
+    "settings or credential changes",
+    "remote fallback",
+    "backend speaker playback",
+    "git staging or commit",
+    "root buildjournal edits"
+  ],
+  "isolated_base_commit": "04c0319ce33f8c51e4b165c3728de5732b49cb5e",
+  "isolated_worktree": "/workspace/shared/ryoko-backend-completion-validation",
+  "final_source_hashes_match_main_and_isolated": true,
+  "canonical_campaign": {
+    "log": "/tmp/be13-speech-isolated-tests.log",
+    "sha256": "e8a4bf9ab24ccab44ca316228b11e1c4feaab9ec311b86b32fa352546a8a8437",
+    "passed": 51,
+    "failed": 0,
+    "skipped": 0,
+    "files": 6,
+    "seconds": 19.6,
+    "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/agent/test_media_ingress.py tests/agent/test_speech_local.py tests/tui_gateway/test_media_rpc.py tests/agent/test_budget_runtime.py tests/tui_gateway/contracts/test_generated.py tests/tui_gateway/test_voice_live_delegation.py",
+    "cwd": "/workspace/shared/ryoko-backend-completion-validation"
+  }
+}

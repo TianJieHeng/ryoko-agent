@@ -60,6 +60,9 @@ class _DB:
         self.events.append(("reload", session_id, kwargs))
         return [{"role": "user", "content": "durable latest"}]
 
+    def assert_provider_state_compatible(self, session_id):
+        self.events.append(("provider_compatible", session_id))
+
     def refresh_session_turn_lease(self, session_id, holder, **kwargs):
         self.events.append(("refresh", session_id, holder))
         self.refresh_times.append(time.time())

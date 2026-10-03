@@ -597,7 +597,7 @@ class TestWireInvariant:
         assert sent == [*turn, {"type": "text", "text": "PLUGIN-CTX"}]
 
         history = db.get_messages_as_conversation(sid)
-        assert "PLUGIN-CTX" in history[0]["content"]  # persisted with the turn, not dropped
+        assert history[0]["content"] == sent  # exact image and injected context survive persistence
 
         handler.captured_requests = []
         agent2 = make_agent()

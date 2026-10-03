@@ -1,0 +1,58 @@
+{
+  "phase": "FE12",
+  "status": "verifying",
+  "base": "a02eab31db03e68c1fc6e845e69e3a4e350b6d93",
+  "checks": [
+    {
+      "command": "./node_modules/.bin/vitest run apps/shared/src/runtime-decisions.test.ts",
+      "result": "passed",
+      "tests": 2
+    },
+    {
+      "command": "cd apps/desktop && ../../node_modules/.bin/vitest run src/app/runtime/decision-panel.test.tsx",
+      "result": "passed",
+      "tests": 2
+    },
+    {
+      "command": "npm run --workspace apps/shared typecheck",
+      "initial_result": "failed: incomplete synthetic receipt fixture",
+      "result": "passed after fully typed fixture correction"
+    },
+    {
+      "command": "npm run --workspace ui-tui typecheck && (cd apps/desktop && NODE_OPTIONS=--max-old-space-size=4096 ../../node_modules/.bin/tsc -p . --noEmit)",
+      "result": "passed"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe12-shared.log",
+      "sha256": "a4a967342b449fe351f02b1c4c60d21ebe41d9d8f11384b0d37672aa1b29f8e7"
+    },
+    {
+      "path": "/tmp/fe12-desktop.log",
+      "sha256": "7786cc390421ca24db68ab2f69ecf73ac36bf5d756cc8e32e7f169a7b6ebcfff"
+    },
+    {
+      "path": "/tmp/fe12-shared-type.log",
+      "sha256": "1d7ebfba917c5086008d4dd86b2558ca2bcff2276d3c1b455c54d08a804bb58f"
+    },
+    {
+      "path": "/tmp/fe12-shared-type-retry.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe12-tui-type.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe12-renderer-type.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "Read-only recorded receipt explanations; no hidden reasoning or raw state packets exposed",
+    "Mode/feedback/ambient policy and proven-safe approval-reduction operations are not exposed",
+    "No LAYA activation or production readiness; training/dataset/live service gates remain separate",
+    "No matched user-friction pilot or latency/quality claim"
+  ]
+}

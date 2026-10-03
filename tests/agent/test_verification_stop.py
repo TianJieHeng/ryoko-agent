@@ -15,6 +15,7 @@ from agent.verification_stop import (
 )
 
 def _node_project(root: Path) -> None:
+    (root / ".git").mkdir(exist_ok=True)
     (root / "package.json").write_text(
         json.dumps({"scripts": {"test": "vitest", "lint": "eslint ."}}),
         encoding="utf-8",
@@ -99,6 +100,7 @@ def test_no_suite_nudge_uses_canonical_temp_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
     project = tmp_path / "project"
     project.mkdir()
+    (project / ".git").mkdir()
     (project / "package.json").write_text("{}", encoding="utf-8")
     real_temp = tmp_path / "real-temp"
     real_temp.mkdir()
@@ -117,6 +119,7 @@ def test_no_suite_nudge_uses_canonical_temp_dir(tmp_path, monkeypatch):
 
 def test_ad_hoc_pass_satisfies_no_suite_stop_loop(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    (tmp_path / ".git").mkdir()
     (tmp_path / "package.json").write_text("{}", encoding="utf-8")
     changed = str(tmp_path / "src" / "app.ts")
     script = Path(tempfile.gettempdir()) / f"hermes-ad-hoc-stop-{tmp_path.name}.py"

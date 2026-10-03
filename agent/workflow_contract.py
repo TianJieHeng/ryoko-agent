@@ -338,7 +338,13 @@ def _workflow_record(record):
     for field, identity in (("predecessor", "workflow_id"), ("template_ref", "template_id")):
         ref = row.setdefault(field, None)
         if ref is not None:
-            _reference(ref, identity)
+            if field == "template_ref" and ref.get("store") == "artifact_templates":
+                _reference({key: value for key, value in ref.items() if key != "store"}, identity)
+                _require(len(row["steps"]) == 1 and row["steps"][0]["kind"] == "render_markdown"
+                         and row["steps"][0]["parameters"] == {"template": "__canonical_template__"},
+                         "Canonical template workflows require one explicit __canonical_template__ render step")
+            else:
+                _reference(ref, identity)
     if row["predecessor"] is not None:
         _require(row["predecessor"]["workflow_id"] == row["workflow_id"]
                  and row["predecessor"]["version"] < row["version"], "Predecessor must be an earlier version of this workflow")

@@ -1344,6 +1344,11 @@ def spawn_background_review_thread(
     memory operation set."""
     if task_cfg is None:
         task_cfg = _background_review_task_config()
+    from agent.decisions.integration import observe_core
+    latest = next((item.get("content", "") for item in reversed(messages_snapshot)
+                   if item.get("role") == "user"), "")
+    observe_core("DP10", {"snippet": latest[:4096] if isinstance(latest, str) else "",
+                          "review_scope": {"memory": review_memory, "skills": review_skills}})
     # Per-agent overrides (agent._MEMORY_REVIEW_PROMPT etc.) keep working.
     name = _PROMPT_NAME_BY_SCOPE[(review_memory, review_skills)]
     prompt = getattr(agent, name, globals()[name])

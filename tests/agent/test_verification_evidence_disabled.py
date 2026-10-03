@@ -20,6 +20,7 @@ def project(tmp_path, monkeypatch):
     monkeypatch.delenv("HERMES_VERIFY_ON_STOP", raising=False)
     root = tmp_path / "project"
     root.mkdir()
+    (root / ".git").mkdir()
     (root / "package.json").write_text('{"scripts": {"test": "vitest"}}', encoding="utf-8")
     return root
 

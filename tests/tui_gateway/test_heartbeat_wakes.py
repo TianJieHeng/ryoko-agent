@@ -26,7 +26,10 @@ DELEGATION = {"type": "async_delegation", "delegation_id": "d1", "session_key": 
 @pytest.fixture
 def surface(monkeypatch):
     submits: list = []
-    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda evt, consumer: "claimed")
+    def claim(evt, consumer, *, owner_context):
+        assert owner_context is None  # these are legacy, unbound surface fixtures
+        return "claimed"
+    monkeypatch.setattr("tools.async_delegation.claim_event_delivery", claim)
     monkeypatch.setattr("tools.async_delegation.complete_event_delivery", lambda *a, **k: None)
     monkeypatch.setattr(server, "_run_prompt_submit", lambda rid, sid, session, text, **kw: submits.append((text, kw)))
     monkeypatch.setattr(server, "_emit", lambda *a, **k: None)
@@ -67,3 +70,22 @@ def test_off_mutes_process_wakes_but_subagent_results_still_land(surface, tmp_pa
 
     assert server._notif_handle_event("sid", session, dict(DELEGATION), set(), registry, lambda e: "t", completions) is True
     assert [kw["display_kind"] for _, kw in surface] == ["async_delegation_complete"]
+
+
+def test_denied_completion_claim_preserves_trusted_parent_authority(surface, monkeypatch):
+    owner_context = object()
+    session = _session()
+    session["agent"] = SimpleNamespace(runtime_context=owner_context)
+    event = {**DELEGATION, "owner_context": object()}
+    claims, completed = [], []
+    monkeypatch.setattr("tools.async_delegation.claim_event_delivery",
+        lambda evt, consumer, *, owner_context: claims.append(owner_context))
+    monkeypatch.setattr("tools.async_delegation.complete_event_delivery",
+        lambda *args: completed.append(args))
+    assert server._notif_claim_turn(session)
+
+    server._notif_dispatch_event("sid", session, event, "unclaimed result")
+
+    assert claims == [owner_context]
+    assert completed == [] and surface == []
+    assert session["running"] is False

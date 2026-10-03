@@ -553,6 +553,35 @@ def test_scratch_root_is_per_user(tmp_path: Path, monkeypatch) -> None:
     assert mine.parent == tmp_path and theirs.parent == tmp_path
 
 
+def test_explicit_scratch_parent_isolates_files_and_keeps_unrelated_data(tmp_path: Path) -> None:
+    root = _probe_root(tmp_path)
+    parent = tmp_path / "disk"
+    parent.mkdir()
+    unrelated = parent / "keep.txt"
+    unrelated.write_text("not a runner fixture")
+    probe = tmp_path / "probe"
+    probe.mkdir()
+    for index in range(2):
+        receipt = tmp_path / f"receipt-{index}.txt"
+        (probe / f"test_{index}.py").write_text(
+            "import tempfile\nfrom pathlib import Path\n"
+            "def test_temporary_directory():\n"
+            f"    Path({str(receipt)!r}).write_text(tempfile.gettempdir())\n"
+            "    assert Path(tempfile.gettempdir()).is_dir()\n"
+        )
+    result = subprocess.run([sys.executable, str(root / "scripts/run_tests_parallel.py"),
+        "--paths", str(probe), "--scratch-parent", str(parent), "-j", "2", "--file-retries", "0"],
+        capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    scratch = [Path((tmp_path / f"receipt-{index}.txt").read_text()) for index in range(2)]
+    assert scratch[0] != scratch[1]
+    assert all(path.parent.parent == parent and not path.exists() for path in scratch)
+    assert unrelated.read_text() == "not a runner fixture"
+    rejected = subprocess.run([sys.executable, str(root / "scripts/run_tests_parallel.py"),
+        "--paths", str(probe), "--scratch-parent", "relative"], capture_output=True, text=True, timeout=30)
+    assert rejected.returncode == 2 and "existing absolute directory" in rejected.stderr
+
+
 def test_off_host_note_names_platforms_specs_that_exclude_this_host(tmp_path: Path) -> None:
     """A green local run must say which platforms() tests were skipped and where
     they run; specs are resolved (posix is not off-host on Linux or macOS)."""

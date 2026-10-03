@@ -1,0 +1,103 @@
+{
+  "phase": "BE13 strict aggregate offline speech budget adapter",
+  "status": "implemented_offline_canonical_validation_passed_shared_contract_regeneration_pending",
+  "observed_head": "7f445ee652d9647f2ca3ff46c9d4aa508af36487",
+  "schema_migration": "none; existing runtime commands, finite-control leases, budget accounts and reservations",
+  "modified_paths": [
+    "agent/artifact_commands.py",
+    "agent/media_ingress.py",
+    "agent/speech_local.py",
+    "agent/speech_budget.py",
+    "agent/speech_control.py",
+    "tui_gateway/contracts/media.py",
+    "tui_gateway/methods_media.py",
+    "tests/agent/test_speech_budget.py",
+    "tests/tui_gateway/test_speech_budget_rpc.py",
+    "docs/build/be13-local-speech.md",
+    "docs/build/be13-strict-speech-validation.json"
+  ],
+  "source_sha256": {
+    "agent/artifact_commands.py": "b20908ad0bb5b90e1cf2632f0a3b87e17a4d2e4e0f8396549aa2129e9edb1ab2",
+    "agent/media_ingress.py": "129b74c3841ff9153cf06e41d4281d729a09f793e5691fdab62f8fc782a1fdf8",
+    "agent/speech_local.py": "d5b4cb9ba65bc09dc7f6255f9376d01926686d7d2635cb7c2834b689640f9121",
+    "agent/speech_budget.py": "c2bc53de3ce8c2ef24ed7c3fcf7fd04bbe3eb8c7c89a7e32fcd8dcffc36fe394",
+    "agent/speech_control.py": "773275d5c0fb88a09a2ace5741a50048381a3087512e328981e6ae6c8f83d264",
+    "tui_gateway/contracts/media.py": "e62075f0ba52e8b83daceaaaf437d3be2caa5d473c03029d487afcd7b06318ca",
+    "tui_gateway/methods_media.py": "bf237c81c4ae80fb144ab80bd697d95e309f128953d867ace17c975c5531651d",
+    "tests/agent/test_speech_budget.py": "20e4941c7fadc1fa471918cfb700ce3ca7dcdf8f90fabfbcf136e691b927d882",
+    "tests/tui_gateway/test_speech_budget_rpc.py": "8a7140e4dc48b73ae16f1255c140a89a288e1ebda054e8bb1a13ff765a15f572",
+    "docs/build/be13-local-speech.md": "eb1311bb51ec1ec55bddbcc92a2645230a9cdf8a38296210b10a26a6ecc5bee5"
+  },
+  "shared_file_note": "agent/artifact_commands.py ownership is only adding runtime.voice.admit to _CONTROL_RPCS; connected-source sibling may add its own RPC strings afterward. Parent owns coordinated generation of gateway contracts.",
+  "validated_scope": [
+    "explicit first-turn owned finite speech admission through begin_artifact_control and create_run_budget; no model client, fabricated active run, capture start or mission mutation",
+    "exact retry and new admission click retain first root, ceiling and deadline; exhausted and expired first-voice accounts cannot silently renew",
+    "current real submit account supersedes the first-voice control; old, sibling, foreign-session and profile account borrowing rejected",
+    "actual local physical process dispatch reserves executor concurrency, attempts and wall against every existing ancestor",
+    "start, empty/cancelled captures, oversized text/PCM and early deadline refusal do not accumulate worker reservations",
+    "known process-creation refusal consumes zero physical attempts and no retained concurrency",
+    "known termination reconciles measured wall and attempts, including cancelled/failed/timed-out work",
+    "unknown termination preserves worst-case durable units and executor slot plus existing host worker semaphore slot",
+    "retired lease cannot refund a dispatched reservation; exact process is killed and private output suppressed",
+    "actual wall overrun is charged uncapped and becomes sticky debt blocking new dispatch",
+    "CPU hard limit shortened inside original finite worker envelope; strict mission cancellation kills/reaps and charges actual work",
+    "real RPC/profile/SQLite reopen with request identities prevents worker redispatch or PCM replay",
+    "legacy configured/unconfigured/non-strict routes, A-to-B-to-A profile isolation and unsupported/malformed policies preserved",
+    "client playback stays independent; no backend speaker, provider/network, download or actual model call in evidence"
+  ],
+  "canonical_campaign": {
+    "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh --scratch-parent /workspace/shared -j2 tests/agent/test_speech_budget.py tests/tui_gateway/test_speech_budget_rpc.py tests/agent/test_speech_local.py tests/agent/test_media_ingress.py tests/tui_gateway/test_media_rpc.py tests/agent/test_budget_runtime.py tests/hermes_state/test_budget_accounts.py tests/agent/test_artifact_commands.py",
+    "cwd": "/workspace/scratch/42f2baf55663/ryoko-agent",
+    "log": "/tmp/be13-strict-speech-final-verified.log",
+    "sha256": "906e58774dfc686dac24acb3f26e27dc2a54d4cd89ed444bf4482b9c2768b00a",
+    "files": 8,
+    "passed": 93,
+    "failed": 0,
+    "seconds": 28.9
+  },
+  "checks": [
+    {
+      "check": "scoped Ruff",
+      "log": "/tmp/be13-strict-speech-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "result": "passed"
+    },
+    {
+      "check": "scoped git diff --check",
+      "log": "/tmp/be13-strict-speech-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "result": "passed"
+    },
+    {
+      "check": "profile-scope static advisory",
+      "log": "/tmp/be13-strict-speech-profile-check.log",
+      "sha256": "a086be576f9069836ff704395ccb2714071a448fc72322691ae32c8446572b04",
+      "result": "19 decorator advisory matches; reviewed full agent_runtime_scope plus served_profile_child_env and live policy/identity checks; real A-B-A and strict foreign-profile fixtures pass"
+    }
+  ],
+  "dto_changes": {
+    "new_rpc": "runtime.voice.admit: VoiceAdmissionParams(request_id)",
+    "capture_start": "VoiceCaptureStartParams adds optional request_id and budget_account_id, required in strict mode",
+    "speak": "VoiceSpeakParams inherits the same optional strict control fields",
+    "feed": "unchanged; capture retains immutable bound authority",
+    "response": "existing response_json; successful final speech includes budget receipt; admission returns aggregate budget snapshot",
+    "generated_contracts": "coordinated by parent; not modified by this worker"
+  },
+  "known_limits": [
+    "installed trusted local Whisper/Piper packages and assets only; no live model quality/latency or physical audio qualification",
+    "streaming STT and native Windows resource-limit support remain unsupported",
+    "no new ceiling/reset path for an expired/exhausted session tree; explicit new-session/new-budget design remains separate",
+    "no speech-reservation inspection/reconciliation RPC; successful receipts inline, durable unknown records retained for existing operator reconciliation",
+    "unknown process termination keeps the process-wide host slot unavailable until restart/reconciliation; it is never reported as known stopped",
+    "generated gateway contract freshness and frontend consumer compilation belong to the parent-coordinated integration gate"
+  ],
+  "not_performed": [
+    "live config or credential changes",
+    "models/packages install/download",
+    "live provider/model/network inference",
+    "deployment",
+    "Git staging or commit",
+    "root plan or buildjournal edits",
+    "other worktree or interpreter mutation"
+  ]
+}

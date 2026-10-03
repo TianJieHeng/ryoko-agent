@@ -7,6 +7,7 @@ Verifies that:
 """
 
 import pytest
+from tests.agent.tool_view_fixtures import tool_definitions_with_view
 #pytestmark = pytest.mark.skip(reason="Hangs in non-interactive environments")
 
 
@@ -82,7 +83,7 @@ def _make_413_error(*, use_status_code=True, message="Request entity too large")
 
 def _new_test_agent():
     with (
-        patch("model_tools.get_tool_definitions", return_value=_make_tool_defs("web_search")),
+        patch("model_tools.get_tool_definitions_with_view", return_value=tool_definitions_with_view(_make_tool_defs("web_search"))),
         patch("model_tools.check_toolset_requirements", return_value={}),
         patch("agent.process_bootstrap.OpenAI"),
     ):

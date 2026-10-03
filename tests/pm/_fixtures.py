@@ -112,14 +112,35 @@ def served(tmp_path):
         yield docroot, f"http://127.0.0.1:{server.server_port}"
 
 
+def seed_pm_runtime_cache(request, destination: Path) -> bool:
+    """Copy an explicitly prepared cache without giving uv write access to it."""
+    prepared_cache = request.config.getini("pm_runtime_cache")
+    if not prepared_cache:
+        return False
+    source = Path(prepared_cache).resolve()
+    assert source.is_dir(), f"prepared PM runtime cache is missing: {source}"
+    for path in source.rglob("*"):
+        if path.is_symlink():
+            assert not Path(os.readlink(path)).is_absolute() and path.resolve().is_relative_to(source), (
+                f"prepared PM runtime cache link escapes its tree: {path}"
+            )
+    # uv mutates its working cache. Preserve internal links but never expose
+    # the prepared cache itself to a fixture's install or cache-prune path.
+    shutil.copytree(source, destination, symlinks=True, dirs_exist_ok=True)
+    return True
+
+
 @pytest.fixture(scope="module")
-def isolated_python(tmp_path_factory):
+def isolated_python(tmp_path_factory, request):
     from pm.runtime_stage import stage_runtime
 
     root = tmp_path_factory.mktemp("pm-python")
     uv = shutil.which("uv")
     assert uv, "the worker contract requires real uv"
-    python = stage_runtime(Path(uv), Path(sys.executable), root)
+    cache = tmp_path_factory.mktemp("pm-cache")
+    prepared = seed_pm_runtime_cache(request, cache)
+    python = stage_runtime(Path(uv), Path(sys.executable), root,
+                           cache=cache if prepared else None, offline=prepared)
     _run([str(python), "-I", "-c", "import importlib.util; assert importlib.util.find_spec('yaml') is None"],
          cwd=root, env=dict(os.environ))
     return python

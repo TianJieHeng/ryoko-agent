@@ -1,0 +1,62 @@
+{
+  "phase": "FE02",
+  "status": "verifying",
+  "base": "5b3285958bf15b8247bc2e0a493280ecaf44209e",
+  "checks": [
+    {
+      "command": "node_modules/.bin/vitest run apps/shared/src/runtime-projects.test.ts apps/shared/src/runtime-feature-session.test.ts ui-tui/src/app/runtime/feature-commands.test.ts",
+      "result": "passed",
+      "tests": 6,
+      "files": 3
+    },
+    {
+      "command": "npm run --workspace apps/shared typecheck",
+      "result": "passed",
+      "environment": "clean FE01+FE02 validation worktree"
+    },
+    {
+      "command": "npm run --workspace ui-tui typecheck",
+      "result": "passed",
+      "environment": "clean FE01+FE02 validation worktree"
+    },
+    {
+      "command": "cd apps/desktop && tsc -p . --noEmit",
+      "result": "passed",
+      "environment": "clean FE01+FE02 validation worktree"
+    },
+    {
+      "command": "cd apps/desktop && vitest run src/app/runtime/feature-panel.test.tsx src/app/runtime/inspector.test.tsx",
+      "result": "passed",
+      "tests": 3,
+      "files": 2
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe02-tests.log",
+      "sha256": "831dceb2c9b08667e3b1a415823c64ca2bffad761d0c396a63744bbaab232117"
+    },
+    {
+      "path": "/tmp/fe02-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe02-clean-tui.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe02-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/fe02-desktop-tests.log",
+      "sha256": "66c18ce86af96c7464babb6f9366185fae9bcbf760b471696247c6993583d63a"
+    }
+  ],
+  "limitations": [
+    "Primary real personal MCP contract/credential gate remains backend unavailable; no fallback fabricated",
+    "Capture extraction/indexing/search/batch/mobile adapters not implemented; originals and bounded duplicate candidates exposed",
+    "Expert command controls are functional, not a polished project editor; no live provider/browser/native visual acceptance yet",
+    "No ten-task user pilot or full product P01/P02/P03/P06 claim"
+  ]
+}

@@ -1,25 +1,18 @@
-"""Cell 5 — effect exactly-once across the delivery-outbox boundary.
+"""Cell 5 — conservative crash recovery across the delivery-outbox boundary.
 
-Contract clause (arXiv:2608.03836, "effect exactly-once"): a crash between
-the provider send and its durable record must not double-deliver on catch-up
-(gateway reboot / boot redelivery sweep). Distinct from cell 2's consume-once:
-cell 2 pins that exactly one claimant WINS a parked row; this cell pins the
-observable SIDE EFFECT — how many copies of a reply the platform received.
+A send and its durable acknowledgment cannot be atomic. BE06 therefore does not
+claim external exactly-once delivery: possibly accepted work is retained as
+``outcome_unknown`` and never automatically resent, even with a duplicate marker.
+Only never-attempted pending work or adapter-proven never-dispatched failures may
+be retried. A crash after claiming but before dispatch cannot be distinguished
+from an accepted send and must also remain uncertain.
 
-Hermes' outbox is ``gateway/delivery_ledger.py``. Because a send and its
-``mark_delivered`` can never be one atomic step, the ledger promises honest
-at-least-once rather than a silent resend: a row that was never sent
-('pending') is redelivered plainly; a row whose send may have landed
-('attempting' / 'failed') is redelivered WITH a visible recovery marker. The
-effect-level invariant that follows, per obligation id, is:
-
-* at most ONE unmarked copy ever reaches the platform (every extra copy is
-  labelled as a possible duplicate);
-* at least one copy reaches it (nothing is lost);
-* after a clean boot sweep the ledger row is terminal (delivered/abandoned);
-* further reboots deliver nothing new (no re-send once recorded);
-* N gateways rebooting concurrently over the same rows never both send one
-  (claim exclusivity rests on the owner-stamp CAS in ``sweep_recoverable``).
+The journal pins actual platform acceptance independently of the ledger. After
+recovery every obligation retains its exact payload and recipient; safe work is
+delivered once, uncertain work remains unresolved, and further boots send nothing.
+Concurrent rebooters must claim each eligible row at most once. The fake transport
+is single-send; this does not certify legacy adapter inline retry behavior or
+strict external exactly-once delivery.
 
 What is real
 ------------
@@ -177,6 +170,8 @@ async def main():
             assert oid, "ledger refused to record an obligation"
             if kind == "sent":
                 await adapter.send(CHAT_ID, text)  # accepted; finalize never runs
+            elif kind == "never-dispatched":
+                dl.mark_failed(oid, "send_path_degraded")
         ids[text] = {"id": oid, "kind": kind}
     out = Path(os.environ["CELL5_IDS"])
     tmp = out.with_suffix(".part")
@@ -355,22 +350,31 @@ class Cell:
             conn.close()
 
 
-def _assert_effect_exactly_once(cell: Cell, ids: dict, label: str) -> dict:
+def _assert_conservative_delivery(cell: Cell, ids: dict, label: str, *, crashed_body: str | None = None) -> dict:
     copies = cell.copies(ids)
     ledger = cell.ledger()
+    conn = sqlite3.connect(f"file:{cell.db_path}?mode=ro", uri=True)
+    try:
+        retained = {row[0]: row[1:] for row in conn.execute(
+            "SELECT obligation_id,content,session_key,platform,chat_id FROM delivery_obligations")}
+    finally:
+        conn.close()
     for body, meta in ids.items():
-        oid, c = meta["id"], copies[meta["id"]]
-        assert c["unmarked"] <= 1, (
-            f"[{label}] {body!r} ({meta['kind']}): {c['unmarked']} UNMARKED copies reached the "
-            f"platform — a silent duplicate (roles={c['roles']})"
-        )
-        assert c["unmarked"] + c["marked"] >= 1, f"[{label}] {body!r}: reply lost (0 copies)"
-        assert oid in ledger, f"[{label}] {body!r}: ledger row vanished before terminal"
-        state, attempts = ledger[oid]
-        assert state in ("delivered", "abandoned"), (
-            f"[{label}] {body!r}: ledger row not terminal after a clean boot sweep "
-            f"(state={state}, attempts={attempts})"
-        )
+        oid, kind = meta["id"], meta["kind"]
+        assert oid in ledger, f"[{label}] {body!r}: retained obligation vanished"
+        assert retained[oid] == (body, SESSION_KEY, "telegram", CHAT_ID)
+        expected_copies, expected_state, expected_attempts = EXPECTED[kind]
+        if crashed_body is not None and kind == "pending":
+            # The boot claims a batch before sending its first member. All batch
+            # siblings have the same uncertain durable state after this crash.
+            expected_copies = (int(body == crashed_body), 0)
+            expected_state, expected_attempts = "outcome_unknown", 1
+        c = copies[oid]
+        assert (c["unmarked"], c["marked"]) == expected_copies, (
+            f"[{label}] {body!r} ({kind}): unexpected copies {c}, expected {expected_copies}")
+        assert sum(expected_copies) <= 1, "uncertain delivery must never be made safe by a duplicate marker"
+        assert ledger[oid] == (expected_state, expected_attempts), (
+            f"[{label}] {body!r}: {ledger[oid]} does not preserve delivery truth")
     return copies
 
 
@@ -380,80 +384,59 @@ def _assert_reboots_are_noops(cell: Cell, ids: dict, label: str, n: int = 2) -> 
     for _ in range(n):
         result = cell.boot()
         assert result["claimed"] == [] and result["redelivered"] == 0, (
-            f"[{label}] a later reboot re-claimed/re-sent settled obligations: {result}"
+            f"[{label}] a later reboot re-claimed/re-sent settled or held obligations: {result}"
         )
     assert cell.journal_entries() == before, f"[{label}] a later reboot re-sent a reply"
-    assert cell.ledger() == ledger_before, f"[{label}] a later reboot mutated settled rows"
+    assert cell.ledger() == ledger_before, f"[{label}] a later reboot mutated settled or held rows"
 
 
-# Kill point -> (kinds seeded by the turn process, reboot #1 crashes inside its resend?)
+# Kill-point states are observationally distinct in the fake platform journal,
+# but attempting-unsent and sent-unacked are intentionally indistinguishable to recovery.
 KILL_POINTS = {
-    # recorded 'pending', crashed before mark_attempting: never sent.
-    "recorded-unsent": (["pending"] * N_OBLIGATIONS, False),
-    # (a) recorded + attempting, send NOT issued.
-    "attempting-unsent": (["attempting"] * N_OBLIGATIONS, False),
-    # (b) send accepted by the transport, SIGKILL before mark_delivered.
-    "sent-unacked": (["sent"] * N_OBLIGATIONS, False),
-    # (b') the REBOOTING gateway is itself killed inside its redelivery send.
-    "resend-crash-attempting": (["attempting"] * N_OBLIGATIONS, True),
+    "recorded-unsent": ["pending"] * N_OBLIGATIONS,
+    "attempting-unsent": ["attempting"] * N_OBLIGATIONS,
+    "sent-unacked": ["sent"] * N_OBLIGATIONS,
+    "proven-never-dispatched": ["never-dispatched"] * N_OBLIGATIONS,
 }
 
-# Expected copies per kind after the first clean sweep (deterministic).
+# (unmarked/marked copies, durable state, recovery-attempt count)
 EXPECTED = {
-    "delivered": (1, 0),   # control: sent + marked delivered, never resent
-    "pending": (1, 0),     # never sent -> one plain redelivery
-    "attempting": (0, 1),  # may have landed -> one marked redelivery
-    "sent": (1, 1),        # landed unmarked -> one marked (honest) duplicate
+    "delivered": ((1, 0), "delivered", 0),
+    "pending": ((1, 0), "delivered", 1),
+    "never-dispatched": ((0, 1), "delivered", 1),
+    "attempting": ((0, 0), "outcome_unknown", 0),
+    "sent": ((1, 0), "outcome_unknown", 0),
 }
 
 
 @pytest.mark.parametrize("kill_point", list(KILL_POINTS))
 def test_crash_between_send_and_record_never_double_delivers(tmp_path, kill_point):
-    kinds, resend_crash = KILL_POINTS[kill_point]
     cell = Cell(tmp_path)
-    ids = cell.seed_and_crash(kinds)
+    ids = cell.seed_and_crash(KILL_POINTS[kill_point])
     assert len(ids) == N_OBLIGATIONS + 1
-
-    crashed_resend = None
-    if resend_crash:
-        cell.crashing_boot()
-        resent = [e for e in cell.journal_entries() if e["role"] == "boot-1"]
-        assert len(resent) == 1, f"crashing boot journaled {len(resent)} sends (want 1)"
-        crashed_resend, _ = _strip_marker(resent[0]["content"])
-
     first = cell.boot()
-    copies = _assert_effect_exactly_once(cell, ids, kill_point)
-
-    owed = {m["id"] for m in ids.values() if m["kind"] != "delivered"}
-    assert set(first["claimed"]) == owed, (
-        f"[{kill_point}] first clean boot claimed {sorted(first['claimed'])}, owed {sorted(owed)}"
-    )
-    for body, meta in ids.items():
-        unmarked, marked = EXPECTED[meta["kind"]]
-        if body == crashed_resend:
-            marked += 1  # the killed boot's accepted resend: marked, so honest
-        got = copies[meta["id"]]
-        assert (got["unmarked"], got["marked"]) == (unmarked, marked), (
-            f"[{kill_point}] {body!r} ({meta['kind']}): copies unmarked/marked="
-            f"{got['unmarked']}/{got['marked']}, want {unmarked}/{marked} (roles={got['roles']})"
-        )
-        if meta["kind"] != "delivered":
-            assert cell.ledger()[meta["id"]][0] == "delivered", (
-                f"[{kill_point}] {body!r}: redelivered but ledger says {cell.ledger()[meta['id']]}"
-            )
-
+    _assert_conservative_delivery(cell, ids, kill_point)
+    eligible = {m["id"] for m in ids.values() if m["kind"] in {"pending", "never-dispatched"}}
+    assert set(first["claimed"]) == eligible
+    assert first["redelivered"] == len(eligible)
     _assert_reboots_are_noops(cell, ids, kill_point)
     assert integrity_ok(cell.db_path)
 
 
 def test_boot_killed_inside_plain_redelivery_never_double_delivers(tmp_path):
-    """A boot killed inside a plain ('pending') redelivery must not resend it unmarked next boot."""
+    """An accepted send and its claimed unsent siblings all retain uncertainty after SIGKILL."""
     cell = Cell(tmp_path)
     ids = cell.seed_and_crash(["pending"] * N_OBLIGATIONS)
     cell.crashing_boot()
-    cell.boot()
-    _assert_effect_exactly_once(cell, ids, "resend-crash-recorded")
+    sent = [entry for entry in cell.journal_entries() if entry["role"] == "boot-1"]
+    assert len(sent) == 1
+    crashed_body, marked = _strip_marker(sent[0]["content"])
+    assert marked is False
+    recovered = cell.boot()
+    assert recovered == {"claimed": [], "redelivered": 0}
+    _assert_conservative_delivery(cell, ids, "resend-crash-recorded", crashed_body=crashed_body)
     _assert_reboots_are_noops(cell, ids, "resend-crash-recorded")
+    assert integrity_ok(cell.db_path)
 
 
 def test_concurrent_reboots_claim_each_obligation_once(tmp_path):
@@ -490,21 +473,13 @@ def test_concurrent_reboots_claim_each_obligation_once(tmp_path):
 
     outs = [json.loads(o.strip().splitlines()[-1]) for _, o, _ in results]
     claims = [oid for out in outs for oid in out["claimed"]]
-    owed = {m["id"] for m in ids.values() if m["kind"] != "delivered"}
+    owed = {m["id"] for m in ids.values() if m["kind"] == "pending"}
     assert sorted(claims) == sorted(owed), (
         f"claim exclusivity violated: {len(claims)} claims for {len(owed)} obligations "
         f"(per rebooter: {[len(o['claimed']) for o in outs]})"
     )
 
-    copies = _assert_effect_exactly_once(cell, ids, "concurrent")
-    for body, meta in ids.items():
-        c = copies[meta["id"]]
-        assert c["unmarked"] + c["marked"] == 1, (
-            f"[concurrent] {body!r} ({meta['kind']}) delivered {c['unmarked'] + c['marked']}x "
-            f"by concurrent rebooters (roles={c['roles']})"
-        )
-        assert (c["unmarked"], c["marked"]) == EXPECTED[meta["kind"]], (
-            f"[concurrent] {body!r} ({meta['kind']}): wrong marker shape {c}"
-        )
+    _assert_conservative_delivery(cell, ids, "concurrent")
+    assert sum(out["redelivered"] for out in outs) == len(owed)
     _assert_reboots_are_noops(cell, ids, "concurrent", n=1)
     assert integrity_ok(cell.db_path)

@@ -12,7 +12,7 @@ import pytest
 
 
 @pytest.mark.platforms("posix")
-def test_staged_uv_prepares_pm_before_any_tool_download(tmp_path):
+def test_staged_uv_prepares_pm_before_any_tool_download(tmp_path, request):
     from pm.packages import Uv
     from pm.store import current_target
 
@@ -24,6 +24,8 @@ def test_staged_uv_prepares_pm_before_any_tool_download(tmp_path):
         shutil.copytree(repo / name, stage / name, ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copy2(repo / "hermes_constants.py", stage / "hermes_constants.py")
     home = tmp_path / "home"
+    from tests.pm._fixtures import seed_pm_runtime_cache
+    seed_pm_runtime_cache(request, home / "cache" / "uv")
     store = home / "tools"
     target = current_target()
     # As in setup: uv has been verified/extracted, but PM has no installed facts.
@@ -68,7 +70,7 @@ print(result.stdout)
 
 
 @pytest.mark.platforms("linux")
-def test_pm_cli_verifies_tls_with_platform_trust(tmp_path, monkeypatch):
+def test_pm_cli_verifies_tls_with_platform_trust(tmp_path, monkeypatch, request):
     from datetime import datetime, timedelta, timezone
     import hashlib
     from http.server import ThreadingHTTPServer
@@ -92,7 +94,11 @@ def test_pm_cli_verifies_tls_with_platform_trust(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_RUNTIME_DIR", str(home / "tools"))
     uv = shutil.which("uv")
     assert uv
-    python = prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime")
+    from tests.pm._fixtures import seed_pm_runtime_cache
+    cache = tmp_path / "prepared-cache"
+    prepared = seed_pm_runtime_cache(request, cache)
+    python = prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime",
+                             cache=cache if prepared else None, offline=prepared)
     source = Path(__file__).resolve().parents[2]
     repo = tmp_path / "source"
     for name in ("pm", "hermes_cli"):

@@ -1,0 +1,211 @@
+{
+  "base_commit": "c40a139570b0c5e9574946e295f8e535c25367e7",
+  "schema_version": 43,
+  "shared_files_note": "Shared files include monitor42, output43, and parent-owned agenda/decline registrations; parent owns coherent checkpoint.",
+  "files": [
+    {
+      "path": "agent/artifact_commands.py",
+      "sha256": "bc7cd720d1f5b2111cfc7f213767e2d332886b57b6da411125fc01ccd075ec5e",
+      "size": 11273,
+      "shared": true
+    },
+    {
+      "path": "agent/context_projection.py",
+      "sha256": "fbc488f4347044d4a7ba7d226f8e800bb12aef562652c5644a41098f2aeb5602",
+      "size": 6996,
+      "shared": false
+    },
+    {
+      "path": "agent/turn_api_call.py",
+      "sha256": "538ce8d418f21c56119ebea26a910497547a621fb676769d71576534464100e2",
+      "size": 14285,
+      "shared": false
+    },
+    {
+      "path": "agent/workflow_contract.py",
+      "sha256": "6bcf16e162034c248359c535aaa889e860de9656fd5ceba89a2e65886562b11c",
+      "size": 20649,
+      "shared": false
+    },
+    {
+      "path": "agent/workflow_runtime.py",
+      "sha256": "e17b4c5779835a59f39037d09bad7a76d1b0a2980a80242627a48c425221b6a8",
+      "size": 15110,
+      "shared": false
+    },
+    {
+      "path": "agent/output_influences.py",
+      "sha256": "f8835c23669f4107f93331e0a3b5bba9dc86bc362edfc8fe16f83443d301f97c",
+      "size": 17666,
+      "shared": false
+    },
+    {
+      "path": "hermes_cli/project_sources.py",
+      "sha256": "1a497aff77397a3019cf9895e8d5c4e45e65729dbf37cb97cb8cc45e39192bf2",
+      "size": 6679,
+      "shared": false
+    },
+    {
+      "path": "hermes_cli/template_application.py",
+      "sha256": "b0453f016e7c8669a778fb54eb3b9c10e297eb1bd59bc3b3048d592f83b8f398",
+      "size": 8262,
+      "shared": false
+    },
+    {
+      "path": "hermes_state_common.py",
+      "sha256": "e526b23283909c5610312061a147b444b8fd80763b338ec0d72d375f810f12f0",
+      "size": 79736,
+      "shared": true
+    },
+    {
+      "path": "hermes_state_workflows.py",
+      "sha256": "023fd1d586b5e8001617de06b107090ae3d672743c6982c280cf2811fceb09df",
+      "size": 13624,
+      "shared": false
+    },
+    {
+      "path": "hermes_state_output_context_schema.py",
+      "sha256": "df33252cb93d02cbb1234b75344fc2497728ce85c412eca8d6951829aae279a6",
+      "size": 755,
+      "shared": false
+    },
+    {
+      "path": "tui_gateway/contracts/__init__.py",
+      "sha256": "b449ff76383eb19e9e3500dfa75b0b00f14133667e474daa64346d598cd9ba92",
+      "size": 1048,
+      "shared": true
+    },
+    {
+      "path": "tui_gateway/contracts/project_sources.py",
+      "sha256": "5d184c092b36168c80f82ae8c0ff3f229726e42000648b37db17b8373339fcbe",
+      "size": 9648,
+      "shared": false
+    },
+    {
+      "path": "tui_gateway/contracts/template_application.py",
+      "sha256": "314dfb6eea1becab591004f9e50f70115bf97253bb8a4e039095dc285fd862cc",
+      "size": 2094,
+      "shared": false
+    },
+    {
+      "path": "tui_gateway/contracts/output_influences.py",
+      "sha256": "6367e02367515f362a45a307e447d99d294d9494a53515162c89ff59cec00281",
+      "size": 3159,
+      "shared": false
+    },
+    {
+      "path": "tui_gateway/methods_template_application.py",
+      "sha256": "c90b5cc3135f6b5709d10a677539b725d879269467e8cf2edec6baa0f532c964",
+      "size": 2902,
+      "shared": false
+    },
+    {
+      "path": "tui_gateway/methods_output_influences.py",
+      "sha256": "9746ba749d96c4b7d4961fa73507f76f41c1005f216d0f7455c9f4f91121e378",
+      "size": 1834,
+      "shared": false
+    },
+    {
+      "path": "tui_gateway/server.py",
+      "sha256": "ea0c51ce58c5c151c295a21b33824f3327745ebb7e3549593779f2b15fde67e5",
+      "size": 199859,
+      "shared": true
+    },
+    {
+      "path": "apps/shared/src/gateway-contract.generated.ts",
+      "sha256": "a35ce1aeeca218f9d0d0c2a38c56e29c22e99ecbcd2f6fa93b8cb6da330e1126",
+      "size": 293894,
+      "shared": true
+    },
+    {
+      "path": "apps/shared/src/gateway-contract.openrpc.json",
+      "sha256": "40d398eddb59c96fa7b5f3deb97dbf1bf67b082e8229d3d8a3c9ade6efe33a8b",
+      "size": 1422565,
+      "shared": true
+    },
+    {
+      "path": "tests/agent/test_output_influences.py",
+      "sha256": "f28f756337c08d3200601fccad4b712ad18c436a7df0b6166d792977b0879156",
+      "size": 16298,
+      "shared": false
+    },
+    {
+      "path": "tests/hermes_cli/test_template_application.py",
+      "sha256": "9f936808d2490b622b572b3d59b07d91e9e34b034d62ce46ae90b7f057835ef8",
+      "size": 2283,
+      "shared": false
+    },
+    {
+      "path": "tests/tui_gateway/test_template_application_rpc.py",
+      "sha256": "261cbb1b2d74ee0df0871d429484d4d5f3bdc75f5ee76f83fdd1b83db37d3693",
+      "size": 8473,
+      "shared": false
+    },
+    {
+      "path": "tests/tui_gateway/test_output_influences_rpc.py",
+      "sha256": "ec85c27913a70215102bd3f0aae890b40e090caffa43e1175d84def11c4497d4",
+      "size": 821,
+      "shared": false
+    },
+    {
+      "path": "tests/hermes_state/test_output_context_migration.py",
+      "sha256": "56560ab0cabec8cc1c66bebf31c4564b0fc3338caf36739d189469fa27487cd1",
+      "size": 1469,
+      "shared": false
+    },
+    {
+      "path": "docs/build/template-application.md",
+      "sha256": "c4a3a61d39f667b4035b89d75b401c5f33c6c308e87c4b8dc32814a92e8a6386",
+      "size": 2370,
+      "shared": false
+    },
+    {
+      "path": "docs/build/output-influences.md",
+      "sha256": "20e33c3ee036922c570b06fef68d037ab149e5df10ec7e3dd7fef677e6832f40",
+      "size": 2836,
+      "shared": false
+    }
+  ],
+  "validation": {
+    "log": "/tmp/ryoko-project-reuse-frozen.log",
+    "state": "passed",
+    "lint_log": "/tmp/ryoko-project-reuse-frozen-lint.log",
+    "diffcheck_log": "/tmp/ryoko-project-reuse-frozen-diffcheck.log",
+    "tests_passed": 133,
+    "seconds": 52.22,
+    "logs": [
+      {
+        "path": "/tmp/ryoko-project-reuse-frozen.log",
+        "sha256": "b66caf86f222062874edd13e552fad07d66727f320988b7df899408f53320a65",
+        "size": 181
+      },
+      {
+        "path": "/tmp/ryoko-project-reuse-frozen-lint.log",
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "size": 19
+      },
+      {
+        "path": "/tmp/ryoko-project-reuse-frozen-diffcheck.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      }
+    ],
+    "canonical_runner": {
+      "command": "HERMES_PYTHON=.venv/bin/python scripts/run_tests.sh <14 exact receipt test files> -j 3 --file-retries 0",
+      "files": 14,
+      "passed": 133,
+      "failed": 0,
+      "seconds": 32.9,
+      "log": "/tmp/ryoko-project-reuse-canonical.log",
+      "sha256": "24f687b8871c9d9bca097528f3e7064fa240a314ddfc301e4dce7bdea63fb5ee",
+      "note": "Supersedes direct pytest as isolated environment qualification; original receipt retained"
+    }
+  },
+  "limitations": [
+    "Fresh memory packet references only, not exhaustive inherited history or causal attribution",
+    "External personal harness lacks verified record mutation contract; no mutation or fallback enabled",
+    "Semantic style is advisory and assets provenance-only; deterministic Markdown slots/formatting apply",
+    "No live provider/harness credentials, activation/training, config, Git staging/commit/push, or root journal edits"
+  ],
+  "journal_proposal": "/tmp/ryoko-project-reuse-journal.md"
+}

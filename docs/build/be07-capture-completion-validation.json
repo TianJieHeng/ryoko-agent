@@ -1,0 +1,84 @@
+{
+  "phase": "BE07 / FE02 / F04 capture processing completion",
+  "status": "local_backend_verified_ui_consumer_pending",
+  "tested_at_utc": "2026-10-03T04:34:04.205994+00:00",
+  "base_at_assignment": "04c0319c",
+  "head_at_verification": "fbd7eaaf77643ee920958e2c3f797e6b66f2ffa7",
+  "schema_version": 44,
+  "migrations": "Additive SessionDB tables for index projections, reversible consolidation history and batch receipts; schema43 seeded capture preserved on reopen. No copied original store.",
+  "scope": "Explicit UTF-8 identity extraction or supplied text extraction, bounded lexical/fuzzy discovery, exact scoped review/commit metadata batches.",
+  "endpoints": [
+    "runtime.capture.process",
+    "runtime.capture.inspect",
+    "runtime.capture.search",
+    "runtime.capture.batch.preview",
+    "runtime.capture.batch.commit"
+  ],
+  "verification": {
+    "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh -j 3 tests/tui_gateway/test_capture_processing_rpc.py tests/hermes_cli/test_capture_processing.py tests/tui_gateway/test_project_sources_rpc.py tests/hermes_cli/test_project_sources.py tests/tui_gateway/contracts/test_generated.py",
+    "result": "30 passed, 0 failed, 5 files",
+    "log": "/tmp/be07-capture-final-tests.log",
+    "log_sha256": "7d27d519a346890ab96739c97b8aee1523fb5fd021060acd540ec5a8efdfe315",
+    "generated_contract_freshness": "passed in focused lane",
+    "python_syntax": "passed for five new production modules",
+    "git_diff_check": "passed for owned tracked shared seams and generated contracts",
+    "lint": {
+      "result": "passed",
+      "log": "/tmp/be07-capture-lint.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    }
+  },
+  "coverage": [
+    "Real registered RPCs and immutable artifact bytes; no provider client",
+    "UTF-8 indexing and approximate spelling retrieval returning original reference",
+    "Unsupported PNG extraction keeps exact downloadable original; supplied text indexing works",
+    "Changed extraction makes old index stale; metadata stays searchable",
+    "64 KiB scalar-safe UTF-8 index bound; original remains complete; read-only search causes no state changes",
+    "Missing original bytes records unavailable extraction; restoration preserves both attempts",
+    "Exact reviewed batch CAS; stale member refuses entire batch; same request replay is idempotent",
+    "Exact-byte duplicate consolidation and reversal preserve distinct originals, dates, annotations, filing and consolidation history",
+    "Source/destination revocation, read-only project grants, foreign transport, profile A\u2192B\u2192A, owner/path injection and scan bounds",
+    "Schema43\u219244 additive reopen preserves seeded capture"
+  ],
+  "limitations": [
+    "Lexical overlap and limited spelling similarity only; no semantic embeddings, synonyms, models, OCR or external fetches",
+    "Processing is explicit. Only existing canonical artifacts and supplied extracted artifacts are accepted; no new arbitrary filesystem, URL imports or watched folders",
+    "64 KiB index body, first1024 distinct terms, newest bounded scan window <=500 and result limit <=50; result explicitly complete:false",
+    "One metadata batch <=25 captures; same owning project only; exact original digest duplicate consolidation; chains and cycles refused",
+    "Atomic SessionDB capture metadata update only. Filing is a label and does not move artifacts, edit ProjectsDB source lists, change source authority or provide cross-database atomicity",
+    "No destructive purge, automatic preference promotion, active content preview, external write, training, installation, credential change or deployment",
+    "Desktop/TUI capture UI consumption belongs to frontend worker; no full suite or live external service qualification claimed"
+  ],
+  "exact_whitelist": [
+    "hermes_cli/capture_processing.py",
+    "hermes_state_capture_schema.py",
+    "hermes_state_captures.py",
+    "hermes_state.py",
+    "hermes_state_common.py",
+    "tui_gateway/contracts/__init__.py",
+    "tui_gateway/contracts/capture_processing.py",
+    "tui_gateway/methods_capture_processing.py",
+    "tui_gateway/server.py",
+    "apps/shared/src/gateway-contract.generated.ts",
+    "apps/shared/src/gateway-contract.openrpc.json",
+    "tests/hermes_cli/test_capture_processing.py",
+    "tests/tui_gateway/test_capture_processing_rpc.py",
+    "docs/build/be07-capture-completion-validation.json"
+  ],
+  "file_sha256": {
+    "hermes_cli/capture_processing.py": "56644ba3d36be6239f67a7d8beba1748ae1076fb51a1ad29c645b277d47d65c0",
+    "hermes_state_capture_schema.py": "25a708df4f118028f417e6d7c4b856b4ff20a8e4c02b5f284a0d2fd61d69ff25",
+    "hermes_state_captures.py": "7646bdb7edaa158dc392c8b929966cdabac16e8d9d338d60a2fdd24abb97539b",
+    "hermes_state.py": "263e79f8e1b52aae980ef94973cfd8354b1c8ad29fb489218601771e7fe3ef26",
+    "hermes_state_common.py": "2c42c12a242527fdb5acdebb4a50ebb3307f6a4b91d909420bbe664c46b70f63",
+    "tui_gateway/contracts/__init__.py": "38d8fbab0aea32e1c769bd9c3029828c8482cd4aa1796db38cbb4507b10b877d",
+    "tui_gateway/contracts/capture_processing.py": "a176a4f35d7d6c59e40905a661a09c087059996bb1fed40c6fb3ec58cd124d05",
+    "tui_gateway/methods_capture_processing.py": "a43ea0cbd7bb7a2335564d3534de528e1ea985e6451162556a2016fb484a7aa2",
+    "tui_gateway/server.py": "ad2885309ebea3741aa81ca5feb276f959a663d7f0d5787ea9fb839e6a06c15a",
+    "apps/shared/src/gateway-contract.generated.ts": "3227de6719485227374223f17a4cec9c6caab8d62b7d59b4840ff95f176d7c8b",
+    "apps/shared/src/gateway-contract.openrpc.json": "f333aab827830c73ba7d7ecdef3eca7ef053ad3f11304a1f84688801687ce659",
+    "tests/hermes_cli/test_capture_processing.py": "70c4cd8eb9fc5bdf663e8578a35b49f75f1dcc64ad0f98958ea92a076e710255",
+    "tests/tui_gateway/test_capture_processing_rpc.py": "517d30d7a74d2ec240501ba73f05e5a42ef0c205d0a636eb52540d425a1f9443"
+  },
+  "initial_fixture_issue": "Initial focused lane10 passed/1 failed because test attempted to overwrite a read-only immutable fixture blob. Test now temporarily renames its own fixture blob, preserves bytes, and restores the same file; final lane passed."
+}

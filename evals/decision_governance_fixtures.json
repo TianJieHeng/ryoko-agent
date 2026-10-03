@@ -1,0 +1,119 @@
+[
+  {
+    "consent_purpose": [
+      "governance_fixture"
+    ],
+    "contract_digest": "685e65127bc721ad848b4412e8c5bb6ba9f191ad29dec421dad133d43da1ccc4",
+    "contract_version": "DP05:v1",
+    "deletion_state": "active",
+    "episode_id": "fixture-episode-train",
+    "independent_label": "none",
+    "label_source": "synthetic_fixture",
+    "labeler": "fixture-author",
+    "observed_at": "2026-01-02T00:00:00Z",
+    "producer": "candidate",
+    "provenance": {
+      "kind": "synthetic",
+      "license": "fixture-only",
+      "source_version": "v1"
+    },
+    "question_id": "scope",
+    "redacted_packet": {
+      "authority": {
+        "personal_recall_allowed": false,
+        "scope": "synthetic-project"
+      },
+      "live_options": [
+        "none",
+        "project",
+        "unclear"
+      ],
+      "state": {
+        "fixture_id": "train",
+        "request": "<untrusted>synthetic train example</untrusted>"
+      }
+    },
+    "scope": "synthetic-project",
+    "source_id": "fixture-source-train",
+    "source_receipt": "fixture-receipt-train",
+    "task_id": "fixture-task-train"
+  },
+  {
+    "consent_purpose": [
+      "governance_fixture"
+    ],
+    "contract_digest": "685e65127bc721ad848b4412e8c5bb6ba9f191ad29dec421dad133d43da1ccc4",
+    "contract_version": "DP05:v1",
+    "deletion_state": "active",
+    "episode_id": "fixture-episode-calibration",
+    "independent_label": "project",
+    "label_source": "synthetic_fixture",
+    "labeler": "fixture-author",
+    "observed_at": "2026-02-02T00:00:00Z",
+    "producer": "candidate",
+    "provenance": {
+      "kind": "synthetic",
+      "license": "fixture-only",
+      "source_version": "v1"
+    },
+    "question_id": "scope",
+    "redacted_packet": {
+      "authority": {
+        "personal_recall_allowed": false,
+        "scope": "synthetic-project"
+      },
+      "live_options": [
+        "none",
+        "project",
+        "unclear"
+      ],
+      "state": {
+        "fixture_id": "calibration",
+        "request": "<untrusted>synthetic calibration example</untrusted>"
+      }
+    },
+    "scope": "synthetic-project",
+    "source_id": "fixture-source-calibration",
+    "source_receipt": "fixture-receipt-calibration",
+    "task_id": "fixture-task-calibration"
+  },
+  {
+    "consent_purpose": [
+      "governance_fixture"
+    ],
+    "contract_digest": "685e65127bc721ad848b4412e8c5bb6ba9f191ad29dec421dad133d43da1ccc4",
+    "contract_version": "DP05:v1",
+    "deletion_state": "active",
+    "episode_id": "fixture-episode-holdout",
+    "independent_label": "unclear",
+    "label_source": "synthetic_fixture",
+    "labeler": "fixture-author",
+    "observed_at": "2026-03-02T00:00:00Z",
+    "producer": "candidate",
+    "provenance": {
+      "kind": "synthetic",
+      "license": "fixture-only",
+      "source_version": "v1"
+    },
+    "question_id": "scope",
+    "redacted_packet": {
+      "authority": {
+        "personal_recall_allowed": false,
+        "scope": "synthetic-project"
+      },
+      "live_options": [
+        "none",
+        "project",
+        "unclear"
+      ],
+      "state": {
+        "fixture_id": "holdout",
+        "request": "<untrusted>synthetic holdout example</untrusted>"
+      }
+    },
+    "scope": "synthetic-project",
+    "source_id": "fixture-source-holdout",
+    "source_receipt": "fixture-receipt-holdout",
+    "task_id": "fixture-task-holdout"
+  }
+]

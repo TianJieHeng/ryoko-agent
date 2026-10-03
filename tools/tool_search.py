@@ -540,6 +540,8 @@ def dispatch_tool_describe(args: Dict[str, Any], *, current_tool_defs: List[Dict
         result["errors"] = errors
     if hosted_failure:
         result["connectors"] = connectors_unavailable(hosted_failure, verb="described", names=undescribed)
+    from agent.decisions.planner_runtime import observe_bridge_recovery
+    observe_bridge_recovery(names, tuple(tools), current_tool_defs=current_tool_defs)
     return json.dumps(result, ensure_ascii=False)
 
 

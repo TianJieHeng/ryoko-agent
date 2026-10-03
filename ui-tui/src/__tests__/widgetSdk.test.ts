@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getOverlayState, resetOverlayState } from '../app/overlayStore.js'
 import { dialogTestApp, gridTestApp } from '../sdk/apps/index.js'
@@ -12,7 +12,10 @@ const key = (overrides: Partial<WidgetInput['key']> = {}, ch = ''): WidgetInput 
     key: { ctrl: false, escape: false, leftArrow: false, return: false, rightArrow: false, ...overrides }
   }) as WidgetInput
 
-beforeEach(() => resetOverlayState())
+// Host lifecycle tests never need live weather or public-IP lookup.
+const offlineFetch = vi.fn(async () => { throw new Error('Network disabled in widget SDK unit tests') })
+beforeEach(() => { resetOverlayState(); offlineFetch.mockClear(); vi.stubGlobal('fetch', offlineFetch) })
+afterEach(() => { resetOverlayState(); vi.unstubAllGlobals() })
 
 describe('widget SDK host', () => {
   it('launch → dispatch → close lifecycle drives the overlay slot', () => {
@@ -145,6 +148,9 @@ describe('widget SDK host', () => {
   it('ambient apps dock together and toggle independently', () => {
     expect(launchWidget('ticker', 'eurusd')).toBeNull()
     expect(launchWidget('weather', '')).toBeNull()
+    expect(globalThis.fetch).toBe(offlineFetch)
+    expect(offlineFetch).toHaveBeenCalledOnce()
+    expect(offlineFetch).toHaveBeenCalledWith(expect.stringContaining('https://ipwho.is/'), expect.any(Object))
     expect(getOverlayState().ambient.map(a => a.appId)).toEqual(['ticker', 'weather'])
 
     // Relaunch with no arg toggles just that app out of the dock.

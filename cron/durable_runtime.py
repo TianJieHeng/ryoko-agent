@@ -60,7 +60,11 @@ def _observe(registry, occurrence, definition, holder, generation, observation):
             if matched:
                 conn.execute("INSERT INTO durable_monitor_intents VALUES(?,?,?,'recorded',?,?)",
                     ("notice_" + oid, oid, "notification", canonical({"source_refs": observation["source_refs"],
-                     "question": definition["specification"]["question"], "delivery": "record_only"}), now))
+                     "question": definition["specification"]["question"], "delivery": definition["specification"]["notify_policy"]}), now))
+                if definition["specification"]["notify_policy"] == "local_runtime":
+                    from hermes_state_monitor_notifications import record_notice
+                    result["delivery_state"] = record_notice(conn, row, occurrence, definition, result,
+                        previous_refs=json.loads(prior["source_refs_json"]) if prior else [])
                 if action is not None:
                     target = digest({"project_id": definition["project_id"], "action": action, "schedule_sha256": digest(definition)})
                     grant = conn.execute("SELECT * FROM durable_condition_grants WHERE schedule_key=? AND version=? "
@@ -86,11 +90,23 @@ def _finish(registry, occurrence, definition, holder, generation, result, *, err
         command = registry.db._runtime_command_on_conn(conn, occurrence["session_id"], occurrence["command_id"])
         require(command is not None and command["status"] == "claimed" and command["claimed_holder"] == holder
                 and command["claimed_generation"] == generation, "Scheduled claim is stale", "stale_owner")
-        encoded = canonical(result)
+        if definition["kind"] == "workflow_draft" and error:
+            # A storage exception can follow fsync. Keep the claimed command for
+            # the existing lost-owner recovery instead of declaring safe failure.
+            uncertain = conn.execute("SELECT 1 FROM runtime_effects WHERE session_id=? AND run_id=? "
+                "AND state IN ('dispatched','outcome_unknown','reconciliation_required') LIMIT 1",
+                (occurrence["session_id"], occurrence["run_id"])).fetchone()
+            require(uncertain is None, "Scheduled draft storage needs read-only reconciliation", "effect_reconciliation_required")
+            from cron.durable_workflows import record_workflow_interruption
+            detail = record_workflow_interruption(conn, occurrence, "failed", error=error)
+        else:
+            detail = {}
+        completed_result = {**result, **detail}
+        encoded = canonical(completed_result)
         conn.execute("UPDATE runtime_commands SET status=?,result_json=? WHERE session_id=? AND command_id=?",
                      (status, encoded, occurrence["session_id"], occurrence["command_id"]))
         registry.db._append_runtime_event_on_conn(conn, occurrence["session_id"], "command." + status,
-            {"command_id": occurrence["command_id"], "result": result}, generation, run_id=occurrence["run_id"])
+            {"command_id": occurrence["command_id"], "result": completed_result}, generation, run_id=occurrence["run_id"])
         conn.execute("UPDATE durable_occurrences SET state=?,result_json=? WHERE occurrence_id=?",
                      (status, encoded, occurrence["occurrence_id"]))
         conn.execute("UPDATE durable_schedules SET health=?,last_success=CASE WHEN ? IS NULL THEN ? ELSE last_success END,"
@@ -98,7 +114,7 @@ def _finish(registry, occurrence, definition, holder, generation, result, *, err
         if error and definition["kind"] == "monitor":
             conn.execute("INSERT OR IGNORE INTO durable_monitor_observations VALUES(?,?,?,?,?,?)", (occurrence["occurrence_id"],
                 occurrence["schedule_key"], occurrence["version"], now, "unhealthy", canonical({"error": error})))
-        conn.execute("UPDATE durable_monitor_intents SET state=? WHERE occurrence_id=? AND kind='action' AND state='authorized'",
+        conn.execute("UPDATE durable_monitor_intents SET state=? WHERE occurrence_id=? AND kind IN ('action','workflow') AND state='authorized'",
                      ("failed" if error else "completed", occurrence["occurrence_id"]))
     registry.db._execute_write(write)
 
@@ -132,6 +148,9 @@ def execute_occurrence(registry, occurrence, definition):
                     check()
                     result["action_review"] = review_sources(registry.context, db, definition, check,
                         specification=definition["specification"]["condition_action"])
+            elif definition["kind"] == "workflow_draft":
+                from cron.durable_workflows import produce_workflow_draft
+                result = produce_workflow_draft(registry, occurrence, definition, holder, generation)
             elif definition["kind"] == "review":
                 result = review_sources(registry.context, db, definition, check)
             else:
@@ -162,8 +181,10 @@ def _recover(db):
         for row in rows:
             live = row["expires_at"] is not None and row["expires_at"] > now and row["claimed_holder"] == row["lease_holder"] and row["claimed_generation"] == row["lease_generation"]
             if row["command_status"] == "claimed" and not live:
+                from cron.durable_workflows import record_workflow_interruption
+                detail = record_workflow_interruption(conn, row, "outcome_unknown", error="owner_lost_after_claim")
                 conn.execute("UPDATE durable_occurrences SET state='outcome_unknown',result_json=? WHERE occurrence_id=?",
-                    (canonical({"reason": "owner_lost_after_claim", "replayed": False}), row["occurrence_id"]))
+                    (canonical({"reason": "owner_lost_after_claim", "replayed": False, **detail}), row["occurrence_id"]))
                 conn.execute("UPDATE durable_schedules SET health='unhealthy',last_error='occurrence_outcome_unknown' WHERE schedule_key=?",
                              (row["schedule_key"],))
     db._execute_write(write)
@@ -262,6 +283,8 @@ def tick_durable_schedules():
                 db._execute_write(lambda conn: conn.execute("UPDATE durable_schedules SET health='unhealthy',last_error=?,"
                     "state=COALESCE(?,state) WHERE schedule_key=?", (code, state, row["schedule_key"])))
                 logger.warning("Durable schedule %s blocked: %s", row["schedule_id"], code)
+        from cron.monitor_notification_delivery import tick_monitor_notifications
+        tick_monitor_notifications(db, home)
         return completed
     finally:
         db.close()

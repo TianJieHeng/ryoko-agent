@@ -20,7 +20,7 @@ import pytest
 
 from pm.lock import Lockfile
 from pm.store import current_target
-from tests.pm._fixtures import _wheel, make_tar, served  # noqa: F401 -- shared HTTP fixture
+from tests.pm._fixtures import _wheel, make_tar, seed_pm_runtime_cache, served  # noqa: F401 -- shared HTTP fixture
 
 
 pytestmark = pytest.mark.platforms("posix")
@@ -41,7 +41,7 @@ def _snapshot(paths):
     return result
 
 
-def test_activation_real_setup_pm_lifecycle(tmp_path, served):
+def test_activation_real_setup_pm_lifecycle(tmp_path, served, request):
     bash, uv = shutil.which("bash"), shutil.which("uv")
     assert bash and uv, "this integration contract requires Bash and real uv"
     interpreter = str(Path(sys._base_executable).resolve())
@@ -101,9 +101,10 @@ def test_activation_real_setup_pm_lifecycle(tmp_path, served):
     assert locked.returncode == 0, locked.stdout + locked.stderr
     dependency_lock = (core / "uv.lock").read_bytes()
 
-    # Seed PM's own cache with its real locked wheels, not the application's
-    # fixture wheel or a copied host cache. Discard this environment so source
-    # still bootstraps and publishes the isolated PM runtime itself, offline.
+    # Build the real locked PM graph, optionally from prepared package bytes.
+    # Discard this environment so source still bootstraps and publishes the
+    # isolated PM runtime itself, offline.
+    prepared_cache = seed_pm_runtime_cache(request, hermes_home / "cache" / "uv")
     seed = tmp_path / "pm-seed"
     seed_env = {key: value for key, value in env.items() if key != "UV_OFFLINE"}
     for key in ("SSL_CERT_FILE", "SSL_CERT_DIR", "NIX_SSL_CERT_FILE"):
@@ -114,8 +115,8 @@ def test_activation_real_setup_pm_lifecycle(tmp_path, served):
          "import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]); "
          "from pm.runtime_stage import stage_runtime; "
          "stage_runtime(Path(sys.argv[2]), Path(sys.argv[3]), Path(sys.argv[4]), "
-         "project=Path(sys.argv[1]) / 'pm', offline=False)",
-         str(core), uv, interpreter, str(seed)],
+         "project=Path(sys.argv[1]) / 'pm', offline=sys.argv[5] == '1')",
+         str(core), uv, interpreter, str(seed), "1" if prepared_cache else "0"],
         cwd=tmp_path, env=seed_env, capture_output=True, text=True, timeout=180,
     )
     assert seeded.returncode == 0, seeded.stdout + seeded.stderr

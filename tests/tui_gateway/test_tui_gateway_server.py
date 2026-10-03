@@ -3139,6 +3139,8 @@ def test_command_dispatch_and_catalog_resolve_project_skills_from_the_session_cw
     import agent.skill_utils as skill_utils
 
     _two_repo_project_skill_sessions(tmp_path, monkeypatch)
+    from agent.runtime_cwd import resolve_agent_cwd
+    initial_root, initial_cwd = skill_utils.find_project_root(), resolve_agent_cwd()
     for sid, own, other in (("sid-a", "alpha-skill", "beta-skill"), ("sid-b", "beta-skill", "alpha-skill")):
         catalog = server._methods["commands.catalog"]("c", {"session_id": sid})["result"]
         assert f"/{own}" in catalog["skills"] and f"/{other}" not in catalog["skills"]
@@ -3147,8 +3149,8 @@ def test_command_dispatch_and_catalog_resolve_project_skills_from_the_session_cw
         assert f"BODY OF {own.upper()}" in res["result"]["message"]
         miss = server._methods["command.dispatch"]("m", {"name": other, "arg": "", "session_id": sid})
         assert miss["error"]["code"] == 4018
-    # Nothing leaks past the RPC: the thread's logical cwd is unbound again.
-    assert skill_utils.find_project_root() is None
+    # Nothing leaks past the RPC, including when the fixture lives below a checkout.
+    assert (skill_utils.find_project_root(), resolve_agent_cwd()) == (initial_root, initial_cwd)
 
 
 def test_command_dispatch_reviews_staged_skill_writes(tmp_path, monkeypatch):
@@ -21673,9 +21675,23 @@ def test_native_vision_turn_persists_a_renderable_image_ref(tmp_path):
 
     agent._flush_messages_to_session_db([{"role": "user", "content": native_parts}], [])
 
-    written = agent._session_db.append_messages_batch.call_args.kwargs["messages"][0]["content"]
-    assert f"@image:`{img}`" in written
-    assert "what is in this photo?" in written
+    written_row = agent._session_db.append_messages_batch.call_args.kwargs["messages"][0]
+    written = written_row["content"]
+    assert written == agent._persist_user_message_override
+    text = "\n".join(part["text"] for part in written if part.get("type") == "text")
+    assert text == f"what is in this photo?\n@image:`{img}`"
+    assert [part for part in written if part.get("type") == "image_url"] == [
+        part for part in native_parts if part.get("type") == "image_url"
+    ]
+    # The same row must retain both the renderable reference and exact pixels
+    # after the real store is closed and reopened.
+    from hermes_state import SessionDB
+    path = tmp_path / "vision-replay.db"
+    with SessionDB(path) as db:
+        db.create_session("s-1", source="tui")
+        db.append_messages_batch("s-1", [written_row])
+    with SessionDB(path) as db:
+        assert db.get_messages_as_conversation("s-1")[0]["content"] == written
     # The model keeps the pixels for the rest of the session.
     assert any(part.get("type") == "image_url" for part in agent._persist_user_message_override)
 

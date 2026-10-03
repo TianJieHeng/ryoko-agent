@@ -33,7 +33,7 @@ async def probe():
     captured = []
 
     def create_agent(**kwargs):
-        agent = MagicMock()
+        agent = MagicMock(runtime_context=None, _memory_manager=None)
         agent.session_id = kwargs.get("session_id")
         agent.session_prompt_tokens = agent.session_completion_tokens = agent.session_total_tokens = 0
         def run(**turn):

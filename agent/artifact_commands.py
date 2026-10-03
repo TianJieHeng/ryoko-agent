@@ -1,8 +1,9 @@
-"""Owned artifact-control commands, deliberately unable to dispatch a model/tool.
+"""Owned artifact controls, unable to dispatch inference or arbitrary tools.
 
 The existing command journal and turn lease own these bounded human operations.
 A pending approval survives the request, but never renews its lease or retries an
 uncertain mutation. Reconnection can inspect/reopen only the exact live claim.
+Finite connected-source reads use a separate host-owned, budgeted egress adapter.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ _CONTROL_RPCS = frozenset({"runtime.artifact.prepare", "runtime.artifact.publish
     "runtime.artifact.bytes.prepare", "runtime.artifact.bytes.publish",
     "runtime.artifact.edit.prepare", "runtime.artifact.edit.publish",
     "runtime.artifact.merge.prepare", "runtime.artifact.merge.publish",
+    "runtime.template.prepare", "runtime.template.publish",
     "runtime.artifact.status", "runtime.artifact.cancel", "runtime.domain.prepare", "runtime.domain.publish",
     "runtime.brief.prepare", "runtime.brief.publish",
     "runtime.workflow.create", "runtime.workflow.template.create", "runtime.workflow.evaluate",
@@ -29,8 +31,11 @@ _CONTROL_RPCS = frozenset({"runtime.artifact.prepare", "runtime.artifact.publish
     "runtime.workflow.run.prepare", "runtime.workflow.run.publish",
     "runtime.schedule.create", "runtime.schedule.import", "runtime.schedule.update",
     "runtime.schedule.grant", "runtime.schedule.reconcile",
-    "runtime.inbox.prepare", "runtime.commitment.accept", "runtime.commitment.update",
-    "runtime.correspondence.draft", "runtime.correspondence.receipt"})
+    "runtime.schedule.output.prepare", "runtime.schedule.output.publish",
+    "runtime.monitor.policy.set", "runtime.monitor.snooze", "runtime.monitor.dismiss",
+    "runtime.inbox.prepare", "runtime.commitment.accept", "runtime.commitment.decline", "runtime.commitment.update",
+    "runtime.correspondence.draft", "runtime.correspondence.receipt", "runtime.voice.admit",
+    "runtime.sources.prepare", "runtime.sources.publish", "runtime.sources.preview"})
 
 
 @dataclass(frozen=True)

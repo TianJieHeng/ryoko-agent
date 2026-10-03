@@ -11,13 +11,14 @@ import sys
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 import pytest
+from tests.pm._fixtures import isolated_python, seed_pm_runtime_cache, worker_toolchain  # noqa: F401
 
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.fixture(scope="module")
-def generate(tmp_path_factory):
+def generate(tmp_path_factory, request):
     root = tmp_path_factory.mktemp("icon-flavors")
     source = root / "source with spaces"
     source.mkdir()
@@ -26,7 +27,22 @@ def generate(tmp_path_factory):
     (foreign / "sitecustomize.py").write_text("raise SystemExit('foreign interpreter path leaked')\n", encoding="utf-8")
     shutil.copytree(ROOT / "assets", source / "assets")
     from scripts.build.icon_environment import prepare_icon_environment
-    python = prepare_icon_environment(ROOT, root / "runtime", root / "cache")
+    prepared = seed_pm_runtime_cache(request, root / "cache")
+    if prepared:
+        from pm import client
+        python_for_worker = request.getfixturevalue("isolated_python")
+        # Still build the frozen application graph in a real isolated worker;
+        # only tool discovery uses the already prepared test interpreter/uv.
+        with pytest.MonkeyPatch.context() as patcher:
+            patcher.setenv("HERMES_HOME", str(root / "home"))
+            patcher.setenv("HOME", str(root / "home"))
+            patcher.setenv("USERPROFILE", str(root / "home"))
+            patcher.setenv("HERMES_RUNTIME_DIR", str(root / "tools"))
+            patcher.setattr(client, "is_runtime", lambda: False)
+            worker_toolchain(client, patcher, python_for_worker)
+            python = prepare_icon_environment(ROOT, root / "runtime", root / "cache")
+    else:
+        python = prepare_icon_environment(ROOT, root / "runtime", root / "cache")
     node = shutil.which("node")
     assert node, "icon acceptance requires prepared Node"
     outputs = {}

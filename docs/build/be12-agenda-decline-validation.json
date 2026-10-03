@@ -1,0 +1,29 @@
+{
+  "scope": "BE12 and FE08 local decline and agenda completion",
+  "status": "implemented_fixture_verified_live_sources_unqualified",
+  "checks": [
+    {
+      "command": "scripts/run_tests.sh tests/hermes_state/test_agenda.py tests/tui_gateway/test_commitment_review_rpc.py tests/hermes_state/test_commitments.py -j 3 --file-retries 0",
+      "result": "passed",
+      "tests": 14,
+      "files": 3,
+      "log": "/tmp/ryoko-agenda-decline-final.log",
+      "sha256": "33ed6b889fc2a672e8e42ca51d61bbbff5b61dc30f38577e839809f92dec0138"
+    }
+  ],
+  "source_hashes": {
+    "hermes_state_agenda.py": "992984c2d56d8ae6e8a5f04891b73dbd08331f49d58637a4f0a2f0624e4fb2af",
+    "hermes_state_commitments.py": "e7dbbb6d47b33353c25d67ed42d8131134424b9cacb8fde8384eda135c3aded4",
+    "tui_gateway/contracts/schedules.py": "ca14675453668003b5dff8d797abd861d2cb177930ec4b65a07546c30acf77b2",
+    "tui_gateway/methods_schedules.py": "476869b68f86df048bfbcb50f108e38c0d8921ea4ae1971e6967adebd8d7f00c",
+    "tests/hermes_state/test_agenda.py": "8ee372c1b10137128e682226666fba4ccb33b46111a24d222a45eceac443dd51",
+    "tests/tui_gateway/test_commitment_review_rpc.py": "0dc4312deb706ea9e0fd6653b05bb6747232d5ee380d7ccd16a91aef12876f2b"
+  },
+  "limitations": [
+    "Availability is exact supplied immutable snapshot, never live calendar proof",
+    "Work durations and priority order are explicit human inputs; overflow is retained",
+    "No calendar writes, invitations or new obligations",
+    "Declined candidates stay declined; terminal accepted obligations cannot reopen",
+    "UI consumer and final combined regression remain required"
+  ]
+}

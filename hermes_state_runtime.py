@@ -20,6 +20,8 @@ MAX_SNAPSHOT_REFERENCES = 100
 _OPERATIONS = frozenset({"submit", "steer", "cancel", "approval", "artifact"})
 _FINISH_STATES = frozenset({"completed", "failed", "blocked", "cancelled"})
 _RECORDED_TYPES = frozenset({"runtime.output", "runtime.state", "approval.requested",
+                             "decision.observed", "decision.outcome",
+                             "decision.tool_plan", "decision.policy", "decision.planner_miss",
                              "operations.repair_started", "operations.repair_finished",
                              "operations.deletion_requested", "operations.deletion_finished",
                              "approval.resolved", "effect.recorded", "model.started", "model.completed", "model.failed",
@@ -166,6 +168,22 @@ def _project_runtime_operation(projection, event):
     projection["unresolved_invocations"] = list(unresolved.values())
 
 
+def _project_runtime_event(projection, event, command_operation=None):
+    """Canonical pure reducer shared by live append and bounded local reconstruction."""
+    _project_runtime_operation(projection, event)
+    if event["type"].startswith("command."):
+        operation = command_operation or event["payload"].get("operation")
+        state = projection["state"]
+        # Control outcomes never replace the submit's state; queued acceptance
+        # does not hide the current run and another run's finish cannot close it.
+        status = event["type"].removeprefix("command.")
+        pending_behind_owner = status == "accepted" and state["status"] == "claimed"
+        other_run_finished = status in _FINISH_STATES and state["last_command_id"] != event["payload"]["command_id"]
+        if operation == "submit" and not pending_behind_owner and not other_run_finished:
+            state.update(status=status, last_command_id=event["payload"]["command_id"],
+                         last_operation=operation, run_id=event["run_id"])
+
+
 class SessionRuntimeMixin:
     """Additive SessionDB API; every authoritative mutation uses its existing writer transaction."""
 
@@ -277,20 +295,10 @@ class SessionRuntimeMixin:
                      "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (session_id, seq, event["event_id"], 1, generation,
                      event_type, event["occurred_at"], *(event[key] for key in _CORRELATIONS), payload_json))
         projection = json.loads(row["snapshot_json"])
-        _project_runtime_operation(projection, event)
-        if event_type.startswith("command."):
-            command = self._runtime_command_on_conn(conn, session_id, payload["command_id"])
-            operation = payload.get("operation") if command is None else json.loads(command["command_json"])["operation"]
-            state = projection["state"]
-            # Acknowledging a steer/cancel is not completion of the active run. Control
-            # outcomes live in their command records; the snapshot describes the submit.
-            # Likewise queued submit acceptance must not hide a currently claimed run.
-            status = event_type.removeprefix("command.")
-            pending_behind_owner = status == "accepted" and state["status"] == "claimed"
-            other_run_finished = status in _FINISH_STATES and state["last_command_id"] != payload["command_id"]
-            if operation == "submit" and not pending_behind_owner and not other_run_finished:
-                state.update(status=status, last_command_id=payload["command_id"],
-                             last_operation=operation, run_id=event["run_id"])
+        command = (self._runtime_command_on_conn(conn, session_id, payload["command_id"])
+                   if event_type.startswith("command.") else None)
+        operation = json.loads(command["command_json"])["operation"] if command is not None else None
+        _project_runtime_event(projection, event, operation)
         conn.execute("UPDATE runtime_state SET revision=?,snapshot_json=? WHERE session_id=?",
                      (seq, _json(projection), session_id))
         return event

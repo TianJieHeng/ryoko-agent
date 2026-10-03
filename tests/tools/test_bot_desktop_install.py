@@ -15,6 +15,9 @@ _REAL_INSTALL_COMMAND = runtime.install_command  # captured before the fixture p
 @pytest.fixture(autouse=True)
 def _isolated_host(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    host_which = install.shutil.which
+    monkeypatch.setattr(install.shutil, "which", lambda name, *a, **k:
+                        "/usr/bin/sudo" if name == "sudo" else host_which(name, *a, **k))
     monkeypatch.setattr(install, "_sudo_nopasswd", lambda: False)
     monkeypatch.setattr(runtime, "is_supported_host", lambda: True)
     monkeypatch.setattr(runtime, "install_command", lambda: "sudo apt-get install -y tigervnc-standalone-server")

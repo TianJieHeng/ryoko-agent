@@ -64,7 +64,7 @@ def _adapter(tmp_path) -> tuple[APIServerAdapter, str]:
 
 def _fake_agent(seen: list, outcome: dict) -> MagicMock:
     """Records what each turn was handed; ``_pending_cli_user_message`` is the adopted row."""
-    agent = MagicMock()
+    agent = MagicMock(runtime_context=None, _memory_manager=None)
     agent.session_id = SESSION_ID
     agent.session_prompt_tokens = 0
     agent.session_completion_tokens = 0

@@ -38,13 +38,19 @@ def _snapshot_child_pids() -> set:
         # signal, and the killpg shutdown sweep never saw the subprocess.
         task_dir = f"/proc/{my_pid}/task"
         found: set = set()
+        children_interface_present = False
         for tid in os.listdir(task_dir):
             try:
                 with open(f"{task_dir}/{tid}/children", encoding="utf-8-sig") as f:
+                    children_interface_present = True
                     found.update(int(p) for p in f.read().split() if p.strip())
-            except (FileNotFoundError, OSError, ValueError):
-                continue  # thread exited between listdir and open
-        return found
+            except FileNotFoundError:
+                continue  # thread exited, or this procfs has no children interface
+            except (OSError, ValueError):
+                # Preserve the existing fail-closed result for unreadable/malformed files.
+                children_interface_present = True
+        if children_interface_present:
+            return found
     except (FileNotFoundError, OSError, ValueError):
         pass
     try:

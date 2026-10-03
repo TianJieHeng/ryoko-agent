@@ -1,0 +1,51 @@
+{
+  "phase": "BE11/BE12 F08 bounded scheduled draft production",
+  "validated_at_utc": "2026-10-03T04:41:32.694158+00:00",
+  "scope": "local_synthetic_backend_only",
+  "base_commit": "d05e0d45acb689e3946719ae5e5190cb909b4f72",
+  "schema_version": 44,
+  "schema_changed": false,
+  "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/cron/test_scheduled_workflow_contract.py tests/cron/test_durable_schedule_contract.py tests/cron/test_monitor_notification_policy.py tests/agent/test_workflow_contract.py tests/agent/test_workflow_runtime.py tests/agent/test_effect_reconciler.py tests/hermes_state/test_effect_records.py tests/hermes_state/test_schedule_migration.py tests/tui_gateway/test_scheduled_workflows_rpc.py tests/tui_gateway/test_schedules_rpc.py tests/tui_gateway/test_workflows_rpc.py tests/tui_gateway/test_artifact_rpc.py tests/tui_gateway/test_template_application_rpc.py tests/tui_gateway/test_monitor_notifications_rpc.py tests/tui_gateway/test_runtime_effects_rpc.py tests/tui_gateway/contracts/test_generated.py --tb=short",
+  "tests_passed": 176,
+  "tests_failed": 0,
+  "test_files": 16,
+  "elapsed_seconds": 27.2,
+  "full_backend_aggregate": false,
+  "live_activation_performed": false,
+  "git_writes_by_worker": false,
+  "source_hashes": {
+    "agent/artifact_commands.py": "2f4f0048ef8ab312ad6d18c54a7a37f2caf8e173fa9eaef8c0776951e2a6b640",
+    "agent/effect_reconciler.py": "9baadc784cad3479dca4087cb8f99d5527bc182e7a35e591149a1127fae33d8e",
+    "agent/workflow_runtime.py": "0fee8cbbee83a94744c966b4c274925c8b119f78272fc50bd0ec5d8b1649e982",
+    "cron/durable_contract.py": "b5cc61459ff14e040db4565347c66ad607ab701ee72d12ccaf570d672e2e4311",
+    "cron/durable_runtime.py": "eda115deaa4269414d5cbb92842c336dc3d468f51ddffb91de17763475144f9c",
+    "cron/durable_workflow_contract.py": "cdcc75237d571095ee1dae783a07ad66da300033074074462ff9ae66004caa33",
+    "cron/durable_workflows.py": "4a50dac3af0ea543b68807f020da7fb5feb764c6434a019ec6e9ff4b09810a06",
+    "hermes_cli/scheduled_workflow_outputs.py": "42da7d92835a382766b11b27919fa7eb3e3ed560fb7f1b754dc91fb8808839dc",
+    "hermes_state_schedules.py": "e440467bf00fd01eeef068f5fc3c64f5bb67816f5f5dbd513f406ac832f7e0cf",
+    "tui_gateway/contracts/__init__.py": "4f050809cee9c7a7045b5ed1955b646c8c9a80b55d2bafff8214103527fb28c6",
+    "tui_gateway/contracts/schedules.py": "18c29c0549aed7f0d7f4e833c5466dbbbfe1c4b22e7be5519806c7277073456a",
+    "tui_gateway/contracts/schedule_outputs.py": "a31497a62d745983365eaaf9bbd00631e2c15e3073ca003643acf4199843e997",
+    "tui_gateway/methods_schedule_outputs.py": "d99ee7c36271a313f7f26b1f77327de9ff6373f2e2b44c9e0c4bd390e8c43ca1",
+    "tui_gateway/server.py": "91814fd960d89b99bbf3af72b99ba1889e19804d071779718995a5c27d8f6758",
+    "apps/shared/src/gateway-contract.generated.ts": "e6348be75d2b82fc57ed228c48028f23f875e370ff39b7ae98ec70dc146c2e03",
+    "apps/shared/src/gateway-contract.openrpc.json": "3fc7f02d70c65cb4cf4c810744e73bc82ab1a4866ec9dbf858ae2b9a45f0282d",
+    "tests/cron/test_scheduled_workflow_contract.py": "6e826f729960ae8ec21ee8d4a42fc023e0de3d17cb4bc2d866e63d33e7d69b5c",
+    "tests/tui_gateway/test_scheduled_workflows_rpc.py": "fe9d918fcb6ddcc9709aa107c794db22824db215a3baa5a5186f652f0b87871b",
+    "docs/build/be12-workflow-production.md": "5987fd79e83519941b60e91154c9ae4b2bb6d092e157dbca855e842e62ccf132"
+  },
+  "supported": "Paused-by-default, explicitly granted bounded local render_markdown production with source-head snapshots and fresh human artifact publication approval",
+  "not_qualified": [
+    "live schedules/deployment",
+    "external sources or publication",
+    "scheduled domain/model/agent/script execution",
+    "visual acceptance",
+    "non-Linux immutable storage"
+  ],
+  "validation_log_sha256": "db383e0bd1c6c8b60981ceda93d9bdb8d3c844dd7792e530d1cc5c26ddc7f9ac",
+  "lint": {
+    "result": "passed",
+    "log": "/tmp/be12-workflow-production-lint.log",
+    "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  }
+}

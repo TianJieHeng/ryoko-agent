@@ -1,0 +1,40 @@
+{
+  "scope": "Combined named configured specialist and on-demand opportunity integration",
+  "base": "6d1a077ab3b0c2e2d86225c4eccc5da6d4fc9958",
+  "source_sha256": {
+    "agent/mission_runtime.py": "057161dfccf9d6968073c91e125a1e282e14c0deec1c953da4d21c998ae6998a",
+    "agent/project_opportunities.py": "bec05eb0130697c301163012ea9971167bfeea17df348714e904e9b0e17341d2",
+    "agent/runtime_commands.py": "51a1bef5ad4784d01ae8f7241dda807de56812fe4058c6281348fdc3745c1952",
+    "agent/specialist_control.py": "f409b5b5ea514c4bba8f8f2f4c4013c9c43baaf2573d172411238f9b54bea81a",
+    "agent/turn_facade.py": "6cf0bbbc5ad1576acb3b167a446e843a5d8fa87cd34d2f00a3fc42c010d8097d",
+    "apps/shared/src/gateway-contract.generated.ts": "d710c9c388e301775e68708958886ea2d72c918b2abebf6bc56497297c970d13",
+    "apps/shared/src/gateway-contract.openrpc.json": "3cceb1f92caaec84b987b391d3971246c7098a24a1cbfbb5f7020959a05581ab",
+    "docs/build/be11-opportunity-review.md": "027e14c66f859456464d6020f6caee1cfff9142fb9750829054364f272d2f81f",
+    "docs/build/be11-opportunity-validation.json": "eade2f8970c08fb9b5ed4b7d0848fe7c15ca1ae091a81a2e61d66c9c6573528f",
+    "docs/build/be13-named-specialists-validation.json": "3ef88a398ff3ebdaaa0f02ae4322796978f1a78723a8fd32086c035adf937a74",
+    "docs/build/be13-named-specialists.md": "837a116ba83efabd2537f1dceecfad78cef039a8608a5f8695ff0fa200321f3c",
+    "hermes_cli/operations_profile_recovery.py": "93f2879bcac0caf121c395ef9a816ec9a85bc3d1633ad9fd142f7d27122a15e1",
+    "hermes_state_common.py": "922c61da5e75e367ca8c7cd3428b811ddc7c9b0e2125222d934180ece3fa8c8a",
+    "hermes_state_opportunities.py": "fdf0ba8853be251064e183c60bbb1f4da0d190cee7bb6e38a780af2c4e4eb5d0",
+    "hermes_state_opportunity_schema.py": "7e797b9ae41359a2565929e8177223f9a96bb0df10a9738c891edd2e69ce1748",
+    "tests/agent/test_specialist_control.py": "d1ed8cdb0a35e0cfed15adfde842e180398eef6a65f41d9ca30a257f50d8c953",
+    "tests/tui_gateway/test_opportunities_rpc.py": "ce8574f2683f4f75bd3f356187e46d2c046a2ff4c4774864392bec8e8a03aee5",
+    "tests/tui_gateway/test_opportunity_recovery_rpc.py": "45344bb56ec73ed846ba480894d896acb57126177fa9aa9d6b863c181c6b9596",
+    "tests/tui_gateway/test_specialist_control_rpc.py": "934f1c4f0a17b1b9e414c3effa72ed9ce2ef9d75a8b28cb927c4a75c0a681d5d",
+    "tui_gateway/contracts/__init__.py": "7b97d9f28a10429ead2ea75fd155bf3025ee2698a2dde90bd60611c0bb395fd6",
+    "tui_gateway/contracts/opportunities.py": "5511acca6a965e24b701a53dc78d1ee04d0da64e6bbc28a0ca82ffe524426724",
+    "tui_gateway/contracts/specialists.py": "a8745fbb4ac3ff336c0521ff6301cbdc1be97b35e1eeccab634a231793802e64",
+    "tui_gateway/methods_operations_control.py": "8da719355ff6bd46edf97f3c659c73cababea069db691316a8cc0aea3816d178",
+    "tui_gateway/methods_opportunities.py": "ab553767fa20be2cb5c3d0c73bed69c4de33e94f9b46f9969494b1a763efb510",
+    "tui_gateway/methods_specialists.py": "84ed18662a7b762d637de20721674cd6cf5fd159e87dc53e40556ee92ea84376",
+    "tui_gateway/server.py": "6e767f2936ed928af89b942d3b98e003d6c2e375625b4cf3f7026c895dd04d00"
+  },
+  "operator_binding_fix": {
+    "description": "Prefix operator helpers to avoid shared bind_module namespace collisions",
+    "tests": "2 passed canonical actual RPC",
+    "log": "/workspace/shared/ryoko-operator-binding-followup.log",
+    "sha256": "0efeeccae8cc4f7b003f298599e4b10fe87fa7cb8303c06f07b3f09762abbee2"
+  },
+  "qualification": "Worker frozen suites retain exact individual receipts; consolidated final-source campaign pending",
+  "publication": "local_only"
+}

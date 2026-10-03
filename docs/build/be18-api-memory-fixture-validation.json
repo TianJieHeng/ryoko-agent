@@ -1,0 +1,38 @@
+{
+  "phase": "BE18 gateway transport fixture qualification",
+  "status": "fixture_only_correction_qualified",
+  "timestamp_utc": "2026-10-03T06:49:43.740273+00:00",
+  "base_commit": "9ebe1996b570fd0ed9bd52cffae634f5e87b44d8",
+  "full_campaign_source": "b323e73f7b2f6792c57341240e206a72e43e3192",
+  "cause": "Previously aiohttp-collection-blocked transport tests used unspecced MagicMock agents, which fabricated non-null runtime_context and _memory_manager. Strict real-manager ownership check correctly rejected them. Legacy real AIAgent explicitly has no runtime context.",
+  "change": "35 mock constructors now explicitly declare runtime_context=None and _memory_manager=None; no production isolation relaxation",
+  "source_sha256": {
+    "tests/gateway/test_api_server.py": "aaf254a6bb593bedec2d49ec24428f54963ed2a1c5a0c534ccf2c6bf2e654673",
+    "tests/gateway/test_api_server_active_work_drain.py": "58924c31cbc213bc148e9404587446748e83c091545b26876efceff4b18a10e8",
+    "tests/gateway/test_api_server_declared_conversation.py": "f679c6ca8066511c0df386cc277009b440ed03a012a88dec1481533058630c6b",
+    "tests/gateway/test_api_server_runs.py": "2f79ab14423c024925f0215c6c325ff2ce988f6dbb63e6f9d45f1cda36f61e15",
+    "tests/gateway/test_chat_completions_approval.py": "d6242acb28c106f517ac33c2342e872aa46c61756e9bbaabcb0e906e3fd5eba3",
+    "tests/gateway/test_peer_dm_transient_retry.py": "9a03f43f482c9716c74b0a72d0f4d52539d4a7ed374426cba3e3986926a96699"
+  },
+  "validation": {
+    "files": 9,
+    "passed": 260,
+    "failed": 0,
+    "seconds": 21.2,
+    "runner": "scripts/run_tests.sh --scratch-parent /workspace/shared -j2 --file-retries 0",
+    "interpreter": "/workspace/shared/ryoko-extra-test-env/bin/python",
+    "scope": "Six affected transport files plus real AIAgent memory-provider initialization, strict owner routing and legacy memory-session cache tests",
+    "production_changes": false,
+    "full_campaign_unchanged": true
+  },
+  "logs": [
+    {
+      "path": "/workspace/shared/ryoko-api-memory-before.log",
+      "sha256": "a040e4a0526b9555548bf2bd6b62c316461d3a5d84fdaae73a4be216f27d62dd"
+    },
+    {
+      "path": "/workspace/shared/ryoko-api-memory-after.log",
+      "sha256": "c499dbc0db60961a0796bb270803aded34dff81ca65fff0c46ee4595bf24ce33"
+    }
+  ]
+}

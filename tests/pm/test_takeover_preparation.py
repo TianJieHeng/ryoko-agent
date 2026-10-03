@@ -12,11 +12,11 @@ import pytest
 
 from pm.lock import Facts, Lockfile
 from pm.store import current_target, tree_digest
-from tests.pm._fixtures import _wheel
+from tests.pm._fixtures import _wheel, seed_pm_runtime_cache
 
 
 @pytest.mark.platforms("linux")
-def test_fresh_takeover_prepares_generation_and_runs_selected_python(tmp_path):
+def test_fresh_takeover_prepares_generation_and_runs_selected_python(tmp_path, request):
     source = Path(__file__).resolve().parents[2]
     root = tmp_path / "source with spaces"
     root.mkdir()
@@ -27,6 +27,7 @@ def test_fresh_takeover_prepares_generation_and_runs_selected_python(tmp_path):
     home, store, wheels = (tmp_path / name for name in ("home", "tools", "wheels"))
     for directory in (home, store, wheels):
         directory.mkdir()
+    seed_pm_runtime_cache(request, home / "cache" / "uv")
     _wheel(wheels, "takeover_dep", "1.0")
     (root / "pyproject.toml").write_text(
         '[project]\nname="takeover-fixture"\nversion="1"\nrequires-python=">=3.14"\n'

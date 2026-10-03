@@ -1,0 +1,52 @@
+{
+  "phase": "FE00",
+  "status": "verifying",
+  "base": "0a4621c6",
+  "checks": [
+    {
+      "command": "node_modules/.bin/vitest run apps/shared/src/runtime-control.test.ts ui-tui/src/app/runtime/runtime-command.test.ts",
+      "result": "passed",
+      "files": 2,
+      "tests": 4
+    },
+    {
+      "command": "npm run --workspace apps/shared typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run --workspace ui-tui typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe00-tests.log",
+      "sha256": "c13975711839bf8cd64f6e1c88e609f723812b572d33e24178c91b43f53cfd1e"
+    },
+    {
+      "path": "/tmp/fe00-types.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe00-tui-types.log",
+      "sha256": "2ed66b05e3ec0f9498a06ef07cec67b41ea4b170be959bf7ad34915a4c7854a7"
+    }
+  ],
+  "limitations": [
+    "Classic CLI and Electron-specific runtime inspector not yet implemented",
+    "No live provider/identity/hardware/browser/native visual claim",
+    "Local checkpoint only; normal Git HTTPS lacks authentication"
+  ],
+  "dependency_setup": {
+    "command": "npm ci --ignore-scripts --cache /workspace/shared/ryoko-npm-cache --prefix /tmp/ryoko-frontend-deps",
+    "result": "passed",
+    "installed_packages": 1331,
+    "lockfile": "unchanged existing package-lock.json",
+    "native_scripts": "disabled",
+    "hydration": "copy missing files only to existing node_modules; local build:ink passed"
+  }
+}

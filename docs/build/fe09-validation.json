@@ -1,0 +1,52 @@
+{
+  "phase": "FE09",
+  "status": "verifying",
+  "base": "5f99cce9386193d362784d6e5772536b0f8469bc",
+  "checks": [
+    {
+      "command": "./node_modules/.bin/vitest run apps/shared/src/runtime-execution.test.ts",
+      "result": "passed",
+      "tests": 15,
+      "files": 1
+    },
+    {
+      "command": "cd apps/desktop && ../../node_modules/.bin/vitest run src/app/runtime/execution-panel.test.tsx",
+      "result": "passed",
+      "tests": 5,
+      "files": 1
+    },
+    {
+      "command": "npm run --workspace apps/shared typecheck && npm run --workspace ui-tui typecheck && (cd apps/desktop && ../../node_modules/.bin/tsc -p . --noEmit)",
+      "result": "passed",
+      "environment": "clean phase-only frontend validation checkout"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe09-shared.log",
+      "sha256": "489099d17f8dce5d584f95f370f4b652c61fe25fd9feef48331b71490f583f61"
+    },
+    {
+      "path": "/tmp/fe09-desktop.log",
+      "sha256": "258a6db9c739b8e559ecb75997570768e016c8bfcba520bf0051ac66083b0fc8"
+    },
+    {
+      "path": "/tmp/fe09-shared-type.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe09-tui-type.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe09-renderer-type.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "Finite local UTF-8 normalization/document-structure pipeline; transcription service demonstration not implemented",
+    "Coding/browser native controls remain existing surfaces; no integrated provider submit or coding promotion journey certification",
+    "No current gateway executor chooser; live device placement/disconnect and secure handoff not exercised",
+    "English execution chrome; native Electron scripts disabled, no native or visual QA yet"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "scope": "BE18 additive migration invariant",
+  "source_campaign": "009255ecaf4adfe81ea114561a5f923ae9dfe605",
+  "failure": "Schema40 migration test hardcoded target41 after additive schema44 completion",
+  "repair": "Assert migration reaches the canonical current SCHEMA_VERSION while retaining all existing message and added-table checks",
+  "tests_passed": 14,
+  "tests_failed": 0,
+  "log": "/workspace/shared/ryoko-final-schema-fixture.log",
+  "log_sha256": "a27a77fda36973495588a0328fbc1fde5d90196e9c5dfa8817994c5be88b7596",
+  "source_sha256": "0fb08d62e46296c929eae0115110e3b820274fbff862fcf59aebcb1df3d95234",
+  "production_changed": false,
+  "ruff": "passed"
+}

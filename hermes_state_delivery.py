@@ -207,6 +207,8 @@ class SessionDeliveryMixin:
             row = self._delivery_on_conn(conn, session_id, actor, delivery_id)
             if row["state"] not in {"pending", "failed"}:
                 return None
+            from hermes_state_monitor_notifications import guard_notification_delivery
+            guard_notification_delivery(conn, row, now=now)
             if row["attempts"] >= row["max_attempts"] or now >= row["deadline_at"]:
                 conn.execute("UPDATE delivery_obligations SET state='dead_letter',updated_at=?,last_error=? "
                              "WHERE obligation_id=?", (now, "delivery_budget_exhausted", delivery_id))
@@ -215,6 +217,8 @@ class SessionDeliveryMixin:
                 return None
             conn.execute("UPDATE delivery_obligations SET state='attempting',attempts=attempts+1,updated_at=?,"
                          "attempt_token=?,last_error=NULL WHERE obligation_id=?", (now, token, delivery_id))
+            from hermes_state_monitor_notifications import sync_notification_delivery
+            sync_notification_delivery(conn, delivery_id)
             metadata = json.loads(row["metadata_json"])
             return {"attempt_token": token, "delivery_id": delivery_id, "artifact": metadata["artifact"],
                     "destination": metadata["destination"], "command_id": metadata["command_id"]}
@@ -249,6 +253,8 @@ class SessionDeliveryMixin:
             conn.execute("UPDATE delivery_obligations SET state=?,updated_at=?,last_error=?,next_attempt_at=?,"
                          "acknowledgement_json=? WHERE obligation_id=?",
                          (state, now, error, due, _json(ack), delivery_id))
+            from hermes_state_monitor_notifications import sync_notification_delivery
+            sync_notification_delivery(conn, delivery_id)
             return _receipt(self._delivery_on_conn(conn, session_id, actor, delivery_id))
         return self._execute_write(write)
 
@@ -276,6 +282,8 @@ class SessionDeliveryMixin:
             state = "delivered" if all(v == "client_received" for v in components.values()) else "partial"
             conn.execute("UPDATE delivery_obligations SET state=?,updated_at=?,last_error=NULL,"
                          "acknowledgement_json=? WHERE obligation_id=?", (state, now, _json(ack), delivery_id))
+            from hermes_state_monitor_notifications import sync_notification_delivery
+            sync_notification_delivery(conn, delivery_id)
             return _receipt(self._delivery_on_conn(conn, session_id, actor, delivery_id))
         return self._execute_write(write)
 
@@ -299,6 +307,8 @@ class SessionDeliveryMixin:
                          "delivery_repair_conflict", "Delivery state changed after its repair preview")
             if row["state"] == "delivered":
                 return _receipt(row)
+            from hermes_state_monitor_notifications import guard_notification_delivery
+            guard_notification_delivery(conn, row, now=now)
             if row["attempts"] >= row["max_attempts"] or now >= row["deadline_at"]:
                 conn.execute("UPDATE delivery_obligations SET state='dead_letter',updated_at=?,last_error=? "
                              "WHERE obligation_id=?", (now, "delivery_budget_exhausted", delivery_id))
@@ -307,5 +317,7 @@ class SessionDeliveryMixin:
                          "delivery_in_flight", "A transport write is still in progress")
                 conn.execute("UPDATE delivery_obligations SET state='pending',updated_at=?,last_error=NULL "
                              "WHERE obligation_id=?", (now, delivery_id))
+            from hermes_state_monitor_notifications import sync_notification_delivery
+            sync_notification_delivery(conn, delivery_id)
             return _receipt(self._delivery_on_conn(conn, session_id, actor, delivery_id))
         return self._execute_write(write)

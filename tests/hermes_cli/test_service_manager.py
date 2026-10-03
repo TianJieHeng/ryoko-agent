@@ -74,7 +74,20 @@ from hermes_cli.service_manager import (
 
 
 @pytest.fixture
-def s6_scandir(tmp_path):
+def service_identity(monkeypatch):
+    """Layout fixtures own their files; Docker tests cover the image's distinct UID."""
+    import os
+
+    from hermes_cli import service_manager
+
+    identity = (os.getuid(), os.getgid())
+    monkeypatch.setattr(service_manager, "_HERMES_UID", identity[0])
+    monkeypatch.setattr(service_manager, "_HERMES_GID", identity[1])
+    return identity
+
+
+@pytest.fixture
+def s6_scandir(tmp_path, service_identity):
     """Empty scandir for the S6ServiceManager tests."""
     d = tmp_path / "service"
     d.mkdir()
@@ -118,7 +131,7 @@ def fake_subprocess_run(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.mark.platforms("linux")
-def test_seed_supervise_skeleton_creates_expected_layout(tmp_path) -> None:
+def test_seed_supervise_skeleton_creates_expected_layout(tmp_path, service_identity) -> None:
     """Verifies the dirs + FIFO the helper lays down."""
     import stat
 
@@ -132,6 +145,7 @@ def test_seed_supervise_skeleton_creates_expected_layout(tmp_path) -> None:
     # Top-level event/ — s6-svlisten1 event subscription dir.
     event = svc_dir / "event"
     assert event.is_dir(), "missing top-level event/"
+    assert (event.stat().st_uid, event.stat().st_gid) == service_identity
 
     # supervise/ dir.
     supervise = svc_dir / "supervise"
@@ -152,7 +166,7 @@ def test_seed_supervise_skeleton_creates_expected_layout(tmp_path) -> None:
 
 
 @pytest.mark.platforms("linux")
-def test_seed_supervise_skeleton_sets_setgid_on_event_dirs(tmp_path) -> None:
+def test_seed_supervise_skeleton_sets_setgid_on_event_dirs(tmp_path, service_identity) -> None:
     """The event dirs carry setgid so s6-supervise's EEXIST path leaves them alone.
 
     Linux-only because the assertion is about what ``chmod`` does, and that

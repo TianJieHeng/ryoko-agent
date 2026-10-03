@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "phase": "BE13/FE10 named configured specialist selection and canonical handoff",
+  "status": "implemented_offline_qualified_live_unqualified_teams_disabled",
+  "observed_head": "6316814532a5df2d89568880a51f619bbf421e78",
+  "validated_at_utc": "2026-10-03T06:00:07.357490+00:00",
+  "schema_migration": "none in this slice; existing command, budget, mission, artifact and delegation stores",
+  "whitelist": [
+    "agent/specialist_control.py",
+    "agent/runtime_commands.py",
+    "agent/turn_facade.py",
+    "agent/mission_runtime.py",
+    "tui_gateway/contracts/specialists.py",
+    "tui_gateway/methods_specialists.py",
+    "tests/agent/test_specialist_control.py",
+    "tests/tui_gateway/test_specialist_control_rpc.py",
+    "docs/build/be13-named-specialists.md",
+    "tui_gateway/contracts/__init__.py",
+    "tui_gateway/server.py",
+    "apps/shared/src/gateway-contract.generated.ts",
+    "apps/shared/src/gateway-contract.openrpc.json",
+    "docs/build/be13-named-specialists-validation.json"
+  ],
+  "source_sha256": {
+    "agent/specialist_control.py": "f409b5b5ea514c4bba8f8f2f4c4013c9c43baaf2573d172411238f9b54bea81a",
+    "agent/runtime_commands.py": "51a1bef5ad4784d01ae8f7241dda807de56812fe4058c6281348fdc3745c1952",
+    "agent/turn_facade.py": "6cf0bbbc5ad1576acb3b167a446e843a5d8fa87cd34d2f00a3fc42c010d8097d",
+    "agent/mission_runtime.py": "057161dfccf9d6968073c91e125a1e282e14c0deec1c953da4d21c998ae6998a",
+    "tui_gateway/contracts/specialists.py": "a8745fbb4ac3ff336c0521ff6301cbdc1be97b35e1eeccab634a231793802e64",
+    "tui_gateway/methods_specialists.py": "84ed18662a7b762d637de20721674cd6cf5fd159e87dc53e40556ee92ea84376",
+    "tests/agent/test_specialist_control.py": "d1ed8cdb0a35e0cfed15adfde842e180398eef6a65f41d9ca30a257f50d8c953",
+    "tests/tui_gateway/test_specialist_control_rpc.py": "934f1c4f0a17b1b9e414c3effa72ed9ce2ef9d75a8b28cb927c4a75c0a681d5d",
+    "docs/build/be13-named-specialists.md": "837a116ba83efabd2537f1dceecfad78cef039a8608a5f8695ff0fa200321f3c"
+  },
+  "shared_source_sha256": {
+    "tui_gateway/contracts/__init__.py": "7b97d9f28a10429ead2ea75fd155bf3025ee2698a2dde90bd60611c0bb395fd6",
+    "tui_gateway/server.py": "6e767f2936ed928af89b942d3b98e003d6c2e375625b4cf3f7026c895dd04d00",
+    "apps/shared/src/gateway-contract.generated.ts": "d710c9c388e301775e68708958886ea2d72c918b2abebf6bc56497297c970d13",
+    "apps/shared/src/gateway-contract.openrpc.json": "3cceb1f92caaec84b987b391d3971246c7098a24a1cbfbb5f7020959a05581ab"
+  },
+  "shared_file_note": "Specialist additions only: specialists import, methods_specialists import/registration, generated Specialist* DTOs and four runtime.specialist methods. Shared bytes also contain the concurrently coordinated opportunity registration/types; preserve that owning slice for isolated replay.",
+  "wire_methods": [
+    "runtime.specialist.catalog",
+    "runtime.specialist.preview",
+    "runtime.specialist.handoff",
+    "runtime.specialist.status"
+  ],
+  "validation": {
+    "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/agent/test_specialist_control.py tests/tui_gateway/test_specialist_control_rpc.py tests/agent/test_runtime_commands.py tests/agent/test_mission_runtime.py tests/agent/test_budget_runtime.py tests/agent/test_durable_delegation.py tests/agent/test_admission.py tests/agent/test_turn_facade_lease.py tests/agent/test_cross_process_turn_lease.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/test_failed_agent_build_retry.py tests/tui_gateway/test_hosted_room_settled_retry.py tests/tui_gateway/test_queued_prompt_persistence.py tests/tui_gateway/test_queued_prompt_restart_retire.py tests/tui_gateway/test_subagent_snapshot.py tests/tui_gateway/test_subagent_child_mirror.py tests/tools/test_delegate.py tests/tools/test_delegate_control_actions.py tests/tools/test_delegate_capacity_interrupt.py tests/tools/test_delegate_output_schema.py tests/tools/test_delegated_individual_memory.py tests/tui_gateway/contracts/ --scratch-parent /workspace/shared -j2",
+    "cwd": "/workspace/scratch/42f2baf55663/ryoko-agent",
+    "files": 24,
+    "tests_passed": 315,
+    "tests_failed": 0,
+    "seconds": 90.3,
+    "specialist_agent_tests": 16,
+    "specialist_rpc_tests": 4,
+    "log": "/tmp/be13-named-specialists-qualified.log",
+    "log_sha256": "28207c2d29f77f2fe3c45c84989272195c5036e3de01cf1b639bdf49335006d5",
+    "full_repository_campaign": "not run by this worker; separate parent-owned campaign untouched"
+  },
+  "checks": [
+    {
+      "check": "scoped Ruff",
+      "status": "passed",
+      "log": "/tmp/be13-named-specialists-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "check": "scoped git diff --check",
+      "status": "passed",
+      "log": "/tmp/be13-named-specialists-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "check": "generated contract parity",
+      "status": "passed",
+      "evidence": "tests/tui_gateway/contracts/test_generated.py in canonical campaign"
+    }
+  ],
+  "proved": [
+    "Real configured stable specialist construction and exactly one local child via canonical submit admission, genuine lease/claim/budget/mission scope and existing capability/delegate_task dispatch",
+    "Real guarded OpenAI SDK MockTransport request; zero parent model requests in explicit handoff; no secondary loop or prompt-only selector",
+    "Exact role/manifest/output schema/method artifact bytes and live parent/child ACL revalidation; immutable method version is not silently replaced by newer head",
+    "Isolated builtin memory survives two distinct actual child sessions; no personal secret or personal MCP inheritance; parent cached prompt remains unchanged",
+    "Child physical usage charged to existing root budget; bounded artifacts/evidence/constraints; canonical staged inputs and immutable completion/delivery claims",
+    "Mission deterministic evidence retained while successful explicit handoff becomes waiting_for_user; no mission acceptance or automatic parent continuation",
+    "Idempotent receipt/duplicate execution and owned reconnect launch no extra child; claimed unknown status inspection performs no mutations or adoption",
+    "Queued and running cancellation; parent cancellation derived from authoritative TaskScope; child schema failure and truncated/partial output cannot falsely complete",
+    "Generic runtime.command cannot forge internal specialist payload; strict specialist DTO rejects identity/grant/credential overrides",
+    "Actual transport ownership, A-to-B-to-A profile isolation, canonical runtime snapshot/replay DTOs, output-schema failure, missing exact method bytes and revoked specialist ACLs",
+    "Adjacent ordinary runtime, budget, mission, delegate, lease, retry, queued prompt, subagent and generated contract regressions passed"
+  ],
+  "limits": [
+    "Configured strict identity, supported durable local model transport, existing finite budget, enabled durable delegation and both project ACLs are prerequisites; no user configuration is created or changed",
+    "Only local leaf specialists are admitted by this control; named identities with narrowed delegate_task permission are refused. Parallel teams remain disabled pending measured benefit qualification",
+    "Running Python work is not resumable. Unknown claimed outcomes are never respawned by reads or duplicate receipts; a new action requires explicit reconciliation and new user intent",
+    "No live model, installed connector, real account, hardware, remote executor, provider cost or team-productivity qualification is claimed",
+    "Parent review is required after child return. A completed specialist handoff is not mission acceptance or external delivery confirmation"
+  ],
+  "no_live_changes": [
+    "No model/provider network requests outside synthetic MockTransport",
+    "No user credentials/config/runtime settings or installed integrations edited",
+    "No dependency installation, Git/index writes, root buildjournal/plan edits, deployment or external mutations",
+    "Separate aggregate validation checkout/interpreter untouched"
+  ],
+  "journal": {
+    "path": "/tmp/be13-named-specialists-journal.md",
+    "sha256": "e089a9bcbc6123f5ca348e381f6f827f65948b800db919914c45940bd4d9ce6f"
+  }
+}

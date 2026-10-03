@@ -14,9 +14,11 @@ from agent.verification_evidence import (
 )
 
 @pytest.fixture(autouse=True)
-def _ledger_on(monkeypatch):
+def _ledger_on(monkeypatch, tmp_path):
     """The ledger is inert unless verify-on-stop is enabled; these tests exercise the ledger."""
     monkeypatch.setenv("HERMES_VERIFY_ON_STOP", "1")
+    # Keep real project discovery inside this synthetic workspace, even below a checkout.
+    (tmp_path / ".git").mkdir()
 
 
 

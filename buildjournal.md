@@ -460,3 +460,724 @@ backups/code/keys/manifests before downgrade; backup recovery does not imply sch
 rollback. See docs/build/operations-contracts.md for the concrete runbook.
 
 Parent validation: shared TypeScript passed (`npm run typecheck --workspace @hermes/shared`); exact log SHA-256 is retained in the phase validation receipt. Phase base is verified BE13 `a35020dede80abe3871d6d72f9c146225cff6773`.
+
+## 2026-10-03 BE15 — Typed decisions, bounded shadow consumers and secured-node protocol
+
+Implementation checkpoint on base 283163a719c25666c36a35da3fd513bb7d7aa532. Default off; no schema migration, model install/training/download, live node/deployment/security-setting change or paid API. Parent owns direct-main commit/publication.
+
+Before: no typed non-generative decision registry/client, no independently bounded classifier circuit, and no redacted per-point decision receipts on the canonical runtime wire.
+
+After: sixteen versioned point contracts with owners, closed questions/options, unclear, compact state builders, exact digests, effect thresholds, executable synthetic protocol fixtures and declared incumbents. Independently controlled off/shadow/advisory modes; SDK enforce requires exact point/model/calibration/contract/threshold evidence gate and durable receipt, and can only return a recommendation. Production enforce remains unavailable. Model outputs never grant tools, identity, approval, memory, budgets or egress.
+
+Real opt-in core consumers: lifecycle pre_api_request (DP16 first initial attempt), pre_tool_call (DP06 destructive), transform_tool_result (DP07 content), background-review core seam (DP10), and immutable finite-source metadata seam (DP11). DP11 is not a semantic inbox scorer and does not choose notifications. Incumbent tools/prompts/results unchanged. Observation binds existing run/lease/profile, charges actual wall time on BE03 ledger without main-provider attempt/retry changes, and writes metadata-only decision.observed/decision.outcome records. Typed replay exposes only validated receipt/label payloads. Profile A→B→A tests prove no owner/client reuse.
+
+Security: dedicated finite classifier worker slots and per-point circuit/deadline with no retries. Hung calls retain slots, late results never apply. Bounded optional receipt wait; mandatory durable sink failure withholds recommendation. Private packets remain blocked by actual BE14 privacy qualification and still require a future destination-bound authorization implementation. LAN transport requires literal RFC1918 addresses, mutual TLS and certificate pin before body transmission, bounded JSON and exact bundle/registry pins; no proxy/DNS/redirect or insecure fallback. Generic node handler validates local artifact bytes, peer allowlist, finite queue and metadata health, but needs a separately reviewed bounded HTTP/TLS host and external vendor adapter.
+
+Validation (canonical runner): 191 passed across 14 affected/backend-budget regression files; after final per-effect/fixture binding additions, 31 passed across client/actual-runtime/mTLS/generated-contract files. Final independent mTLS benchmark gate 5 passed. Shared TypeScript, Ruff, generated contract freshness and diff checks passed. Every registry question exercises synthetic unclear fallback. Arithmetic calibration fixture: 58 passing metric/provenance/leakage tests. Exact log hashes, source hashes, synthetic evaluation and measured local TLS end-to-end/sequential-batch samples are in docs/build/be15-validation.json. The local TLS numbers are x86_64/container fixture measurements, never Jetson or model claims.
+
+Cross-links: docs/build/typed-decisions.md, docs/build/decision-node-runbook.md, evals/decisions/README.md; FE12 consumer fields in tui_gateway/contracts/decisions.py plus runtime_v1/methods_runtime and regenerated apps/shared contracts. Exact stage whitelist /tmp/be15-files.txt; parent should not stage agent/decisions directory because BE16 owns sibling files.
+
+Remaining release dependencies: actual initial intention dataset is absent; no trained/calibrated Router exists. Inspect its schema/labels/license and heldout suitability before training. Verify actual Jetson/JetPack/serving/model support, deployment allowlist/encryption/auth, actual latency/memory/thermal/backend parity and restore/rollback before node qualification. BE14 private-data lifecycle gates and explicit destination authorization remain closed. Catalog points are not sixteen models or a completion prerequisite; Guard optional later. Per-point measured promotion remains BE16/BE17 work. No raw harness documents or secrets were exported, persisted in receipts or added to this change.
+
+# BE16 proposed buildjournal entry
+
+## 2026-10-03 BE16 — Independent LAYA policies and recoverable front-door planning
+
+- Before: BE15 had typed, default-off/shadow observers and closed receipts; per-point deterministic floor adapters, an evidence-bound release workflow and causal tool-plan/cache recovery machinery were absent.
+- After: all DP01–DP16 have tested floor adapters. Five real production observer points remain DP06/DP07/DP10/DP11/DP16; the other eleven explicitly remain adapter-only. DP16 now observes need/effort/family then conditional tool/verification stages, with default-full fallback, authorized bridge retention, immutable context bundles and owner-bound omission/recovery diagnostics.
+- Shipping state: all settings remain unchanged/default-off; production enforcement config is rejected. LAYA experiments, activation and promotion are paused per the latest user direction. No training/download/paid provider/live private packet/config activation was performed.
+- Release workflow: point-specific pinned contract/model/calibration/service/policy/scope evidence, independent frozen holdout/calibration/safety/latency/budget reports and exact operator approval; synthetic fixtures cannot qualify. Individual rollback retains reason and matched bundle. Corrections cannot raise permissions, tools or budgets. Missing classifications retain point-specific floors only within the qualified rollout scope.
+- Cache/authority: same-context schemas remain byte-stable. New bundle installation is a tested component only at a compatible new-context/compression boundary and is not wired for production enforcement. Existing tool-search/describe/call and policy dispatch remain authoritative. Shadow misses are marked observation_only; denied names are hashed.
+- Initial candidate: DP16 intention/front-door routing. No intention-routing dataset found in checkout filename inventory; actual schema/labels/license/quality, training/calibration/holdout/shadow/hardware qualification remain pending. No sixteen-model requirement or empirical benefit claim.
+- Wire/FE12: closed decision.tool_plan, decision.policy, decision.planner_miss payloads are projected through real runtime replay and regenerated TypeScript/OpenRPC contracts. Operator UI/authorized promotion endpoints and other eleven owner consumers remain deferred.
+- Bounded review fixed atomic rollback reads, out-of-scope fallback leakage, mandatory outage fallbacks, and partial/unclear planner stages. No remaining confirmed review defect; real owner integration validated separately.
+- Regression repair: initial broader run was 133 passed / 1 failed because a BE05 test still rejected memory schema admission after BE08 certification. With explicit parent authorization, the exact test now verifies admission vs unadmitted execution, no writes and no personal-MCP access. No authority module changed. Settled rerun: 134 passed / 0 failed.
+- Validation receipt: docs/build/be16-validation.json; runbook: docs/build/laya-point-policies.md. Counts overlap and must not be summed.
+
+### Exact final validation commands and logs
+
+- focused_owner_planner_policy_and_generated_contracts: passed
+  Command: `HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/agent/test_decision_planner_runtime.py tests/agent/test_decision_runtime.py tests/agent/test_decision_point_policies.py tests/agent/test_decision_tool_planner.py tests/agent/test_decision_planner_evaluation.py tests/tui_gateway/contracts/test_generated.py -q`
+  Log: `/tmp/be16-integration.log` SHA-256 `977cc8e9b6a6392f52ea2beb135fcc628979cba5d0ed9cc0f340ec29baca5570`
+- broader_authority_bridge_and_replay_regression: historical_failure_resolved
+  Command: `HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/tools/test_tool_search.py tests/tools/test_tool_search_multiquery.py tests/tools/test_agent_policy_boundaries.py tests/tools/test_capability_broker.py tests/agent/test_tool_view.py tests/agent/test_tool_view_construction.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_runtime_v1.py -q`
+  Log: `/tmp/be16-regression.log` SHA-256 `03afe868c2d49b3b5c3545c75c1c66fbf92a30066acba8c89dd0b5fe7ba28876`
+- settled_broader_authority_bridge_and_replay_regression: passed
+  Command: `HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/tools/test_tool_search.py tests/tools/test_tool_search_multiquery.py tests/tools/test_agent_policy_boundaries.py tests/tools/test_capability_broker.py tests/agent/test_tool_view.py tests/agent/test_tool_view_construction.py tests/tui_gateway/test_runtime_rpc.py tests/tui_gateway/contracts/test_runtime_v1.py -q`
+  Log: `/tmp/be16-regression-settled.log` SHA-256 `4e66607481d717e942344395670e7d822fab4ec7856181b70c0b48554d0699d5`
+- shared_typescript: passed
+  Command: `node_modules/.bin/tsc -p apps/shared --noEmit`
+  Log: `/tmp/be16-shared-typecheck.log` SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+- ruff: passed
+  Command: `.venv/bin/ruff check agent/decisions/{integration,point_policies,point_adapters,release_gates,tool_planner,planner_runtime,planner_evaluation}.py hermes_state_runtime.py tools/tool_search.py tui_gateway/contracts/decision_plans.py tui_gateway/contracts/runtime_v1.py tui_gateway/methods_runtime.py tests/agent/test_decision_{point_policies,tool_planner,planner_evaluation,planner_runtime}.py tests/tools/test_agent_policy_boundaries.py`
+  Log: `/tmp/be16-ruff.log` SHA-256 `82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18`
+- diff_whitespace: passed
+  Command: `git diff --check`
+  Log: `/tmp/be16-diff-check.log` SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+
+### Exact file whitelist
+
+- `agent/decisions/integration.py`
+- `agent/decisions/planner_evaluation.py`
+- `agent/decisions/planner_runtime.py`
+- `agent/decisions/point_adapters.py`
+- `agent/decisions/point_policies.py`
+- `agent/decisions/release_gates.py`
+- `agent/decisions/tool_planner.py`
+- `hermes_state_runtime.py`
+- `tools/tool_search.py`
+- `tui_gateway/contracts/decision_plans.py`
+- `tui_gateway/contracts/runtime_v1.py`
+- `tui_gateway/methods_runtime.py`
+- `apps/shared/src/gateway-contract.generated.ts`
+- `apps/shared/src/gateway-contract.openrpc.json`
+- `tests/tools/test_agent_policy_boundaries.py`
+- `tests/agent/test_decision_planner_evaluation.py`
+- `tests/agent/test_decision_planner_runtime.py`
+- `tests/agent/test_decision_point_policies.py`
+- `tests/agent/test_decision_tool_planner.py`
+- `docs/build/laya-point-policies.md`
+- `docs/build/be16-validation.json`
+
+Validation JSON SHA-256: `c4fc59c83703fc6aad798ed888be902d34898e5cff4bdd318b65c4d819380533`
+
+No Git staging, commit, push, branch operation or root buildjournal edit performed by this worker. Parent owns publication and remaining BE18 validation.
+
+Publication: local phase checkpoint. Standard Git push is awaiting existing remote authentication; no alternate publication route is being used. LAYA activation and rollout decisions remain deferred.
+
+## BE17 — governed dataset and model-release tooling (2026-10-03 UTC)
+
+Status: local code/CLI governance implemented and verified; real training and production acceptance gates remain deferred. No trained candidate is claimed. Remote publication remains pending existing Git authentication.
+
+Before: the phase roadmap specified dataset provenance, deletion propagation, frozen splits and signed release gates, without a concrete local CLI consumer. After: bounded consent/purpose/scope records, independent-label checks, secret scrubbing without authority truncation, task/episode/time/content anti-leakage, deterministic receipt-only exports, immutable holdout lineage, source deletion/invalidation/checkpoint-review receipts, offline scalar calibration refit, Ed25519 existing-public-identity verification, opaque artifact hashing, independent shadow metric gates, operator bundle selection and complete predecessor rollback are executable locally. Guard/router drift produces a hold/investigation/proposal only.
+
+BE15 integration: manifest contract versions and exact semantic digests/questions are pinned; `runtime-projection` validates installed `contract_for` entries and constructs the existing `ModelBundle(model_digest, calibration_digest, service_digest)`. This neither installs a calibrator nor activates serving. The explicit synthetic fixture uses the actual DP05:v1/scope menu and is a plumbing fixture, not the promised post-backend harness dataset.
+
+Migration/flags: no DB migrations, gateway/config/default changes, credentials, keys, or runtime enablement. Default export omits packets. Private records need existing source/purpose/scope/destination-specific approval; including packets needs explicit inclusion approval. Only tests create mock checkpoint bytes and temporary signing keys. No actual dataset export, external host, model download, remote teacher/GPU or training run occurred.
+
+Validation:
+- `HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/evals/test_decision_governance.py tests/agent/test_decision_calibration.py tests/agent/test_decision_client.py -q`: 106 passed / 0 failed, 3 files; 30 are BE17 tests. `/tmp/be17-validation.txt` SHA-256 `e55fc5e6d5303e9c3cd0ec1c72fdcd7231453b7b8f9cdee5a7b6976fb6f90c54`
+- Synthetic CLI rebuild twice against the same ledger: manifest `ef01647868fd52ef48053d0d339822dddcc49b1ad0d2bf7724e50c04606f1d02`, identical export SHA-256 `51dd0ee52b0f64461e1db325c117d8de25b337d6f16dbb4a9f47cef87d60149a`; 3 records, no packets. `/tmp/be17-cli-rebuild.txt` SHA-256 `f6f776105ac5d535f7e109f95976d213179a320b2c25886c913f8897692b8c7d`
+- Actual CLI offline refit: calibration digest `e862b9f9c4179f715b067f913c0b928655880e7f5ae26aea8fc951ab6f01d310`, explicitly untrained/unqualified. Deletion rebuild yields 2 rows with deleted source absent, manifest `8c8a2e9f78d3dfbfc344bfec2c24033c4dcf257b77a727865eafeef6c616f2db`. `/tmp/be17-cli-refit-deletion.txt` SHA-256 `d1cefc17e1e7bcd35621c0f14c24bdd06b5f92b6920995075e4d260794779a64`
+- Actual `deletion-impact` and Guard `drift` CLI receipts confirm source-manifest invalidation and review hold without training/privilege relaxation. Signed mock tamper, two independent exact fixture builds, actual runtime projection and rollback paths are exercised inside tests only.
+- Ruff on the three new modules plus their test passes. `git diff --check` passes. Full suite remains the BE18 gate.
+
+Evidence: [docs/build/be17-validation.json](docs/build/be17-validation.json); runbook/boundaries: [docs/build/decision-data-governance.md](docs/build/decision-data-governance.md). BE15 companion paths: `agent/decisions/contracts.py`, `registry.py`, `calibration.py`; those were not edited by BE17.
+
+Deferred: actual intention dataset inspection, the separately approved post-backend harness dataset, exact RLCD source/license/toolchain and target hardware investigation, real model training/reproducibility, measured serving/token limits, production holdout/red-team qualification, installed calibration, live shadow promotion and serving rollback. Signing proves integrity/provenance, not model safety; removing source records does not unlearn existing weights. Supplied approvals and evaluator identities are controlled operator attestations, not an authentication service.
+
+Checkpoint base: `a815882c42c5eaec3155845494be70bca40529d0`. Real LAYA experiments, activation and rollout decisions remain deferred.
+
+## 2026-10-03 FE00 — Existing-surface runtime contracts and controls
+
+Status: verifying; locally implemented consumer foundation, full platform gate pending.
+Source: FE00/U32, BE02 generated runtime contracts. Base: 0a4621c6.
+
+Implemented a shared typed runtime controller using generated RpcMethods and a discoverable
+TUI `/runtime` command (inherited by the dashboard's existing PTY TUI). Status, refresh,
+bounded event replay, steer, cancel and explicit identical-command retry use the existing
+owned session transport. Capability/version negotiation gates controls; generation checks
+prevent stale selection writes; disconnected transport leaves work stale rather than cancelled.
+Stable command IDs and expected revisions guard duplicate submissions and uncertain retries.
+Receipt acceptance is explicitly separate from execution, artifact validation and delivery.
+Added a surface/authority inventory; no second chat, scheduler, memory or policy engine.
+Classic CLI and Electron-specific runtime controls are not claimed implemented in this checkpoint.
+No new Python registry advertisement on surfaces without a handler.
+
+Validation: root `node_modules/.bin/vitest run apps/shared/src/runtime-control.test.ts
+ui-tui/src/app/runtime/runtime-command.test.ts` passed 4 tests/2 files. Shared workspace
+`npm run --workspace apps/shared typecheck` passed. `git diff --check` passed.
+TUI aggregate typecheck initially failed due missing dependencies. Lock-respecting staging
+`npm ci --ignore-scripts --cache /workspace/shared/ryoko-npm-cache --prefix /tmp/ryoko-frontend-deps`
+succeeded (1331 packages); missing dependency files hydrated without overwriting existing files.
+`npm run --workspace ui-tui build:ink` and `npm run --workspace ui-tui typecheck` then passed.
+The typed adapter spreads generated params into the transport dictionary without weakening the
+wire contract. No lockfile/dependency version/live configuration changes. Native install scripts
+remain disabled. Browser/native visual
+QA, live identity binding, real provider/hardware and classic CLI parity are not claimed.
+
+Rollback: remove the additive view/command and shared export; authoritative runtime work remains.
+No storage migration or credentials. Publication: normal Git HTTPS push unavailable (no credential);
+this phase remains a local checkpoint until authenticated publication is possible.
+Next: FE01 identity/memory/capability health rendering and existing Electron inspector; resolve
+workspace dependency gate for aggregate frontend verification.
+
+## 2026-10-03 FE01 — Identity and actual capability health inspection
+
+Status: verifying; local supported inspector complete, live setup and full provenance gates pending.
+Source: FE01/F34, BE01/04/05/08. Base 91fd20f8.
+
+Added `/runtime identity` and a Runtime & memory inspector in Electron’s existing Command Center → Maintenance. The view uses the exact active gateway/session, never opens another chat, and probes real `runtime.capabilities` and `runtime.memory.status` on explicit refresh. It shows declared backend/execution/cancellation limitations, frozen tool policy counts, queue scope, primary-only personal MCP versus isolated built-in memory, acknowledged capabilities and repair guidance. Failed probes cannot show connected/ready or leak error payloads. Scope keys/unmount generation invalidate stale results; disconnect disables refresh and retains honest stale work status. Existing maintenance controls are preserved. Chrome labels cover bundled locales; backend diagnostic text remains original.
+
+Checks: shared identity and TUI consumer tests 4 passed/2 files; Electron inspector behavior test 1 passed; full TUI typecheck passed; Electron renderer `tsc -p . --noEmit` passed in clean FE00+FE01 validation worktree, as did clean shared/TUI typechecks (future modules excluded); whitespace check passed. Exact logs/hashes in docs/build/fe01-validation.json. Tests use controlled transports, not real MCP/hardware. Full redacted override provenance has no current backend projection; credential entry/grant editing and two real setup flows are not fabricated. No live/native visual claims.
+
+Rollback is additive inspector removal; no state migration, persistent client cache, credentials or permission authority added. Local commit only until authenticated normal Git publication is available. Next FE02 project continuity/capture/scoped acknowledged corrections.
+
+## 2026-10-03 FE02 — Project continuity, capture review and scoped corrections
+
+Status: verifying; supported local controls implemented, harness/indexing/product journey gates pending. Base 5b328595. Source FE02/F01/F03/F04/F05/F06; BE07/BE08.
+
+Added concrete project list/create/inspect/select/resume and exact-revision canonical attachment commands; old artifact refs are preserved. Resume presents actual current versions, stale dependencies, mission states, evidence authority/freshness and blockers, without launching work or claiming complete history. Capture commands retain original artifact IDs/versions and extraction failures, allow revision-checked filing/unfiling, and show duplicate candidates without consolidation. Explicit remember/correct/forget controls retain scope and expected version; acknowledgment/conflict and tombstone limitations are separate. Primary harness unavailability never routes to built-in memory.
+
+Existing TUI `/runtime project|memory|capture` and Electron Runtime & memory inspector share these concrete handlers. The expert command panel requires explicit submission, blocks double clicks, uses escaped text, clears output on feature/context changes, never retries unknown mutations automatically, and closing a view never cancels accepted work. Actual consumer tests cover delayed TUI memory after conversation change and delayed Electron identity probe after gateway/session switch. No competing project/memory database or scheduler.
+
+Validation: focused shared/TUI 6 tests passed; desktop consumer 3 tests passed; clean-phase shared, TUI and Electron renderer typechecks passed. Exact commands/log hashes in docs/build/fe02-validation.json. Later uncommitted phases excluded from validation. Backend authority remains independently tested by backend phases; transport fixtures are not live harness certification.
+
+Deferred: actual personal MCP operations pending configured server/schema/secure credentials, capture indexing/approximate retrieval/batch/mobile adapters, complete product pilot and polished domain-specific forms. No full P01/P02/P03/P06 acceptance claim. Additive rollback removes UI only; backend versions/receipts retained. Local-only Git checkpoint; next FE03 complete artifact bytes, revision review, templates and alternatives.
+
+## 2026-10-03 FE03 — Complete artifacts, exact revisions, templates and comparison
+
+Status: verifying; usable Markdown controls implemented, broader quality/platform gates pending. Base 676f8bad. Source FE03/F10/F11/F32; BE06/07/10.
+
+Added typed Electron artifact workbench in the existing runtime inspector: create complete Markdown, load exact immutable version with full-byte SHA-256 verification, choose unambiguous heading outside code fences, review baseline/replacement side by side, prepare exact section digest/base/head preconditions, and confirm exact publication separately. Edited inputs invalidate approval while retaining proposal identity; Discard calls exact backend cancellation and waits terminal acknowledgment before freeing the UI for another prepare. It never claims committed effects were undone. Control ID is visible for recovery after closing the view.
+
+Added immutable version comparison with no implicit selection/overwrite, typed template creation from an approved baseline with structure/style/topic slot and explicit incidental-content exclusions, and complete-download controls. Electron reads no partial file into a link, cancels pending reads, uses inert application/octet-stream download bytes, and never previews active HTML. TUI explicit local download uses exclusive create (no overwrite) after digest verification. Shared advanced artifact/template controls preserve exact approval/request/content binding; structured TUI input preserves whitespace inside JSON content.
+
+Validation: shared/TUI 8 tests passed; desktop 5 tests passed; clean shared/TUI/Electron renderer typechecks passed; actual canonical artifact RPC suite 10 passed. Tests include complete chunks/truncation, unchanged baseline, exact approval/content revision, cancel before reprepare, explicit file save/no overwrite, and cancel without partial link. Log hashes/commands in docs/build/fe03-validation.json. Existing server independently validates section locks/digests and scope.
+
+Limitations: Markdown-first, no format-layout/fidelity claim; polished branch-merge chooser and three-varied-topic template proof remain pending. New detailed forms are English pending complete localization/visual/a11y consolidation. No real remote provider/hardware/native Electron acceptance; no full F10/F11/F32 claim. Additive rollback retains authoritative immutable versions and control/effect receipts. Local-only publication. Next FE04 typed mission progress, evidence acceptance, precise cancellation and delivery recovery.
+
+## 2026-10-03 FE04 — Conversation-owned mission progress and review
+
+Status: verifying; supported typed control/review surface complete, live product pilot pending. Base 0459d064. Source FE04/F02/P07; BE03/06/09.
+
+Added a user-invoked Mission dialog on the actual primary conversation surface, with concise outcome/state/next-step and timestamped snapshot summary. It reads the exact provided live gateway/session, refreshes on that session’s message/result events and explicit mission actions, and never steals focus for background events. Switching scope closes the old dialog; delayed old summaries cannot appear in a new conversation. Existing approval overlays remain untouched.
+
+Typed mission panel creates reviewed intent, revises exact current revision, attaches multiple immutable artifact outputs and optional required Markdown sections, preserves unrelated deliverables, runs actual deterministic verification, and explicitly confirms acceptance only from current ready-to-review evidence. Pause/resume/cancel and missed corrections preserve authoritative states; cancellation does not undo effects. Unknown mutation failure requires refresh before more writes. Execution/acceptance/delivery, partial outputs, blockers and receipt evidence remain separate.
+
+Added delivery inspection and retry-existing-notification controls, never mission rerun or manual false client receipt acknowledgment. Advanced TUI mission/approval/delivery commands reuse typed contracts; metadata-only approval view supports denial but cannot approve unseen content. Exact-content artifact approval remains in its original review. Visited typed inspector panels stay mounted when hidden so temporary tab changes do not discard pending review state.
+
+Validation: shared/TUI 5 tests passed, desktop 4 tests passed including real ChatView integration and delayed old-scope summary, clean shared/TUI/renderer typechecks passed, canonical mission RPC suite 15 passed. Log hashes/commands in docs/build/fe04-validation.json. No live-provider/two-output quality pilot, native Electron or full delivery certification claimed. Detailed-form localization and aggregate visual/a11y gate remain FE13. Additive rollback removes controls without deleting authoritative missions/effects. Local-only Git checkpoint.
+
+## 2026-10-03 FE05 — Retained-source research and reviewed brief refresh
+
+Status: verifying; bounded typed evidence/brief UI implemented, connected source and decision-lab gates pending. Base 88733e53. Source FE05/F07/F08/F09; BE07/09/10.
+
+Added real typed research form to existing Electron runtime controls and TUI research commands: select retained project artifact or capture-original IDs, exact versions/digests/byte ranges/quotes, observe missing/stale/incomplete coverage, and separate source claims from interpretations. Initial dependency baselines derive owner scope from actual server source reads rather than caller identity. A stable memoized transport retains exact timestamp-bearing preparation bytes; saved-manifest refresh can resume without client storage authority.
+
+Brief/manifest refresh displays both exact ordered artifact approval records and requires explicit review plus canonical confirmation before publication. Changed inputs or disconnect revoke approval while preserving command identity; Discard/status use exact backend command and terminal receipts before allowing new preparation. Partial/non-atomic publication and unknown outcomes remain explicit; no automatic retry, false complete brief or private scope leak. A pre-dispatch validation failure clears only local phantom preparation without sending cancellation for nonexistent backend work.
+
+Split large initial component into topical locale/types/input/action/view modules before checkpoint; main component is below300 lines and rendering/action functions stay bounded. All nine bundled locales have chrome.
+
+Validation: shared research4 tests and rendered research12 tests passed; clean shared/TUI/renderer typechecks and scoped ESLint passed. Exact logs/hashes in docs/build/fe05-validation.json. Existing canonical BE10 research contracts were also worker-tested, but no new live-service proof is claimed.
+
+Limits: retained local sources only, no connected-search P08 claim, typed form one claim update and one citation range per source, no scenario/decision engine or automatic monitoring. Prior brief versions and unrelated claims stay backend-owned. No native/browser visual or complete product-quality pilot yet. Local-only checkpoint; next FE06 manual workflow and truthful finite schedule/monitor controls.
+
+## 2026-10-03 FE06 — Manual workflow runs and truthful finite monitor health
+
+Status: verifying; supported manual workflow/record-only schedule controls implemented, live monitoring gates pending. Base 005e6658. Source FE06/F19/F20/F21; BE11/BE12.
+
+Added typed WorkflowPanel and TUI workflow/schedule actions over existing contracts. Inspected immutable approved workflow versions expose declared inputs/outputs, permissions/evidence and real typed scalar parameter fields. Explicit run preparation, ordered exact artifact review and canonical confirmation publish only the chosen version and parameters. Accepted-mission save, definition authoring/evaluation/feedback and bounded history remain supported through inspected text commands, without a second workflow engine.
+
+Edited inputs, scope switches and disconnect revoke review but retain the original pending command. Explicit status/cancel uses exact command identity; only terminal acknowledgment releases preparation. Unknown cancellation cannot silently unlock another run. Schedule inspection displays active/paused/expired/revoked, actual health, last success/error, next due, expiry, timezone/DST and finite check budget. Baseline/no-change/source-failure/matched-change states stay distinct. Pause/resume uses current revision and backend scope; no default standing grant or hidden notification send.
+
+Validation: shared workflow16 tests and rendered workflow8 tests passed; clean shared/TUI/renderer typechecks passed. Worker scoped lint/type verification also passed. Exact logs/hashes in docs/build/fe06-validation.json. No live source/notification pilot claimed.
+
+Backend limits are visible: record-only finite local monitors, created paused; no snooze/quiet-hour/digest or notification dispatch API. These controls do not pretend checks stopped while delivery is merely suppressed, or fabricate end-to-end P10 alert precision. Graphical workflow canvas remains intentionally deferred; typed scalar rerun is usable now. Local-only checkpoint with backend state/occurrence receipts retained on rollback.
+
+## 2026-10-03 FE07 — Typed data and prompt-only creative packages
+
+Status: verifying; two selected local production packages implemented, broader domain and fidelity gates pending. Base ae35f64f. Source FE07/F12/F28; selected Slice-D scope permitted by plan.
+
+Added typed data/creative desktop form and TUI domain controls over canonical backend adapters. Retained CSV/XLSX IDs/versions/digests, encoding, delimiter, date/currency/null/duplicate/unit assumptions, aggregation, chart and export inputs are explicit. Complete immutable manifest readback verifies digest and chunk boundaries before showing data profile, recipe and selected-row lineage; no raw source cells are dumped. Formula caches are declared preserved, not recalculated.
+
+Creative mode separates brief/prompts/continuity and supplied reference/rights declarations; prepare/publish creates prompt-only package with zero image/audio/video generation. Rights are not certified and publication is not external production/delivery. Exact ordered output approvals are reviewed, with manifest last and explicit non-atomic publication confirmation.
+
+Stale inputs/disconnects retain original control identity and revoke approval. One-shot discard waits terminal acknowledgment; uncertain publication is inspected, never automatically retried. Local byte-bound rejection occurs before reserving a phantom lease. Fixed manifest readback to pass only the exact artifact/version/digest pin, and kept the confirmation owned until the actual request settles. Effect cleanup captures its exact lifetime object. Nine locale chrome sets are included.
+
+Validation: shared domain4 tests, actual desktop23 tests, clean shared/TUI/renderer typechecks and scoped lint (zero warnings) passed. Exact logs/hashes in docs/build/fe07-validation.json. Earlier test failures (manifest pin normalization/confirmation lifecycle and a copy key) were corrected and affected tests rerun.
+
+Limits: typed data UI starts with one retained source; advanced commands expose supported joins/multiple inputs. New upload adapter, lesson/tutor/demonstration packages and live media generation are explicitly deferred. No workbook visual fidelity, recalculation, learner transfer or production-quality pilot claim. Additive rollback preserves original datasets/media and published artifacts. Local-only checkpoint; next FE08 reviewed obligations/drafts.
+
+## 2026-10-03 FE08 — Reviewed commitments and draft-only correspondence
+
+Status: verifying; supported source-backed review/draft controls implemented, live communications/calendar gates pending. Base 24ff4dc6. Source FE08/F13/F22/F23/F24; BE06/10/12.
+
+Added FollowthroughPanel to existing runtime controls and TUI commitment/correspondence commands. Active review includes accepted nonterminal obligations only. Candidate inspection supports explicit owner/outcome correction and ISO timestamp-with-offset plus IANA zone before exact-revision confirmed acceptance. Leaving an item unaccepted creates no obligation; unsupported durable decline and terminal reopen are stated plainly. Source text never silently invents a speaker, owner or due date.
+
+Typed correspondence fields collect exact recipient identities, draft text and immutable source references, then create a draft only. Canonical returned correspondence IDs are retained for inspection. Edited drafts need new IDs/review; existing confirmed send evidence may be associated through the backend but never sends a message or proves delivery. Advanced controls include imported-inbox evidence, waiting review and source-snapshot calendar preview without calendar writes. Scope switches, disconnects, stale confirmations and repeated clicks remain guarded. Nine locale chrome sets and existing confirmation primitives are used.
+
+Validation: shared follow-through17 tests and rendered panel5 tests passed; clean shared/TUI/renderer typechecks passed. Logs/hashes in docs/build/fe08-validation.json. Source/receipt fixtures are not live inbox/calendar/provider evidence.
+
+Limits: no live meeting speaker attribution, mailbox/calendar check, day/week workload/travel planning, send/queue endpoint or provider/human-read certification. Backend durable decline/reopen APIs remain absent. No automatic reminders, blanket replies or new promises. Rollback retains accepted records/receipts and never retracts sent messages. Local-only checkpoint; next FE09 scoped execution and real-outcome inspection.
+
+## 2026-10-03 BE18 — Validation and regression-repair checkpoint (not release sign-off)
+
+Frozen foundation: 0a4621c6b8eb69d170ad4bf5e63aabfb5946b8d0, tree b4e16d1a88147f456087a0cf6427e8983e24ffce, plus explicit BE18 files. Validation used an isolated detached worktree while frontend changes proceeded independently. Initial source digest stayed unchanged throughout the complete Python campaign.
+
+Before: separate phase receipts had not exposed all cross-phase and inherited-consumer integration failures. After: six finite local release journeys, a producer-only compatibility fixture, failure-preserving evidence tooling, source/config/dependency/schema manifest, and targeted regression repairs are recorded. Real fixes remove obsolete lossy persistence consumers, preserve exact structured media and private provider state through reopen/export/deletion guards, complete schema chronology, retain ownership/uncertainty semantics in legacy consumers, guard corrupt scheduled identity configuration, and route isolated executor lookup through the canonical resolver. Stale admission/tool-view/protocol fixture seams and the synthetic DP05 contract pin were reconciled without weakening production gates or changing training labels/permissions.
+
+Validation:
+- Complete default Python campaign: 5,331 files; 55,681 passed, 558 failed, 725 skipped; additional collection/setup errors; exit 1; 3,191.6 seconds. Full log SHA-256 d18882770fd575a90528f8834696c72c97c224fb15c40a0fcae3b906d0043743. This remains a failed original receipt.
+- Exact baseline comparison: 243 failing existing files against 4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd; 3,139 passed, 443 failed, 58 skipped, with setup/collection errors separately retained. No second full suite.
+- Final critical authority/effect/memory gate: 29 files, 357 passed, zero failures/skips.
+- Final affected campaign: 35 files, 1,378 passed, 16 failed. Fourteen lack aiohttp, one reproduces the inherited /tmp marker, and one stale native-vision assertion was then repaired: three exact gateway cases plus 57 multipart/message-UID consumer checks pass, including real SQLite reopen fidelity.
+- Final slice/tooling/generated-contract campaign: 16 passed; after checkpoint gap-gating/sanitization changes, release-tooling six tests pass. Changed Python Ruff (41 files) and diff check pass.
+- Shared producer TypeScript and serialized desktop typecheck pass. TUI unit suite: 175 files/1,610 passed. Web unit suite: 50 files/359 passed. Root JS: 180 passed, 11 native-preparation failures, one skipped. Desktop aggregate units were interrupted after prolonged lack of completed-test progress; exact active node was not established. The last reported voice-prefs file independently finishes with 16 passed/two failed; its failures are not claimed as baseline-qualified.
+- Across the 245 initially failing files, 37 pass on documented repair/resource reruns. Every remaining observed Python failed node is also represented on the comparison baseline after exact resource/temp-root checks; this is node-level reproduction, not a blanket identical-root-cause claim. Detailed sanitized node/phase/reason classifications and all hashes remain in docs/build/be18-validation.json.
+
+Resource/evidence limits: /var/tmp maps to tmpfs /tmp. Updater fixtures can exhaust it even serially. Original full telemetry lost two files; later reporting writes atomically and preserves pytest's true exit status on ENOSPC. Exact disk-backed reruns and their environmental changes are recorded; original missing evidence is never fabricated. Only completed BE18-created fixture directories were removed after retaining their logs/receipts. Existing lock-respecting Node dependencies were copied from approved staging and frozen local Ink built; temporary dependency fixtures created by inherited tests are separate from runtime hydration.
+
+Remaining implementation work is explicit: local user notifications and their policies, actual template application beyond retained records, output-influence controls, and full-store recovery. These are mandatory code gaps, not merely live-service qualification. This checkpoint does not complete the full BE18 objective or authorize release/cutover.
+
+Other blocked/unqualified areas: optional agent-client-protocol==0.9.0, aiohttp==3.14.3 and fal-client==0.13.1 scopes; absent prepared Electron/native inputs; unresolved complete desktop-unit coverage; live model/harness/connector/browser/voice/hardware acceptance; sensitive-ingestion encryption and production key custody; full-profile recovery/migration; empirical benefit; FE13 and Dots OD00–OD04. LAYA remains default-off, with no model training, live activation or promotion. No real credentials, private user data, Dots changes or production deployment were used for this work.
+
+Rollback: pause admission/schedules, reconcile unknown effects without replay, preserve immutable artifacts/consumed approvals/tombstones, and retain schema-compatible readers. Local temporary-store reopen/effect recovery is demonstrated; production encrypted restore and downgrade are not. One runtime owner and scheduler remain mandatory. Client timeouts and delivery retries cannot restart missions.
+
+Publication: parent integrates the exact checkpoint whitelist and verifies any remote commit/CI separately. Local verification does not assert remote publication or CI success. Subsequent required feature completion needs new affected qualification and eventual release sign-off.
+
+## 2026-10-03 FE09 — Reviewed bounded execution and real outcome receipts
+
+Status: verifying; the supported local execution consumer is implemented, with broader coding/browser/device acceptance still unqualified. Base 5f99cce9; FE09/F25/F26/F27, BE05/06/09/10/13.
+
+Added typed execution review to the existing runtime inspector and /runtime execution. The service view discloses the two actual registered finite document services, capability/health and processing/storage location. Exact retained source versions and digests are prepared before explicit execution; same-source re-preparation preserves request identity so backend stage recovery cannot blindly repeat committed work. Receipts distinguish pending/partial/completed stages, disconnected executors, transfer digests and unresolved effects. Bounded output bytes are checked against size/digest, without dumping private content into status. Session/transport changes invalidate review and reject late output. Closing a view never cancels accepted work.
+
+Validation: 15 shared execution tests and 5 rendered panel tests passed in the phase-only validation checkout. Shared, TUI and Electron renderer typechecks passed there. Exact log hashes and commands are in docs/build/fe09-validation.json. No full-suite, deployment or live executor qualification is inferred from these focused fixtures.
+
+Remaining implementation/acceptance: the current local normalization/structure pipeline is not a transcription-to-document demonstration. Gateway executor choice is unavailable; integrated coding promotion/browser consequential-submit evidence, live device handoff and visual/native qualification remain open. Existing coding/browser controls are preserved rather than duplicated. Execution chrome is English pending final localization review. Local-only checkpoint; next FE10 bounded specialist/media/channel controls.
+
+## 2026-10-03 FE10 — Bounded specialist, media and channel controls
+
+Status: verifying; actual supported roster/channel controls are mounted, broader specialist/team/voice/screen acceptance remains open. Base ca5902f2; FE10/F16/F17/F29/F30/F31, BE08/13.
+
+Added SpecialistPanel and /runtime specialist over the existing owned gateway. Roster inspection preserves failed children and distinguishes visible lineage from current control. Exact-session steer and interrupt do not manufacture delivery or terminal completion. Local verified channel binding and revision-bound logical input submission retain attempted identity after disconnect; no blind resubmission occurs. Specialist memory stays isolated built-in; primary personal memory is never read/shared through the roster.
+
+Media inspection reports actual declared capabilities without starting capture. Speech stop, discard captured audio and accepted-work cancel remain different operations. Advanced bounded snapshot metadata/annotation and exact transcript/selected-text submission reject caller-supplied identity and mismatched payloads. No continuous screen observation, invented OCR, implicit recording or external identity mapping is added. Scope/unmount guards suppress late private output.
+
+Validation: 15 shared specialist tests and 4 rendered tests passed in the clean phase-only checkout. Shared/TUI typechecks passed. Renderer typecheck first exhausted Node's default 2GB heap, then passed with a bounded 4GB heap; both logs are retained in docs/build/fe10-validation.json. Existing canonical backend fixture evidence is documented separately in frontend-execution.md and is not a live-device demonstration.
+
+Remaining implementation/acceptance: no named specialist manifest/team-budget gateway controls, microphone/playback consumer, trusted capture acquisition timestamp, or actual cross-device/channel handoff qualification. Configured local voice adapter construction is pending independent backend verification and must never silently download models. English chrome/localization and visual/native qualification remain open. Local-only checkpoint; next FE11 status/setup/repair projections.
+
+## 2026-10-03 FE11 — Current work, unresolved effects and privacy capability status
+
+Status: verifying; supported bounded status/repair projections are implemented, opportunity and broader setup acceptance remain incomplete. Base d3e6224c; FE11/F18/F19/F28/F35.
+
+Added a typed Current work and repair panel and /runtime overview. The view reads canonical ready-to-review, waiting and active missions, selected-project upcoming schedules and accepted commitments, unresolved effects and capability/memory health. Independent failures remain visible; an empty or failed bounded queue is never an all-clear. Effect inspection and explicit local-evidence reconciliation do not replay external mutations. Privacy view reports backend capability truth and explains tombstones versus physical erasure without pretending a hidden row or request is deletion acknowledgment.
+
+Validation: two shared status tests and two rendered tests passed in the clean phase-only validation checkout; shared/TUI/Electron renderer typechecks passed (renderer 4GB heap). Scoped helper/panel lint passed with no warnings. Session changes discard late results; merely opening or inspecting the panel never repairs effects or creates tasks. Exact command/log hashes in docs/build/fe11-validation.json.
+
+Remaining implementation: durable scoped opportunity proposals/dismissal, authorized setup/repair plans and bulk export/retention/deletion manifests have no exposed gateway operations here. The view says so; these are code-level requirements, not merely unmeasured live gates. Full live harness/setup journey, native, keyboard/visual and product-effort qualification remain pending separately. Local-only checkpoint; next FE12 read-only recorded decision explanations with off/shadow defaults unchanged.
+
+## 2026-10-03 FE12 — Read-only recorded decision explanations
+
+Status: verifying; receipt explanation view implemented with modes and deterministic floors unchanged. Base a02eab31; FE12 and decision receipts from BE15/16/17.
+
+Added Recorded decisions panel and /runtime decision inspect over existing bounded durable replay. It explains actual recorded mode/route/fallback, verified tool-family plans and recovery/outcome signals in plain language. Shadow observation is explicitly not control authority, a confidence signal is never permission, and no raw packet or private chain-of-thought is shown. Replay gaps and pagination are visible; absence in a bounded page does not establish service activation/inactivity. Session/transport changes suppress late receipts. The control is read-only and cannot activate LAYA, train a model, change channel policy or weaken an approval floor.
+
+Validation: two shared receipt tests and two rendered tests passed in the phase-only clean checkout. Initial shared typecheck caught an incomplete synthetic receipt fixture; the fixture now supplies every generated field and shared/TUI/renderer typechecks pass. Logs including the original failure are hashed in docs/build/fe12-validation.json. Scoped panel/helper lint passed.
+
+Remaining implementation and qualification: correction/feedback/override, mode/ambient opt-in and proven-safe approval reduction APIs are not exposed. No user-friction, latency, variable model quality, dataset or trained-model deployment claim follows from this view. Off/shadow defaults and all deterministic authority/evidence gates stay intact for the user's later review. Local-only checkpoint; next FE13 closes feasible local UI gaps and consolidates acceptance evidence, then FE14 read-only Dots handoff documentation.
+
+## 2026-10-03 BE18 follow-up — Verify actual storage-denial injection
+
+Reproduced the two unresolved desktop voice-preference failures (16 passed, 2 failed). The test injected quota/security failures on the Storage instance; jsdom calls were not intercepted. Bind the fixture to Storage.prototype and assert it was actually called. All 18 cases now pass; production preferences code is unchanged. Exact before/after logs in docs/build/be18-desktop-fixture-followup.json. This does not replace complete desktop aggregate or native voice acceptance.
+
+## 2026-10-03 BE07/BE11 completion — Apply canonical approved templates
+
+Saved examples now have exact immutable pins and actual bounded Markdown preview, preparation and approved publication. Explicit slots, exclusions, applied formatting versus advisory style, lineage-only assets and selected section locks are preserved. Workflow execution uses the same canonical template renderer; old style-only metadata stays inspectable but cannot falsely claim application. Three varied-topic and old-pin/lock proofs pass. No model call or external publication.
+
+## 2026-10-03 BE08/FE02 completion — Inspect supplied references and control future context
+
+Schema43, following monitor42, records exact fresh-memory references actually supplied in successful provider requests. This is explicitly limited coverage, not causal explanation or enumeration of all history. Owned latest-output controls support response-only ignore/correction, scoped suppression and acknowledged same-store CAS correction/tombstone. They preserve metadata, cache prefixes, historical messages and namespace isolation. Uncertain post-store receipts remain pending and cannot silently replay. Primary external harness mutation stays unavailable without verified version/ack schemas; no fallback personal store is enabled.
+
+Template/influence qualification: 133 tests across14 files passed through the required isolated scripts/run_tests.sh runner in32.9s, plus scoped lint and whitespace checks. The earlier direct-pytest receipt is retained but superseded for environment qualification. Exact file/log hashes and limits: docs/build/project-reuse-validation.json.
+
+## 2026-10-03 BE12/FE06 completion — Deliver owned local monitor notifications
+
+Actual registered RPC → existing per-profile cron → BE06 outbox → exact attached local transport now supports quiet hours/DST, bounded digests, expiring snooze, persistent dismissal, immutable dedup and paginated retained notices. Admission and retry recheck state/version/policy/expiry/dismissal and live owner/project authority. Unknown sends remain unknown; delivery retry never reruns a source check or mission. External destinations and OS toast daemons remain unimplemented. Final canonical regression:214 passed across19 files, zero failures/skips; lint and whitespace passed. Receipt: docs/build/be12-notification-validation.json. Client render/ack acceptance follows in FE13.
+
+## 2026-10-03 BE12/FE08 completion — Durable decline and bounded agenda proposals
+
+Added exact owned human decline of nonbinding commitment candidates, preserving reason/revision/actor through SQLite reopen and reimport, with acceptance blocked after decline. Existing accepted terminal obligations remain immutable and cannot reopen. Added source-bound day/week planning over exact supplied availability, explicit daily windows and ordered duration estimates, fixed intervals, buffers, flexible-work capacity and visible overflow. No implicit calendar write, invitation or new promise.
+
+Validation: 14 tests across three canonical runner files passed, including real owned RPC, close/reopen, cross-scope denial, timezone/DST and capacity/overflow behavior; scoped Ruff passed. Receipt: docs/build/be12-agenda-decline-validation.json. Live availability/speaker evidence and typed UI acceptance remain unqualified. This closes local code gaps; it does not certify live inbox/calendar operations.
+
+Integration: these completion sections share additive schema42/43 and generated registrations and are committed together to keep every checkpoint importable. Pausing UI exposure or schedules preserves consumed approvals, unknown effects, immutable records and source pins. Live services, sensitive-ingestion key custody, full-store recovery completion, final combined UI qualification and release signoff remain separate. Local-only; no Git push, live activation or LAYA rollout.
+
+## 2026-10-03 BE14 completion — Bounded owning-store recovery
+
+Before: BE14 backup drills only copied state.db, checkpoint qualification always denied restore, and the operator broker had no restore-checkpoint action. Canonical project stores, artifact bytes and individual memory could not be jointly qualified.
+
+After: a bounded Linux/single-actor owning-store bundle inventories and validates state.db, projects.db, every canonical artifact blob (retaining orphan bytes without promotion), and individual-memory SQLite history/conflicts plus checked projections. It rejects incompatible/unsupported local owning stores and explicitly records excluded config/credentials, external personal-memory providers/project workspaces and non-certified ancillary state. WAL-safe copying reuses the updater copier; the existing updater/full-profile authority remains unchanged. A fresh temporary-home reader drill checks complete file hashes, SQLite integrity/FKs, scope/generation/effect/approval safety, native SessionDB readers and checkpoint reconstruction. The CLI exposes drill-recovery.
+
+The existing preview/authorization/maintenance-lease broker now supports restore-checkpoint. It reconstructs only derived state from the latest compatible checkpoint plus contiguous journal tail using the same canonical reducer as live appends. Current effect/approval/artifact references override stale checkpoint references. Commands, consumed approvals, unknown effects, context/transcript bytes, journal history and owner counters are never rewound; no adapter executes. The cache replacement and required before/after events are one writer transaction. Real child-process death mid-repair proves rollback, while lease generations remain monotonic.
+
+Validation: HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/agent/test_operations_checkpoint_recovery.py tests/hermes_cli/test_operations_profile_recovery.py tests/agent/test_operations_control.py tests/hermes_cli/test_operations_backup_extensions.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_context_projection.py tests/hermes_state/test_effect_records.py tests/hermes_state/test_delivery_outbox.py
+Result: 8 focused files, 78 passed, 0 failed. All invocations used scripts/run_tests.sh; no raw pytest. Exact final log: /tmp/be14-recovery-final.log; SHA-256 4b40c593f7b10f8c8ab285f3529844375b68bf0fb9e9eec8c618090616c7931f. git diff --check passed for the owned scope. Source hashes, exact whitelist and detailed proof list: docs/build/be14-local-recovery-validation.json. Runbook: docs/build/be14-local-recovery.md.
+
+Migration/flags: no schema migration, dependencies, runtime flags or updater frozen-surface changes. Existing schema versions/readers are checked exactly; incompatible code/schema is denied, never auto-downgraded. Only existing recorded event types are used.
+
+Remaining qualification boundaries: local supported-owner/derived-projection recovery is implemented; this is not blanket full-profile/production disaster recovery. Multi-actor/legacy owning-store breadth and live cutover remain unqualified. Archive AES-GCM does not encrypt live databases/files/logs or plaintext staging. Production encryption deployment, key custody/loss strategy and secure staging/erasure need separate decisions. External providers/harnesses are never contacted or claimed restored. No live profile restore, secret handling, dependency install, deployment or external write occurred.
+
+## 2026-10-03 BE13 completion — Configured local speech bridge
+
+Before: media RPC always constructed VoiceIngress without adapters. Existing general transcription/Piper helpers could auto-download and backend TTS could target the wrong host.
+
+After: existing served-profile local configuration selects a fixed offline faster-whisper/Piper worker. Explicit mono16k client PCM yields a reviewed transcript; explicit TTS returns exact bounded PCM bytes/digest to the same current client for playback. Capture cancel/speech stop invalidate only owned work, and transcripts enter missions only through unchanged confirmed normal command admission. Models are never loaded by a capability query. No schema migration, core tool, automatic fallback, installation, settings/secret change or backend playback.
+
+Validation: final canonical six-file campaign passed 51/51 in 19.6 seconds from /workspace/shared/ryoko-backend-completion-validation, detached base 04c0319ce33f8c51e4b165c3728de5732b49cb5e plus only the nine frozen speech files. Every source hash matches the main workspace. Covers real configured RPC/factory/worker package-boundary fixtures, A→B→A isolation, exact bytes/digest, current-transport suppression after reconnect, missing/model-load/network failures, CPU/wall/output bounds, cancellation/reaping, strict policy-object and config budget rejection, existing budget/legacy voice and generated contract parity. Ruff and owned diff check pass. Earlier shared-worktree integration failures were caused by concurrent missing hermes_state_captures and stale unrelated generated contracts; the isolated canonical result supersedes that attempt without changing shared files. Exact receipts: docs/build/be13-speech-validation.json.
+
+Canonical log: /tmp/be13-speech-isolated-tests.log, SHA256 e8a4bf9ab24ccab44ca316228b11e1c4feaab9ec311b86b32fa352546a8a8437
+
+Implemented scope: non-budgeted configured local route with prerequisite-only readiness, strict no-download loading, CPU/wall/byte caps and same-client PCM return. Strict runtime_budget media remains an explicit code/certification gap, not a model-installation gate. Streaming STT, non-POSIX process bounds and live model/hardware qualification remain open. Frontend RPC/audio shape coordinated with the frontend worker.
+
+Files are listed in /tmp/be13-speech-whitelist.txt. No staging, commit, root journal or shared schema edits by this worker.
+
+# BE07 / FE02 / F04 capture completion
+
+Implemented real explicit local text processing and bounded lexical/fuzzy retrieval on the canonical capture/artifact stores. Generated five typed registered RPC endpoints. Preserves original bytes/references, dates, annotations and every extraction attempt even when extraction is unsupported or bytes are unavailable. Search rechecks live exact project grants and namespace, rejects foreign transport/scope, and works with read-only grants.
+
+Added schema44 additive index/consolidation/batch tables. Atomic reviewed SessionDB metadata batch commit checks exact digest, capture revisions, explicit selection, original-byte duplicate digests, source and destination grants; repeated exact commit returns retained receipt. Consolidation and filing are reversible metadata pointers with retained histories. No artifact movement or cross-ProjectsDB atomicity claim.
+
+Final tests:30 passed,0 failed across5 files (mandatory scripts/run_tests.sh; explicit isolated interpreter/home/runtime). Includes schema43 reopen preservation, Unicode byte bounds, failed-extraction original download, stale index, malformed source/authority rejection, CAS rollback, duplicate history, grants and profile A→B→A. Generated freshness tests passed. Python syntax and scoped git diff --check passed.
+
+Receipt: docs/build/be07-capture-completion-validation.json
+Final log: /tmp/be07-capture-final-tests.log
+Full command: HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh -j 3 tests/tui_gateway/test_capture_processing_rpc.py tests/hermes_cli/test_capture_processing.py tests/tui_gateway/test_project_sources_rpc.py tests/hermes_cli/test_project_sources.py tests/tui_gateway/contracts/test_generated.py
+
+Exact file whitelist and SHA256 inventory are in the receipt. Backend contracts are frozen; parent owns shared registration/generated edits after04:33UTC. UI completion remains frontend-owned. No root journal/plan or Git writes performed.
+
+## 2026-10-03 BE18 follow-up — Explicit disk-backed test scratch
+
+The canonical runner assumed /var/tmp was disk-backed, while this host maps it to tmpfs and earlier fixtures exhausted space. Added optional --scratch-parent for a dedicated short per-user runner directory on explicitly chosen storage; default behavior remains unchanged. Tests prove per-file isolation/cleanup and preservation of unrelated parent contents. All20 runner tests pass, Ruff/whitespace clean. Receipt: docs/build/be18-runner-scratch-validation.json. Final campaigns will record disk-backed placement explicitly; no filesystem mount, network or security setting changed.
+
+## 2026-10-03 BE11/BE12 completion — Bounded scheduled draft production
+
+Before: durable review jobs inspected immutable sources/workflow pins but did not execute workflows or retain produced briefs.
+
+After: paused workflow_draft schedules can execute the exact approved finite Markdown workflow only after an explicit bounded grant. Each fire pins authorized local source heads and actual parameters, uses the existing occurrence/claim/deadline/budget owner, creates a canonical mission/workflow run, and retains real immutable draft bytes through the existing effect journal. Source updates produce refreshed bytes. Grant/owner/policy/workflow/deadline checks occur at execution and result-storage boundaries. No second scheduler or fabricated human RPC context.
+
+Human review: new runtime.schedule.output.get/prepare/publish contracts provide digest-checked inspection and a fresh ordinary approval/publish path over stored bytes. Review never reruns production, adopts an old generation or converts a production grant into publication approval. It publishes a new project artifact, not an automatic replacement head.
+
+Safety: original deadline and one grant debit survive accepted-work restart; consumed approvals remain consumed; lost claims/fsync uncertainty remain unknown and non-replayable. Corrupt or unconfirmed outputs cannot be served. Paused/revoked/expired/changed-policy work cannot publish private results. No live schedule/config/deployment/connector/secret/Git actions were performed.
+
+Validation: canonical runner,16 files,176 passed /0 failed in27.2s.17 new RPC/tick/storage tests +7 new pure contract cases; retained previous schedule/workflow/template/artifact/effect/notification/migration gates. Exact command/source hashes in docs/build/be12-workflow-production-validation.json; full whitelist including receipt hashes in /tmp/be12-workflow-production-whitelist.json. Generated contract drift passed and git diff --check is clean.
+
+Migration/flag: no schema bump (schema44); no runtime flag; no creation or activation outside synthetic tests. Consumers were informed of frozen Python/generated DTOs before frontend implementation.
+
+Remaining: local render_markdown slice only; scheduled domain/model/agent/script/remote execution, live setup, external delivery/publication and platform/client qualification remain unsupported or unqualified. Parent owns the phase/root journal/plan/Git checkpoint and final aggregate.
+
+Backend roadmap status now links actual completion receipts and explicitly records unpublished local checkpoints, incomplete adapters and ungranted release gates. Final backend source will be frozen for consolidated verification; frontend integration remains independent.
+
+## 2026-10-03 BE18 follow-up — Isolate synthetic refresh-lock fixture
+
+The frozen final campaign exposed a credential-refresh test creating its lock under the real read-only home even though all credentials/endpoints were mocked. Point only the test at a temporary synthetic config directory. All3 cases now pass through the canonical runner; Ruff/whitespace pass. No production auth code, real credentials or frozen campaign source changed. Receipt: docs/build/be18-credential-fixture-validation.json.
+
+## 2026-10-03 BE18 follow-up — Assert migration against current schema
+
+The frozen final campaign found an old delegation migration test hardcoding target41 after additive schema44 work. It now asserts the migration reaches canonical SCHEMA_VERSION, retaining message preservation and added-table checks. All14 delegation cases pass through the isolated runner; production code is unchanged. Receipt: docs/build/be18-schema-fixture-validation.json. Frozen full-campaign failures remain recorded rather than rewritten.
+
+## 2026-10-03 BE18 follow-up — Qualify declared optional dependency scopes
+
+Built a separate PM-managed environment from the frozen lock with declared ACP/fal/aiohttp extras, without changing source/lockfiles or the interpreter used by the ongoing full campaign. The previously dependency-blocked selection now has360 passes,0 failures and1 retained skip across32 files. Source009255ec remains clean; no live account, provider call, credentials or runtime feature was configured. Exact packages, source/lock/log hashes and selection are in docs/build/be18-optional-extras-validation.json. This environment-qualified rerun supplements, rather than rewrites, earlier failed receipts.
+
+## BE13 strict aggregate local speech budget adapter
+
+Before: configured speech returned speech_budget_unsupported whenever runtime_budget was present. First-turn capture could not run under a strict tree.
+
+After: runtime.voice.admit uses the real owned finite-control journal/lease/run-budget path, completes metadata-only admission, and returns the original account/root/deadline. It creates no active inference run or mission, and reuses existing current accounts. Strict capture/speak require stable request_id and budget_account_id; validated physical workers reserve and reconcile the existing aggregate tree. No reservation is created for empty, cancelled or refused capture. Known completion/cancellation charges actual physical attempts and wall; unknown termination retains durable units and concurrency; stale writers cannot refund; uncapped overruns create debt. Newer real submit accounts supersede old voice roots. Reconnect/retry never replays speech. Client playback remains separate.
+
+Wire: new runtime.voice.admit with required request_id; optional-on-wire strict request_id and budget_account_id on capture.start/speak; feed unchanged. capability budget metadata declares explicit admission. Successful final speech carries the reservation receipt. Parent owns generated contracts and frontend integration.
+
+Validation: 93/93 tests, 0 failed across 8 files via required scripts/run_tests.sh (-j2, configured isolated interpreter/home/runtime, --scratch-parent /workspace/shared), 28.9 seconds. Covers first-turn admission with/without existing mission, retry/new-click no renewal, expired/exhausted root, active/idle/newer run sharing, sibling/foreign refusal, real subprocess CPU/wall/cancellation, unknown/retired-fence retention, debt, no-work refusal, real SQLite reopen/no replay, and unchanged legacy routes. Ruff and scoped git diff --check passed. Static profile checker has 19 reviewed decorator advisories; full scoped handler/context and credential-free served-profile child environment are exercised.
+
+Exact command, source hashes and log hashes: docs/build/be13-strict-speech-validation.json. Frozen whitelist/receipt hash: /tmp/be13-strict-speech-whitelist.json. Canonical log: /tmp/be13-strict-speech-final-verified.log. Shared agent/artifact_commands.py change owns only runtime.voice.admit; the sibling adds separate source RPCs.
+
+No live setup/config/credentials, model calls/downloads/install, deployment, Git staging/commit, root plan/journal edits, other worktree or interpreter mutation. Remaining qualification: real model/audio/hardware quality and latency; streaming STT; Windows process limits. Unknown reservations remain explicit and require reconciliation; there is no new reset or replay API. Generated contract freshness/consumer checks remain parent-coordinated.
+
+# BE10/BE12 connected read bridges
+
+## Outcome
+Implemented the finite Gmail-thread and Google Calendar free/busy adapters through the existing authenticated ConnectorClient. Both have real registered source prepare/publish RPCs. The frozen DTO is in tui_gateway/contracts/connected_sources.py. Central generator/server wiring belongs to the parent.
+
+Final validation: 144/144 tests across8 files, including36 new bridge tests; targeted Ruff and git diff --check pass. Exact command, limits, hashes and primary documentation links are in docs/build/be10-connected-sources-validation.json. No live account calls or activation occurred.
+
+## Authority and retained evidence
+The request has no principal, policy, arbitrary tool name/arguments or source-body input. It selects one exact account plus mailbox/thread, or exact calendar IDs/window/timezone. The host validates the fixed read contract and returned schema without trusting readOnlyHint, descriptions, remote refs or regexes. Existing live identity/project grants and artifact-control ownership are checked at every guarded HTTP edge. Existing bearer peek supplies the profile credential without refresh or mint.
+
+Originals retain exact selection, actor/project/policy, connector/tool, schema/argument/payload/recipient-endpoint digests, observed/fresh times and provider history where available. Calendar provider version is explicitly unavailable; content digest plus acquisition time identify the immutable observation. Original and typed projection are distinct canonical JSON artifacts, separately approved and derivative-linked. The original is canonical gateway JSON, not a claim to raw RFC822 or provider HTTP bytes.
+
+prepare performs one schema request and one account-pinned read, once. publish consumes the exact retained proposals and never connects. Repeated prepare returns the same bounded per-agent bundle. Durable decision.observed audit prevents read replay after cache/process loss; user must start a new explicit refresh. A second-artifact failure returns partial with the first canonical ref and permits exact publication retry. Old versions remain readable.
+
+## Budget semantics
+Attempts mean physical requests to the selected connector gateway. They do not certify upstream vendor subrequests/retries. Cost mode fails closed because gateway pricing/upstream ceilings are not certified; token mode explicitly leaves spend untracked. Requests use no client retries, follow no redirects and do not inherit proxies. Timeout, malformed execute output and unconfirmed completion preserve unknown budget usage and a held remote slot. No exception silently releases a possibly active remote operation or retries it.
+
+## Verified capability gap
+Existing tools/connectors/gateway/wire.py records contract probe F2: account selectors are rejected with400 while gateway multi-account is off. This is a concrete gateway limitation, not absence of a user account. The adapter always includes account, returns source_pinned_request_rejected on400 and never drops the pin or substitutes pre/post active-account observations. No live qualification was attempted.
+
+## Supported consumer flow
+ConnectedSourceResult.record_json carries selection, coverage/freshness, original_ref/projection_ref after publication, research_request for immutable original bytes, and projection_research_request for decoded-text citation. Feed projection_ref into existing inbox.prepare or calendar.preview/agenda.plan contracts. Calendar participant fields contain explicit calendar IDs, not verified people. Inbox classifications and date mentions remain nonbinding proposals; attachments are metadata references only. No messages, calendar updates, invitations, or accepted obligations are created by the bridge.
+
+## Validation coverage
+Actual ConnectorClient and gateway wire with synthetic HTTP, real registered RPC and DTO checks, real SessionDB budgets/effects/immutable artifact catalog, exact original/projection retention, two kinds jointly researched with exact citation spans, schema drift, malicious JSON Schema refs/regex/recursion, authentication and grant revocation, explicit account rejection, A→B→A, wrong-thread discard, pending-loss/repeat behavior, old-version reopen, timeout/response bounds and uncertainty, cost and attempt denial, inert injection text, separate exact approvals and partial publication recovery. Existing gateway-client, wire, bridge, egress, research/brief and generated-contract tests passed.
+
+## File ownership
+- agent/artifact_commands.py  6acab9cd71102c0a50d205408e05f216edcf612245910910cac1aeabe798f454
+- agent/connected_sources.py  0b28807671588d6bd1025f401a5a375d20d993f9bf3874e46cc19a5f92f04079
+- hermes_cli/connected_sources.py  16ff5526d36d9f3e4dd170f28934c586a9dd1943ceab5a749d059b8a88a4e0e6
+- tools/connectors/source_reads.py  82ca20847721eb0289c1dbfee2621503f8b1fecb22fe10b394d5773b37f0e997
+- tools/connectors/gateway/client.py  4523723d50144ced66d59ed2526de47184e771bd729d55527cda7c1081f6b8b3
+- tools/connectors/gateway/wire.py  ecc03f3c861ef5eb92adb14f16925fb0ae2083a43664765b6d8e3193f5f46686
+- tools/egress_policy.py  dc3255d00adcb4032163ba676baaf7ba58e31198ab25e674c04992f26abe3dcb
+- tui_gateway/contracts/connected_sources.py  654b9366c97ec1c70719b07866919cf742bf55c91343a09d718a0841aa22cfec
+- tui_gateway/methods_connected_sources.py  b455e48913821e35b7c1ef0a11e7c49e9c7aecbc5a817379442491a5e03d07ce
+- tests/tools/test_connected_source_reads.py  5cfff770b8d60652864c7d113dcb3c757bd3a656cba55655ad823c6b6dd1c8d8
+- tests/tools/test_egress_policy.py  287823d0b01df8912423f98f6f608ad2224c3955aad61d8863306b4912604a0d
+
+Receipt: docs/build/be10-connected-sources-validation.json
+Log: /tmp/be10-connected-sources-tests.log
+
+No Git staging/commits, root journal/build-plan edits, live deployment/config, installations, model/API calls or source text/secret attachments were introduced. Test content is synthetic only.
+
+## 2026-10-03 BE14/FE11 completion — Owned repair and privacy controls
+
+Added thin owned RPCs for existing runtime inspection, redacted audit, retention, checkpoint qualification, exact repair preview/apply and deletion preview/apply. The original maintenance broker retains all live policy, identity, target, digest, CAS, lease, journal and partial-deletion semantics. No client filesystem paths, credentials or arbitrary repair code; active model-run origins are denied. A revoked lease never claims remote work stopped. Logical deletion explicitly retains recovery/source/provider/backup limitations and cannot mutate the unknown primary harness.
+
+Focused canonical checks:21 tests passed across2 files, including real owned RPC, wrong digest/transport/target, stale deletion manifest, no action on preview and truthful outcomes. Ruff passed. Receipt: docs/build/be14-operator-rpc-validation.json. Generated integration and real typed frontend acceptance follow in the coordinated checkpoint. No live user data, settings or credentials were touched.
+
+Coherent integration: the exact30-file slice was copied to an isolated checkout at18071c8c and verified through the canonical runner:218 passed,0 failed across15 files in63.9s, including generated contract parity. Staged source was byte-verified against that isolated tree; later specialist/opportunity work remains separate. Exact hashes: docs/build/backend-adapters-integration-validation.json. No remote publication, live account access or activation is claimed.
+
+## FE13 — Consolidate owned frontend workflows and offline acceptance
+
+Status: verifying; local implementation/evidence checkpoint, not release sign-off. Existing Hermes TUI, web-hosted TUI and Electron surfaces remain authoritative consumers of backend contracts. Added typed artifact branch/template flows, supplied-output influence review, capture search/processing/batch review, scheduled drafts, bounded local monitor controls/receipts, agenda/decline and explicit configured local-backend microphone/playback controls. Added nine-locale chrome and compiler/StrictMode-safe scope guards; same-object reconnect invalidates approval state immediately while bounded passive original IDs remain inspectable.
+
+Validation: full desktop renderer 1,204 files/10,635 tests; shared 36/277; offline TUI 179/1,618; web 50/359, all passed. All declared frontend types and final scoped/full lints passed; inherited warnings retained. TUI/web/pure desktop renderer builds passed. Full desktop renderer aggregate preceded an erasableSyntaxOnly constructor compatibility correction; affected 15 shared +17 compiled UI tests passed separately, plus clean 7-file/23-test compatibility rerun. Exact commands, hashes and original failed attempts are retained in docs/build/fe13-validation.json.
+
+Native/helper aggregate: 339 passed, 7 failed, 7 skipped files; 3,261 passed, 6 failed, 15 skipped tests. All failed test files were unchanged from candidate base. A prepared-Python rerun resolved four helper files (6/6 tests). Remaining Electron collection and Unix-socket permission limits are explicit. Packaged test was attempted: the skip-build flag did not skip a missing app, native rebuild failed before any package was produced, and was not retried. Pure renderer success is not native launch evidence.
+
+The initial TUI aggregate was blocked by an unanticipated geolocation request from an existing fixture. No live retry or network workaround occurred; a rejecting fixture-only mock proved the route offline, production weather unchanged, then the entire TUI suite passed. Cloud Browser separately blocked the loopback visual fixture under URL policy; zero screenshots, keyboard/narrow-window visual acceptance pending. Native/hardware/provider/model and human-effort pilot gates remain open.
+
+Required additive consumers for newly committed/frozen backend APIs remain separate follow-up work: operator repair/privacy, strict speech admission/accounting, exact connected-source snapshots, named configured specialists and bounded on-demand opportunities. Full teams/unsolicited activation and LAYA modes remain disabled/value-gated. No Dots repo/cutover, credentials, deployment or publication claim. Normal Git authentication remains unavailable; this checkpoint is local only.
+
+# BE13 named configured specialist controls
+
+Date: 2026-10-03 UTC
+
+## Scope and behavior
+
+Closed the FE10 configured-specialist selection/handoff gap. The existing roster
+and steer/interrupt controls remain separate. New typed catalog, preview, handoff
+and status methods inspect configured leaf specialists and execute one actual
+local child through the canonical submit command, admission queue, lease, budget,
+mission and existing delegation machinery.
+
+No RuntimeRun or human RPC context is fabricated. No database schema was changed
+by this slice. No model prompt merely requests use of a named specialist. No
+provider, credential, runtime setting or installed integration was edited. Teams
+remain disabled pending their measured gate.
+
+The narrow, approved lifecycle extensions are in runtime_commands.py (internal
+submit payload validation), turn_facade.py (execution under its genuine claim),
+and mission_runtime.py (durable parent review without automatic continuation or
+mission acceptance). The public generic runtime.command input remains narrow.
+
+Selections preserve exact configured role/manifest/methods/output schema, expiry,
+explicit project, source/evidence references, parent policy and mission witness.
+Parent and child ACLs are checked live. Built-in memory remains individually
+owned and persists for the same stable named specialist across child sessions.
+The existing root budget, executor and completion/delivery machinery is reused.
+
+Command retries/reconnect return the original command. Claimed uncertain work is
+inspectable without adoption or relaunch. A host cancellation remains cancelled
+even if child output validation also fails; iteration-truncated child output is
+retained as partial evidence rather than labeled complete.
+
+## Validation
+
+Only synthetic on-disk profiles and guarded SDK HTTP fixtures were used. Real
+agents, SDK serialization, immutable artifact publication, child construction,
+individual memory, capability dispatch, hierarchical budgets, mission verification,
+RPC ownership, admission, result persistence and delivery were exercised.
+
+The exact final command, tested source SHA-256 values, test counts and log hashes
+are recorded in docs/build/be13-named-specialists-validation.json. The operational
+notes are docs/build/be13-named-specialists.md.
+
+Final qualified campaign: 315 tests passed, 0 failed, across 24 files in 90.3s
+using the mandated isolated runner and interpreter with -j2. Scoped Ruff and
+Git diff checks passed. Generated TypeScript/OpenRPC parity passed. The final
+log is /tmp/be13-named-specialists-qualified.log. Observed validation base HEAD:
+6316814532a5df2d89568880a51f619bbf421e78.
+
+The work includes negative tests for altered/expired selections, injected grant
+fields, generic RPC bypass attempts, revoked child project ACLs, missing exact
+method bytes, owned transport changes, queued and running cancellation, unknown
+claims, schema failure and partial iteration exhaustion. The parent's frozen
+prompt remains unchanged. Snapshot and replay remain representable by the
+declared wire contracts.
+
+Intermediate failures were investigated: an immutable artifact correctly refused
+a fixture overwrite, which was replaced by a missing-bytes test; client rebuilds
+within one child session were de-duplicated by session identity in the memory
+assertion. A real cancellation projection issue was fixed and retested. A shared
+opportunity-method factory name collision was reported to its owner and fixed
+there; the final campaign includes its corrected registration.
+
+## Boundaries and integration
+
+This is local leaf specialist support. Live provider/integration/hardware
+qualification, remote executors, resumed Python execution, and team benefit
+measurement are not claimed. Parent review remains explicit. New methods heads
+do not replace a configured immutable methods version silently.
+
+No Git/index changes or root plan/buildjournal edits were made by this worker.
+Shared contract aggregator/server/generated changes were coordinated with the
+backend parent and opportunity worker after the prior staged slice was frozen.
+Receipt hashes of shared files may include the opportunity slice and are
+identified separately from this slice's topical ownership.
+
+# FE11 opportunity review implementation checkpoint
+
+Implemented explicit selected-project, on-demand candidate review with three honest local rules: current stale artifact head, accepted waiting commitment whose explicit due/check time is reached, and latest unevaluated workflow draft. Added four frozen typed RPCs and generated TS/OpenRPC contracts. All dispositions are metadata only: no command/mission/task/commitment/effect/approval dispatch or creation.
+
+Canonical storage is additive SessionDB schema45, with CAS/idempotency, bounded candidate/history/request retention, unchanged dismissal suppression (including replayed scan requests), semantic-source deduplication, changed-source explanations and fresh atomic acceptance guards. Source reads remain selected-project and live-grant fenced. Existing store bundle validation includes the new metadata and referenced projects.
+
+Focused real registered RPC + bundle/restore + generated parity validation passed 9 tests across 3 files. This includes schema44→45 preserving effects/approvals, restart suppression, selected A ignoring corrupt excluded B, A→B→A, grant revocation, bounds, current evidence, concurrent one-winner CAS and duplicate-request deduplication. Wider adjacent validation passed 63 tests across 16 files with zero failures or retries (42.2 seconds). The exact command, source whitelist and SHA256 values are in docs/build/be11-opportunity-validation.json. git diff --check passed.
+
+The initial focused run exposed a gateway helper collision: _handler was renamed _opportunity_handler. A later fixture-only artifact reference contained an unsupported sha256 key; corrected to the existing artifact/version wire shape. Both were rerun green. No Git staging, commits, root journal or buildplan edits performed by this worker.
+
+Operator integration: prefixed helper bindings to avoid gateway shared namespace collisions; actual RPC 2/2 passed. Combined source receipt is docs/build/backend-specialist-opportunity-integration.json. Local only; final consolidated campaign remains pending.
+
+# BE10/BE12 connected read bridges
+
+## Outcome
+Implemented the finite Gmail-thread and Google Calendar free/busy adapters through the existing authenticated ConnectorClient. Both have real registered source prepare/publish RPCs. The frozen DTO is in tui_gateway/contracts/connected_sources.py. Central generator/server wiring belongs to the parent.
+
+Final validation: 144/144 tests across8 files, including36 new bridge tests; targeted Ruff and git diff --check pass. Exact command, limits, hashes and primary documentation links are in docs/build/be10-connected-sources-validation.json. No live account calls or activation occurred.
+
+## Authority and retained evidence
+The request has no principal, policy, arbitrary tool name/arguments or source-body input. It selects one exact account plus mailbox/thread, or exact calendar IDs/window/timezone. The host validates the fixed read contract and returned schema without trusting readOnlyHint, descriptions, remote refs or regexes. Existing live identity/project grants and artifact-control ownership are checked at every guarded HTTP edge. Existing bearer peek supplies the profile credential without refresh or mint.
+
+Originals retain exact selection, actor/project/policy, connector/tool, schema/argument/payload/recipient-endpoint digests, observed/fresh times and provider history where available. Calendar provider version is explicitly unavailable; content digest plus acquisition time identify the immutable observation. Original and typed projection are distinct canonical JSON artifacts, separately approved and derivative-linked. The original is canonical gateway JSON, not a claim to raw RFC822 or provider HTTP bytes.
+
+prepare performs one schema request and one account-pinned read, once. publish consumes the exact retained proposals and never connects. Repeated prepare returns the same bounded per-agent bundle. Durable decision.observed audit prevents read replay after cache/process loss; user must start a new explicit refresh. A second-artifact failure returns partial with the first canonical ref and permits exact publication retry. Old versions remain readable.
+
+## Budget semantics
+Attempts mean physical requests to the selected connector gateway. They do not certify upstream vendor subrequests/retries. Cost mode fails closed because gateway pricing/upstream ceilings are not certified; token mode explicitly leaves spend untracked. Requests use no client retries, follow no redirects and do not inherit proxies. Timeout, malformed execute output and unconfirmed completion preserve unknown budget usage and a held remote slot. No exception silently releases a possibly active remote operation or retries it.
+
+## Verified capability gap
+Existing tools/connectors/gateway/wire.py records contract probe F2: account selectors are rejected with400 while gateway multi-account is off. This is a concrete gateway limitation, not absence of a user account. The adapter always includes account, returns source_pinned_request_rejected on400 and never drops the pin or substitutes pre/post active-account observations. No live qualification was attempted.
+
+## Supported consumer flow
+ConnectedSourceResult.record_json carries selection, coverage/freshness, original_ref/projection_ref after publication, research_request for immutable original bytes, and projection_research_request for decoded-text citation. Feed projection_ref into existing inbox.prepare or calendar.preview/agenda.plan contracts. Calendar participant fields contain explicit calendar IDs, not verified people. Inbox classifications and date mentions remain nonbinding proposals; attachments are metadata references only. No messages, calendar updates, invitations, or accepted obligations are created by the bridge.
+
+## Validation coverage
+Actual ConnectorClient and gateway wire with synthetic HTTP, real registered RPC and DTO checks, real SessionDB budgets/effects/immutable artifact catalog, exact original/projection retention, two kinds jointly researched with exact citation spans, schema drift, malicious JSON Schema refs/regex/recursion, authentication and grant revocation, explicit account rejection, A→B→A, wrong-thread discard, pending-loss/repeat behavior, old-version reopen, timeout/response bounds and uncertainty, cost and attempt denial, inert injection text, separate exact approvals and partial publication recovery. Existing gateway-client, wire, bridge, egress, research/brief and generated-contract tests passed.
+
+## File ownership
+- agent/artifact_commands.py  6acab9cd71102c0a50d205408e05f216edcf612245910910cac1aeabe798f454
+- agent/connected_sources.py  0b28807671588d6bd1025f401a5a375d20d993f9bf3874e46cc19a5f92f04079
+- hermes_cli/connected_sources.py  16ff5526d36d9f3e4dd170f28934c586a9dd1943ceab5a749d059b8a88a4e0e6
+- tools/connectors/source_reads.py  82ca20847721eb0289c1dbfee2621503f8b1fecb22fe10b394d5773b37f0e997
+- tools/connectors/gateway/client.py  4523723d50144ced66d59ed2526de47184e771bd729d55527cda7c1081f6b8b3
+- tools/connectors/gateway/wire.py  ecc03f3c861ef5eb92adb14f16925fb0ae2083a43664765b6d8e3193f5f46686
+- tools/egress_policy.py  dc3255d00adcb4032163ba676baaf7ba58e31198ab25e674c04992f26abe3dcb
+- tui_gateway/contracts/connected_sources.py  654b9366c97ec1c70719b07866919cf742bf55c91343a09d718a0841aa22cfec
+- tui_gateway/methods_connected_sources.py  b455e48913821e35b7c1ef0a11e7c49e9c7aecbc5a817379442491a5e03d07ce
+- tests/tools/test_connected_source_reads.py  5cfff770b8d60652864c7d113dcb3c757bd3a656cba55655ad823c6b6dd1c8d8
+- tests/tools/test_egress_policy.py  287823d0b01df8912423f98f6f608ad2224c3955aad61d8863306b4912604a0d
+
+Receipt: docs/build/be10-connected-sources-validation.json
+Log: /tmp/be10-connected-sources-tests.log
+
+No Git staging/commits, root journal/build-plan edits, live deployment/config, installations, model/API calls or source text/secret attachments were introduced. Test content is synthetic only.
+
+## Prepared-source review seam follow-up
+
+Added runtime.sources.preview after frontend correctly found that unpublished proposal bytes were not readable. It serves bounded exact original/projection chunks under the original live session/lease/proposal and durable approval binding, with full digest/size and approval IDs. No external source call or publication occurs. Source contracts and generated files are frozen and shared with the frontend lead.
+
+Final focused validation:58/58 across source bridge (46), generated parity (2), and artifact RPC regressions (10). Complete assembly agrees with proposal digest/size and later publication. Cross-session RPC, tampered cache, cancelled/completed control, replaced lease, expired bundle, denied approval, revoked project and bad bounds all fail without exposing bytes. Ruff and scoped diff checks pass.
+
+Receipt: docs/build/be10-source-preview-validation.json
+Log: /tmp/be10-source-preview-tests.log
+
+Follow-up exact code/generated whitelist and hashes:
+- agent/artifact_commands.py  31ba74002f63acf35c88dbb958a7e78982999152707f675416c2ac2759c98920
+- hermes_cli/connected_sources.py  9a4dab2a692b3f70b50247df4453702eaf89a64b2725880f3511c3d57870fbb9
+- tui_gateway/contracts/connected_sources.py  4a505a4d2361e430fee5bbcff4daf5551b30a86f0743cea3c59af9f758f3294b
+- tui_gateway/methods_connected_sources.py  5b50eca640acd04a571987ef8d68c41ba3d2576bd383f9fddfa114cadb41a7fb
+- tests/tools/test_connected_source_reads.py  22e514128c578fa981a3c0c3495a0e94ff761c70cdee8e59f206baaec2bbdfc5
+- apps/shared/src/gateway-contract.generated.ts  73f089aeca65cbc1e90c8a54da0f7d11c144fc160e8d8cc99e28043e9eef1839
+- apps/shared/src/gateway-contract.openrpc.json  1d3151320c621de5b7032a4e5fb4ba170fe09fa5400fd762df832bca09622909
+
+## BE18 — Preserve second full campaign and bounded follow-up evidence
+
+The frozen 009255ec campaign completed with 55,930 passed, 444 failed and 730 skipped across 5,348 files. docs/build/be18-second-campaign-validation.json preserves exact log hashes and distinguishes reporter phases, baseline node comparison, prepared-dependency checks and subsequent source. Combined 2244f515 actual specialist/opportunity/operator/contracts passed 35/35. Default-scratch Docker host fixture passed 28/28; three inherited project-root fixture assertions remain affected by protected host .git markers, unchanged after default-scratch rerun. No host marker was removed. Later source needs the next frozen-source campaign; no release signoff or remote publication is claimed.
+
+## FE13 follow-up — Finish required additive runtime consumers
+
+Status: verifying. Closed the five remaining feasible local consumer seams against backend candidate b323e73f: exact operator repair/privacy review; strict finite speech admission and accounting; account-pinned connected source prepare/full-byte review/publish; named configured single-specialist handoff; bounded explicit opportunity review. Each uses existing runtime authority and existing Electron surfaces; no second memory, scheduler or agent loop.
+
+Connected source review now uses the real cached preparation preview RPC, complete bounded chunks and full SHA validation before independent original/projection approval. It never publishes from a metadata-only digest view or refetches at publish. Specialist handoff pins real configured identity/methods/policy/mission references and leaves parent review explicit. Opportunity acceptance only records choice and opens existing review controls. Operator logical deletion acknowledges individual stores and retains its partial-erasure limits.
+
+Strict speech admission starts no microphone/model/mission; recording and synthesis remain separate explicit actions with original request/account IDs. Lost media usage stays unknown through disconnect or capture discard; budget inspection does not invent a receipt or reset an account. Scope/reconnect fences and passive recovery identifiers cover all new operations; copy follows all nine existing locales.
+
+Clean combined gates: full shared 41 files/368 tests, all runtime/voice UI 32 files/250 tests and TUI runtime 4 files/8 tests passed. Shared/TUI types/lint, declared desktop type/lint and web/pure renderer builds are individually recorded in docs/build/fe13-followup-validation.json. The original full UI/TUI aggregates remain separately source-bound; overlapping counts are not summed. Initial default-heap and concurrent-resource type failures plus web fingerprint retry remain visible in the receipt. No native rebuild, live provider/model/hardware or blocked browser retry occurred.
+
+Remaining: exact live/native/visual and human-pilot gates, backend final full campaign, external personal-harness operations, conditional full teams/LAYA and separate Dots consumer qualification. These are not waived by local test counts. Normal Git publication remains authentication-blocked; checkpoint is local only.
+
+## FE14 — Record producer-side Dots adapter handoff
+
+Status: partial, producer handoff only. Added frontend-adapter-handoff.md with exact current producer contract inputs, OD00 read-only identity/snapshot/replay proof, one-runtime/one-scheduler/artifact-owner invariants, isolated specialist memory, exact approval/delivery semantics, canary prerequisites and rollback ownership. No source in the separate Dots repository was changed, no consumer commit exists, and OD00/OD01–OD04 are not claimed complete.
+
+Validation is documentation/contract-boundary only: exact generated TypeScript/OpenRPC bytes match producer b323e73f; OpenRPC parses with 407 declared methods, required runtime control/read methods exist, producer-only synthetic fixture identity is retained, and local handoff links resolve. Exact hashes and limits are in docs/build/fe14-validation.json; there is no visual, live, deployed or cross-consumer acceptance claim.
+
+FE00–FE13 local implementation checkpoints remain individually verifying with their receipts. FE14's separate-consumer implementation/readiness gate remains pending; this phase does not authorize cutover, credentials, deployment, model training or LAYA activation. Normal Git publication remains unavailable; documentation checkpoint is local only.
+
+## BE18 — Qualify newly collected API transport fixtures
+
+The prepared optional-dependency environment exposed transport tests previously blocked at aiohttp collection. Unspecced mock agents fabricated identity and memory-manager state; strict checkin correctly rejected them. Changed only 35 mock constructors in six test files to declare the absent legacy attributes. No production ownership policy changed. All six files and three existing real-agent/strict-ownership suites passed: 260 tests across nine files, no retries. Exact hashes and original failure are in docs/build/be18-api-memory-fixture-validation.json. The running b323e73f full campaign remains frozen and its original failures are retained; this is a separate affected-suite qualification.
+
+## BE18 — Isolate doctor configuration fixture from host installation
+
+The prepared runtime exposed an unrelated command-install repair invoked by a configuration-only test helper. Scoped that helper to the three existing real Configuration Files checks; production logic and filesystem protections are unchanged, and no host command was installed. The complete doctor file plus command-install coverage passed 73 tests, with eight macOS-only skips and no retries. See docs/build/be18-doctor-fixture-validation.json. The running immutable full campaign retains its original outcome separately.
+
+## BE18 — Qualify the remaining hosted-room memory fixture
+
+The final newly collected two-gateway transport fixture had the same unspecced mock-agent ownership mismatch. One constructor now declares absent legacy memory/context attributes; no production policy changed. Hosted-room and real ownership/reuse suites passed 16 tests. Exact source and log hashes are in docs/build/be18-hosted-room-fixture-validation.json. Original full-campaign failure remains recorded separately.
+
+## BE18 — Record final frozen-source campaign and local handoff
+
+Status: implementation checkpoint complete locally within the selected scope; release blocked. The clean immutable backend candidate b323e73f7b2f6792c57341240e206a72e43e3192 completed the canonical four-worker campaign in 3,501.2 seconds: 5,356 files, 56,979 passed, 219 failed and 724 skipped. The runner also reports 12 files with passing tests but nonzero exit and 15 files where no tests ran. The complete sanitized per-file index preserves 484 failing node IDs and phase outcomes separately from the runner summary; 455 node IDs match the preceding campaign, which is comparison evidence rather than proof of identical causes.
+
+Twenty-seven new nodes became executable after optional dependency setup and were transport-mock ownership mismatches; the six API and one hosted-room fixture corrections passed 260 and 16 tests separately. A newly exposed doctor fixture invoked unrelated host installation; its scoped correction passed 73 tests with eight platform skips. The unchanged LSP descendant cleanup test hit the live-system signal guard and remains unqualified; no guard bypass or direct signal retry occurred. The original full-run counts were not rewritten.
+
+The final campaign's selected 29-file authority/effect/memory group passed 357 tests with no skips. Explicit final release slices/tooling/generated parity passed 14 tests. Ruff passed all 196 changed Python files since the published BE14 checkpoint. Frontend FE13 and additive consumer receipts retain their own full/affected aggregates, types, lint and pure builds; FE14 is a producer-side handoff only. The current manifest and current-scope document distinguish implemented finite local paths from unsupported/conditional/live/native/visual/harness/Dots gates. No model training, LAYA activation, deployment or credential use occurred.
+
+Exact evidence: docs/build/be18-final-source-validation.json, docs/build/be18-final-test-index.json, docs/build/release-manifest.json and docs/build/backend-current-scope.md. Full test failure blocks release signoff despite focused successes. Normal Git authentication remains unavailable: remote main was last exactly verified through BE14, and all later phase commits remain local-only with a refreshed recovery bundle. No API-blob publication or CI-green claim is made.
+
+## BE18 — Repair and classify remaining runtime fixture failures
+
+Continued failure recovery after the initial final-source receipt. All 36 assigned runtime/gateway/TUI/cron/monitoring nonzero modules now have per-node evidence and independent baseline relationships. Of 84 original failing node outcomes, 66 are qualified fixture repairs (39 in this slice and 27 previously repaired); 18 remain blocked by AF_UNIX restrictions or the untouched LSP live-system guard. Three additional optional-dependency collection skips are not failing test nodes. Synthetic negative ancestry fixtures explicitly exclude unrelated enclosing host markers; they do not prove a real outside-checkout host.
+
+The exact final 17-file patch is fixture-only, including the synthetic API probe; production runtime is unchanged. Canonical qualification passed 883 tests across 16 files, with final hashes and per-file receipts verified. Ruff and diff checks passed. See docs/build/be18-runtime-fixture-repairs.json and docs/build/be18-runtime-failure-classification.json. The original full-suite failure receipt remains intact; no security/process/filesystem guard was bypassed.
+
+## BE18 — Recover package and script fixture failures
+
+Qualified 162 of 166 original failed node outcomes across 24 PM/script modules. Existing hash-pinned runtime wheels, the existing IDNA fixture pin and original uv bootstrap archive were obtained through the normal official downloader, verified, and consumed only in isolated fixtures. Opt-in pytest cache/wheelhouse settings preserve defaults, copy rather than mutate shared caches, and retain real build/install/cold-start/hash-failure paths. Dependency-free local fixture build backends avoid implicit setuptools fetches. No production code or package versions changed.
+
+Consolidated original-module outcomes: 240 passed, four GPG failures, three skips; the new cache-isolation guard tests passed three cases. A short owned-home diagnostic proves GPG agent socket creation is denied with EPERM; no user keys, guard bypass or broad process kill. The legacy cold-bootstrap row remains skipped because Python 3.11 is absent. Exact source/log hashes and all node dispositions are in docs/build/be18-package-source-manifest.json and docs/build/be18-package-failure-classification.json. Failed attempts and the original full campaign are retained.
+
+## BE18 — Recover and classify CLI failures
+
+All 150 original CLI failed node outcomes are classified: 125 now qualified, one doctor fixture previously qualified, and 24 host-blocked (17 socket EPERM and seven profile-export cases under protected Git ancestry). The affected distinct modules passed 204 tests with four Windows skips; the five owned fixture files passed 39 tests with four skips using the actual receipt-plugin argv.
+
+Fixed only fixture facade targeting, fake opener signature, inherited test argv, canonical alias expectation and synthetic service UID/GID. Real chown/chmod/FIFO assertions and dedicated security tests remain intact; distinct-UID live-container ownership is not certified. Shared offline PM fixtures recover previously blocked plugin setup without changing source authority. No CLI production edit, export guard bypass or alternate writable-root workaround occurred. Evidence: docs/build/be18-cli-failure-classification.json.
+
+## BE18 — Recover tool failures and two pre-existing production defects
+
+Qualified 21 of 84 original failing tool/plugin/verify outcomes; 63 remain blocked by socket EPERM. Focused qualification passed 417 tests across 15 files, including the unchanged Docker fixture under the canonical default scratch location. Optional-dependency skips, non-host skips and deliberate deselection are separate from failures.
+
+Two production defects, responsible for three failing outcomes, are repaired: Parallel now uses its canonical key-first cached SDK acquisition rather than a redundant eager install; MCP child enumeration reaches its existing current-parent psutil fallback only when the procfs children interface is absent. Readable-empty, malformed/unreadable and PermissionError semantics remain fail-closed; process signal/ownership guards are unchanged. Real cross-thread-child, missing-key/no-acquisition, keyed-SDK error and adjacent lifecycle/SSRF tests pass. Other edits isolate fixture paths, sudo discovery, synthetic deletion targets and fake DNS while preserving real policy checks. Exact hashes, baseline comparisons and dispositions: docs/build/be18-tools-failure-classification.json.
+
+## BE18 — Correct the final LSP teardown classification
+
+Deeper full-trace inspection showed the LSP test body had already verified successful cleanup, but finally attempted to signal a reparented zombie because is_running includes zombies. Corrected only the fixture teardown predicate and NoSuchProcess race handling. Fresh canonical real-child validation passed all 13 tests; the live-system signal guard is byte-unchanged and no original PID was signaled. The former host-blocker assessment is preserved as history and superseded by fixture-isolation recovery. Runtime classification is now 67 recovered and 17 genuine host-blocked original outcomes. Evidence: docs/build/be18-lsp-zombie-fixture-validation.json and updated runtime classification.
+
+## BE18 — Final observed-failure reconciliation and supported-host handoff
+
+All 117 original nonzero-exit module receipts and all 484 original failing node outcomes are accounted for exactly once. Qualified recoveries total 376; 108 remain demonstrated host constraints (101 socket-EPERM outcomes and seven profile-export checkout-ancestry outcomes). Unclassified observed failures: zero. Unfixed observed production regressions: zero; two pre-existing production defects and one stale test expectation were repaired. This says nothing about latent defects or unexercised host/live capabilities. Every one of the 29 failure nodes newly visible relative to the preceding campaign has now qualified.
+
+The final combined repair integration passed 182 tests across six modules; the subsequent LSP fixture-only delta passed 13. Ruff passed all 48 changed Python files. Focused lane receipts retain exact source/log hashes, source comparisons, failed attempts, skips and overlapping counts. The original full campaign remains 56,979 passed, 219 failed and 724 skipped; phase-aware recovery counts are not subtracted from that different summary. No fourth full run was performed merely to repeat proven host denials.
+
+Current evidence: docs/build/be18-failure-resolution.json, four detailed lane classifications, docs/build/remaining-host-tests.txt and the updated release manifest. A suitable already-authorized host and outside-checkout temp root are needed for remaining integration proof. No host security settings were changed, no export/signal/transport guard was bypassed, and no live user credentials, model training, LAYA activation or deployment were used. The temporary Vite fixture server was already stopped normally; no browser-policy retry was made. Main publication remains blocked on normal Git authentication; all post-BE14 work is local with its recovery bundle.

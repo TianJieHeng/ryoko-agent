@@ -158,7 +158,7 @@ def test_missing_effect_bytes_are_not_marked_success(runtime):
     assert apply(runtime, plan)["state"] == "reconciliation_required"
     with pytest.raises(OperationsError, match="unsupported"):
         preview_repair(runtime.db, runtime.context, "mark-success", effect["effect_id"])
-    with pytest.raises(OperationsError, match="unsupported"):
+    with pytest.raises(OperationsError, match="checkpoint missing"):
         preview_repair(runtime.db, runtime.context, "restore-checkpoint", "session")
 
 

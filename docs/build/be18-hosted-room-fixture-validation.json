@@ -1,0 +1,19 @@
+{
+  "phase": "BE18 hosted-room transport fixture qualification",
+  "status": "fixture_only_correction_qualified",
+  "base_commit": "37fbea1136cc133f5cb082d0884024a86bf54a4e",
+  "source_sha256": {
+    "tests/tui_gateway/test_hosted_room_two_gateway_scoped.py": "33c2fccbc4c147e9e0d5a893e46291c14067967e7b6b431e4f43e9949211fb40"
+  },
+  "change": "One transport MagicMock explicitly declares absent legacy runtime_context and _memory_manager. Same ownership fixture issue as prior six API files; production guards unchanged.",
+  "validation": {
+    "passed": 16,
+    "failed": 0,
+    "files": 4,
+    "runner": "scripts/run_tests.sh --scratch-parent /workspace/shared -j2 --file-retries 0",
+    "scope": "Hosted-room flow plus unchanged routing, pool isolation and real AIAgent reuse suites",
+    "log": "/workspace/shared/ryoko-hosted-room-memory-after.log",
+    "sha256": "d8e84a6ce7fc558ecb187ce2e7f2de7f0ab69413e22bd8e8a1a62611f5ff8df5"
+  },
+  "full_campaign": "Original b323e73f failure is retained; this is an affected-suite supplement."
+}

@@ -10,9 +10,7 @@ from __future__ import annotations
 import json
 import math
 import os
-import platform
 import selectors
-import shutil
 import signal
 import subprocess
 import sys
@@ -22,6 +20,8 @@ from pathlib import Path
 from typing import Callable
 
 from tools.workspace_manifest import MAX_TOTAL_BYTES, StagedWorkspace
+from hermes_platform.host import facts as host_facts
+from hermes_platform.resolver import LookupContext, locate_command
 
 MAX_TIMEOUT_SECONDS = 30.0
 MAX_CODE_BYTES = 512 * 1024
@@ -53,11 +53,12 @@ def execute_isolated_python(code: str, *, workspace: StagedWorkspace,
                             timeout_seconds: float = MAX_TIMEOUT_SECONDS,
                             wall_seconds: float | None = None,
                             is_cancelled: Callable[[], bool] = lambda: False) -> dict:
-    if platform.system() != "Linux" or platform.machine() != "x86_64":
+    if host_facts.os_family() != "linux" or host_facts.native_arch() != "amd64":
         raise IsolationUnavailable("isolated Python requires a supported Linux executor")
-    unshare = shutil.which("unshare", path="/usr/bin:/bin")
-    if unshare is None:
+    resolved = locate_command("unshare", LookupContext(path="/usr/bin:/bin"))
+    if not resolved.found:
         raise IsolationUnavailable("unshare is required; unsafe fallback is disabled")
+    unshare = resolved.command[0]
     if not isinstance(code, str) or not code.strip() or len(code.encode()) > MAX_CODE_BYTES:
         raise ValueError("code must be nonempty and within the finite input limit")
     if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (float, int)) or not (

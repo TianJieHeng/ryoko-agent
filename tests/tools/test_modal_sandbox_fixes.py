@@ -369,7 +369,7 @@ class TestDockerHostBindApproval:
         monkeypatch.setattr(A, "_YOLO_MODE_FROZEN", False)
         monkeypatch.setattr(approval_context, "_get_approval_mode", lambda: "manual")
 
-    def test_host_bound_docker_requires_approval(self, monkeypatch):
+    def test_host_bound_docker_requires_approval(self, tmp_path, monkeypatch):
         """Host-bound Docker dangerous command escalates instead of bypassing."""
         import tools.approval as A
         self._isolate_approval_state(monkeypatch)
@@ -377,7 +377,11 @@ class TestDockerHostBindApproval:
         monkeypatch.setattr(
             "tools.tirith_security.check_command_security",
             lambda _c: {"action": "allow", "findings": [], "summary": ""})
-        res = A.check_all_command_guards("rm -rf /workspace", "docker",
+        # A fixture-owned target must not contain the running interpreter:
+        # deleting /workspace is correctly hard-blocked on workspace-hosted installs.
+        import shlex
+        command = f"rm -rf {shlex.quote(str(tmp_path / 'mounted-project'))}"
+        res = A.check_all_command_guards(command, "docker",
                                          has_host_access=True)
         # Must NOT take the silent container fast-path.
         assert res.get("approved") is not True

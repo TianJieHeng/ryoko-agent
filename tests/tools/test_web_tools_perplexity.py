@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import socket
 from unittest.mock import MagicMock, patch
 
 from tests.tools.conftest import register_all_web_providers
@@ -60,13 +61,19 @@ def test_search_dispatch_maps_search_api_shape():
     }
 
 
-def test_extract_dispatch_snippets_per_url_and_missing_key():
+def test_extract_dispatch_snippets_per_url_and_missing_key(monkeypatch):
     """web_extract on backend=perplexity posts every URL to /sdk/content/snippets;
     a URL the backend failed carries ``error`` instead of content; no key → error, no HTTP."""
     import tools.web_tools as wt
 
     register_all_web_providers()
     urls = ["https://tokio.rs/tokio/tutorial", "https://docs.rs/smol"]
+    # Keep the real SSRF policy while making DNS, like HTTP below, fully offline.
+    def resolve_fixture(hostname, port=None):
+        assert hostname in {"tokio.rs", "docs.rs", "127.0.0.1"}
+        address = "127.0.0.1" if hostname == "127.0.0.1" else "93.184.216.34"
+        return [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", (address, port or 443))]
+    monkeypatch.setattr("tools.url_safety._getaddrinfo", resolve_fixture)
     payload = {"results": [
         {"url": urls[0], "text": "Tokio is an asynchronous runtime … for Rust.", "tokens_count": 12},
         {"url": urls[1], "error": "Page not found or unavailable."},
@@ -74,7 +81,7 @@ def test_extract_dispatch_snippets_per_url_and_missing_key():
     with patch.dict(os.environ, {"PERPLEXITY_API_KEY": "pplx-test"}), \
          patch.object(wt, "_get_extract_backend", return_value="perplexity"), \
          patch("plugins.web.perplexity.provider.httpx.post", return_value=_ok(payload)) as post:
-        out = json.loads(asyncio.run(wt.web_extract_tool(urls)))
+        out = json.loads(asyncio.run(wt.web_extract_tool([*urls, "http://127.0.0.1/private"])))
 
     assert post.call_args.args[0] == "https://api.perplexity.ai/sdk/content/snippets"
     _assert_hermes_identity_headers(post.call_args.kwargs["headers"])
@@ -85,6 +92,7 @@ def test_extract_dispatch_snippets_per_url_and_missing_key():
     by_url = {r["url"]: r for r in out["results"]}
     assert "Tokio is an asynchronous runtime" in by_url[urls[0]]["content"]
     assert by_url[urls[1]]["error"] == "Page not found or unavailable."
+    assert "Blocked" in by_url["http://127.0.0.1/private"]["error"]
 
     with patch.dict(os.environ, {}, clear=False), \
          patch("plugins.web.perplexity.provider.httpx.post") as post:

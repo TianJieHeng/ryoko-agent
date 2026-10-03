@@ -337,7 +337,7 @@ def test_additive_schema40_migration_preserves_existing_runtime_and_async_record
         assert [tuple(row) for row in conn.execute("SELECT * FROM messages")] == before
         assert conn.execute("SELECT COUNT(*) FROM delegation_handoffs").fetchone()[0] == 0
         assert conn.execute("SELECT COUNT(*) FROM bounded_service_pipelines").fetchone()[0] == 0
-        assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == 41
+        assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == schema.SCHEMA_VERSION
     db.close()
 
 

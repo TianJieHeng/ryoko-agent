@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 def _observe(hook_name: str, **kwargs: Any) -> None:
+    from agent.decisions.integration import observe_lifecycle as observe_decision
+    observe_decision(hook_name, **kwargs)
     try:
         from hermes_cli.observability import observe_lifecycle
 
@@ -48,6 +50,9 @@ def has_hook(hook_name: str) -> bool:
     except Exception:
         logger.warning("Unable to inspect built-in observability hooks", exc_info=True)
 
+    from agent.decisions.integration import handles_hook as decision_handles_hook
+    if decision_handles_hook(hook_name):
+        return True
     from hermes_cli import plugins
 
     return plugins.has_hook(hook_name)

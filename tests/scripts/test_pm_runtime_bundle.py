@@ -7,9 +7,10 @@ import subprocess
 import sys
 
 import pytest
+from tests.pm._fixtures import seed_pm_runtime_cache
 
 
-def _exercise_relocated_pm_runtime(tmp_path, monkeypatch):
+def _exercise_relocated_pm_runtime(tmp_path, monkeypatch, request):
     from scripts.bundles import native
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
@@ -39,9 +40,10 @@ def _exercise_relocated_pm_runtime(tmp_path, monkeypatch):
     stage = getattr(native, "stage_pm_runtime", None)
     assert callable(stage), "native payload has no isolated PM runtime stage"
     cache = tmp_path / "build-cache"
+    prepared = seed_pm_runtime_cache(request, cache)
     monkeypatch.setattr("pm.client._request", lambda *args, **kwargs: pytest.fail("runtime staging must not bootstrap a worker"))
     monkeypatch.setattr("pm._uv._toolchain", lambda **kwargs: (Path(uv), Path(sys.executable)))
-    stage(root, python, repo, cache=cache)
+    stage(root, python, repo, cache=cache, offline=prepared)
     assert cache.is_dir()
     assert not (tmp_path / "home/cache/uv").exists()
     stage(root, python, repo, offline=True, cache=cache)
@@ -83,17 +85,17 @@ print(json.dumps(YAML(typ='safe').load('isolated: true')))
 
 
 @pytest.mark.platforms("posix")
-def test_native_pm_runtime_survives_payload_move(tmp_path, monkeypatch):
-    _exercise_relocated_pm_runtime(tmp_path, monkeypatch)
+def test_native_pm_runtime_survives_payload_move(tmp_path, monkeypatch, request):
+    _exercise_relocated_pm_runtime(tmp_path, monkeypatch, request)
 
 
 @pytest.mark.platforms("windows")
-def test_resident_pm_bypasses_windows_redirector_after_move(tmp_path, monkeypatch):
-    _exercise_relocated_pm_runtime(tmp_path, monkeypatch)
+def test_resident_pm_bypasses_windows_redirector_after_move(tmp_path, monkeypatch, request):
+    _exercise_relocated_pm_runtime(tmp_path, monkeypatch, request)
 
 
 @pytest.mark.parametrize("poison", ["cwd", "global"])
-def test_pm_builder_ignores_ambient_uv_configuration(tmp_path, monkeypatch, poison):
+def test_pm_builder_ignores_ambient_uv_configuration(tmp_path, monkeypatch, poison, request):
     from pm import stage_manager_runtime
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
@@ -109,5 +111,8 @@ def test_pm_builder_ignores_ambient_uv_configuration(tmp_path, monkeypatch, pois
     assert uv
     monkeypatch.setattr("pm.client._request", lambda *args, **kwargs: pytest.fail("runtime staging must not bootstrap a worker"))
     monkeypatch.setattr("pm._uv._toolchain", lambda **kwargs: (Path(uv), Path(sys.executable)))
-    executable = stage_manager_runtime(python=Path(sys.executable), destination=tmp_path / "runtime")
+    cache = tmp_path / "prepared-cache"
+    prepared = seed_pm_runtime_cache(request, cache)
+    executable = stage_manager_runtime(python=Path(sys.executable), destination=tmp_path / "runtime",
+                                       cache=cache if prepared else None, offline=prepared)
     assert executable.is_file()

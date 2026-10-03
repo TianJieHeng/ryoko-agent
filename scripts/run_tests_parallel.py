@@ -86,10 +86,13 @@ def _rmtree_force(path: str) -> None:
             pass
     shutil.rmtree(path, onerror=_chmod_retry)
 
+_SCRATCH_PARENT: str | None = None
+
+
 def _runner_scratch_root() -> str:
-    """Per-run temp roots live on DISK, never the system temp dir: a full-suite run writes
-    gigabytes of tmp_path fixtures and /tmp is RAM-backed tmpfs on many Linux hosts. /var/tmp is
-    the FHS disk-backed temp root and is used because the alternatives fail tests that assume
+    """Prefer disk-backed scratch: a full-suite run writes gigabytes of tmp_path fixtures
+    and /tmp is RAM-backed on many Linux hosts. /var/tmp is the default FHS candidate;
+    --scratch-parent overrides hosts that map it to tmpfs. The default is retained because alternatives fail tests that assume
     the root's shape: under the Hermes home conftest relocates the basetemp; under a dot-dir
     (~/.cache) the hidden-dir search tests see every fixture as hidden; anything longer than
     the old /tmp root pushes AF_UNIX test sockets past sun_path.
@@ -99,11 +102,16 @@ def _runner_scratch_root() -> str:
     later makedirs/mkdtemp here fail with EPERM for every other user on the host, with no way
     back that does not need root. Keying by uid means no run is blocked by another's leftovers.
     """
-    name = "hermes-pytest" + (f"-{os.getuid()}" if hasattr(os, "getuid") else "")
-    if os.name == "nt" or not os.path.isdir("/var/tmp"):  # no-tmp: ok — probing the disk-backed FHS root
+    uid = f"-{os.getuid()}" if hasattr(os, "getuid") else ""
+    name = "hermes-pytest" + uid
+    if _SCRATCH_PARENT is not None:
+        # Short, private per-user root preserves room for AF_UNIX fixture paths.
+        # The caller selects storage; /var/tmp can itself resolve to tmpfs.
+        root = os.path.join(_SCRATCH_PARENT, "hp" + uid)
+    elif os.name == "nt" or not os.path.isdir("/var/tmp"):  # no-tmp: ok — probing the disk-backed FHS root
         root = os.path.join(tempfile.gettempdir(), name)
     else:
-        root = f"/var/tmp/{name}"  # no-tmp: ok — /var/tmp is disk-backed by FHS, never tmpfs
+        root = f"/var/tmp/{name}"  # no-tmp: ok — FHS default; explicit override supports tmpfs mappings
     os.makedirs(root, exist_ok=True)
     return root
 
@@ -981,6 +989,7 @@ def _pytest_flag_error(tokens: List[str]) -> Optional[str]:
 
 
 def main() -> int:
+    global _SCRATCH_PARENT
     _make_stdio_glyph_safe()
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -1006,6 +1015,10 @@ def main() -> int:
         "--include-integration",
         action="store_true",
         help="Don't skip integration/ e2e/ during discovery",
+    )
+    parser.add_argument(
+        "--scratch-parent",
+        help="Existing absolute disk-backed directory for a runner-owned per-user scratch subdirectory; keep the path short for Unix sockets",
     )
     parser.add_argument(
         "--file-timeout",
@@ -1107,7 +1120,7 @@ def main() -> int:
     OUR_FLAGS = {
         "-h", "--help", "-j", "--jobs", "--paths", "--include-integration",
         "--file-timeout", "--file-retries", "--slice", "--generate-slices", "--files",
-        "--files-from",
+        "--files-from", "--scratch-parent",
     }
     # pytest short flags that consume the NEXT token as their value.
     PYTEST_VALUE_FLAGS = {"-k", "-m", "-p", "-o", "-c", "-r", "-W"}
@@ -1156,6 +1169,12 @@ def main() -> int:
         i += 1
 
     args = parser.parse_args(our_args)
+    _SCRATCH_PARENT = None
+    if args.scratch_parent is not None:
+        parent = Path(args.scratch_parent)
+        if not parent.is_absolute() or not parent.is_dir():
+            parser.error("--scratch-parent must name an existing absolute directory")
+        _SCRATCH_PARENT = str(parent.resolve())
 
     # Bare tokens are validated against pytest's option set so a typo fails
     # here with usage instead of once per discovered file. Anything after a

@@ -124,9 +124,12 @@ def perform_api_call(
 
     def _perform_api_call(next_api_kwargs):
         from agent.runtime_commands import invoke_runtime_operation
-        return invoke_runtime_operation(
+        response = invoke_runtime_operation(
             "model", lambda: _perform_api_request(next_api_kwargs), agent=agent,
             name=str(agent.model or ""))
+        from agent.output_influences import record_supplied_context
+        record_supplied_context(agent, next_api_kwargs)
+        return response
 
     from hermes_cli.middleware import run_llm_execution_middleware
 

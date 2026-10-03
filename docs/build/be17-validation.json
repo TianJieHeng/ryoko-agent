@@ -1,0 +1,108 @@
+{
+  "deferred_gates": [
+    "Original intention dataset unavailable: coverage and license inspection not performed",
+    "Additional harness dataset remains a separately authorized post-backend task",
+    "Exact RLCD recipe/source/license/toolchain and target hardware not supplied or investigated online",
+    "No real checkpoint or model training; no teacher/API/GPU use, credential configuration or private dataset export",
+    "Actual serving token limits and 320\u2013768-token-style hypothesis not measured",
+    "Independent production holdouts/red-team qualification and actual model reproducibility not established",
+    "Offline scalar calibrator is not installed; selection receipts do not deploy or activate a runtime",
+    "End-to-end production shadow promotion and runtime model+contract rollback remain deferred"
+  ],
+  "diff_check": {
+    "command": "git diff --check",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "status": "passed"
+  },
+  "file_sha256": {
+    "docs/build/decision-data-governance.md": "9cd96a8a076c302f2389e0b805603dcc0f0acb914b1528e111edbba876fa88a3",
+    "evals/decision_governance.py": "bef64c355e93f349ba188f066565e549e87e65884c870e1bcbb73cea33fe521d",
+    "evals/decision_governance_cli.py": "66b09059f6e7969a10529baac4ec5edbf5859759a362a1d6248e43a10e49ee66",
+    "evals/decision_governance_fixtures.json": "8c1e592c99a483a16e30d33f57c1b40313e8a2e4269e90fa1da3e199c1a3a537",
+    "evals/decision_governance_release.py": "dbbdedf8a8162ae0ba346690da24c5d5b304b70903a69e764556ab7f8aaa8611",
+    "tests/evals/test_decision_governance.py": "4b5c8be32243f28bc65dfa746f720306c575310a2ae0a78cbd9b0b18030ac34c"
+  },
+  "initial_parent_checkpoint": "75951795ed4e4cf0305de917870ca097528aa980",
+  "lint": {
+    "command": ".venv/bin/python -m ruff check evals/decision_governance.py evals/decision_governance_cli.py evals/decision_governance_release.py tests/evals/test_decision_governance.py",
+    "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "status": "passed"
+  },
+  "phase": "BE17",
+  "recorded_at": "2026-10-03T01:20:00Z",
+  "runs": [
+    {
+      "be17_passed": 30,
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/evals/test_decision_governance.py tests/agent/test_decision_calibration.py tests/agent/test_decision_client.py -q",
+      "failed": 0,
+      "files": 3,
+      "log": "/tmp/be17-validation.txt",
+      "log_sha256": "e55fc5e6d5303e9c3cd0ec1c72fdcd7231453b7b8f9cdee5a7b6976fb6f90c54",
+      "name": "governance_and_be15_regression",
+      "passed": 106,
+      "status": "passed",
+      "wall_seconds": 1.3
+    },
+    {
+      "both_export_sha256": "51dd0ee52b0f64461e1db325c117d8de25b337d6f16dbb4a9f47cef87d60149a",
+      "command": "Run documented build CLI twice against evals/decision_governance_fixtures.json and the same /tmp/be17-example/frozen-ledger.json; compare export SHA-256",
+      "contains_packets": false,
+      "log": "/tmp/be17-cli-rebuild.txt",
+      "log_sha256": "f6f776105ac5d535f7e109f95976d213179a320b2c25886c913f8897692b8c7d",
+      "manifest_digest": "ef01647868fd52ef48053d0d339822dddcc49b1ad0d2bf7724e50c04606f1d02",
+      "name": "deterministic_synthetic_cli_rebuild",
+      "records": 3,
+      "status": "passed"
+    },
+    {
+      "after_deletion_manifest_digest": "8c8a2e9f78d3dfbfc344bfec2c24033c4dcf257b77a727865eafeef6c616f2db",
+      "calibration_digest": "e862b9f9c4179f715b067f913c0b928655880e7f5ae26aea8fc951ab6f01d310",
+      "calibration_file_sha256": "7cf0489c272fea1cea3fa8da38f37d397fb195deb29f04ac5ccd22b242f56335",
+      "command": "Run refit on synthetic calibration receipt observations, then build with --deleted-sources /tmp/be17-example/deleted.json",
+      "deleted_source_absent": true,
+      "log": "/tmp/be17-cli-refit-deletion.txt",
+      "log_sha256": "d1cefc17e1e7bcd35621c0f14c24bdd06b5f92b6920995075e4d260794779a64",
+      "name": "synthetic_cli_calibration_refit_and_deletion",
+      "production_qualified": false,
+      "records_after_deletion": 2,
+      "status": "passed",
+      "trained_model": false
+    },
+    {
+      "command": "Run deletion-impact and drift against /tmp/be17-example synthetic inputs",
+      "invalidated_manifests": [
+        "ef01647868fd52ef48053d0d339822dddcc49b1ad0d2bf7724e50c04606f1d02"
+      ],
+      "log": "/tmp/be17-cli-review.txt",
+      "log_sha256": "f5f39347e75baec5250adda394a7e1d3be452d05665f07db6f7b96c41ae7157f",
+      "name": "synthetic_cli_deletion_review_and_guard_drift",
+      "no_checkpoint_present": true,
+      "status": "passed",
+      "unlearning_claim": false
+    }
+  ],
+  "schema_version": 1,
+  "signed_mock_release_checks": {
+    "checks": [
+      "approved public identity and revoked-key enforcement",
+      "manifest signature tamper and opaque checkpoint byte tamper rejected",
+      "artifact path escape rejected",
+      "independent evaluator and conservative metric gates",
+      "synthetic production certification rejected",
+      "incumbent/candidate shadow comparison",
+      "complete predecessor model/service/contracts/calibration rollback",
+      "rollback away from invalidated current dataset to unaffected predecessor",
+      "exact artifact reconstruction from two independently built synthetic fixtures",
+      "BE15 ModelBundle and registered contract/question compatibility",
+      "verified snapshot mutation and inflated evaluation population rejected"
+    ],
+    "mock_model_files_outside_tests": false,
+    "signature": "Ed25519 with ephemeral test keys, never saved as live credentials",
+    "status": "passed_in_tests_only"
+  },
+  "status": "local governance tooling verified; actual training and production acceptance deferred",
+  "validation_observed_commit": "283163a719c25666c36a35da3fd513bb7d7aa532",
+  "worktree": "shared phase-separated worktree; no staging, commits, publication, root journal or shared-schema edits by BE17 worker",
+  "checkpoint_base": "a815882c42c5eaec3155845494be70bca40529d0",
+  "publication": "local checkpoint; remote push awaits existing authentication"
+}

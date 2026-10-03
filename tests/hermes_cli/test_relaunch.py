@@ -95,6 +95,8 @@ class TestRelaunch:
 
         monkeypatch.setattr(relaunch_mod.os, "execvp", fake_execvp)
         monkeypatch.setattr(relaunch_mod, "resolve_hermes_bin", lambda: "/usr/bin/hermes")
+        # Relaunch inherits CLI flags; pytest's own -p/-m flags are not CLI input.
+        monkeypatch.setattr(relaunch_mod.sys, "argv", ["/usr/bin/hermes"])
 
         with pytest.raises(SystemExit):
             relaunch_mod.relaunch(["--resume", "abc"])

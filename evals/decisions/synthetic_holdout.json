@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "notice": "Hand-authored synthetic metric fixtures only. Not the existing user intention-routing dataset. No model was trained or run; artifact digests identify synthetic descriptors, not model or calibration files. These measurements establish no model performance or enforcement qualification.",
+  "provenance": {
+    "dataset_id": "synthetic-decisions-holdout-v1",
+    "dataset_sha256": "e45054973882a794bdaf029eca03d2613ac3a644e248336478e7f64fb9dd8ed9",
+    "domain": "synthetic-metric-arithmetic",
+    "split": "holdout",
+    "frozen": true,
+    "synthetic": true,
+    "label_source": "synthetic_fixture",
+    "model_digest": "01beeec72588e99934ee702e16d4afc0dead33bedcaa66fe14b5ca27fc3e07d7",
+    "calibration_digest": "cb7f19c3905ae3b02dadc4f5a61fd8013213f6b4b3c02d53bf998f8a2049e17e",
+    "contract_digest": "6cdb167e55f74bb192d0160627f078f3d07e5acd8ce73f3b5c5a9dfaa4b0aafd",
+    "calibration_dataset": {
+      "dataset_id": "synthetic-calibration-placeholder-v1",
+      "dataset_sha256": "d7bf9da4737677afef758de406464640320cb5f9498232d2a262d88c063bf54a",
+      "episode_ids": []
+    },
+    "training_datasets": []
+  },
+  "rows": [
+    {
+      "row_id": "synthetic-01",
+      "episode_id": "synthetic-episode-01",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_need",
+      "options": [
+        "no_tools",
+        "needs_tools",
+        "defer",
+        "unclear"
+      ],
+      "distribution": {
+        "no_tools": 0.05,
+        "needs_tools": 0.85,
+        "defer": 0.05,
+        "unclear": 0.05
+      },
+      "label": "needs_tools",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-02",
+      "episode_id": "synthetic-episode-02",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_need",
+      "options": [
+        "no_tools",
+        "needs_tools",
+        "defer",
+        "unclear"
+      ],
+      "distribution": {
+        "no_tools": 0.8,
+        "needs_tools": 0.1,
+        "defer": 0.05,
+        "unclear": 0.05
+      },
+      "label": "needs_tools",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-03",
+      "episode_id": "synthetic-episode-03",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_need",
+      "options": [
+        "no_tools",
+        "needs_tools",
+        "defer",
+        "unclear"
+      ],
+      "distribution": {
+        "no_tools": 0.9,
+        "needs_tools": 0.05,
+        "defer": 0.025,
+        "unclear": 0.025
+      },
+      "label": "no_tools",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-04",
+      "episode_id": "synthetic-episode-04",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_need",
+      "options": [
+        "no_tools",
+        "needs_tools",
+        "defer",
+        "unclear"
+      ],
+      "distribution": {
+        "no_tools": 0.2,
+        "needs_tools": 0.55,
+        "defer": 0.1,
+        "unclear": 0.15
+      },
+      "label": "needs_tools",
+      "fallback": true,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-05",
+      "episode_id": "synthetic-episode-05",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_need",
+      "options": [
+        "no_tools",
+        "needs_tools",
+        "defer",
+        "unclear"
+      ],
+      "distribution": null,
+      "label": "unclear",
+      "fallback": true,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-06",
+      "episode_id": "synthetic-episode-06",
+      "point_id": "DP06",
+      "question_id": "synthetic_risk",
+      "options": [
+        "allow",
+        "block",
+        "unclear"
+      ],
+      "distribution": {
+        "allow": 0.9,
+        "block": 0.05,
+        "unclear": 0.05
+      },
+      "label": "allow",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-07",
+      "episode_id": "synthetic-episode-07",
+      "point_id": "DP06",
+      "question_id": "synthetic_risk",
+      "options": [
+        "allow",
+        "block",
+        "unclear"
+      ],
+      "distribution": {
+        "allow": 0.7,
+        "block": 0.2,
+        "unclear": 0.1
+      },
+      "label": "block",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-08",
+      "episode_id": "synthetic-episode-08",
+      "point_id": "DP06",
+      "question_id": "synthetic_risk",
+      "options": [
+        "allow",
+        "block",
+        "unclear"
+      ],
+      "distribution": {
+        "allow": 0.15,
+        "block": 0.7,
+        "unclear": 0.15
+      },
+      "label": "block",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-09",
+      "episode_id": "synthetic-episode-09",
+      "point_id": "DP06",
+      "question_id": "synthetic_risk",
+      "options": [
+        "allow",
+        "block",
+        "unclear"
+      ],
+      "distribution": {
+        "allow": 0.1,
+        "block": 0.1,
+        "unclear": 0.8
+      },
+      "label": "unclear",
+      "fallback": true,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-10",
+      "episode_id": "synthetic-episode-10",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_choice",
+      "options": [
+        "tool_a",
+        "tool_b",
+        "unclear"
+      ],
+      "distribution": {
+        "tool_a": 0.8,
+        "tool_b": 0.1,
+        "unclear": 0.1
+      },
+      "label": "tool_a",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-11",
+      "episode_id": "synthetic-episode-11",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_choice",
+      "options": [
+        "tool_a",
+        "tool_b",
+        "unclear"
+      ],
+      "distribution": {
+        "tool_a": 0.4,
+        "tool_b": 0.4,
+        "unclear": 0.2
+      },
+      "label": "tool_b",
+      "fallback": false,
+      "split": "holdout"
+    },
+    {
+      "row_id": "synthetic-12",
+      "episode_id": "synthetic-episode-12",
+      "point_id": "DP16",
+      "question_id": "synthetic_tool_choice",
+      "options": [
+        "tool_a",
+        "tool_b",
+        "unclear",
+        "tool_c"
+      ],
+      "distribution": {
+        "tool_a": 0.1,
+        "tool_b": 0.1,
+        "unclear": 0.05,
+        "tool_c": 0.75
+      },
+      "label": "tool_c",
+      "fallback": false,
+      "split": "holdout"
+    }
+  ],
+  "error_costs": [
+    {
+      "point_id": "DP06",
+      "question_id": "synthetic_risk",
+      "true_label": "block",
+      "predicted_label": "allow",
+      "cost": 10.0
+    }
+  ]
+}

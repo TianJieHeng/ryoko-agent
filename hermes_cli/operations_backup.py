@@ -42,7 +42,9 @@ def validate_archive(data):
         for entry in entries:
             path = PurePosixPath(entry.filename)
             if (entry.filename in names or path.is_absolute() or ".." in path.parts
-                    or "\\" in entry.filename or stat.S_ISLNK(entry.external_attr >> 16)
+                    or path.as_posix() != entry.filename or not path.parts or entry.is_dir()
+                    or ":" in entry.filename or "\\" in entry.filename
+                    or (stat.S_IFMT(entry.external_attr >> 16) not in {0, stat.S_IFREG})
                     or entry.flag_bits & 1):
                 raise ValueError("unsafe_backup_member")
             names.add(entry.filename)

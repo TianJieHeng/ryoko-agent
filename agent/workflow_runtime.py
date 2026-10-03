@@ -1,4 +1,4 @@
-"""Finite manual workflow interpreter. Procedure text never becomes tool authority.
+"""Finite workflow interpreter for manual control or grant-fenced local drafts. Procedure text never becomes tool authority.
 
 Only deterministic local artifact producers are installed. Evaluations use this
 same interpreter without publishing, so A/B comparisons cannot replay mutations.
@@ -19,6 +19,13 @@ from hermes_state_workflows import WorkflowRegistry, canonical, digest, require
 
 MAX_OUTPUT_BYTES = 4 * 1024 * 1024
 _INTERPOLATION = re.compile(r"\$\{(input|steps)\.([A-Za-z_][A-Za-z0-9_-]*)\}")
+
+
+def _assert_execution(run, *, definition=None, parameters=None):
+    from cron.durable_workflows import ScheduledWorkflowRun, assert_scheduled_workflow_dispatch
+    if isinstance(run, ScheduledWorkflowRun):
+        return assert_scheduled_workflow_dispatch(run, definition=definition, parameters=parameters)
+    return assert_artifact_dispatch(run)
 
 
 def assert_workflow_control(run, methods):
@@ -107,31 +114,41 @@ def _bounded_local(run):
     finally:
         if operation is not None:
             budget.settle(operation, {"wall_ms": max(0, int((time.monotonic() - started) * 1000))})
-    assert_artifact_dispatch(run)
+    _assert_execution(run)
 
 
 def execute_workflow(run, definition, parameters, *, admitted_at):
     from agent.workflow_contract import validate_parameters
     from hermes_cli.domain_jobs import DomainJob, build_domain_package
     from hermes_cli.artifact_formats import validate_artifact
-    assert_artifact_dispatch(run)
+    _assert_execution(run, definition=definition, parameters=parameters)
     record = definition.to_record()
     validate_parameters(record["input_schema"], parameters)
     authorize_project(run.context, definition.project_id, "write")
     registry = WorkflowRegistry(run.context, run.db)
-    if record["template_ref"]:
-        registry.template(definition.project_id, record["template_ref"])
+    require(record["template_ref"] is None or record["template_ref"].get("store") == "artifact_templates",
+            "workflow_legacy_template_not_applicable", "Legacy style metadata is not an executable template; pin a canonical approved-example template")
+    template = registry.template(definition.project_id, record["template_ref"]) if record["template_ref"] else None
     for capability in record["capability_requirements"]:
         authorize_project(run.context, definition.project_id, {"artifact_read": "read", "artifact_write": "write"}[capability])
+    output_limit = min(MAX_OUTPUT_BYTES, getattr(run, "output_limit", MAX_OUTPUT_BYTES))
     pending, values, outputs, sources, total = list(record["steps"]), {}, [], [], 0
     with _bounded_local(run):
         while pending:
             step = next((item for item in pending if set(item["depends_on"]) <= set(values)), None)
             require(step is not None, "workflow_dependency_invalid", "Workflow dependencies are not ready")
-            assert_artifact_dispatch(run)
+            _assert_execution(run, definition=definition, parameters=parameters)
             if step["kind"] == "render_markdown":
-                produced = [{"name": step["step_id"] + ".md", "mime": "text/markdown",
-                             "content_bytes": _render(step["parameters"]["template"], parameters, values, maximum=MAX_OUTPUT_BYTES - total)}]
+                if template is not None and record["template_ref"].get("store") == "artifact_templates":
+                    from hermes_cli.template_application import render_template
+                    content, _advisory_style = render_template(template, parameters)
+                    data = content.encode()
+                    sources.extend({**ref, "sha256": run.db.read_artifact_version(ref["artifact_id"], ref["version"],
+                        artifact_actor(run.context), access=project_access(run.context))["descriptor"]["sha256"]}
+                        for ref in [template["baseline_ref"], *template["assets"]])
+                else:
+                    data = _render(step["parameters"]["template"], parameters, values, maximum=output_limit - total)
+                produced = [{"name": step["step_id"] + ".md", "mime": "text/markdown", "content_bytes": data}]
             else:
                 arguments = _resolve(step["parameters"]["arguments"], parameters, values)
                 canonical(arguments)  # bound expanded bindings before adapter serialization
@@ -143,7 +160,7 @@ def execute_workflow(run, definition, parameters, *, admitted_at):
                 sources.extend(package["metadata"].get("inputs", []))
             for item in produced:
                 total += len(item["content_bytes"])
-                require(total <= MAX_OUTPUT_BYTES and len(outputs) < 32, "workflow_output_bound", "Workflow output exceeds bound")
+                require(total <= output_limit and len(outputs) < 32, "workflow_output_bound", "Workflow output exceeds bound")
                 validate_artifact(item["content_bytes"], item["mime"])
                 outputs.append({**item, "step_id": step["step_id"]})
             primary = produced[0]

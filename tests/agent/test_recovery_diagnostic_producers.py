@@ -3,6 +3,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+from tests.agent.tool_view_fixtures import tool_definitions_with_view
 from agent.status_output import StatusOutputMixin
 from agent.turn_overflow import _Recovery, _recover_payload_too_large
 from agent.turn_retry_state import TurnRetryState
@@ -71,7 +72,7 @@ def test_missing_requirements_keeps_tool_inventory(policy, monkeypatch, capsys):
     agent.quiet_mode = agent.save_trajectories = agent._use_prompt_caching = False
     agent.ephemeral_system_prompt = None
     monkeypatch.setattr("hermes_cli.plugins.discover_plugins", lambda: None)
-    monkeypatch.setattr(model_tools, "get_tool_definitions", lambda **kw: [{"function": {"name": "offline_tool"}}])
+    monkeypatch.setattr(model_tools, "get_tool_definitions_with_view", lambda **kw: tool_definitions_with_view([{"function": {"name": "offline_tool"}}]))
     monkeypatch.setattr(model_tools, "check_toolset_requirements", lambda: {"fixture_dependency": False})
     _load_tools(agent, None, None)
     output = capsys.readouterr().out + "\n".join(agent.printed)

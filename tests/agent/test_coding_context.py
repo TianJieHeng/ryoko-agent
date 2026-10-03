@@ -13,6 +13,9 @@ from agent import coding_context as cc
 
 
 
+pytestmark = pytest.mark.usefixtures("isolated_git_ancestors")
+
+
 def _git_init(path):
     env = {
         "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",

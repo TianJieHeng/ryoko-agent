@@ -1,0 +1,37 @@
+import { useI18n } from '@/i18n'
+
+import { runtimeUiLocales } from './runtime-ui-copy'
+
+type Words = readonly [string, string, string, string, string, string, string, string, string]
+export const opportunityCopy = {
+  pending: ['Request in progress', 'Anfrage läuft', 'Solicitud en curso', 'Requête en cours', 'リクエスト処理中', '请求处理中', '請求處理中', 'الطلب قيد التنفيذ', 'Запрос выполняется'],
+  title: ['Project opportunities', 'Projektchancen', 'Oportunidades del proyecto', 'Opportunités du projet', 'プロジェクトの機会', '项目机会', '專案機會', 'فرص المشروع', 'Возможности проекта'],
+  scope: ['Selected project IDs (one per line, maximum 8)', 'Projekt-IDs (eine je Zeile, höchstens 8)', 'IDs de proyectos (uno por línea, máximo 8)', 'ID de projets (un par ligne, maximum 8)', '選択プロジェクトID（1行1件、最大8件）', '所选项目ID（每行一个，最多8个）', '所選專案ID（每行一個，最多8個）', 'معرفات المشاريع المختارة (واحد لكل سطر، 8 كحد أقصى)', 'ID выбранных проектов (по одному в строке, до 8)'],
+  open: ['Review selected projects', 'Ausgewählte Projekte prüfen', 'Revisar proyectos seleccionados', 'Examiner les projets sélectionnés', '選択プロジェクトを確認', '审核所选项目', '審查所選專案', 'مراجعة المشاريع المختارة', 'Проверить выбранные проекты'],
+  retained: ['Load retained candidates', 'Gespeicherte Vorschläge laden', 'Cargar propuestas retenidas', 'Charger les propositions conservées', '保存済み候補を読込', '加载保留候选项', '載入保留候選項', 'تحميل المقترحات المحفوظة', 'Загрузить сохранённые предложения'],
+  discover: ['Look for bounded local opportunities', 'Begrenzte lokale Chancen suchen', 'Buscar oportunidades locales acotadas', 'Chercher des opportunités locales limitées', '範囲限定のローカル候補を探す', '查找有限本地机会', '尋找有限本機機會', 'البحث عن فرص محلية محدودة', 'Найти ограниченные локальные возможности'],
+  limits: ['Explicit local rules only; results are bounded and incomplete. No background scan or task creation.', 'Nur explizite lokale Regeln; Ergebnisse sind begrenzt und unvollständig. Keine Hintergrundsuche oder Aufgabenerstellung.', 'Solo reglas locales explícitas; resultados limitados e incompletos. Sin escaneo en segundo plano ni creación de tareas.', 'Règles locales explicites ; résultats limités et incomplets. Aucune recherche en arrière-plan ni création de tâche.', '明示的なローカルルールのみ。結果は限定的で不完全です。背景スキャンやタスク作成は行いません。', '仅使用明确的本地规则；结果有限且不完整。无后台扫描或任务创建。', '僅使用明確的本機規則；結果有限且不完整。無背景掃描或任務建立。', 'قواعد محلية صريحة فقط؛ النتائج محدودة وغير مكتملة. لا فحص خلفي أو إنشاء مهام.', 'Только явные локальные правила; результаты ограничены и неполны. Без фонового поиска и создания задач.'],
+  empty: ['No retained candidates in this bounded result', 'Keine gespeicherten Vorschläge in diesem begrenzten Ergebnis', 'No hay propuestas en este resultado acotado', 'Aucune proposition dans ce résultat limité', 'この限定結果には候補がありません', '此有限结果中无保留候选项', '此有限結果中無保留候選項', 'لا مقترحات محفوظة ضمن هذه النتيجة المحدودة', 'В ограниченном результате нет предложений'],
+  benefit: ['Benefit', 'Nutzen', 'Beneficio', 'Bénéfice', '利点', '收益', '效益', 'الفائدة', 'Польза'],
+  effort: ['Effort', 'Aufwand', 'Esfuerzo', 'Effort', '作業量', '工作量', '工作量', 'الجهد', 'Затраты усилий'],
+  evidence: ['Exact retained evidence', 'Exakte gespeicherte Belege', 'Evidencia retenida exacta', 'Éléments conservés exacts', '正確な保存済み根拠', '确切保留证据', '確切保留證據', 'الأدلة المحفوظة المحددة', 'Точные сохранённые основания'],
+  save: ['Save', 'Speichern', 'Guardar', 'Enregistrer', '保存', '保存', '儲存', 'حفظ', 'Сохранить'],
+  dismiss: ['Dismiss', 'Verwerfen', 'Descartar', 'Écarter', '却下', '忽略', '忽略', 'استبعاد', 'Отклонить'],
+  accept: ['Accept for review', 'Zur Prüfung annehmen', 'Aceptar para revisión', 'Accepter pour examen', '確認対象として承認', '接受并审核', '接受並審查', 'قبول للمراجعة', 'Принять к рассмотрению'],
+  history: ['Inspect history', 'Verlauf prüfen', 'Inspeccionar historial', 'Examiner l’historique', '履歴を確認', '检查历史', '檢查歷史', 'فحص السجل', 'Проверить историю'],
+  next: ['Open existing review control', 'Vorhandene Prüfung öffnen', 'Abrir control de revisión existente', 'Ouvrir le contrôle existant', '既存の確認画面を開く', '打开现有审核控件', '開啟現有審查控制項', 'فتح أداة المراجعة الحالية', 'Открыть существующую проверку'],
+  confirm: ['Record this choice', 'Diese Auswahl speichern', 'Registrar esta elección', 'Enregistrer ce choix', 'この選択を記録', '记录此选择', '記錄此選擇', 'تسجيل هذا الاختيار', 'Записать выбор'],
+  review: ['Review opportunity choice', 'Chancenauswahl prüfen', 'Revisar elección', 'Examiner le choix', '候補の選択を確認', '审核机会选择', '審查機會選擇', 'مراجعة اختيار الفرصة', 'Проверить выбор'],
+  noEffect: ['This records your choice only. Acceptance does not create a task, approve an effect or start execution.', 'Dies speichert nur Ihre Auswahl. Annahme erstellt keine Aufgabe, genehmigt keinen Effekt und startet nichts.', 'Solo registra su elección. Aceptar no crea tareas, autoriza efectos ni inicia ejecución.', 'Ce choix est seulement enregistré. Accepter ne crée aucune tâche, n’autorise aucun effet et ne démarre rien.', '選択の記録のみです。承認してもタスク作成、操作承認、実行開始は行いません。', '仅记录您的选择。接受不会创建任务、批准效果或开始执行。', '僅記錄您的選擇。接受不會建立任務、核准效果或開始執行。', 'يسجل اختيارك فقط. القبول لا ينشئ مهمة أو يوافق على أثر أو يبدأ التنفيذ.', 'Сохраняется только выбор. Принятие не создаёт задачу, не разрешает действие и не запускает выполнение.'],
+  stale: ['Evidence changed; refresh before saving or accepting', 'Belege geändert; vor Speichern oder Annahme aktualisieren', 'La evidencia cambió; actualice antes de guardar o aceptar', 'Les éléments ont changé ; actualisez avant d’enregistrer ou accepter', '根拠が変更されました。保存・承認前に更新してください', '证据已变更；保存或接受前请刷新', '證據已變更；儲存或接受前請重新整理', 'تغيرت الأدلة؛ حدّث قبل الحفظ أو القبول', 'Основания изменились; обновите перед сохранением или принятием'],
+  unknown: ['Outcome unknown. Retain the original request ID; inspect retained candidates/history before another choice. No automatic retry.', 'Ergebnis unbekannt. Ursprüngliche Anfrage-ID behalten; Vorschläge/Verlauf vor neuer Auswahl prüfen. Kein automatischer Wiederholungsversuch.', 'Resultado desconocido. Conserve el ID original; revise propuestas e historial antes de otra elección. Sin reintento automático.', 'Résultat inconnu. Conservez l’ID original ; examinez propositions et historique avant un autre choix. Aucun nouvel essai automatique.', '結果不明。元のリクエストIDを保持し、別の選択前に候補と履歴を確認してください。自動再試行はありません。', '结果未知。保留原始请求ID；再次选择前检查保留候选项及历史。不会自动重试。', '結果未知。保留原始請求ID；再次選擇前檢查保留候選項及歷史。不會自動重試。', 'النتيجة غير معروفة. احتفظ بمعرف الطلب الأصلي وافحص المقترحات والسجل قبل اختيار آخر. لا إعادة تلقائية.', 'Исход неизвестен. Сохраните исходный ID запроса; проверьте предложения и историю перед новым выбором. Автоповтора нет.'],
+  unavailable: ['Opportunity review unavailable or interrupted', 'Chancenprüfung nicht verfügbar oder unterbrochen', 'Revisión no disponible o interrumpida', 'Examen indisponible ou interrompu', '候補確認が利用不可または中断されました', '机会审核不可用或已中断', '機會審查無法使用或已中斷', 'مراجعة الفرص غير متاحة أو انقطعت', 'Проверка недоступна или прервана'],
+  invalid: ['Enter one to eight distinct exact project IDs', 'Eine bis acht unterschiedliche exakte Projekt-IDs eingeben', 'Introduzca de uno a ocho IDs de proyecto distintos', 'Saisissez un à huit ID de projets distincts', '正確なプロジェクトIDを重複なしで1〜8件入力', '输入1至8个不同的确切项目ID', '輸入1至8個不同的確切專案ID', 'أدخل من معرف مشروع واحد إلى ثمانية معرفات مختلفة ودقيقة', 'Введите от одного до восьми различных точных ID проектов'],
+} satisfies Record<string, Words>
+
+export function useOpportunityCopy() {
+  const { locale } = useI18n()
+  const index = runtimeUiLocales.indexOf(locale as typeof runtimeUiLocales[number])
+
+  return (key: keyof typeof opportunityCopy) => opportunityCopy[key][index < 0 ? 0 : index]
+}

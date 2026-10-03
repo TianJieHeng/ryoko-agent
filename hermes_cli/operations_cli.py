@@ -17,15 +17,18 @@ from agent.operations_privacy import apply_deletion, preview_deletion, privacy_q
 def parser():
     result = argparse.ArgumentParser(description=__doc__)
     sub = result.add_subparsers(dest="command", required=True)
-    for name in ("inspect", "audit", "retention", "check-checkpoint", "preview-repair", "apply-repair", "preview-deletion", "apply-deletion"):
+    for name in ("inspect", "audit", "retention", "check-checkpoint", "preview-repair", "apply-repair", "preview-deletion", "apply-deletion", "drill-recovery"):
         child = sub.add_parser(name)
         child.add_argument("--session", required=True)
         if name.startswith("apply-"):
             child.add_argument("--plan", type=Path, required=True)
             child.add_argument("--approve", required=True, help="Exact digest explicitly authorized after reviewing the plan")
         if name == "preview-repair":
-            child.add_argument("--action", required=True, choices=("reconcile-effect", "retry-delivery", "revoke-lease", "rebuild-index"))
+            child.add_argument("--action", required=True, choices=("reconcile-effect", "retry-delivery", "revoke-lease", "rebuild-index", "restore-checkpoint"))
             child.add_argument("--target", required=True)
+        if name == "drill-recovery":
+            child.add_argument("--code-version", required=True)
+            child.add_argument("--temporary-parent", type=Path, required=True)
         if name == "preview-deletion":
             child.add_argument("--memory-record", default=None)
         if name == "audit":
@@ -90,6 +93,14 @@ def _extension_apply(args):
     return apply_extension_change(_read_plan(args.plan), approval_id=args.approve, manager=get_plugin_manager())
 
 
+def _drill(db, context, args):
+    from hermes_cli.operations_profile_recovery import snapshot_owning_stores, verify_owning_store_restore
+    from hermes_state_common import SCHEMA_VERSION
+    archive = snapshot_owning_stores(db, context, staging_directory=args.temporary_parent, code_version=args.code_version)
+    return verify_owning_store_restore(archive, context, expected_store_schema=SCHEMA_VERSION,
+        expected_code_version=args.code_version, temporary_parent=args.temporary_parent)
+
+
 def execute(args):
     standalone = {"qualification": lambda _: privacy_qualification(), "extension-catalog": _extension_catalog,
                   "preview-extension": _extension_preview, "apply-extension": _extension_apply}
@@ -112,6 +123,7 @@ def execute(args):
                 "inspect": lambda: inspect_runtime(db, context),
                 "audit": lambda: _audit(db, context, args),
                 "retention": lambda: retention_inventory(db, context),
+                "drill-recovery": lambda: _drill(db, context, args),
                 "check-checkpoint": lambda: qualify_checkpoint_restore(db, context),
                 "preview-repair": lambda: preview_repair(db, context, args.action, args.target),
                 "apply-repair": lambda: apply_repair(db, context, _read_plan(args.plan), authorization_digest=args.approve),

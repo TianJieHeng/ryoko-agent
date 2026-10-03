@@ -23,11 +23,15 @@ def test_completion_display_keeps_payload_separate_across_surfaces(monkeypatch, 
         cli = HermesCLI.__new__(HermesCLI)
         cli.session_id = event["session_key"]
         cli._pending_input = queue.Queue()
+        owner_context = object()
+        cli.agent = SimpleNamespace(runtime_context=owner_context)
+        claims = []
         registry = SimpleNamespace(drain_notifications=lambda **kw: [(event, payload)], completion_queue=queue.Queue())
         monkeypatch.setattr("tools.process_registry.process_registry", registry)
-        monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda *a: "claimed")
+        monkeypatch.setattr("tools.async_delegation.claim_event_delivery", lambda evt, consumer, *, owner_context: claims.append(owner_context) or "claimed")
         monkeypatch.setattr("tools.async_delegation.complete_event_delivery", lambda *a: None)
         cli._drain_process_notifications("cli-idle")
+        assert claims == [owner_context]
         cli._pending_resume_sessions = []
         cli._typed_voice_stop = lambda text: False
         cli.handle_bang_shell = lambda text: False

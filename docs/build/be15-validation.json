@@ -1,0 +1,774 @@
+{
+  "actual_intention_dataset_found": false,
+  "base_commit": "283163a719c25666c36a35da3fd513bb7d7aa532",
+  "default_mode": "off",
+  "external_network_or_live_credentials_used": false,
+  "fixture_evaluation": {
+    "fixture_notice": "Hand-authored synthetic metric fixtures only. Not the existing user intention-routing dataset. No model was trained or run; artifact digests identify synthetic descriptors, not model or calibration files. These measurements establish no model performance or enforcement qualification.",
+    "groups": [
+      {
+        "metrics": {
+          "accuracy": 0.75,
+          "asymmetric_error_cost": {
+            "basis": "candidate_top1_only",
+            "mean": 2.5,
+            "scored_count": 4,
+            "total": 10.0
+          },
+          "brier": 0.3375,
+          "calibration_bins": [
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.0,
+              "mean_confidence": null,
+              "upper": 0.1
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.1,
+              "mean_confidence": null,
+              "upper": 0.2
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.2,
+              "mean_confidence": null,
+              "upper": 0.3
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.3,
+              "mean_confidence": null,
+              "upper": 0.4
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.4,
+              "mean_confidence": null,
+              "upper": 0.5
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.5,
+              "mean_confidence": null,
+              "upper": 0.6
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.6,
+              "mean_confidence": null,
+              "upper": 0.7
+            },
+            {
+              "accuracy": 0.5,
+              "count": 2,
+              "lower": 0.7,
+              "mean_confidence": 0.7,
+              "upper": 0.8
+            },
+            {
+              "accuracy": 1.0,
+              "count": 1,
+              "lower": 0.8,
+              "mean_confidence": 0.8,
+              "upper": 0.9
+            },
+            {
+              "accuracy": 1.0,
+              "count": 1,
+              "lower": 0.9,
+              "mean_confidence": 0.9,
+              "upper": 1.0
+            }
+          ],
+          "confidence_auroc": {
+            "correct_count": 3,
+            "incorrect_count": 1,
+            "undefined_reason": null,
+            "value": 0.8333333333333334
+          },
+          "coverage_at_target_precision": {
+            "accepted_count": 1,
+            "coverage": 0.25,
+            "eligible_count": 3,
+            "precision": 1.0,
+            "target_precision": 0.95,
+            "threshold": 0.9,
+            "undefined_reason": null
+          },
+          "ece": 0.17499999999999996,
+          "fallback_count": 1,
+          "fallback_rate": 0.25,
+          "missing_distribution_count": 0,
+          "row_count": 4,
+          "scored_count": 4,
+          "unscored_metrics_reason": null
+        },
+        "option_count": 3,
+        "point_id": "DP06",
+        "question_id": "synthetic_risk"
+      },
+      {
+        "metrics": {
+          "accuracy": 0.5,
+          "asymmetric_error_cost": {
+            "basis": "candidate_top1_only",
+            "mean": 0.5,
+            "scored_count": 2,
+            "total": 1.0
+          },
+          "brier": 0.31,
+          "calibration_bins": [
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.0,
+              "mean_confidence": null,
+              "upper": 0.1
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.1,
+              "mean_confidence": null,
+              "upper": 0.2
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.2,
+              "mean_confidence": null,
+              "upper": 0.3
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.3,
+              "mean_confidence": null,
+              "upper": 0.4
+            },
+            {
+              "accuracy": 0.0,
+              "count": 1,
+              "lower": 0.4,
+              "mean_confidence": 0.4,
+              "upper": 0.5
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.5,
+              "mean_confidence": null,
+              "upper": 0.6
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.6,
+              "mean_confidence": null,
+              "upper": 0.7
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.7,
+              "mean_confidence": null,
+              "upper": 0.8
+            },
+            {
+              "accuracy": 1.0,
+              "count": 1,
+              "lower": 0.8,
+              "mean_confidence": 0.8,
+              "upper": 0.9
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.9,
+              "mean_confidence": null,
+              "upper": 1.0
+            }
+          ],
+          "confidence_auroc": {
+            "correct_count": 1,
+            "incorrect_count": 1,
+            "undefined_reason": null,
+            "value": 1.0
+          },
+          "coverage_at_target_precision": {
+            "accepted_count": 1,
+            "coverage": 0.5,
+            "eligible_count": 2,
+            "precision": 1.0,
+            "target_precision": 0.95,
+            "threshold": 0.8,
+            "undefined_reason": null
+          },
+          "ece": 0.3,
+          "fallback_count": 0,
+          "fallback_rate": 0.0,
+          "missing_distribution_count": 0,
+          "row_count": 2,
+          "scored_count": 2,
+          "unscored_metrics_reason": null
+        },
+        "option_count": 3,
+        "point_id": "DP16",
+        "question_id": "synthetic_tool_choice"
+      },
+      {
+        "metrics": {
+          "accuracy": 1.0,
+          "asymmetric_error_cost": {
+            "basis": "candidate_top1_only",
+            "mean": 0.0,
+            "scored_count": 1,
+            "total": 0.0
+          },
+          "brier": 0.085,
+          "calibration_bins": [
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.0,
+              "mean_confidence": null,
+              "upper": 0.1
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.1,
+              "mean_confidence": null,
+              "upper": 0.2
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.2,
+              "mean_confidence": null,
+              "upper": 0.3
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.3,
+              "mean_confidence": null,
+              "upper": 0.4
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.4,
+              "mean_confidence": null,
+              "upper": 0.5
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.5,
+              "mean_confidence": null,
+              "upper": 0.6
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.6,
+              "mean_confidence": null,
+              "upper": 0.7
+            },
+            {
+              "accuracy": 1.0,
+              "count": 1,
+              "lower": 0.7,
+              "mean_confidence": 0.75,
+              "upper": 0.8
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.8,
+              "mean_confidence": null,
+              "upper": 0.9
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.9,
+              "mean_confidence": null,
+              "upper": 1.0
+            }
+          ],
+          "confidence_auroc": {
+            "correct_count": 1,
+            "incorrect_count": 0,
+            "undefined_reason": "all_correct",
+            "value": null
+          },
+          "coverage_at_target_precision": {
+            "accepted_count": 1,
+            "coverage": 1.0,
+            "eligible_count": 1,
+            "precision": 1.0,
+            "target_precision": 0.95,
+            "threshold": 0.75,
+            "undefined_reason": null
+          },
+          "ece": 0.25,
+          "fallback_count": 0,
+          "fallback_rate": 0.0,
+          "missing_distribution_count": 0,
+          "row_count": 1,
+          "scored_count": 1,
+          "unscored_metrics_reason": null
+        },
+        "option_count": 4,
+        "point_id": "DP16",
+        "question_id": "synthetic_tool_choice"
+      },
+      {
+        "metrics": {
+          "accuracy": 0.75,
+          "asymmetric_error_cost": {
+            "basis": "candidate_top1_only",
+            "mean": 0.25,
+            "scored_count": 4,
+            "total": 1.0
+          },
+          "brier": 0.4434375,
+          "calibration_bins": [
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.0,
+              "mean_confidence": null,
+              "upper": 0.1
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.1,
+              "mean_confidence": null,
+              "upper": 0.2
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.2,
+              "mean_confidence": null,
+              "upper": 0.3
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.3,
+              "mean_confidence": null,
+              "upper": 0.4
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.4,
+              "mean_confidence": null,
+              "upper": 0.5
+            },
+            {
+              "accuracy": 1.0,
+              "count": 1,
+              "lower": 0.5,
+              "mean_confidence": 0.55,
+              "upper": 0.6
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.6,
+              "mean_confidence": null,
+              "upper": 0.7
+            },
+            {
+              "accuracy": null,
+              "count": 0,
+              "lower": 0.7,
+              "mean_confidence": null,
+              "upper": 0.8
+            },
+            {
+              "accuracy": 0.5,
+              "count": 2,
+              "lower": 0.8,
+              "mean_confidence": 0.825,
+              "upper": 0.9
+            },
+            {
+              "accuracy": 1.0,
+              "count": 1,
+              "lower": 0.9,
+              "mean_confidence": 0.9,
+              "upper": 1.0
+            }
+          ],
+          "confidence_auroc": {
+            "correct_count": 3,
+            "incorrect_count": 1,
+            "undefined_reason": null,
+            "value": 0.6666666666666666
+          },
+          "coverage_at_target_precision": {
+            "accepted_count": 2,
+            "coverage": 0.4,
+            "eligible_count": 3,
+            "precision": 1.0,
+            "target_precision": 0.95,
+            "threshold": 0.85,
+            "undefined_reason": null
+          },
+          "ece": 0.29999999999999993,
+          "fallback_count": 2,
+          "fallback_rate": 0.4,
+          "missing_distribution_count": 1,
+          "row_count": 5,
+          "scored_count": 4,
+          "unscored_metrics_reason": null
+        },
+        "option_count": 4,
+        "point_id": "DP16",
+        "question_id": "synthetic_tool_need"
+      }
+    ],
+    "overall": {
+      "accuracy": 0.7272727272727273,
+      "asymmetric_error_cost": {
+        "basis": "candidate_top1_only",
+        "mean": 1.0909090909090908,
+        "scored_count": 11,
+        "total": 12.0
+      },
+      "brier": 0.34806818181818183,
+      "calibration_bins": [
+        {
+          "accuracy": null,
+          "count": 0,
+          "lower": 0.0,
+          "mean_confidence": null,
+          "upper": 0.1
+        },
+        {
+          "accuracy": null,
+          "count": 0,
+          "lower": 0.1,
+          "mean_confidence": null,
+          "upper": 0.2
+        },
+        {
+          "accuracy": null,
+          "count": 0,
+          "lower": 0.2,
+          "mean_confidence": null,
+          "upper": 0.3
+        },
+        {
+          "accuracy": null,
+          "count": 0,
+          "lower": 0.3,
+          "mean_confidence": null,
+          "upper": 0.4
+        },
+        {
+          "accuracy": 0.0,
+          "count": 1,
+          "lower": 0.4,
+          "mean_confidence": 0.4,
+          "upper": 0.5
+        },
+        {
+          "accuracy": 1.0,
+          "count": 1,
+          "lower": 0.5,
+          "mean_confidence": 0.55,
+          "upper": 0.6
+        },
+        {
+          "accuracy": null,
+          "count": 0,
+          "lower": 0.6,
+          "mean_confidence": null,
+          "upper": 0.7
+        },
+        {
+          "accuracy": 0.6666666666666666,
+          "count": 3,
+          "lower": 0.7,
+          "mean_confidence": 0.7166666666666667,
+          "upper": 0.8
+        },
+        {
+          "accuracy": 0.75,
+          "count": 4,
+          "lower": 0.8,
+          "mean_confidence": 0.8125,
+          "upper": 0.9
+        },
+        {
+          "accuracy": 1.0,
+          "count": 2,
+          "lower": 0.9,
+          "mean_confidence": 0.9,
+          "upper": 1.0
+        }
+      ],
+      "confidence_auroc": {
+        "correct_count": 8,
+        "incorrect_count": 3,
+        "undefined_reason": null,
+        "value": 0.7708333333333334
+      },
+      "coverage_at_target_precision": {
+        "accepted_count": 3,
+        "coverage": 0.25,
+        "eligible_count": 9,
+        "precision": 1.0,
+        "target_precision": 0.95,
+        "threshold": 0.85,
+        "undefined_reason": null
+      },
+      "ece": 0.13181818181818183,
+      "fallback_count": 3,
+      "fallback_rate": 0.25,
+      "missing_distribution_count": 1,
+      "row_count": 12,
+      "scored_count": 11,
+      "unscored_metrics_reason": null
+    },
+    "provenance": {
+      "calibration_dataset": {
+        "dataset_id": "synthetic-calibration-placeholder-v1",
+        "dataset_sha256": "d7bf9da4737677afef758de406464640320cb5f9498232d2a262d88c063bf54a",
+        "episode_ids": []
+      },
+      "calibration_digest": "cb7f19c3905ae3b02dadc4f5a61fd8013213f6b4b3c02d53bf998f8a2049e17e",
+      "contract_digest": "6cdb167e55f74bb192d0160627f078f3d07e5acd8ce73f3b5c5a9dfaa4b0aafd",
+      "dataset_id": "synthetic-decisions-holdout-v1",
+      "dataset_sha256": "e45054973882a794bdaf029eca03d2613ac3a644e248336478e7f64fb9dd8ed9",
+      "domain": "synthetic-metric-arithmetic",
+      "frozen": true,
+      "label_source": "synthetic_fixture",
+      "model_digest": "01beeec72588e99934ee702e16d4afc0dead33bedcaa66fe14b5ca27fc3e07d7",
+      "split": "holdout",
+      "synthetic": true,
+      "training_datasets": []
+    },
+    "purpose": "descriptive_frozen_holdout_evaluation",
+    "schema_version": 1,
+    "settings": {
+      "bins": 10,
+      "default_correct_cost": 0.0,
+      "default_error_cost": 1.0,
+      "error_costs": [
+        {
+          "cost": 10.0,
+          "point_id": "DP06",
+          "predicted_label": "allow",
+          "question_id": "synthetic_risk",
+          "true_label": "block"
+        }
+      ],
+      "target_precision": 0.95
+    }
+  },
+  "hardware_qualified": false,
+  "limitations": [
+    "all_production_consumers_are_observation_only",
+    "DP06_observes_destructive_only_DP07_content_only_DP16_need_only",
+    "DP11_is_immutable_source_metadata_not_inbox_semantic_scoring",
+    "catalog_only_points_have_no_runtime_consumer",
+    "no_vendor_plugin_in_core_external_adapter_and_deployment_remain_separate",
+    "typed_node_handler_requires_bounded_TLS_HTTP_host",
+    "synthetic_fixture_metrics_are_not_model_quality_or_hardware_evidence"
+  ],
+  "model_trained_or_downloaded": false,
+  "phase": "BE15",
+  "required_gates": [
+    "actual_intention_dataset_schema_labels_license_split_review",
+    "trained_versioned_router_checkpoint",
+    "actual_Jetson_OS_serving_compatibility",
+    "live_allowlist_firewall_and_mTLS_deployment_verification",
+    "actual_hardware_latency_memory_thermal_and_backend_parity",
+    "BE14_sensitive_ingestion_qualification",
+    "private_destination_bound_authorization",
+    "per_point_empirical_promotion"
+  ],
+  "schema_migration": null,
+  "source_sha256": {
+    "agent/background_review.py": "bc9d88d2369095c6cd7f731d756555a41d04dd877f6b90a36635403c27c1a8f0",
+    "agent/decisions/__init__.py": "e0d0ac73020be4d4b2baa5ea9069ed7e8f83b88aaf173953633082c01058760f",
+    "agent/decisions/calibration.py": "f2aeb385a15e063ec0136765a538988f347c734185b5ddf55f5e7afd52080a10",
+    "agent/decisions/client.py": "7b4ca3af7ece1f332496138350e1a1625e27b14ce0e838cc3e20841d7ca0e0c1",
+    "agent/decisions/contracts.py": "f9831b5d9ab793fc09420cc302ae40f2c1d8c2d3656a3c546d9c8f882c196404",
+    "agent/decisions/health.py": "0d6441e9f829d3011ae83c437896d2f5b1ebd80feb49739d71e9cdee4f4a3d45",
+    "agent/decisions/integration.py": "3f48b93cf905fe9ed2b2da43ed5448d2f95b1f8d15ed9cb0f3c8d74617b24c08",
+    "agent/decisions/policy.py": "86f95ad3a3664289a8db26f0f6034e53a4a7358fb3b874ed8223833026cc7bc2",
+    "agent/decisions/receipts.py": "bca00eec0aea02b1e7c65388250ca6cc0abb440f61508aaa3ed95ff0adb6512a",
+    "agent/decisions/registry.py": "0cac35b4ebeb5f9a805c484a6aa36fbfad3b014a1162006ce9875c2b9f9e9880",
+    "agent/decisions/service.py": "e3f000bd964af8706e2457c53b05bf6c821f35edf0f428d14f27041211b1f444",
+    "agent/decisions/state.py": "9b6158d8e6ece74f732b147c39266b0342713d9d57f1f36524307ed0303a8674",
+    "agent/decisions/transport.py": "0d54c743cfeb6cddcd60274e25b860d4cc1c8039c58babaf456546c37fda0ef9",
+    "apps/shared/src/gateway-contract.generated.ts": "96450c9524a05af3b7e51e5e0f68fbee27bda7564a38c76bff1adf8801eb6e30",
+    "apps/shared/src/gateway-contract.openrpc.json": "2ee4f29de6ff1becb973359f103897adb8af49fcbd4bfe7910f19acb4e03c10b",
+    "cron/durable_sources.py": "664647ce7114a00fb4c73aa637eaf041cfcb85f41d86eafa7139d8a83cb63b1a",
+    "docs/build/decision-node-runbook.md": "45057a4c5a74ea9943919dee22ae154e1c31947dcc4e07f498712e1a4460b8d3",
+    "docs/build/typed-decisions.md": "2a5a0780e627e8643be44bcc3be35581364de0e6c6c217bc08b97dc2330d380f",
+    "evals/decisions/README.md": "22d2aa017f9d1766fbd7d1439033992dfcf1edc068ad506d70b97bf15ed3ecc4",
+    "evals/decisions/benchmark.py": "4caae07279770dc04b52ab325b91177b4b995c4ccb4430067d6e739036a0a1a1",
+    "evals/decisions/contract_fixtures.json": "ce6a746d7475f6d7132ddbc605cad4d852abbed39bd86a171333f2f5b517e7da",
+    "evals/decisions/evaluate.py": "3163d12778384b0c6bc402ff28e965b611e40122f89c9f9da36fda0d48893899",
+    "evals/decisions/synthetic_holdout.json": "0de1e9049afbb4470ce11599b2ebf64ee4854a730005d49cd105d9416b880528",
+    "hermes_cli/config_defaults.py": "ba09e53adbdc29e754034891d6313b2c886d2a51a816cc67801670f1921e3d76",
+    "hermes_cli/lifecycle.py": "a2c0c61fc8f1260942611ece75153a88e22960d65e0dbd3e51d5ad72e641f2a6",
+    "hermes_state_runtime.py": "34184d29ca4efcd8a1db11e5001337119e86c5b86695bfa87515bbf30d9cc35e",
+    "tests/agent/test_decision_calibration.py": "ee623277d63668e5e73bfaafb2628c37358a7f937d95109dc08d1e1c7b558efd",
+    "tests/agent/test_decision_client.py": "aafb169dc56b91219d36b77ffc7543c45956792af29260e58304c1626cdf324b",
+    "tests/agent/test_decision_runtime.py": "5d53fa99b27140809e0763b0856ebce5fbb84fe9a1515dcaa80ad9a18cebe932",
+    "tests/agent/test_decision_transport.py": "0e11df69f799b9c2c94072d17790c602521c8eefa4e2362050d6f9ca81633573",
+    "tui_gateway/contracts/decisions.py": "edf85811c003da603b2453d3987102851aef8bc29b8a00bd0d69c2f295c7db17",
+    "tui_gateway/contracts/runtime_v1.py": "0dce0c690642412a7051a52ef45d8816010cd5a32aa14a0ba76d2a31f75f3678",
+    "tui_gateway/methods_runtime.py": "e77230a709426c349027d74463388f153d2fd90b79cb21f4ae867f27f5cc3594"
+  },
+  "status": "implementation_checkpoint_shadow_only_live_qualification_deferred",
+  "synthetic_loopback_benchmark": {
+    "backend": "synthetic_fixture",
+    "calibration_digest": "16bc77858c6118855561392f436af5c2cd0c14546453cb070a1e3efa7f368c76",
+    "cases_digest": "a1b70eb252f48e775ca1fe14311491a2bfb65e0fa9290bb37ae2f9f2b86c0c82",
+    "client_machine": "x86_64",
+    "client_system": "Linux",
+    "end_to_end_ms": {
+      "max": 3.4226849966216832,
+      "p50": 2.734987996518612,
+      "p95": 3.4226849966216832
+    },
+    "failure_count": 0,
+    "hardware_evidence_digest": null,
+    "hardware_qualified": false,
+    "health": {
+      "calibration_digest": "16bc77858c6118855561392f436af5c2cd0c14546453cb070a1e3efa7f368c76",
+      "hardware_verified": false,
+      "max_queue": 4,
+      "memory_limit_bytes": 8192,
+      "memory_used_bytes": 1024,
+      "model_digest": "e23f166a7bf3c2ae2dbbdc88b6e49bd22c20f06c9016cf203b7d06f5e00263ef",
+      "queue_depth": 0,
+      "ready": true,
+      "registry_digest": "0a4ca25c1cd596e3526c30734fda6168423c7c7c942d2906194770c59c849a17",
+      "schema_version": 1,
+      "service_digest": "3333333333333333333333333333333333333333333333333333333333333333",
+      "uptime_seconds": 0.005907022001338191
+    },
+    "model_digest": "e23f166a7bf3c2ae2dbbdc88b6e49bd22c20f06c9016cf203b7d06f5e00263ef",
+    "node_hardware": "unverified_by_this_runner",
+    "predictions": [
+      [
+        {
+          "defer": 0.0,
+          "needs_tools": 1.0,
+          "no_tools": 0.0,
+          "unclear": 0.0
+        },
+        {
+          "defer": 0.0,
+          "needs_tools": 1.0,
+          "no_tools": 0.0,
+          "unclear": 0.0
+        },
+        {
+          "defer": 0.0,
+          "needs_tools": 1.0,
+          "no_tools": 0.0,
+          "unclear": 0.0
+        }
+      ],
+      [
+        {
+          "defer": 0.0,
+          "needs_tools": 1.0,
+          "no_tools": 0.0,
+          "unclear": 0.0
+        },
+        {
+          "defer": 0.0,
+          "needs_tools": 1.0,
+          "no_tools": 0.0,
+          "unclear": 0.0
+        },
+        {
+          "defer": 0.0,
+          "needs_tools": 1.0,
+          "no_tools": 0.0,
+          "unclear": 0.0
+        }
+      ]
+    ],
+    "promotion_eligible": false,
+    "raw_end_to_end_ms": [
+      2.9904359980719164,
+      2.6385140081401914,
+      2.734987996518612,
+      3.4226849966216832,
+      2.7953770040767267,
+      2.61033300193958
+    ],
+    "raw_sequential_batch_ms": [
+      8.426529995631427,
+      8.890907993190922
+    ],
+    "registry_digest": "0a4ca25c1cd596e3526c30734fda6168423c7c7c942d2906194770c59c849a17",
+    "samples": 6,
+    "schema_version": 1,
+    "sequential_batch_ms": {
+      "p50": 8.426529995631427,
+      "p95": 8.890907993190922,
+      "size": 3
+    },
+    "service_digest": "3333333333333333333333333333333333333333333333333333333333333333",
+    "synthetic": true,
+    "warmup_rounds_excluded": 1
+  },
+  "validation_runs": [
+    {
+      "log": "/tmp/be15-final-tests.log",
+      "sha256": "f70f9c378a00e2e50f8bf7cf11769531bc0d824933fbf708975f55b693c55d99",
+      "summary": "=== Summary: 14 files, 191 tests passed, 0 failed (100% complete) in 21.1s (9 workers) ==="
+    },
+    {
+      "log": "/tmp/be15-last-check.log",
+      "sha256": "96c08ff75eb7faaa3f71af9efef252ed356d6494e5a4af41c3fbcd86b4bc85f6",
+      "summary": "=== Summary: 4 files, 31 tests passed, 0 failed (100% complete) in 8.0s (9 workers) ==="
+    },
+    {
+      "log": "/tmp/be15-tls-final.log",
+      "sha256": "4431f8d14edacefa08ec307579da4907f231b9b0e5ecb2423bb3da66d6aa467f",
+      "summary": "=== Summary: 1 files, 5 tests passed, 0 failed (100% complete) in 3.3s (9 workers) ==="
+    },
+    {
+      "log": "/tmp/be15-ts.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summary": "passed_exit_0"
+    },
+    {
+      "log": "/tmp/be15-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "summary": "passed_exit_0"
+    },
+    {
+      "log": "/tmp/be15-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summary": "passed_exit_0"
+    }
+  ]
+}

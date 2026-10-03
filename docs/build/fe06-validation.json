@@ -1,0 +1,51 @@
+{
+  "phase": "FE06",
+  "status": "verifying",
+  "base": "005e6658b99c0828ae192255c03dd50a44d41f33",
+  "checks": [
+    {
+      "command": "vitest run apps/shared/src/runtime-workflows.test.ts",
+      "result": "passed",
+      "tests": 16,
+      "files": 1
+    },
+    {
+      "command": "desktop vitest run src/app/runtime/workflow-panel.test.tsx",
+      "result": "passed",
+      "tests": 8,
+      "files": 1
+    },
+    {
+      "command": "clean shared/TUI/Electron renderer typechecks",
+      "result": "passed"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe06-tests.log",
+      "sha256": "9cf13cde53f6c35b5a0a46fbc16153a1aadbd5538670b4ef6dfc33d41e9dedcb"
+    },
+    {
+      "path": "/tmp/fe06-desktop-tests.log",
+      "sha256": "f779bb2d26bb6d8e4edee6ee48b47cdc1194c414bcb88bb158f6f96973879979"
+    },
+    {
+      "path": "/tmp/fe06-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe06-clean-tui.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe06-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "Backend finite local schedules are record-only and created paused; no notification delivery or external condition dispatch claim",
+    "Quiet hours/digest/snooze APIs absent; UI reports unsupported",
+    "Typed UI handles inspected scalar workflow inputs; full workflow authoring is an inspectable advanced command, not a graphical canvas",
+    "No live-monitor P10 precision/pilot or production schedule acceptance claim"
+  ]
+}

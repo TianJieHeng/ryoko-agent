@@ -1098,6 +1098,24 @@ def pytest_unconfigure(config):  # noqa: D401 — pytest hook
     _remove_relocated_basetemp(config)
 
 
+def pytest_addoption(parser):
+    parser.addini(
+        "pm_runtime_cache",
+        "Prepared uv cache to copy into isolated PM worker fixtures for offline staging",
+        default="",
+    )
+    parser.addini(
+        "pm_runtime_wheelhouse",
+        "Original pm/uv.lock wheels to verify and copy into offline runtime fixtures",
+        default="",
+    )
+    parser.addini(
+        "pm_bootstrap_archive",
+        "Original pm/lock.json uv archive to serve over fixture loopback during source install",
+        default="",
+    )
+
+
 @pytest.hookimpl(trylast=True)  # after _pytest.tmpdir has built config._tmp_path_factory
 def pytest_configure(config):  # noqa: D401 — pytest hook
     """Register markers used by hermetic conftest."""

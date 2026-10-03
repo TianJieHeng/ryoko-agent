@@ -89,6 +89,13 @@ export interface VoicePlaybackOptions extends OwnerScope {
   turnKey?: string
 }
 
+/** Register a bounded external playback owner with the existing global stop authority. */
+export function registerOwnedVoiceStop(stop: () => void): () => void {
+  liveStops.add(stop)
+
+  return () => { liveStops.delete(stop) }
+}
+
 export function stopVoicePlayback() {
   inFlight = null
   sequence += 1

@@ -1,9 +1,10 @@
 """Cold CLI provisioning and repair, with real tools and no mocked child code.
 
 Only uv/Python are offered by the fixture's loopback archive server. The copied
-PM recipe is unchanged; its small locked runtime is fetched from PyPI. The app
-recipe is deliberately tiny so this cannot install the production dependency
-set. Run through scripts/run_tests.sh with uv/uvx available on PATH.
+PM recipe is unchanged; its small locked runtime comes from PyPI or an explicitly
+prepared cache. An optional wheelhouse supplies the tiny app's real dependencies
+without installing the production dependency set. Run through scripts/run_tests.sh
+with uv/uvx available on PATH.
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ import threading
 import tomllib
 
 import pytest
+from tests.pm._fixtures import seed_pm_runtime_cache
 
 # Spawns children with a home it builds itself; the parent's must stay real.
 pytestmark = pytest.mark.real_machine_home
@@ -74,7 +76,7 @@ def _foreign_link(stdlib: Path) -> Path | None:
 
 @pytest.mark.platforms("linux")
 @pytest.mark.parametrize("bootstrap_name", [None, "python3.11"])
-def test_cold_cli_builds_own_runtime_discovers_plugins_and_repairs_app(tmp_path, bootstrap_name):
+def test_cold_cli_builds_own_runtime_discovers_plugins_and_repairs_app(tmp_path, bootstrap_name, request):
     from pm.packages import Python, Uv
     from pm.store import current_target, tree_digest
 
@@ -106,14 +108,18 @@ def test_cold_cli_builds_own_runtime_discovers_plugins_and_repairs_app(tmp_path,
         shutil.copy2(source / name, repo / name)
     # No production application lock or metadata enters this source snapshot.
     recipe = tomllib.loads((repo / "pm" / "pyproject.toml").read_text())
+    prepared_wheels = request.config.getini("pm_runtime_wheelhouse")
     yaml_requirement = next(dep for dep in recipe["project"]["dependencies"]
                             if dep.startswith("ruamel.yaml"))
+    # Keep the fixture's local resolution settings in every rebuilt workspace.
     (repo / "pyproject.toml").write_text(
         '[project]\nname="cold-pm-app"\nversion="0.0.0"\n'
         'requires-python=">=3.14,<3.15"\n'
         f'dependencies=[{json.dumps(yaml_requirement)}]\n'
         '[project.optional-dependencies]\nall=[]\n'
-        '[tool.uv]\npackage=false\n', encoding="utf-8",
+        '[tool.uv]\npackage=false\n'
+        + (f'no-index=true\nfind-links=[{json.dumps(prepared_wheels)}]\n' if prepared_wheels else ""),
+        encoding="utf-8",
     )
     home = tmp_path / "home"
     hermes_home = home / ".hermes"
@@ -135,6 +141,12 @@ def test_cold_cli_builds_own_runtime_discovers_plugins_and_repairs_app(tmp_path,
         "UV_PYTHON_DOWNLOADS": "never", "UV_NO_CONFIG": "1",
         "UV_CACHE_DIR": str(tmp_path / "seed-cache"),
     }
+    if seed_pm_runtime_cache(request, tmp_path / "seed-cache"):
+        seed_pm_runtime_cache(request, hermes_home / "cache" / "uv")
+        env["UV_OFFLINE"] = "1"
+    if prepared_wheels:
+        env["UV_NO_INDEX"] = "1"
+        env["UV_FIND_LINKS"] = prepared_wheels
     # Keep TLS functional on Nix without inheriting any application settings.
     for key in ("SSL_CERT_FILE", "SSL_CERT_DIR", "NIX_SSL_CERT_FILE"):
         if key in os.environ:

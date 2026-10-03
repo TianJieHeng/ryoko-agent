@@ -51,6 +51,10 @@ def observe_sources(context, db, definition, check):
         values[artifact_id] = _projection(raw, mime, specification["predicate"])
         refs.append(ref)
     check()
+    from agent.decisions.integration import observe_core
+    observe_core("DP11", {"evidence": {"source_count": len(refs), "bytes_read": total,
+                                      "semantic_content_available": False},
+                          "source_digest": digest(refs)})
     return {"projection": values, "source_refs": refs, "bytes_read": total,
             "source_scope": "retained_local_artifacts", "live_connection_verified": False}
 

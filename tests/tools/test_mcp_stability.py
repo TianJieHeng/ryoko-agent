@@ -3,7 +3,7 @@
 import asyncio
 import os
 import signal
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 
 import pytest
 from tools import mcp_tool_lifecycle as _mcp_lifecycle
@@ -59,6 +59,29 @@ class TestMCPLoopExceptionHandler:
 
 class TestStdioPidTracking:
     """_snapshot_child_pids and _stdio_pids track subprocess PIDs."""
+
+    @pytest.mark.parametrize("error,falls_back", [(FileNotFoundError, True), (PermissionError, False)])
+    def test_missing_proc_children_uses_current_parent_fallback(self, error, falls_back):
+        """An absent procfs interface uses psutil; an access denial remains fail-closed."""
+        parent_pid = os.getpid()
+        child = MagicMock(pid=12345)
+        with patch.object(_mcp_lifecycle.os, "listdir", return_value=[str(parent_pid)]), \
+             patch("builtins.open", side_effect=error), \
+             patch("psutil.Process") as process:
+            process.return_value.children.return_value = [child]
+            assert _mcp_lifecycle._snapshot_child_pids() == ({child.pid} if falls_back else set())
+        if falls_back:
+            process.assert_called_once_with(parent_pid)
+            process.return_value.children.assert_called_once_with()
+        else:
+            process.assert_not_called()
+
+    def test_readable_empty_proc_children_does_not_fall_back(self):
+        with patch.object(_mcp_lifecycle.os, "listdir", return_value=[str(os.getpid())]), \
+             patch("builtins.open", mock_open(read_data="")), \
+             patch("psutil.Process") as process:
+            assert _mcp_lifecycle._snapshot_child_pids() == set()
+        process.assert_not_called()
 
 
     def test_snapshot_sees_child_spawned_from_another_thread(self):

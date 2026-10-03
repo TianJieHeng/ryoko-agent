@@ -136,7 +136,7 @@ class TestDrainWaitsForApiWork:
 
             return original_create_task(delayed())
 
-        mock_agent = MagicMock()
+        mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
         mock_agent.run_conversation.return_value = {"final_response": "done"}
         mock_agent.session_prompt_tokens = 0
         mock_agent.session_completion_tokens = 0
@@ -257,7 +257,7 @@ def _parked_agent(loop, started: asyncio.Event, release: threading.Event) -> Mag
     ``hard_interrupt`` on a ``__getattr__`` proxy — which is exactly the ABI
     teknium1's review asked this regression to verify.
     """
-    agent = MagicMock()
+    agent = MagicMock(runtime_context=None, _memory_manager=None)
     agent.session_id = None
     agent.session_prompt_tokens = 0
     agent.session_completion_tokens = 0
@@ -322,7 +322,7 @@ class TestRunAgentRegistersForShutdownInterrupt:
         list rather than any registry, so it is not a usable hook.
         """
         adapter = APIServerAdapter(PlatformConfig(enabled=True))
-        agent = MagicMock()
+        agent = MagicMock(runtime_context=None, _memory_manager=None)
         agent.session_id = None
         agent.session_prompt_tokens = 0
         agent.session_completion_tokens = 0
@@ -383,7 +383,7 @@ class TestRunAgentRegistersForShutdownInterrupt:
     @pytest.mark.asyncio
     async def test_agent_is_unregistered_when_the_turn_raises(self):
         adapter = APIServerAdapter(PlatformConfig(enabled=True))
-        agent = MagicMock()
+        agent = MagicMock(runtime_context=None, _memory_manager=None)
         agent.run_conversation.side_effect = RuntimeError("boom")
 
         with patch.object(adapter, "_create_agent", return_value=agent):

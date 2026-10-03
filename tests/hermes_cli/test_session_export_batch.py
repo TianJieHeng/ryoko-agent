@@ -14,6 +14,7 @@ def test_export_all_batches_message_reads_without_changing_export_rows(tmp_path,
                     {
                         "role": "assistant",
                         "content": f"answer {index}",
+                        "anthropic_content_blocks": [{"type": "thinking", "thinking": "private", "signature": f"signed-{index}"}],
                         "tool_calls": [{"id": f"call-{index}", "type": "function"}],
                     },
                 ],
@@ -21,7 +22,7 @@ def test_export_all_batches_message_reads_without_changing_export_rows(tmp_path,
 
         sessions = db.search_sessions(source="cli", limit=100000)
         expected = [
-            {**session, "messages": db.get_messages(session["id"])}
+            {**session, "messages": db.get_messages(session["id"], include_provider_state=True)}
             for session in sessions
         ]
 

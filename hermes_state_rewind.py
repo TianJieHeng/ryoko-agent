@@ -32,11 +32,9 @@ def _user_indices(messages: List[Dict[str, Any]]) -> List[int]:
 
 
 def _comparison_content(message: Dict[str, Any]) -> Any:
-    """Project content the way the durable row stores it (flush projection, then the read-side sanitize) so a
-    warm row and its durable twin compare equal."""
-    from agent.session_persistence import _durable_content
+    """Compare warm and durable content through the same lossless read-side sanitization."""
     from hermes_state_messages import SessionMessagesMixin
-    return SessionMessagesMixin._loaded_view_content(message.get("role"), _durable_content(message.get("content")))
+    return SessionMessagesMixin._loaded_view_content(message.get("role"), message.get("content"))
 
 
 class SessionRewindMixin:
@@ -81,6 +79,10 @@ class SessionRewindMixin:
         if require_composite and scaffold is None:
             raise RewindTargetUnavailableError("target user message is not a compaction carrier")
 
+        # Retry re-sends the stored bytes: ``"".join`` of the text parts, never the "\n"-joined display
+        # flattening (wire bytes == stored bytes; ``"ab"`` must not come back as ``"a\nb"``).
+        live_text = retryable_user_text(live_view.get("content")) if require_retryable else None
+        # Reject unsupported durable media before considering a degraded warm display view.
         prefix = durable_prefix
         if warm_history is not None:
             warm = [m for m in warm_history if not _is_ephemeral_scaffolding(m)]
@@ -90,9 +92,6 @@ class SessionRewindMixin:
             prefix, warm_live_view = history_before_user_originated_turn(warm, warm_user[user_ordinal])
             if _comparison_content(live_view) != _comparison_content(warm_live_view):
                 raise RuntimeError(_HISTORY_CHANGED)
-        # Retry re-sends the stored bytes: ``"".join`` of the text parts, never the "\n"-joined display
-        # flattening (wire bytes == stored bytes; ``"ab"`` must not come back as ``"a\nb"``).
-        live_text = retryable_user_text(live_view.get("content")) if require_retryable else None
         target_row_id = target.get("_row_id")
         if not isinstance(target_row_id, int):
             raise RuntimeError("rewind target has no durable row identity")

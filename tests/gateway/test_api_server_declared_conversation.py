@@ -417,7 +417,7 @@ def _stub_agent(adapter, session_id, seen):
     opted-in bind while mocked tests stayed green (@andrexibiza on #98811).
     Stubbing one layer lower — `_create_agent` — leaves that block real.
     """
-    agent = MagicMock()
+    agent = MagicMock(runtime_context=None, _memory_manager=None)
     agent.session_id = session_id
     agent.session_prompt_tokens = 0
     agent.session_completion_tokens = 0

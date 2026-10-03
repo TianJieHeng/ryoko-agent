@@ -103,7 +103,13 @@ def _envelope(agent, envelope):
     operation, payload = envelope["operation"], envelope["payload"]
     if not isinstance(payload, dict):
         raise RuntimeCommandError("invalid_command")
-    if operation in {"submit", "steer"}:
+    if operation == "submit" and "specialist_handoff" in payload:
+        from agent.specialist_control import validate_specialist_payload
+        try:
+            validate_specialist_payload(payload)
+        except (ValueError, TypeError) as exc:
+            raise RuntimeCommandError("invalid_specialist_handoff") from exc
+    elif operation in {"submit", "steer"}:
         if (set(payload) != {"text"} or not isinstance(payload["text"], str)
                 or not payload["text"].strip() or len(payload["text"]) > 65536):
             raise RuntimeCommandError("invalid_command")

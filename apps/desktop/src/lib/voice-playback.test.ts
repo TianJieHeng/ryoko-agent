@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { $voicePlayback } from '@/store/voice-playback'
 
-import { playSpeechText, startSpeechStream, stopVoicePlayback } from './voice-playback'
+import { playSpeechText, registerOwnedVoiceStop, startSpeechStream, stopVoicePlayback } from './voice-playback'
 
 const gateway = vi.hoisted(() => {
   let nextUrl: string | null = 'ws://gateway.test/api/ws'
@@ -299,4 +299,16 @@ describe('voice-playback teardown (#91991)', () => {
     expect(FakeAudioContext.instances[1]?.closed).toBe(true)
     expect($voicePlayback.get().status).toBe('idle')
   })
+})
+
+it('includes bounded owned RPC playback in the existing global stop authority', () => {
+  const stop = vi.fn(), disposed = vi.fn()
+  const unregister = registerOwnedVoiceStop(disposed)
+  unregister()
+  registerOwnedVoiceStop(stop)
+  stopVoicePlayback()
+  expect(stop).toHaveBeenCalledOnce()
+  expect(disposed).not.toHaveBeenCalled()
+  stopVoicePlayback()
+  expect(stop).toHaveBeenCalledOnce()
 })

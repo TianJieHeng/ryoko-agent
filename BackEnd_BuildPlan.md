@@ -6,6 +6,8 @@ This plan chronicles the full runtime upgrade, its dependencies, implementation 
 
 **Current Git publication rule:** publish verified phase commits directly to `main`, with the journal and a user update after each phase. The user explicitly declined pull requests. This rule supersedes the branch/draft-PR publication wording retained in the original phase instructions below; preserve concurrent work and never force-push.
 
+**Overnight publication status (3 October 2026):** the user requested no Git-blob approvals overnight. Remote main was verified through BE14 `283163a719c25666c36a35da3fd513bb7d7aa532`; normal Git push lacks configured authentication. BE15 onward and subsequent backend/frontend completion checkpoints are local commits only, with a recovery bundle. No unpublished commit is claimed remote or CI-green. Direct-main/non-force publication remains the eventual destination when an authorized normal push is available.
+
 **Reviewed:** 2 October 2026. **Runtime repository:** `TianJieHeng/ryoko-agent`, `main` baseline [`b78931e3b0959c42dca7400c78a4dffd1bb48575`](https://github.com/TianJieHeng/ryoko-agent/commit/b78931e3b0959c42dca7400c78a4dffd1bb48575). The checkout is substantially newer than the supplied Hermes 0.21.1 / `cbd03e6e4ca143c1d5c2db881320afb85783c30b` analysis. Its packaging `0.0.0` placeholder is not a release version; use the recorded commit and the runtime version resolver.
 
 **Build order:** customize Hermes here first; integrate the separately forked [`ryoko-dots`](https://github.com/TianJieHeng/ryoko-dots) afterward. Its reviewed baseline is [`b01ac1f6a903e5e56c119d960901353ac0a3d171`](https://github.com/TianJieHeng/ryoko-dots/commit/b01ac1f6a903e5e56c119d960901353ac0a3d171). The integration boundary is maintained in [Integration_Handoff.md](https://github.com/TianJieHeng/ryoko-dots/blob/main/Integration_Handoff.md).
@@ -46,7 +48,7 @@ After the agent and real memory integration are built, create an **additional ha
 
 ## Current fork review and the seams to preserve
 
-This is an evidence map of the inspected execution paths, configuration and representative tests. It is not a claim that every one of the repository's files was read or that inherited tests passed in this environment. Source inspection did not import/run agent code.
+This retained preimplementation review maps the inspected execution paths, configuration and representative tests. It is not a claim that every repository file was read or that inherited tests passed. That original source-inspection step did not run agent code; later implementation execution is documented in the phase receipts and BE18 evidence above.
 
 | Verified at the pinned fork | Planning consequence | Evidence |
 |---|---|---|
@@ -107,6 +109,20 @@ No phase permits bypassing confirmation, credential or consequential-action poli
 
 Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 federation, multi-host storage, additional deployment profiles and broad domain breadth remain explicit conditional work, not hidden prerequisites or automatically authorized expansions.
 
+## Implementation evidence snapshot — 3 October 2026
+
+BE00–BE17 now have local foundation checkpoints and phase receipts. This is a validation/repair checkpoint, not BE18 release sign-off. Their statuses below describe only demonstrated finite adapters, not blanket completion of the original phase objectives. BE18 validates a detached backend candidate so concurrent frontend work cannot change the source under test.
+
+- Slice A: owned projects, conflicting project contexts, explicit missing-harness degradation, full Markdown bytes, exact revision/template-record/reopen/resume; specialist built-in memory remains separate from granted shared artifacts
+- Slice B: digest-checked local source evidence, two-output mission verification and exact acceptance; real process death after publication preserves uncertainty; delivery retry and partial acknowledgment never rerun execution
+- Slice C: exact evaluated workflow version and parameterized output, original-source monitor baseline/noise/change, durable occurrence/restart and cancellation
+- Mandatory implementation work remains: local user notifications and their policies, actual template application (beyond storing template records), output-influence controls, and full-store recovery. These are code gaps, not only live-service qualification limits
+- Authority/effect/memory results are bounded by declared adapters. No production cutover is permitted with unresolved failures or unqualified sensitive-ingestion/migration gates
+- LAYA foundations remain default-off. The user's rollout decisions are deferred until morning; no hardware provisioning, model training, live shadow activation or promotion occurred
+- FE13 user journeys and Dots OD00–OD04 remain separate later consumer work. No Dots-ready claim is made
+
+Exact source/dependency/schema hashes, all exception inventories, initial failures, affected repairs, baseline comparison, resource incidents and remaining blockers are recorded in [BE18 validation](docs/build/be18-validation.json). The [release manifest](docs/build/release-manifest.json) is the machine-readable readiness decision; a local backend checkpoint does not imply production or Dots readiness.
+
 ## Backend phase index
 
 | Phase | Work package |
@@ -137,7 +153,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE00 Pin the fork and establish the evidence baseline
 
-**Status:** planned. **Objective and value:** Create a reproducible starting point for U33/U31/U35 and distinguish inherited capability from the work still required. This phase enables every later claim of improvement.
+**Status:** baseline recorded; local measurements and inherited failures retained ([baseline receipt](docs/build/baseline-manifest.json)). **Objective and value:** Create a reproducible starting point for U33/U31/U35 and distinguish inherited capability from the work still required. This phase enables every later claim of improvement.
 
 **Prerequisites:** None. Read root and affected-area AGENTS.md; preserve the supplied design files as input evidence outside implementation changes.
 
@@ -167,7 +183,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE01 Make configuration identity and runtime services explicit
 
-**Status:** planned. **Objective and value:** Establish U01/U10/U31 and the first U28 hooks. This is the prerequisite for Ryoko-only personal memory, exact approvals and truthful per-surface setup.
+**Status:** implemented for configured local strict identities; live integration qualification remains open ([validation receipt](docs/build/be01-validation.json)). **Objective and value:** Establish U01/U10/U31 and the first U28 hooks. This is the prerequisite for Ryoko-only personal memory, exact approvals and truthful per-surface setup.
 
 **Prerequisites:** BE00. The stable primary agent identity and specialist identity lifecycle are design decisions to record before persistence begins.
 
@@ -200,7 +216,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE02 Unify ownership durable transitions and the narrow runtime API
 
-**Status:** planned. **Objective and value:** Extend U02/U03/U30 and bring the minimum U32 forward. A single authoritative execution history is needed before another client can safely reconnect or steer.
+**Status:** implemented for owned local commands, SQLite fencing and replay; remote/opaque execution is not certified ([validation receipt](docs/build/be02-validation.json)). **Objective and value:** Extend U02/U03/U30 and bring the minimum U32 forward. A single authoritative execution history is needed before another client can safely reconnect or steer.
 
 **Prerequisites:** BE01; reuse existing lease, state and contract systems. Design the version negotiation and command idempotency rules with FE00 and the Dots handoff before code changes.
 
@@ -232,7 +248,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE03 Bound budgets admission concurrency and cancellation
 
-**Status:** planned. **Objective and value:** Implement U04/U05/U06 across foreground, scheduled, child and auxiliary work. Existing per-agent iteration caps do not constitute a shared tree budget.
+**Status:** implemented for finite supported local adapters; live billing/upstream cancellation remains unqualified ([validation receipt](docs/build/be03-validation.json)). **Objective and value:** Implement U04/U05/U06 across foreground, scheduled, child and auxiliary work. Existing per-agent iteration caps do not constitute a shared tree budget.
 
 **Prerequisites:** BE01/BE02; budget policy and strict-mode provider limits must be explicit.
 
@@ -263,7 +279,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE04 Formalize provider retries and authorized tool views
 
-**Status:** planned. **Objective and value:** Complete U07/U08/U27 while preserving protocol fidelity and cache behavior.
+**Status:** implemented with deterministic SDK/HTTP fixtures and authorized tool views; live models remain unverified ([validation receipt](docs/build/be04-validation.json)). **Objective and value:** Complete U07/U08/U27 while preserving protocol fidelity and cache behavior.
 
 **Prerequisites:** BE01–BE03; server/tool grants are checked again at BE05 dispatch.
 
@@ -294,7 +310,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE05 Enforce capabilities isolation egress and MCP trust
 
-**Status:** planned. **Objective and value:** Close U09/U10/U11/U12/U14 boundaries before unattended effects. This is also the enforcement foundation for per-agent memory.
+**Status:** implemented for the bounded Linux local executor and pinned MCP contract; hostile multi-tenant and live-service qualification remains open ([validation receipt](docs/build/be05-validation.json)). **Objective and value:** Close U09/U10/U11/U12/U14 boundaries before unattended effects. This is also the enforcement foundation for per-agent memory.
 
 **Prerequisites:** BE01–BE04. Select one actually enforceable OS/executor boundary first; a sandbox directory or prompt is insufficient.
 
@@ -328,7 +344,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE06 Journal effects and deliver results with honest receipts
 
-**Status:** planned. **Objective and value:** Implement U15/U16 by integrating existing ledgers, giving missions and clients reliable external-action semantics.
+**Status:** implemented for immutable local publication and owned local delivery receipts; remote exactly-once delivery is not claimed ([validation receipt](docs/build/be06-validation.json)). **Objective and value:** Implement U15/U16 by integrating existing ledgers, giving missions and clients reliable external-action semantics.
 
 **Prerequisites:** BE02/BE03/BE05; one selected mutation adapter and one delivery adapter first.
 
@@ -360,7 +376,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE07 Build project artifact and evidence records on existing stores
 
-**Status:** planned. **Objective and value:** Provide the shared object backbone for F01/F03/F04/F10/F11/F32 and U20 without treating personal memory as a project database.
+**Status:** local permissioned project/artifact foundations plus actual canonical template application, bounded capture indexing/search and reversible reviewed metadata batches are implemented; external sharing and broader extraction adapters remain unqualified or unimplemented ([foundation receipt](docs/build/be07-validation.json), [reuse receipt](docs/build/project-reuse-validation.json), [capture receipt](docs/build/be07-capture-completion-validation.json)). **Objective and value:** Provide the shared object backbone for F01/F03/F04/F10/F11/F32 and U20 without treating personal memory as a project database.
 
 **Prerequisites:** BE02/BE05/BE06; narrow artifact staging may begin earlier read-only.
 
@@ -392,7 +408,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE08 Route per-agent memory and preserve context through compaction
 
-**Status:** planned. **Objective and value:** Implement the corrected U19–U24 boundary. Ryoko alone uses the external personal MCP harness; other agents receive isolated built-in individual memory.
+**Status:** isolated built-in memory, exact fresh-output input references and scoped future-boundary/CAS controls are locally verified; primary personal harness remains unconfigured/live-unverified and its mutation/version acknowledgment contract is unsupported ([foundation receipt](docs/build/be08-validation.json), [control receipt](docs/build/project-reuse-validation.json)). **Objective and value:** Implement the corrected U19–U24 boundary. Ryoko alone uses the external personal MCP harness; other agents receive isolated built-in individual memory.
 
 **Prerequisites:** BE01/BE02/BE05/BE07. Verify the real personal memory MCP contract before relying on unsupported operations.
 
@@ -429,7 +445,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE09 Build bounded missions plans and evidence-backed completion
 
-**Status:** planned. **Objective and value:** Connect F02/F09/F10/F26 with U26 and existing goals rather than running a second autonomous loop.
+**Status:** implemented for bounded local missions and deterministic evidence; empirical review savings remain unmeasured ([validation receipt](docs/build/be09-validation.json)). **Objective and value:** Connect F02/F09/F10/F26 with U26 and existing goals rather than running a second autonomous loop.
 
 **Prerequisites:** BE03–BE08; minimal mission object can begin with artifact-only work.
 
@@ -461,7 +477,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE10 Add evidence retrieval and domain production adapters
 
-**Status:** planned. **Objective and value:** Deliver F07/F08/F09/F12/F13/F14/F15/F25/F26/F28 through reusable artifact/mission contracts rather than expanding the core tool catalog indiscriminately.
+**Status:** declared finite local source/domain production adapters are implemented; exact-account Gmail-thread/calendar read bridges are offline-verified, while deployed gateway pin support, broader sources/browser execution and live qualification remain incomplete, while rendered fidelity and empirical review savings remain unverified ([validation receipt](docs/build/be10-validation.json), [connected reads](docs/build/be10-connected-sources-validation.json)). **Objective and value:** Deliver F07/F08/F09/F12/F13/F14/F15/F25/F26/F28 through reusable artifact/mission contracts rather than expanding the core tool catalog indiscriminately.
 
 **Prerequisites:** BE05–BE09; each adapter additionally needs its actual connector/tool and purpose-specific grant.
 
@@ -500,7 +516,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE11 Version workflows templates and evaluated procedural learning
 
-**Status:** planned. **Objective and value:** Implement F11/F18/F19 and U25: successful work can be reused without uncontrolled self-modification.
+**Status:** evaluated immutable workflows, exact human promotion and actual pinned approved-template application are locally implemented; bounded scheduled Markdown draft production is implemented, with no automatic training or external execution ([foundation receipt](docs/build/be11-validation.json), [reuse receipt](docs/build/project-reuse-validation.json)). **Objective and value:** Implement F11/F18/F19 and U25: successful work can be reused without uncontrolled self-modification.
 
 **Prerequisites:** BE07–BE10; automation triggers remain BE12. Memory references route per BE08.
 
@@ -532,7 +548,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE12 Make schedules monitors and commitments durable
 
-**Status:** planned. **Objective and value:** Complete U17 and F08/F20/F21/F22/F23/F24/F33 with one owner of each schedule and honest monitoring health.
+**Status:** owned local schedules, real same-client monitor notifications/policies, accepted commitments, durable decline and bounded day/week agenda proposals are implemented; bounded scheduled Markdown production with fresh human publication review is implemented, and live inbox/calendar/send adapters and Dots cutover remain incomplete or unqualified ([foundation receipt](docs/build/be12-validation.json), [notifications](docs/build/be12-notification-validation.json), [scheduled production](docs/build/be12-workflow-production-validation.json), [agenda](docs/build/be12-agenda-decline-validation.json)). **Objective and value:** Complete U17 and F08/F20/F21/F22/F23/F24/F33 with one owner of each schedule and honest monitoring health.
 
 **Prerequisites:** BE02/BE03/BE06/BE09/BE11. Bring narrow occurrence identity/recovery earlier when any background task is enabled.
 
@@ -569,7 +585,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE13 Give specialists durable handoffs and scoped executors
 
-**Status:** planned. **Objective and value:** Complete U18 and F16/F17/F27/F29/F30/F31 while keeping one mission authority and separate individual memory.
+**Status:** bounded local specialists, finite services and configured offline client-audio speech bridge are implemented; strict shared-tree local speech admission/accounting is now implemented; team breadth, broader device/channel adapters and real model/hardware qualification remain incomplete or unqualified ([foundation receipt](docs/build/be13-validation.json), [speech receipt](docs/build/be13-speech-validation.json), [strict budgets](docs/build/be13-strict-speech-validation.json)). **Objective and value:** Complete U18 and F16/F17/F27/F29/F30/F31 while keeping one mission authority and separate individual memory.
 
 **Prerequisites:** BE03/BE05/BE08/BE09/BE12; real executor capability checks precede routing.
 
@@ -607,7 +623,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE14 Harden operations privacy provisioning and deployment
 
-**Status:** planned. **Objective and value:** Complete U13/U28/U29/U34/U35; the minimum retention, telemetry and provisioning controls start in earlier phases before sensitive data is ingested.
+**Status:** local operator/privacy/pinned-extension controls plus supported single-actor owning-store bundles and fenced checkpoint projection repair are implemented; broader store/multi-actor recovery, live cutover, sensitive-ingestion encryption and production key custody remain incomplete or unqualified ([foundation receipt](docs/build/be14-validation.json), [recovery receipt](docs/build/be14-local-recovery-validation.json)). **Objective and value:** Complete U13/U28/U29/U34/U35; the minimum retention, telemetry and provisioning controls start in earlier phases before sensitive data is ingested.
 
 **Prerequisites:** BE01/BE02/BE05/BE06 and the workload being certified. This is a consolidation gate, not permission to postpone privacy until the end.
 
@@ -644,7 +660,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE15 Introduce typed LAYA decisions and secure the Jetson node
 
-**Status:** planned. **Objective and value:** Implement U36/U37/U41 in shadow first. This phase can begin alongside BE00–BE05 once its explicit prerequisites exist; it does not block the first useful artifact slice.
+**Status:** typed decision and pinned-node protocol foundations implemented; default-off/shadow-only fixtures, no live Jetson or model qualification ([validation receipt](docs/build/be15-validation.json)). **Objective and value:** Implement U36/U37/U41 in shadow first. This phase can begin alongside BE00–BE05 once its explicit prerequisites exist; it does not block the first useful artifact slice.
 
 **Prerequisites:** BE01 contracts/config, BE02 receipts, BE03 wall-time budget, BE05 identity/egress and the narrow BE14 provisioning/retention controls. Hardware and serving facts from the supplied plan require live verification during implementation.
 
@@ -676,7 +692,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE16 Promote LAYA points individually and prove tool planning
 
-**Status:** planned. **Objective and value:** Implement U38/U39 across all DP01–DP16 under U41. Promotion depends on decision-specific evidence, not a single global enable flag.
+**Status:** point policies, bounded planning and evaluation foundations implemented; activation and real empirical promotion remain deferred ([validation receipt](docs/build/be16-validation.json)). **Objective and value:** Implement U38/U39 across all DP01–DP16 under U41. Promotion depends on decision-specific evidence, not a single global enable flag.
 
 **Prerequisites:** BE15 plus the owning phase for each point in the DP matrix. BE08 memory isolation, BE12 monitor semantics and BE13 live specialist grants remain authoritative.
 
@@ -711,7 +727,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE17 Govern LAYA datasets fine tuning and model releases
 
-**Status:** planned. **Objective and value:** Implement the optional U40 data/training lifecycle and sustain U41. The user-selected additional harness dataset is a post-agent-build task, not a blocker for core Hermes.
+**Status:** local synthetic governance/release tooling implemented; final contract pins reconciled in BE18, no model training or production promotion ([validation receipt](docs/build/be17-validation.json)). **Objective and value:** Implement the optional U40 data/training lifecycle and sustain U41. The user-selected additional harness dataset is a post-agent-build task, not a blocker for core Hermes.
 
 **Prerequisites:** BE14 data lifecycle and BE15 receipts. The additional DP05 harness dataset starts only after BE08 and the real agent integration are built. Explicit training destination/data approval is required for any external host.
 
@@ -745,7 +761,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### BE18 Run consolidated release gates and hand off to Dots
 
-**Status:** planned. **Objective and value:** Close U32/U33/U35 with end-to-end evidence, then enable a separate ryoko-dots implementation using the agreed contracts.
+**Status:** local implementation checkpoints and final source validation are recorded; the full suite remains failed and release signoff is blocked. The final frozen campaign passed 56,979 tests with 219 failures and 724 skips. Subsequent per-node recovery qualified 376 of 484 phase-aware failing cases; the remaining 108 are demonstrated host constraints, with no unclassified observed failure. Full-run counts are not rewritten, and targeted/frontend receipts remain source-bounded ([failure resolution](docs/build/be18-failure-resolution.json)). Remote publication/CI, live/native/visual qualification and Dots consumer proof remain pending ([final validation](docs/build/be18-final-source-validation.json), [current scope](docs/build/backend-current-scope.md), [journal](buildjournal.md)). **Objective and value:** Close U32/U33/U35 with end-to-end evidence, then enable a separate ryoko-dots implementation using the agreed contracts.
 
 **Prerequisites:** All phases required by the selected release slice and mandatory authority/effect/memory gates. First assemble the BE18 release candidate; FE13 then validates user journeys against that candidate; BE18 final sign-off consumes those receipts. Dots OD00 contract proof is required for the Dots-ready claim, not a prerequisite for producing the candidate. Deferred experimental features remain disabled and listed.
 
@@ -776,7 +792,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ## Complete engineering coverage U01 to U41
 
-All are planned unless explicitly conditional. Existing mechanisms are preserved; the table maps the delta to an accountable phase. Source: engineering §§5–6 and §14.8, reconciled with product §10.2 and current user memory decisions.
+This is a complete requirements-to-phase map, not a claim that all capabilities are released. Current local implementation and remaining qualification are stated in each phase status and its linked receipt. Conditional indexing/federation/scale remain disabled; live, hardware, privacy and empirical gates remain open where explicitly recorded. Existing mechanisms are preserved; the table maps the delta to an accountable phase. Source: engineering §§5–6 and §14.8, reconciled with product §10.2 and current user memory decisions.
 
 | ID and source title | Backend phase | Consumer phase | Disposition and required delta |
 |---|---|---|---|
@@ -901,7 +917,7 @@ Each starter ticket is a bounded slice inside its owning phase, not an assertion
 
 ## Consolidated backend validation and release gates
 
-These are future implementation checks. The present planning change does not install dependencies or run Hermes. Use the checked-out repository's current build instructions: prepare the independent test interpreter through PM, then **`scripts/run_tests.sh`**, never bare pytest. Python 3.14 is the documented development runtime; the broader pyproject range supports updater compatibility and is not a promise of equivalent runtime support. Node/npm versions come from the pinned package manifests.
+These are the release requirements. The BE18 [validation receipt](docs/build/be18-validation.json), [candidate manifest](docs/build/release-manifest.json) and [runbook](docs/build/release-runbook.md) record what actually ran, failed, was skipped or remains unqualified. The initial frozen-source default campaign ran 5,331 files: 55,681 passed, 558 failed and 725 skipped, with collection/setup errors reported separately; it is not a green release gate. Only affected checks are rerun after documented repairs. Use the checked-out repository's current build instructions: prepare the independent test interpreter through PM, then **`scripts/run_tests.sh`**, never bare pytest. Python 3.14 is the documented development runtime; the broader pyproject range supports updater compatibility and is not a promise of equivalent runtime support. Node/npm versions come from the pinned package manifests.
 
 For a focused change, select affected files, for example:
 

@@ -224,6 +224,9 @@ def _decision(mission, receipts, evidence, available, result, source_unavailable
         state = "partially_completed" if available else "paused"
         reason = "Execution stopped before all acceptance criteria were satisfied"
         choices = ["Review retained artifacts and remaining criteria", "Revise or pause within the existing budget ceiling"]
+    elif result.get("runtime_status") == "specialist_review_required":
+        state, reason = "waiting_for_user", "The selected specialist returned; parent review is required"
+        choices = ["Review the specialist result and recorded evidence", "Confirm the next step within the existing mission"]
     elif any(ref["state"] != "confirmed" for ref in evidence["effect_refs"]):
         state = "partially_completed" if available else "paused"
         reason = "An already dispatched effect requires reconciliation before further execution"

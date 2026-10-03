@@ -2247,17 +2247,6 @@ def _prepare_job_prompt(
     """Run every pre-agent gate and build the prompt. Returns ``(early_result, prompt)``: an early
     result short-circuits ``run_job`` (no_agent job, empty payload, monitor gate, wake gate,
     injection block, empty prompt); otherwise ``prompt`` is set."""
-    # Fail closed on a corrupt config.yaml: defaults would let auto-detection bill a provider the
-    # user never chose. no_agent jobs are exempt. Escape hatch: HERMES_IGNORE_USER_CONFIG=1.
-    if not job.get("no_agent"):
-        from hermes_cli.config import InvalidUserConfigError, require_parseable_user_config
-
-        try:
-            require_parseable_user_config()
-        except InvalidUserConfigError as exc:
-            logger.error("Job '%s': refusing to run — %s", job_id, exc)
-            return (False, f"# Cron Job: {job_name}\n\nError: {exc}\n", "", str(exc)), None
-
     # no_agent short-circuits BEFORE importing run_agent / opening SessionDB.
     if job.get("no_agent"):
         return _run_no_agent_job(job, job_id, job_name, cancel_event), None
@@ -2550,10 +2539,13 @@ def run_job(
     """Bind/check the persisted owner before any source, script or provider work."""
     from cron.scheduler_identity import job_identity_scope
     from agent.agent_identity import IdentityPolicyError
+    from hermes_cli.config import InvalidUserConfigError
     try:
         with job_identity_scope(job):
             return _run_legacy_job(job, defer_agent_teardown=defer_agent_teardown,
                 extra_prompt=extra_prompt, cancel_event=cancel_event, execution_id=execution_id)
+    except InvalidUserConfigError as exc:
+        return False, "", "", str(exc)
     except IdentityPolicyError as exc:
         return False, "", "", f"IdentityPolicyError: {exc}"
 

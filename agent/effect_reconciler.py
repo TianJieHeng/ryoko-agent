@@ -54,7 +54,13 @@ def dispatch_certified_effect(operation_type, *, run, input_ref, payload, operat
         intent_options["approval_id"] = approval.approval_id
     else:
         from agent.runtime_commands import assert_runtime_finalization
-        authority_check = assert_runtime_finalization
+        from cron.durable_workflows import ScheduledWorkflowRun, assert_scheduled_result_dispatch
+        if isinstance(run, ScheduledWorkflowRun):
+            # This only retains exact produced bytes in an actor-private result
+            # namespace. Project publication still needs human artifact control.
+            authority_check = lambda candidate: assert_scheduled_result_dispatch(candidate, input_ref)
+        else:
+            authority_check = assert_runtime_finalization
         intent_options = {"input_revision": input_ref["sha256"], "artifact_revision": str(input_ref["version"])}
     authority_check(run)
     descriptor = validate_artifact_descriptor(run.context, input_ref)

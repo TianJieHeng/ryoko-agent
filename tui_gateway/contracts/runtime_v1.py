@@ -11,6 +11,8 @@ from typing import Annotated, Literal
 from pydantic import ConfigDict, Field, StrictInt, field_validator, model_validator
 
 from .base import Params, Result
+from .decisions import DecisionReceipt, DecisionOutcomeLabel
+from .decision_plans import DecisionToolPlan, DecisionPolicyRecord, DecisionPlannerMiss
 from .registry import method
 
 RuntimeIdentifier = Annotated[str, Field(min_length=1, max_length=256)]
@@ -255,6 +257,11 @@ class MissionSnapshot(Result):
 class RuntimeEventPayload(Result):
     """Safe correlation metadata only. Raw model/tool outputs stay off this wire."""
 
+    decision_receipt: DecisionReceipt | None = None
+    decision_outcome: DecisionOutcomeLabel | None = None
+    decision_tool_plan: DecisionToolPlan | None = None
+    decision_policy: DecisionPolicyRecord | None = None
+    decision_planner_miss: DecisionPlannerMiss | None = None
     command_id: str | None = None
     operation: RuntimeOperation | Literal["artifact"] | None = None
     effect_state: Literal["prepared", "dispatched", "confirmed", "failed", "outcome_unknown", "reconciliation_required"] | None = None
@@ -292,6 +299,8 @@ class RuntimeEventEnvelope(Result):
         "command.blocked", "command.cancelled", "checkpoint.published", "runtime.output",
         "runtime.state", "approval.requested", "approval.resolved", "effect.recorded",
         "model.started", "model.completed", "model.failed", "tool.started", "tool.completed", "tool.failed",
+        "decision.observed", "decision.outcome",
+        "decision.tool_plan", "decision.policy", "decision.planner_miss",
         "operations.repair_started", "operations.repair_finished",
         "operations.deletion_requested", "operations.deletion_finished",
     ]

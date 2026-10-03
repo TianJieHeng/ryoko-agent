@@ -8,6 +8,8 @@ These tests pin the contract: one opener, one closer, and every store routed thr
 from __future__ import annotations
 
 import sqlite3
+import functools
+import inspect
 
 import pytest
 
@@ -93,13 +95,16 @@ def test_every_store_opens_through_the_canonical_open_db(monkeypatch, tmp_path, 
     calls = []
     real_open_db = sqlite_util.open_db
 
+    @functools.wraps(real_open_db)
     def spy(path, **kwargs):
         calls.append(kwargs)
         return real_open_db(path, **kwargs)
 
     # Patch where production reads: a module-level ``from sqlite_util import open_db`` binds its own name.
     monkeypatch.setattr(sqlite_util, "open_db", spy)
-    if getattr(module, "open_db", None) is real_open_db:
+    # A lazily imported sibling can retain an earlier parametrized spy. Unwrap
+    # only our canonical wrapper, rather than replacing an unrelated opener.
+    if inspect.unwrap(getattr(module, "open_db", None)) is real_open_db:
         monkeypatch.setattr(module, "open_db", spy)
     opener = getattr(module, attr)
     args = (tmp_path / "opened.db",) if module_name == "gateway.hosted_rooms_common" else ()

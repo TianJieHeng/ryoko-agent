@@ -1,0 +1,2826 @@
+{
+  "schema_version": 1,
+  "lane": "agent_gateway_tui_cron_monitoring",
+  "original_full_campaign_source": "b323e73f7b2f6792c57341240e206a72e43e3192",
+  "prebuild_baseline": "4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+  "scope_note": "All 36 assigned original nonzero-exit modules are included. Node IDs are unchanged from canonical original per-file receipts, including hashed parameter IDs. Cause is separate from baseline relationship. Original full campaign unchanged. No production edits.",
+  "modules": [
+    {
+      "path": "tests/agent/lsp/test_broken_set.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 4,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/lsp/test_broken_set.py::test_mark_broken_handles_no_workspace_silently",
+          "node_id_sha256": "185afb0b090209e6a76058ac533d2bc2955b97b7e4e6171098721eedf0255e35",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__lsp__test_broken_set.py.log",
+              "sha256": "a58407f05e3bbc1cc86151df40ca3f9d47681527dc0f4d4eeeeb1b8ccec11ad4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__lsp__test_broken_set.py.log",
+              "sha256": "c16f126148551e961fade5e14f465668abd721382c73676a7ff9d970a13fd4bb",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The no-workspace synthetic file inherited /workspace/shared/.git, so LSPService._mark_broken_for_file correctly created a pyright broken key for /workspace/shared. The fixture now hides only .git probes of ancestors outside tmp_path; real markers within tmp_path remain visible."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/994-ffb8e410a4a8472586b5e92299f1a07f.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/132-4e75ed7f735f416d871fda63289b658c.json",
+      "module_notes": [
+        "Qualification is synthetic fixture isolation, not a real-host outside-checkout proof. Only explicitly requested fixture marker probes are filtered. Host markers are untouched."
+      ]
+    },
+    {
+      "path": "tests/agent/lsp/test_client_e2e.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 12,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/lsp/test_client_e2e.py::test_cancelled_start_hard_kills_sigterm_ignoring_descendant",
+          "node_id_sha256": "9c09d0bcd20c7b23ec68608d510c98d34043c099285ef398baa1a806f2b81ee3",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_not_measured",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__lsp__test_client_e2e.py.log",
+              "sha256": "25a3be7f762398a11670296f3de6c4d0020cd4e549afffff9e1613b00cbf189a",
+              "kind": "original_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The original body accepts a child that is gone or STATUS_ZOMBIE and passes client.state/error and client._proc/None assertions. Its finally block instead used only is_running(), which includes zombies, and attempted SIGKILL on an already-exited reparented child. Cleanup now uses the same live/non-zombie predicate as the body and catches only psutil.NoSuchProcess races. The 15-second live-escape assertion and all production/guard behavior are unchanged. Fresh canonical file run: 13 passed, 0 failed."
+            },
+            {
+              "kind": "qualified_source",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/lsp/test_client_e2e.py",
+              "sha256": "d7f23febd362bffac42d0c306d1d704ae19cace80e5ac1510d97a84965ae53f6"
+            },
+            {
+              "kind": "qualification_log",
+              "path": "/workspace/shared/ryoko-lsp-zombie-repair.log",
+              "sha256": "07421f114ad976da4947fb7a15e629b4a2a1d7cb1d634fb951a344cb6ac30d0a"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-lsp-zombie-repair.log",
+          "classification_history": [
+            {
+              "superseded_assessment": {
+                "node_id": "tests/agent/lsp/test_client_e2e.py::test_cancelled_start_hard_kills_sigterm_ignoring_descendant",
+                "node_id_sha256": "9c09d0bcd20c7b23ec68608d510c98d34043c099285ef398baa1a806f2b81ee3",
+                "cause_category": "environment_constraint",
+                "baseline_relationship": "baseline_not_measured",
+                "evidence": [
+                  {
+                    "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__lsp__test_client_e2e.py.log",
+                    "sha256": "25a3be7f762398a11670296f3de6c4d0020cd4e549afffff9e1613b00cbf189a",
+                    "kind": "original_failure_trace"
+                  },
+                  {
+                    "kind": "cause_and_qualification",
+                    "detail": "Test finally block calls child.kill() after the descendant leaves the allowed process subtree. The live-system guard rejects os.kill(..., SIGKILL). The assertion block preceding finally does not show a production cleanup failure; the precise process/zombie state is not captured. No bypass, protected PID signal, or rerun attempted."
+                  }
+                ],
+                "disposition": "blocked",
+                "qualification_log": null
+              },
+              "reason": "Full failure trace review identifies an unnecessary teardown signal after the body has accepted a zombie descendant, rather than a production cleanup failure. Fresh-fixture canonical qualification confirms the bounded fixture repair."
+            }
+          ]
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/1038-04b82285e0b44d238a514c090c9506e9.json",
+      "baseline_receipt": null,
+      "module_notes": [
+        "Prior environment-constraint classification is retained in classification_history and in the before-lsp-zombie archive. No original protected PID was signaled or retried; only fresh fixture children were tested, with live-system guard unchanged."
+      ]
+    },
+    {
+      "path": "tests/agent/lsp/test_install_and_lint_fixes.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 2,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/lsp/test_install_and_lint_fixes.py::test_check_lint_returns_error_for_real_ts_type_errors",
+          "node_id_sha256": "19b58be52aba934ae935b2586dfbbea5a67e49ee4bef5db12e60e1ae6f001f40",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__lsp__test_install_and_lint_fixes.py.log",
+              "sha256": "b82aeafdaf26a408a769e747997dc66a748aaf1948e2bed6509fb89fa1e68059",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__lsp__test_install_and_lint_fixes.py.log",
+              "sha256": "afc8f93c4d823bf38919a2de4c143ca5462750748f14cc1698ed3eb66b401eb1",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The mocked shell-TypeScript-linter test did not select the shell-linter branch: _check_lint returned skipped because _lsp_will_handle was true. Its fixture now explicitly selects no LSP handler; the mocked real TS2322 result and error assertions are unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/1210-e1e96f98c9cc4549896a1d65fd891f07.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/164-6cfc89c80e9e42e1b5479dfa660fd206.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/agent/lsp/test_workspace.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 6,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/lsp/test_workspace.py::test_find_git_worktree_cache_is_capped",
+          "node_id_sha256": "a3b26356c00bf5f611c4e9f6a930cc77f1e12b8d5060bddfa21c351f2b9cb29a",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__lsp__test_workspace.py.log",
+              "sha256": "85660b64c747fd20e659a35315251b6ab21325fd1b292af793d7b09101426d74",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__lsp__test_workspace.py.log",
+              "sha256": "0f6de83d35357cb6619e627dca26e634661d246ad3a219e9887686a4b8b4b6a2",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The cache-size test expected no git worktree but an enclosing /workspace/shared/.git made find_git_worktree return /workspace/shared. Synthetic ancestor isolation preserves the cache cap assertion and real within-fixture marker traversal."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/1343-28d510cb22a442199ddbfb7b73f7d516.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/165-6729e90158484c5cafb0d5302e8ec930.json",
+      "module_notes": [
+        "Qualification is synthetic fixture isolation, not a real-host outside-checkout proof. Only explicitly requested fixture marker probes are filtered. Host markers are untouched."
+      ]
+    },
+    {
+      "path": "tests/agent/test_coding_context.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 3,
+        "passed": 21,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_coding_context.py::TestWorkspaceBlock::test_empty_outside_repo",
+          "node_id_sha256": "29a3ee1ef04aa9472a3ed4139b35eb3372894fac4788ca3e052582e090fc7096",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_initial_campaign_had_ENOSPC; focused_baseline_rerun_/tmp/be18-coding-context-baseline.log_reproduced_same_ancestor_git_cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_coding_context.py.log",
+              "sha256": "c1f782ecb0419cb0693971318a4a441789d06058af699c4743af4331d3d1fb62",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_coding_context.py.log",
+              "sha256": "672d40d4d3543b2c481100c0689da6ea7910edb9a5ccf8a04ad4f4cd98c46200",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Bare synthetic directories inherited /workspace/shared/.git. agent.coding_context._git_root walks ancestor markers, so the workspace block reported /workspace/shared and auto mode became coding. Explicit synthetic ancestor isolation removes only out-of-fixture marker observations."
+            },
+            {
+              "kind": "baseline_focused_rerun",
+              "path": "/tmp/be18-coding-context-baseline.log",
+              "sha256": "92d16f30146b5855d7eb60b799aaf07fc2c4603145cee7890f0ea5f8adc13eab"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_coding_context.py::TestRuntimeMode::test_resolves_general_outside_workspace",
+          "node_id_sha256": "7943c29dc8a2641f54628f71bd4be947a7340101f822c87d378002deb62d0fde",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_initial_campaign_had_ENOSPC; focused_baseline_rerun_/tmp/be18-coding-context-baseline.log_reproduced_same_ancestor_git_cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_coding_context.py.log",
+              "sha256": "c1f782ecb0419cb0693971318a4a441789d06058af699c4743af4331d3d1fb62",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_coding_context.py.log",
+              "sha256": "672d40d4d3543b2c481100c0689da6ea7910edb9a5ccf8a04ad4f4cd98c46200",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Bare synthetic directories inherited /workspace/shared/.git. agent.coding_context._git_root walks ancestor markers, so the workspace block reported /workspace/shared and auto mode became coding. Explicit synthetic ancestor isolation removes only out-of-fixture marker observations."
+            },
+            {
+              "kind": "baseline_focused_rerun",
+              "path": "/tmp/be18-coding-context-baseline.log",
+              "sha256": "92d16f30146b5855d7eb60b799aaf07fc2c4603145cee7890f0ea5f8adc13eab"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_coding_context.py::TestDetection::test_bare_dir_is_not_coding",
+          "node_id_sha256": "f7fa3fe3caf3c67ad9c7bb541cb4869149a275f95864ecb0fd460555cf90428d",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_initial_campaign_had_ENOSPC; focused_baseline_rerun_/tmp/be18-coding-context-baseline.log_reproduced_same_ancestor_git_cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_coding_context.py.log",
+              "sha256": "c1f782ecb0419cb0693971318a4a441789d06058af699c4743af4331d3d1fb62",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_coding_context.py.log",
+              "sha256": "672d40d4d3543b2c481100c0689da6ea7910edb9a5ccf8a04ad4f4cd98c46200",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Bare synthetic directories inherited /workspace/shared/.git. agent.coding_context._git_root walks ancestor markers, so the workspace block reported /workspace/shared and auto mode became coding. Explicit synthetic ancestor isolation removes only out-of-fixture marker observations."
+            },
+            {
+              "kind": "baseline_focused_rerun",
+              "path": "/tmp/be18-coding-context-baseline.log",
+              "sha256": "92d16f30146b5855d7eb60b799aaf07fc2c4603145cee7890f0ea5f8adc13eab"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/17061-ae486ae11102461ab8a68548714e2269.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/187-d2478fb48bde4e0b9652a82ef53ba8e3.json",
+      "module_notes": [
+        "Qualification is synthetic fixture isolation, not a real-host outside-checkout proof. Only explicitly requested fixture marker probes are filtered. Host markers are untouched."
+      ]
+    },
+    {
+      "path": "tests/agent/test_credential_pool_anthropic_refresh_race.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 1,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_credential_pool_anthropic_refresh_race.py::test_concurrent_claude_code_refresh_recovers_via_credentials_file",
+          "node_id_sha256": "4dd4228d69bfa76083874e8712144e5c9a44300ec80353b805cc92af7b99b67f",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_credential_pool_anthropic_refresh_race.py.log",
+              "sha256": "959bdbddcb1c8311c7983203f9ea7ce0ce8f3d5ae3786915c257eae6d4760631",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_credential_pool_anthropic_refresh_race.py.log",
+              "sha256": "ce391580267c71469616aa7afc4115bb5726a3a354a092319c2e8f51e2d460d2",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fake credential readers/writers left the production Claude refresh lock pointed at /home/agent/.claude. Both race threads raised EROFS there before the fake endpoint, leaving results[\"a\"] absent. CLAUDE_CONFIG_DIR now points at tmp_path/claude; the real lock and concurrency/recovery assertions remain."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/30081-1612bdc1ceb8411b8b16d1f28f86be53.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/822-5605bd31be18424d8c484a485d6837e8.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/agent/test_project_skills.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 21,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_project_skills.py::TestFindProjectRoot::test_no_git_returns_none",
+          "node_id_sha256": "6ac4db14f9d27f24bc9cc547881e3e56a517b56c8cf5dadc8c08ef8e903e353e",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_project_skills.py.log",
+              "sha256": "0a1a87a83596439cfc733af4ad3745665c6f977e32f95bcb31bcbac349e22753",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_project_skills.py.log",
+              "sha256": "525521e45332428beb76572c27c33664928e1ff51a45791b526596b37e43a229",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The no-git synthetic directory inherited /workspace/shared/.git; find_project_root returned the enclosing host checkout. Explicit synthetic ancestor isolation preserves real nested marker discovery and trust assertions."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/57955-81b17b7189144b0aa44763abcb1d8176.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/1929-a112300e49b344cda3024faf8707b4b6.json",
+      "module_notes": [
+        "Qualification is synthetic fixture isolation, not a real-host outside-checkout proof. Only explicitly requested fixture marker probes are filtered. Host markers are untouched."
+      ]
+    },
+    {
+      "path": "tests/agent/test_prompt_builder.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 2,
+        "passed": 56,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_prompt_builder.py::TestBuildContextFilesPrompt::test_agents_md_no_git_root_stays_cwd_only",
+          "node_id_sha256": "ef348b419a20eb24830201a7f8307aa8de3c2441ef82ac6228fd268bea5beac2",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_prompt_builder.py.log",
+              "sha256": "80a0749fd158e4f98ad234f52f661fe616a2171e80ee7df9078dfe3a1e42f17b",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_prompt_builder.py.log",
+              "sha256": "e5c986869f475c412a5b3b0a74f454df3c98aa7e2a1a5614c00afb055d621527",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Host ancestor /workspace/shared/.git defeated the intended no-git premises and admitted the planted parent AGENTS.md. Synthetic ancestor marker isolation keeps fixture-local Git and context-file reads real; the negative parent-context and permission assertions are unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_prompt_builder.py::TestFindHermesMd::test_unreadable_parent_is_treated_as_no_git_root",
+          "node_id_sha256": "2627f70132a3dae01852a6322e8dba46eaa6fcceac5db6d63b268dcb56d38218",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_prompt_builder.py.log",
+              "sha256": "80a0749fd158e4f98ad234f52f661fe616a2171e80ee7df9078dfe3a1e42f17b",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_prompt_builder.py.log",
+              "sha256": "e5c986869f475c412a5b3b0a74f454df3c98aa7e2a1a5614c00afb055d621527",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Host ancestor /workspace/shared/.git defeated the intended no-git premises and admitted the planted parent AGENTS.md. Synthetic ancestor marker isolation keeps fixture-local Git and context-file reads real; the negative parent-context and permission assertions are unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/58172-868bfe1a0be540a1b9bba5c54dd2cff5.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/2144-6f6a7707699e4935933a0f19ce85e778.json",
+      "module_notes": [
+        "Qualification is synthetic fixture isolation, not a real-host outside-checkout proof. Only explicitly requested fixture marker probes are filtered. Host markers are untouched."
+      ]
+    },
+    {
+      "path": "tests/agent/test_tool_executor_checkpoint_paths.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 2,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_tool_executor_checkpoint_paths.py::test_container_backend_task_leaves_host_store_untouched",
+          "node_id_sha256": "70c5fa1e747a4dfac23761835221aa5d67bc5deaf9d92d70d2f3677a83524df4",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_tool_executor_checkpoint_paths.py.log",
+              "sha256": "e6ab16b951a448f27af430895a3079b9c2198a8249623b4bb381525797ea2489",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_tool_executor_checkpoint_paths.py.log",
+              "sha256": "0d0f41a975298f90238a0e60b4ff6d17ea27c1ff1234381ff76b52d9c9df88ca",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The local control had no project marker, so CheckpointManager.get_working_dir_for_path walked to the enclosing host checkout rather than host_file.parent. An explicit pyproject.toml boundary now identifies the synthetic host project; container no-write and rollback refusal assertions are unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/84568-becba24867c846f7befcdd5514f3d678.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/3778-112ea7fc29984ad7baa1f3cd369f213d.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/agent/test_verification_evidence.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 18,
+        "passed": 10,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_lint_and_typecheck_are_not_reported_as_full_tests",
+          "node_id_sha256": "1ca8d2d1cda7ffc338890f17deeb4a732b9d799f7e020fb3623b1e7dbb299366",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_shell_wrappers_match_but_echo_does_not",
+          "node_id_sha256": "1fe99dc335cdd9b792cfa97e1a0c59ebac4fb6def0241d3d9a6ef84963cae04c",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_successful_and_chain_preserves_passing_evidence[sha256:e23afa7f20281373]",
+          "node_id_sha256": "de916518dd9aa267e3ee26ad458cd604758319e70bbc87036acbc14990ab4554",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_successful_and_chain_preserves_passing_evidence[sha256:9430ce71e3481edf]",
+          "node_id_sha256": "2e783ca38a807398ed3f7111ddbf98c55d98d796e65b7c5c284146d483db1407",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_final_verifier_after_sequence_owns_shell_exit_status[sha256:9587048ca71a43e3]",
+          "node_id_sha256": "70b54a8295428980144a99477e59388e6f0e01059fe0327e5b99699a52869fa9",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_final_verifier_after_sequence_owns_shell_exit_status[sha256:a7b89647373976dc]",
+          "node_id_sha256": "64d16ae7fa6aaef9da6fb8bdfc7b209d312aa6493a0a5ebddc24bb452eb6e358",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_quoted_shell_operator_remains_a_verifier_argument",
+          "node_id_sha256": "07704b09bfc94ded73d8b891ceceef563a141d73130f293583bdc998e6e68a9d",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_shell_redirection_does_not_hide_simple_verifier[sha256:a20f6b46891221f1]",
+          "node_id_sha256": "9849b5df925f036ce69200b8d6429f708af6c5d6b79452f7c828f41d86c1fefe",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_shell_redirection_does_not_hide_simple_verifier[sha256:4444e4d1c9e2e84f]",
+          "node_id_sha256": "5fed2e82ac0bd45eefc06ac5ddbe9bd1923ec32ef42ec857212c1f84849bc0c0",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_masked_verifier_does_not_clear_edited_ledger_state",
+          "node_id_sha256": "fbaff1775baa18f30870bd42b2f6f3059e77aa8e1849e2034e6292803a10756d",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_temp_script_records_ad_hoc_evidence_without_canonical_suite",
+          "node_id_sha256": "fab87d3def7545686a17830e6757d36efe64ed2b33eca6961acd42932a3a543b",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_versioned_or_absolute_interpreter_records_ad_hoc_evidence[sha256:a852baded7b0cb41]",
+          "node_id_sha256": "75a30fd9bf3ab4df8527edd3d5d6039da93e24907d2451f0f9da77040f72e4c9",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_versioned_or_absolute_interpreter_records_ad_hoc_evidence[sha256:5a29b6b9903a7075]",
+          "node_id_sha256": "ff6f76d8acee78a03585fb42e74dab26a51be36dacca0d925b7c2e33ed571e4d",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_versioned_or_absolute_interpreter_records_ad_hoc_evidence[sha256:978af07164356922]",
+          "node_id_sha256": "705a35375c9bfb59d4cc2c247e4d716d8905c444bc8be237da497b3395867af9",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_versioned_or_absolute_interpreter_records_ad_hoc_evidence[sha256:2a8c1e677b94fae2]",
+          "node_id_sha256": "b41c51f2a3ebd3c12b6e50cbe18e181e63ae44542932813deba53cc8be972f34",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_versioned_or_absolute_interpreter_records_ad_hoc_evidence[sha256:3e3ad88665117b3c]",
+          "node_id_sha256": "e88a53ceb8ad465b6ea962ae502a85d0297c478ee8096d791b4851352b490a6e",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_file_tool_stales_evidence_by_session_id_for_absolute_edit",
+          "node_id_sha256": "13d6689640a62584ee8bf98e77e7168b9d57319c162cabcdfd364bfa19d3468b",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/agent/test_verification_evidence.py::test_recording_expires_old_edit_only_state",
+          "node_id_sha256": "15378328eb32024f70facdc762788cf2b352942ff88055559f2ddd2f6376c658",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "612c08e113b386cfa0c0327ed40ba53373a492e85375235b7c1ddde07ee31557",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence.py.log",
+              "sha256": "70827c77b2371e78c26b5f86cf79658c92eb3723054491c9f3447f012f95452e",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Fixture package.json/pyproject.toml lived below enclosing /workspace/shared/.git. coding_context._workspace_roots prioritizes git root, so verification_evidence._project_facts used host facts instead of fixture commands, yielding None evidence, missing stale transitions and retained old edit state. A local .git fixture boundary restores the actual project-facts/ledger path; assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/88558-2e3844b62d5e472db18280cadaeba450.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/5508-3c19ec9dccd942fbad6f8bf65af8b6e6.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/agent/test_verification_evidence_disabled.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 1,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_verification_evidence_disabled.py::test_enabled_guard_records_into_the_ledger",
+          "node_id_sha256": "965a61011e83c408ab2b4a68e460fccdbaba619220f45248d313924182610901",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_evidence_disabled.py.log",
+              "sha256": "aafef26071a5106bdf470c59f4c2075367e59da8b7487ac67e2398f739261de6",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_evidence_disabled.py.log",
+              "sha256": "45ae2b32adbd2c4fa145ead1149b5ce0093062b74fb4a1a345d9bcf76c4d1a5a",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The enabled-ledger control resolved enclosing host Git root rather than its package.json project and returned no evidence. A .git boundary inside the synthetic project restores real canonical-command detection; the disabled no-database assertion is retained."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/88617-ed8613540a0a446499971727ccd829f2.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/5891-94788b9964e4457fb9b5edca00310ae1.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/agent/test_verification_stop.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 11,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_verification_stop.py::test_ad_hoc_pass_satisfies_no_suite_stop_loop",
+          "node_id_sha256": "5c3d450d225095a1bb519e63c706b7152b79ffda93ca0ff2c78723e26a3390c1",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_verification_stop.py.log",
+              "sha256": "a5ffd6181ad0ce401dc89f13802118d3f3f0d54e82f127dbc6a9568a3dcfbb6b",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_verification_stop.py.log",
+              "sha256": "80973256afe8da3b0e1c65ab0af15287245f61501ae456e38389691b5e22b483",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The no-suite fixture inherited the host Git root, including its canonical commands and broad root, so the synthetic ad-hoc script did not satisfy the stop guard. Local project markers now make project boundaries explicit; the stop-loop acceptance/refusal assertions are unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/88671-47f976c21a714c419ff092e06b8a28d9.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/6094-7397214ce0c841229173782b33512093.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/agent/test_vision_routing.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 8,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/agent/test_vision_routing.py::TestTextOnlyMainSkippedForVision::test_text_only_main_skipped_when_no_aggregator",
+          "node_id_sha256": "b32266f2c28653a2a258fdde9a287800f62a96f00bcea535881972ac65b53929",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "same_baseline_node_and_observed_symptom; current_cause_supported_by_source_trace_and_fixture-only_qualification; baseline_cause_not_independently_retested_with_repaired_fixture",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__agent__test_vision_routing.py.log",
+              "sha256": "9a7cf8216a2d02967690eb3c1143c0f26088da7f90d60876f0021f2309eddf28",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__agent__test_vision_routing.py.log",
+              "sha256": "9eb738e93bebfbd6e1146a2dbca2c27d14900c214dafd76318a948e2f14f078d",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The test supplied fake credentials but relied on a live models.dev capability response for its text-only premise. image_routing._probe_models_dev returns unknown without catalog data and _main_model_supports_vision intentionally permits unknown capability. The fixture now supplies a synthetic text-only catalog entry for only the exact DeepSeek model while retaining the real capability-probe and auxiliary-route chain."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/89007-41cbdc3e38fe4e688fe6d85601fbfac4.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/6309-c99359b6ac104607982da94576748ab2.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/cron/test_timezone.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 10,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/cron/test_timezone.py::TestCodeExecutionTZ::test_tz_injected_when_configured",
+          "node_id_sha256": "5c0a418d76bf75fa35d5d511501bb1d800d2a65bde1c4fbde86681de438b4b63",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__cron__test_timezone.py.log",
+              "sha256": "0b29350fc4d0ae346279697859c15db7f3eb7b84aa039bfe0066d2965c19a2fb",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__cron__test_timezone.py.log",
+              "sha256": "0f34b0b63edb48c7f2420f186940bd0363adcc89c45d7a314dae874a1c961996",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "tools.code_kernel._spawn calls _bind_rpc_socket; socket.socket(AF_UNIX, SOCK_STREAM) raises PermissionError(EPERM) before the synthetic code kernel starts. Timezone injection itself is not reached."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/105844-ea252f41f0ca46318a71dec244b171ba.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/7470-3d0ec4b11be64202ab6e2db7b66b0c48.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_api_delegation_delivery_contract.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 1,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_api_delegation_delivery_contract.py::test_detached_dispatch_requires_a_declared_consumer",
+          "node_id_sha256": "3483c05e1728924641a13c7b3002e25bdda577db4854537fd771abdda32f854d",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_delegation_delivery_contract.py.log",
+              "sha256": "6e84301630f63e4301464f2e08e85bad25739d5d7a16113563fd36e6061bf11c",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_delegation_delivery_contract.py.log",
+              "sha256": "fd4d94b84cb7e20506b5839e96f6e2318404353a7ab097f83e0f7d2103844d5f",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "evals/api_delegation_http_probe.py created unspecced MagicMock agents that fabricated runtime_context and _memory_manager. The strict memory-manager owner check rejected those fabricated identities during settlement. The synthetic agent now explicitly has runtime_context=None and _memory_manager=None; production ownership checks and transport assertions unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/108983-fb40c7bf317b45ac99208faffa1323a0.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/8550-957b5a3f73894a46bc7c77af3dd8e6b9.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_api_server.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 3,
+        "passed": 111,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_api_server.py::TestAgentExecution::test_run_agent_uses_session_id_as_task_id",
+          "node_id_sha256": "8b866ac61fce6cdcc43e989288ad32dce1f3ed7dfc1a7ae29cf6a3a5cfc8f48f",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server.py.log",
+              "sha256": "916566713930b3d7d7bb26de8f4b1af824195b405be86ac526eab76c905347db",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server.py.log",
+              "sha256": "f4d1c034f8449125ff597e7aeded7865647af58bf8c87a319c2990a264d9fcbc",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server.py::TestAgentExecution::test_run_agent_sets_and_clears_process_ownership_markers",
+          "node_id_sha256": "c6e2fcb40be90add6bf05025f432a9b25af0e44a473e6847c717b38a57980b0c",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server.py.log",
+              "sha256": "916566713930b3d7d7bb26de8f4b1af824195b405be86ac526eab76c905347db",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server.py.log",
+              "sha256": "f4d1c034f8449125ff597e7aeded7865647af58bf8c87a319c2990a264d9fcbc",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server.py::TestSessionKeyHeader::test_session_key_threads_into_create_agent",
+          "node_id_sha256": "4ad64410fbcb9cf017f2477a784cffe4872d447932cb217a53706c236d5eeac7",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server.py.log",
+              "sha256": "916566713930b3d7d7bb26de8f4b1af824195b405be86ac526eab76c905347db",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server.py.log",
+              "sha256": "f4d1c034f8449125ff597e7aeded7865647af58bf8c87a319c2990a264d9fcbc",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/109133-979387f013894f159069f21cb29544d0.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/9259-5a5ff07cd2eb4574976c2f57a1c381fa.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_api_server_active_work_drain.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 22,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_api_server_active_work_drain.py::TestRunAgentRegistersForShutdownInterrupt::test_agent_is_unregistered_when_the_turn_raises",
+          "node_id_sha256": "65885ad3c9938886533d0cb509f512d69b3b4459e1b528155d82c3bba1968eba",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_active_work_drain.py.log",
+              "sha256": "7d4dc90900aa351f58945c8cdc63cb43daa2b4e287a3a1279bdeae2a17f38bb5",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_active_work_drain.py.log",
+              "sha256": "856203487dd192799ffa88033557c18dadef4f76c4c14aca8182782447c5e027",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/109206-dc14554a5d5740e680f40f012826c884.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/9378-d1aced93cabc4557bfb202852e05b9cb.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_api_server_declared_conversation.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 3,
+        "passed": 28,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_api_server_declared_conversation.py::TestRealRunAgentSettlement::test_declared_bind_settles_without_raising",
+          "node_id_sha256": "745946a403a648a8f609b8405f2f9e486398a7e6c577f30d2e4c1781bd95db83",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_declared_conversation.py.log",
+              "sha256": "9e4d7ef7fc56acaba2ad282b9a9da9706edb8e8a0f3158abf53871914726a7ef",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_declared_conversation.py.log",
+              "sha256": "17852151c9fbf9d4ead7e818cb09d67bae165cdf92abf4876fdc25f3b589c7f1",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_declared_conversation.py::TestRealRunAgentSettlement::test_two_replies_settle_on_one_conversation",
+          "node_id_sha256": "c11c212ba18d3d8ad7b29eeeaec9ae34866db7660969d0ed735ab850482b7948",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_declared_conversation.py.log",
+              "sha256": "9e4d7ef7fc56acaba2ad282b9a9da9706edb8e8a0f3158abf53871914726a7ef",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_declared_conversation.py.log",
+              "sha256": "17852151c9fbf9d4ead7e818cb09d67bae165cdf92abf4876fdc25f3b589c7f1",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_declared_conversation.py::TestRealRunAgentSettlement::test_a_chained_turn_never_rebinds_through_real_settlement",
+          "node_id_sha256": "bc73246ea1597715b8e1973f664de377a8e75d5cceafbb35909c521eda324c50",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_declared_conversation.py.log",
+              "sha256": "9e4d7ef7fc56acaba2ad282b9a9da9706edb8e8a0f3158abf53871914726a7ef",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_declared_conversation.py.log",
+              "sha256": "17852151c9fbf9d4ead7e818cb09d67bae165cdf92abf4876fdc25f3b589c7f1",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/109595-c77ea2dc0caa497892cf96d066af7bbd.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/9478-0f50ac6f244d44ff8991ffa2b02f72fc.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_api_server_runs.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 17,
+        "passed": 58,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestStartRun::test_start_passes_normalized_author_to_run_conversation[sha256:e1f214545816a303]",
+          "node_id_sha256": "012f2ad45633c98d321624a47ee18811eecc1c7cae8c433b158a64bb57e338f1",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestStartRun::test_start_passes_normalized_author_to_run_conversation[sha256:6b8fee0fa56d0d0e]",
+          "node_id_sha256": "165375cbeae0e9262cce1128f45bee5209eafd62c5401b8a06b3051493451f4f",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestStartRun::test_start_passes_normalized_author_to_run_conversation[sha256:aebd28aed00a8288]",
+          "node_id_sha256": "5c5217fa37a99e8473b2ff33cedf11dc8827215521f87a3bf20a12a86293806f",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestStartRun::test_events_stream_forwards_interim_commentary[sha256:f776b48bd82d557a]",
+          "node_id_sha256": "67a3fd2e2a8b1a23c99be18ac6b4b6cccf00011d5dda452e4f5796c5b3a69726",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestStartRun::test_events_stream_forwards_interim_commentary[sha256:57768a899e46227d]",
+          "node_id_sha256": "b351e38996c5cc08e5f179801bb810aefb08493f125342d48f02b27a890792b9",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestRunStatus::test_status_completed_run_reports_served_runtime_and_cache_tokens",
+          "node_id_sha256": "6bec7c5aca6ca0b797fa4677289c819ccee991f7a452313e361b6671c45b0168",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestRunEvents::test_events_stream_returns_completed",
+          "node_id_sha256": "c99f15054ab8fec68b5cfed367832346d70d6c7bcb783e8bab776dba7e612eb7",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestRunEvents::test_completed_event_carries_served_runtime_and_cache_tokens",
+          "node_id_sha256": "76176a96890876843a2a7ffb8e3ceca6102df33df5c06074eb5f3e1bb29ecf29",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestRunEvents::test_concurrent_subscribers_each_receive_delta_and_terminal",
+          "node_id_sha256": "c65290c59a1e21e134cb124f4773e0668afab0ab6b40a55d874e08f1b389d349",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestRunEvents::test_reconnect_receives_exactly_missed_events_and_terminal",
+          "node_id_sha256": "5718c80faf6486ba307fc0e58e57d2837670b94960a495011ee69b2be58face6",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestSteerRun::test_pending_steer_preserved_on_run_completed",
+          "node_id_sha256": "f6305867f00ecfa2fb8d0fcd267fb8229895e2a8512f3a8f2b14c33452f351c8",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestSteerRun::test_run_terminal_status_follows_result_flags[sha256:b585304d23b7eb43]",
+          "node_id_sha256": "913afc40b4bfa4badf4b12b6957e613b2bea356c23aebcafb4a4f05edd16bc1f",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestSteerRun::test_run_terminal_status_follows_result_flags[sha256:2eacd84c32a52721]",
+          "node_id_sha256": "b8f23364a8a1f23c1bfe4f0ef42fae2b331f6a5970de2e9abbd2f8b864e5bb4c",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestSteerRun::test_run_terminal_status_follows_result_flags[sha256:ac430fe2472c7a64]",
+          "node_id_sha256": "c9eebffe0fedad291d22571407c9f425139b79f5072ae00a4326d05f814007e6",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestStopRun::test_completion_wins_before_uncooperative_stop_is_acknowledged",
+          "node_id_sha256": "a6ba8507b4ee2b63f6ef565bca86b315ddc5da4bc7a65edf6486de38e1904bf7",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestRunIdempotency::test_direct_status_hydrates_after_adapter_restart",
+          "node_id_sha256": "60f68f34f0a74951fb8f4b57c6ed92c6085c87f4faf21ca98cdca30428288b7e",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        },
+        {
+          "node_id": "tests/gateway/test_api_server_runs.py::TestHostedRoomRuns::test_scoped_grant_admits_group_session_run_without_peer_api_key",
+          "node_id_sha256": "d9dcc972d08a54ad41e799c0c4b17479eb49ab637472767a1c4299cd7a0cca2b",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "6a68eeb4a3ebf49d60dcfbab1f994d8dee743a6b57e03f8d36c42e550ba8d8b4",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_api_server_runs.py.log",
+              "sha256": "89f7bcb1d379e63366666dc9c85e31b74385afcceac4487814d1bfe932a6abf4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/109776-b66449487ba148ceb3c108647c64835a.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/9927-7bd8d734c24c479b864f7e68d6b836a7.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_chat_completions_approval.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 0,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_chat_completions_approval.py::test_streamed_completion_approval_resolves_via_runs_endpoint",
+          "node_id_sha256": "43f755737a90e3febb9ab5772ec4417b630ad2fcfb54fe3cd1d2266188f2ea9a",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_chat_completions_approval.py.log",
+              "sha256": "06115720a403e595da03d6d3deb947292473da5dc6e69e637010dd7421105912",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_chat_completions_approval.py.log",
+              "sha256": "1a45df721fdbbadd3a254754024d93762795a085630868877404336db7ac4017",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/111834-b54ceb6f78c14460a72694c6510366b2.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/10458-41e6df95b6fd4d9183c35b4d20faaf97.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_control_socket.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 7,
+        "passed": 9,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_control_socket.py::test_server_answers_identify_and_status",
+          "node_id_sha256": "72a23af46c85a330cb8e0fb64c4764a0f707d7bf3ae3f8d9a87126e689effd7c",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "d043f4979dab45b9acf19d004d211f739780cdc4d00f1f98bfc51a0c26ac42c9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "fdee261efaa62c3c9171f7e08257d965ac4ff177669f8f1f6d85944547d1e6e6",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Every failing real-socket case records gateway.control_socket.start returning False with [Errno 1] Operation not permitted. The POSIX _start_posix implementation calls asyncio.start_unix_server; companion direct socket traces establish AF_UNIX is denied in this runtime. No socket fallback or guard change attempted."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_control_socket.py::test_unknown_verb_and_malformed_request",
+          "node_id_sha256": "b61f1dfd62368e62fbf2900ea47f1ae27576efed3e3683a911c7ae18e6953a4e",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "d043f4979dab45b9acf19d004d211f739780cdc4d00f1f98bfc51a0c26ac42c9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "fdee261efaa62c3c9171f7e08257d965ac4ff177669f8f1f6d85944547d1e6e6",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Every failing real-socket case records gateway.control_socket.start returning False with [Errno 1] Operation not permitted. The POSIX _start_posix implementation calls asyncio.start_unix_server; companion direct socket traces establish AF_UNIX is denied in this runtime. No socket fallback or guard change attempted."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_control_socket.py::test_verb_handler_receives_params",
+          "node_id_sha256": "13848c4532831a0649457e777675a1c87b2f3bb0c112ccf98b6e88096d7ae94b",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "d043f4979dab45b9acf19d004d211f739780cdc4d00f1f98bfc51a0c26ac42c9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "fdee261efaa62c3c9171f7e08257d965ac4ff177669f8f1f6d85944547d1e6e6",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Every failing real-socket case records gateway.control_socket.start returning False with [Errno 1] Operation not permitted. The POSIX _start_posix implementation calls asyncio.start_unix_server; companion direct socket traces establish AF_UNIX is denied in this runtime. No socket fallback or guard change attempted."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_control_socket.py::test_stop_removes_socket_and_pointer",
+          "node_id_sha256": "c22a18fe3b93f0f9dda3eb34f73dbe27df8df9e3c3d72475630a6cab22a3e858",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "d043f4979dab45b9acf19d004d211f739780cdc4d00f1f98bfc51a0c26ac42c9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "fdee261efaa62c3c9171f7e08257d965ac4ff177669f8f1f6d85944547d1e6e6",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Every failing real-socket case records gateway.control_socket.start returning False with [Errno 1] Operation not permitted. The POSIX _start_posix implementation calls asyncio.start_unix_server; companion direct socket traces establish AF_UNIX is denied in this runtime. No socket fallback or guard change attempted."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_control_socket.py::test_stale_socket_file_is_replaced_on_bind",
+          "node_id_sha256": "e96b314acd497b0089c2b8168d5c843c5c73f8ba81383a13360bdfe279bb6adc",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "d043f4979dab45b9acf19d004d211f739780cdc4d00f1f98bfc51a0c26ac42c9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "fdee261efaa62c3c9171f7e08257d965ac4ff177669f8f1f6d85944547d1e6e6",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Every failing real-socket case records gateway.control_socket.start returning False with [Errno 1] Operation not permitted. The POSIX _start_posix implementation calls asyncio.start_unix_server; companion direct socket traces establish AF_UNIX is denied in this runtime. No socket fallback or guard change attempted."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_control_socket.py::test_long_home_end_to_end_via_pointer",
+          "node_id_sha256": "a6dbf02db31ade32bfa19b36e13c8f08a3385533f6c0fb53fd9b69df47e9292a",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "d043f4979dab45b9acf19d004d211f739780cdc4d00f1f98bfc51a0c26ac42c9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "fdee261efaa62c3c9171f7e08257d965ac4ff177669f8f1f6d85944547d1e6e6",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Every failing real-socket case records gateway.control_socket.start returning False with [Errno 1] Operation not permitted. The POSIX _start_posix implementation calls asyncio.start_unix_server; companion direct socket traces establish AF_UNIX is denied in this runtime. No socket fallback or guard change attempted."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_control_socket.py::test_default_identify_payload_shape",
+          "node_id_sha256": "bbbe1308b469ab7cb62e6c3eca40a2af026d901f6c639a29ee00955664871384",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "d043f4979dab45b9acf19d004d211f739780cdc4d00f1f98bfc51a0c26ac42c9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket.py.log",
+              "sha256": "fdee261efaa62c3c9171f7e08257d965ac4ff177669f8f1f6d85944547d1e6e6",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Every failing real-socket case records gateway.control_socket.start returning False with [Errno 1] Operation not permitted. The POSIX _start_posix implementation calls asyncio.start_unix_server; companion direct socket traces establish AF_UNIX is denied in this runtime. No socket fallback or guard change attempted."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/113102-4df2c81158c1442384670a77aa8e8f70.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/10525-d28d34c3709f49faa65e612e53aa1569.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_control_socket_pause.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 2,
+        "passed": 3,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_control_socket_pause.py::test_pause_client_roundtrip_over_real_socket",
+          "node_id_sha256": "baea3851e55cfdac4ab5b85d61894448649daa53c66cdef68f10593a290479b2",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket_pause.py.log",
+              "sha256": "279befc3772b7265bfe5df86279f2484648a80ac28e3dcfdfc3e8212b20da4cf",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket_pause.py.log",
+              "sha256": "eec6bb83812098f64c7b219eb72d4334e48a21e22f4f1830c3ffb4c022459fd0",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Both real pause round trips record Gateway control socket failed to start with EPERM. They fail at server startup before any pause RPC; POSIX start uses asyncio.start_unix_server."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_control_socket_pause.py::test_pause_client_none_when_gateway_lacks_verb",
+          "node_id_sha256": "9714f218f77bf4a3129ba5945fb740b8cf5fde297f365b071f9a4e30ce20e489",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_control_socket_pause.py.log",
+              "sha256": "279befc3772b7265bfe5df86279f2484648a80ac28e3dcfdfc3e8212b20da4cf",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_control_socket_pause.py.log",
+              "sha256": "eec6bb83812098f64c7b219eb72d4334e48a21e22f4f1830c3ffb4c022459fd0",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Both real pause round trips record Gateway control socket failed to start with EPERM. They fail at server startup before any pause RPC; POSIX start uses asyncio.start_unix_server."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/113339-c80a8edef2d540e6b445ef5128ec49a4.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/10526-98d1dc56a4054dbbba069f2cd7bd868b.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_discord_voice_mixer.py",
+      "original_exit_code": 5,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 0,
+        "passed": 0,
+        "skipped": 1
+      },
+      "nodes": [],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/118360-b595f9274b96417eb03fcbaf9ca77d4c.json",
+      "baseline_receipt": null,
+      "module_notes": [
+        "Exit 5 is zero collected runnable tests: 0 failed, 0 collection errors, 1 module skip, 0 deselected. Missing optional dependency numpy; tests/gateway/test_discord_voice_mixer.py:18 pytest.importorskip(\"numpy\"). Not an intentional deselection and not a test failure. Original receipt classifies optional_dependency_unavailable."
+      ],
+      "cause_category": "optional_dependency",
+      "disposition": "no_failure",
+      "baseline_relationship": "not_measured_in_baseline_failed-file_campaign"
+    },
+    {
+      "path": "tests/gateway/test_hosted_room_driver.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 43,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_hosted_room_driver.py::test_first_schema_creation_is_safe_across_processes",
+          "node_id_sha256": "8198f167e96284a30f4b04837055865dcb72a5618eaa57e9064318627e35a932",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_hosted_room_driver.py.log",
+              "sha256": "ba49273dc75b93b0d6c481b98207d1aaf03fd8f1ae133184f0148419fa0ef58e",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_hosted_room_driver.py.log",
+              "sha256": "8c146a07469e1ff5eee096e4e9927996ddc46133fd9f4e71524947a0bf52ab3f",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Multiprocessing default forkserver launch calls forkserver.ensure_running then socket.socket(AF_UNIX), which raises EPERM before the child schema-creation function starts."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/122306-cd342068a8184aa2a473bde0e126b5d5.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/10687-85f347f3aaa04e02a475f65a5d31d713.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_hosted_rooms.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 47,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_hosted_rooms.py::test_draft_schema_migration_is_safe_across_processes",
+          "node_id_sha256": "a7c37432b5d12fbc23a0221df0a9a70c2df30ebf54b6089f3d43f1c56689926b",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_hosted_rooms.py.log",
+              "sha256": "05f57616a6ad71be285eb4599690b060d9bb99a73c42eac17800de0f4b06ddc9",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_hosted_rooms.py.log",
+              "sha256": "71b17c72cc809aaf23e1073e9246c45fd748632f1276746d0f6ba822bc29917a",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Multiprocessing default forkserver launch calls forkserver.ensure_running then socket.socket(AF_UNIX), which raises EPERM before the child schema-migration function starts."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/123348-1c713a372b2247efbac5e0e30497a95f.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/10728-af8a80c1da1a4657b2a14214811fc498.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_matrix_voice.py",
+      "original_exit_code": 5,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 0,
+        "passed": 0,
+        "skipped": 1
+      },
+      "nodes": [],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/126835-7eff6a3da3ce4155a6addbcd0bec9c4a.json",
+      "baseline_receipt": null,
+      "module_notes": [
+        "Exit 5 is zero collected runnable tests: 0 failed, 0 collection errors, 1 module skip, 0 deselected. Missing optional dependency mautrix; tests/gateway/test_matrix_voice.py:15-20 import probe and module-level skip. Not an intentional deselection and not a test failure. Original receipt classifies optional_dependency_unavailable."
+      ],
+      "cause_category": "optional_dependency",
+      "disposition": "no_failure",
+      "baseline_relationship": "not_measured_in_baseline_failed-file_campaign"
+    },
+    {
+      "path": "tests/gateway/test_media_download_retry.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 3,
+        "passed": 8,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_media_download_retry.py::TestSlackDownloadSlackFile::test_success_on_first_attempt",
+          "node_id_sha256": "0a324e567b0c3d1dfac8ffeadccd31c8a75cb635412e6655eae755f4beb0c877",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_media_download_retry.py.log",
+              "sha256": "ad3521f306dbd613306a6c7757ebe492febbb072b94e0f758e760e01b2cfab16",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_media_download_retry.py.log",
+              "sha256": "e3a4d59c9921a44eb36f51ac96bd8acf831d56200c9ca051ed57bd43d66767a4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Slack HTTP responses were synthetic but socket.getaddrinfo was real. Captured DNS-resolution warnings show preflight SSRF failed before mocked downloads. A fixture supplies the exact files.slack.com public IP answer, retaining the real URL-safety check; independent DNS rebinding/private-address denial tests are unchanged and pass in the same module."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/gateway/test_media_download_retry.py::TestSlackDownloadSlackFile::test_rejects_html_response",
+          "node_id_sha256": "67b3d9e1d1b782fe68da479db0646a6c89ec469aa8b6d6746a688bd720e7ec21",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_media_download_retry.py.log",
+              "sha256": "ad3521f306dbd613306a6c7757ebe492febbb072b94e0f758e760e01b2cfab16",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_media_download_retry.py.log",
+              "sha256": "e3a4d59c9921a44eb36f51ac96bd8acf831d56200c9ca051ed57bd43d66767a4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Slack HTTP responses were synthetic but socket.getaddrinfo was real. Captured DNS-resolution warnings show preflight SSRF failed before mocked downloads. A fixture supplies the exact files.slack.com public IP answer, retaining the real URL-safety check; independent DNS rebinding/private-address denial tests are unchanged and pass in the same module."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/gateway/test_media_download_retry.py::TestSlackDownloadSlackFileBytes::test_success_returns_bytes",
+          "node_id_sha256": "e1769e0c94de7766bc008ef1c6e01237cf21428b6e27325415fb294cb50148a2",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_media_download_retry.py.log",
+              "sha256": "ad3521f306dbd613306a6c7757ebe492febbb072b94e0f758e760e01b2cfab16",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_media_download_retry.py.log",
+              "sha256": "e3a4d59c9921a44eb36f51ac96bd8acf831d56200c9ca051ed57bd43d66767a4",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Slack HTTP responses were synthetic but socket.getaddrinfo was real. Captured DNS-resolution warnings show preflight SSRF failed before mocked downloads. A fixture supplies the exact files.slack.com public IP answer, retaining the real URL-safety check; independent DNS rebinding/private-address denial tests are unchanged and pass in the same module."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/127005-fee67bb99fa147b1a1692d9a17208f38.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/11361-38a92a31570e41b794068b4d52d4a6ce.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_multiplex_hot_serve.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 8,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_multiplex_hot_serve.py::test_profile_lifecycle_over_real_control_socket",
+          "node_id_sha256": "0e1db1705d963e7989098d73023998e98ce4c220a448a1f3dc3f707bfb4f9c65",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_multiplex_hot_serve.py.log",
+              "sha256": "117f2ece7420d6657acfb4d244aee04a9333f71bd5761e611632615e0610a11e",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_multiplex_hot_serve.py.log",
+              "sha256": "09d99b060d3adae4245d4faaac09e1765ae77b449db3b5b213ca8ab032d120f9",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Real control-socket lifecycle query returns None after captured Gateway control socket failed to start EPERM. Profile lifecycle RPC is not reached."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/127676-c3c3a8fd421a4610832791dc83068ef9.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/11629-1b99b1682a4146ad9384f5bcba6e0b5a.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_peer_dm_transient_retry.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 0,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_peer_dm_transient_retry.py::test_peer_dm_retries_a_transient_turn_once_and_still_reports_a_permanent_one",
+          "node_id_sha256": "4d4fe856ab3c9b1ac1f5496d6b69f216f68119e1afa0b97ef75b20a9bd579f04",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_peer_dm_transient_retry.py.log",
+              "sha256": "fbf5514bbdbb1115ebe8773dd05e683c4d30292a9b8cda19b8dbe0692775334f",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_peer_dm_transient_retry.py.log",
+              "sha256": "516dde359a5b21b2e8461c1adf7580d3a73eb86cf65c840633d2b49f9ae1d7db",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-api-memory-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-api-memory-fixture-validation.json",
+              "sha256": "0aaed322701698bac06bc0b3865d4e92d7f74f22b04b46df9489d346a0d0e944"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-api-memory-after.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/129943-72d04b12b0f94c96ab63b4880de88a7c.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/11710-1eae430d323e4ea5aa00eadaf499ed49.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_scale_to_zero.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 2,
+        "passed": 25,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_scale_to_zero.py::test_suspend_self_posts_suspend_for_this_machine",
+          "node_id_sha256": "e235904523ed815160c0ea1a5058b4ceb81ab27718249be61a5447fc0dfc073c",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_scale_to_zero.py.log",
+              "sha256": "c5fc362834681454508b050232547f79d664d38dcfe9e4b9fd47daab606719b3",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_scale_to_zero.py.log",
+              "sha256": "e7e7cfb2ef4247d02f0de60b87dafd4510c90dcbda75b11392d8c8b5dbb75b61",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Both fake-Flaps HTTP scenarios fail in test fixture _fake_flaps at socket.socket(AF_UNIX, SOCK_STREAM) with EPERM, before the suspend-self production request is made."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        },
+        {
+          "node_id": "tests/gateway/test_scale_to_zero.py::test_suspend_self_non_2xx_is_false_not_raise",
+          "node_id_sha256": "54aff046a976b5d50de5b11e2c7662a54b04eb746308a6acbcfeeb055c43fbd8",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_scale_to_zero.py.log",
+              "sha256": "c5fc362834681454508b050232547f79d664d38dcfe9e4b9fd47daab606719b3",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_scale_to_zero.py.log",
+              "sha256": "e7e7cfb2ef4247d02f0de60b87dafd4510c90dcbda75b11392d8c8b5dbb75b61",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Both fake-Flaps HTTP scenarios fail in test fixture _fake_flaps at socket.socket(AF_UNIX, SOCK_STREAM) with EPERM, before the suspend-self production request is made."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/132748-0ea0f4df50ee4579915735c7a0e1eb0c.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/12181-f6280ada05644d468662eb6f41d1d5ff.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/gateway/test_shutdown_watchdog.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 2,
+        "skipped": 1
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_shutdown_watchdog.py::test_loop_tick_witness_arms_on_posix",
+          "node_id_sha256": "4f95b0ba4f738ac2a4d27aac2ead1ea58a5e14023c428e25d149a6729f0e1b8b",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_shutdown_watchdog.py.log",
+              "sha256": "89c68df55b186abbf475dc0ef1fba709c1908f2022c8ec2d6244c5211d24c56a",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_shutdown_watchdog.py.log",
+              "sha256": "d5ba97be0f367a313eba15f33c023e0f4339b14c54fd7f318209fb71b61e1524",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "loop_heartbeat_forever catches EPERM from asyncio.start_unix_server -> socket.socket(AF_UNIX, SOCK_STREAM), so loop_tick_socket is false. The runtime cannot create the real witness socket."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/135489-0cc329fb91bc487fa74a12328081d5b1.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/12244-513d96a7d17c4a40b460875ec35ef424.json",
+      "module_notes": [
+        "Original non-failing platform skip is retained and is not counted among failing nodes."
+      ]
+    },
+    {
+      "path": "tests/gateway/test_systemd_notify.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 2,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/gateway/test_systemd_notify.py::test_notify_supports_systemd_abstract_socket",
+          "node_id_sha256": "9f843035f45c8bd230beb6600468130b5b7aab440dc85dec58e497a971a1b753",
+          "cause_category": "environment_constraint",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__gateway__test_systemd_notify.py.log",
+              "sha256": "dc77d72335343a8bb6c776ec27fb24da79814cc79ff3243437ee9ccd05b85a46",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__gateway__test_systemd_notify.py.log",
+              "sha256": "663e412a9865aadf6cae2acb496222effac0e9ba86bfe78026a6585ef5702627",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "The test receiver fails at socket.socket(AF_UNIX, SOCK_DGRAM) with EPERM before bind/send or production sd_notify behavior."
+            }
+          ],
+          "disposition": "blocked",
+          "qualification_log": null
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/138794-f0a4ef021cb542d38ff13cb5fd4126ff.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/12436-f6fcfc513ece4d39895179f240bb2d0a.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/monitoring/test_otlp_exporter.py",
+      "original_exit_code": 5,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 0,
+        "passed": 0,
+        "skipped": 1
+      },
+      "nodes": [],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/229825-f9e5a1493a264e7e806c16268a00d24c.json",
+      "baseline_receipt": null,
+      "module_notes": [
+        "Exit 5 is zero collected runnable tests: 0 failed, 0 collection errors, 1 module skip, 0 deselected. Missing optional dependency opentelemetry.sdk.trace; tests/monitoring/test_otlp_exporter.py:12 pytest.importorskip(reason=\"otlp extra not installed\"). Not an intentional deselection and not a test failure. Original receipt classifies optional_dependency_unavailable."
+      ],
+      "cause_category": "optional_dependency",
+      "disposition": "no_failure",
+      "baseline_relationship": "not_measured_in_baseline_failed-file_campaign"
+    },
+    {
+      "path": "tests/tui_gateway/test_hosted_room_two_gateway_scoped.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 0,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/tui_gateway/test_hosted_room_two_gateway_scoped.py::test_in_process_scoped_transport_contract_finishes_headlessly",
+          "node_id_sha256": "be200618e41f0db8217f9b1a93eb2fd0aae77d5dd511cf8f6d97b2fff60f7b8e",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_blocked_by_missing_aiohttp_before_current_cause; current failure cannot be called a reproduced baseline cause",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__tui_gateway__test_hosted_room_two_gateway_scoped.py.log",
+              "sha256": "d8651a8e770de128989bb7fe827f0a77309cf72a40ffbc21de69f5e5b3dd9d63",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__tui_gateway__test_hosted_room_two_gateway_scoped.py.log",
+              "sha256": "cbda3627687da1a84f3fb66c95f490e00e7322c2448e6ce3f0848b76d8ef6ad1",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Previously qualified synthetic MagicMock agents fabricated runtime_context/_memory_manager and failed the strict real-manager ownership check. Explicit absent legacy fields repaired the fixture only; see docs/build/be18-hosted-room-fixture-validation.json. No re-edit or rerun by this lane."
+            },
+            {
+              "kind": "prior_qualification_receipt",
+              "path": "/workspace/scratch/42f2baf55663/ryoko-agent/docs/build/be18-hosted-room-fixture-validation.json",
+              "sha256": "da7c6dcd198313f40b6ff9cb5e16e4a8f07f630fedd0cd3dcb9e35a5330bbca5"
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-hosted-room-memory-after.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/307502-8a18a69d7d0f4aa0a1b09d021fce22d9.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/33960-03f712ba6d994dadb5a2a00c4f257ca7.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/tui_gateway/test_projects_rpc.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 2,
+        "passed": 25,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/tui_gateway/test_projects_rpc.py::test_projects_reads_are_scoped_to_the_requested_profile",
+          "node_id_sha256": "de24e79f8be5a45ba753e7cea09a8c239dccef565840956fbc83de6c960ced3a",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__tui_gateway__test_projects_rpc.py.log",
+              "sha256": "7c1c4a684fd671f8a5134d1c8066f51cc0f2324848c6a246db24910a9d10b399",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__tui_gateway__test_projects_rpc.py.log",
+              "sha256": "b42eeb0abbd533a2386049abb9743fdb770d1858a2fda53b9467535fc7d5863c",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Named synthetic repos lacked Git roots; sessions resolved enclosing host checkout as an additional auto-project named shared. Each fixture repo now receives a real git init. Actual A-to-B-to-A profile stores, names, counts, and no-leak assertions are unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        },
+        {
+          "node_id": "tests/tui_gateway/test_projects_rpc.py::test_projects_tree_is_scoped_to_the_requested_profile",
+          "node_id_sha256": "3f553296f19ea255acb7903dae84dbd1a6e0fef20e9c2b884632ea3ba497a38b",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__tui_gateway__test_projects_rpc.py.log",
+              "sha256": "7c1c4a684fd671f8a5134d1c8066f51cc0f2324848c6a246db24910a9d10b399",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__tui_gateway__test_projects_rpc.py.log",
+              "sha256": "b42eeb0abbd533a2386049abb9743fdb770d1858a2fda53b9467535fc7d5863c",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "Named synthetic repos lacked Git roots; sessions resolved enclosing host checkout as an additional auto-project named shared. Each fixture repo now receives a real git init. Actual A-to-B-to-A profile stores, names, counts, and no-leak assertions are unchanged."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/317563-857d1777c6364495aaa2a5b5200acf37.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/33990-721ba93aa1844a6b99df82016eb57a3e.json",
+      "module_notes": []
+    },
+    {
+      "path": "tests/tui_gateway/test_tui_gateway_server.py",
+      "original_exit_code": 1,
+      "original_counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 1,
+        "passed": 667,
+        "skipped": 0
+      },
+      "nodes": [
+        {
+          "node_id": "tests/tui_gateway/test_tui_gateway_server.py::test_command_dispatch_and_catalog_resolve_project_skills_from_the_session_cwd",
+          "node_id_sha256": "b65f5f3ea7450aa791cf446d1e0441e4b3fd6aefeaa76039164ae0a79dc267b9",
+          "cause_category": "fixture_isolation",
+          "baseline_relationship": "baseline_trace_reproduces_same_observed_cause_in_prebuild_4b7268c69f72c3fa5d2d056a3bbce9a3b65d94cd",
+          "evidence": [
+            {
+              "path": "/workspace/shared/ryoko-final-failure-sections/tests__tui_gateway__test_tui_gateway_server.py.log",
+              "sha256": "d943157024bba54a805b2740423de2313578b0ecf43df5ddfad7efa7ddbad8b7",
+              "kind": "original_failure_trace"
+            },
+            {
+              "path": "/workspace/shared/ryoko-runtime-baseline-sections/tests__tui_gateway__test_tui_gateway_server.py.log",
+              "sha256": "33c5d0afa248b82b2845f2f4323f557f59135042d69efe179d001736f40942df",
+              "kind": "baseline_failure_trace"
+            },
+            {
+              "kind": "cause_and_qualification",
+              "detail": "RPC no-leak assertion assumed initial project root None, but initial unbound cwd was below host /workspace/shared/.git. It now captures and requires exact restoration of both initial project root and logical cwd; both session catalogs and cross-repo skill refusal assertions remain."
+            }
+          ],
+          "disposition": "fixed_and_retested",
+          "qualification_log": "/workspace/shared/ryoko-runtime-repair-final.log"
+        }
+      ],
+      "original_receipt": "/workspace/shared/ryoko-final-source-python-receipts/327975-6676b24c2b32490787edb5a853fa4714.json",
+      "baseline_receipt": "/tmp/be18-baseline-test-receipts/34664-00f89ffc861d45979eb0af09ef51dba4.json",
+      "module_notes": []
+    }
+  ],
+  "summary": {
+    "modules": 36,
+    "original_failed_nodes": 84,
+    "cause_categories": {
+      "fixture_isolation": 67,
+      "environment_constraint": 17
+    },
+    "dispositions": {
+      "fixed_and_retested": 67,
+      "blocked": 17
+    }
+  },
+  "revisions": [
+    {
+      "timestamp_utc": "2026-10-03T08:18:34Z",
+      "change": "Classify and repair LSP fixture zombie cleanup",
+      "previous_report": "/workspace/shared/ryoko-runtime-failure-classification-before-lsp-zombie.json",
+      "previous_report_sha256": "ec420086fa5158bd9ef7ab4b71177222309fe72956951244e2d55513fe92b8f5"
+    }
+  ]
+}

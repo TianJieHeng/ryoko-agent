@@ -967,7 +967,6 @@ def _stamp_api_content_sidecar(
 
 def _append_multimodal_context(
     agent: Any, turn_user_msg: Dict[str, Any], ext_prefetch_cache: str, plugin_user_context: str,
-    *, preflight_compressed: bool,
 ) -> None:
     """Multimodal (list) content takes no string sidecar: the turn's context becomes a durable
     text part on the current turn's live list (the gateway must-deliver-note channel, #71998),
@@ -978,19 +977,18 @@ def _append_multimodal_context(
     a close/early flush that raced it) is updated in place: the crash persist marker-skips that
     message, so without this a resumed session replays a view the model never saw. Same
     ``_row_id``-under-lock protocol as the string sidecar backfill; the row keeps its writer's
-    shape (compaction inserted the raw parts, a flush the text projection)."""
+    lossless part-list shape for both compaction and early flushes."""
     _mm_ctx = compose_multimodal_context_part(ext_prefetch_cache, plugin_user_context)
     if not append_notes_to_multimodal_content(turn_user_msg.get("content"), _mm_ctx):
         return
-    from agent.session_persistence import _durable_content, _persist_lock
+    from agent.session_persistence import _persist_lock
 
     with _persist_lock(agent):
         _row_id = turn_user_msg.get("_row_id")
         _db = getattr(agent, "_session_db", None)
         if _db is None or not isinstance(_row_id, int):
             return
-        _in_place_compacted = preflight_compressed and bool(getattr(agent, "_last_compaction_in_place", False))
-        content = turn_user_msg["content"] if _in_place_compacted else _durable_content(turn_user_msg["content"])
+        content = turn_user_msg["content"]
         try:
             _db.set_user_message_content(agent.session_id, _row_id, content)
         except Exception:
@@ -1183,7 +1181,6 @@ def build_turn_context(
         if isinstance(messages[current_turn_user_idx].get("content"), list):
             _append_multimodal_context(
                 agent, messages[current_turn_user_idx], ext_prefetch_cache, plugin_user_context,
-                preflight_compressed=compaction.compressed,
             )
         elif not moa_active and getattr(agent, "api_mode", None) != "codex_app_server":
             _stamp_api_content_sidecar(

@@ -1,0 +1,60 @@
+{
+  "phase": "FE04",
+  "status": "verifying",
+  "base": "0459d06431b5574e703eb31cf4dec0c7a4c4a85f",
+  "checks": [
+    {
+      "command": "vitest run runtime-missions.test.ts + TUI runtime-command.test.ts",
+      "result": "passed",
+      "tests": 5,
+      "files": 2
+    },
+    {
+      "command": "desktop vitest run mission-panel/conversation-mission/chat-index tests",
+      "result": "passed",
+      "tests": 4,
+      "files": 3
+    },
+    {
+      "command": "clean shared/TUI/Electron renderer typechecks",
+      "result": "passed"
+    },
+    {
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/tui_gateway/test_missions_rpc.py",
+      "result": "passed",
+      "tests": 15,
+      "files": 1
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe04-tests.log",
+      "sha256": "36d106f13f2006e6ae5e9621cc480be2cd08cc28db607a6af0f7ec89c34b4043"
+    },
+    {
+      "path": "/tmp/fe04-desktop-tests.log",
+      "sha256": "a5109986f72c053ccd5f8bf6923ff47858c482f2a958eec95a407a63c56fca38"
+    },
+    {
+      "path": "/tmp/fe04-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe04-clean-tui.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe04-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/fe04-backend-tests.log",
+      "sha256": "f5571bc9e36ca783f8c810a9a4a1403d042896c428b8f4ae9c013cca2c5adb40"
+    }
+  ],
+  "limitations": [
+    "Mission controls create/revise intent; they do not dispatch a new model or external effect",
+    "Current metadata-only approval list cannot safely approve unseen content; exact prepared-content approval remains in originating control",
+    "No model-run two-output pilot or live delivery/provider claim; aggregate/native/visual/localization gates pending"
+  ]
+}

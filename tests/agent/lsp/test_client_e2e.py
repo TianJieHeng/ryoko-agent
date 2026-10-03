@@ -185,8 +185,13 @@ async def test_cancelled_start_hard_kills_sigterm_ignoring_descendant(tmp_path: 
         if not start.done():
             start.cancel()
             await asyncio.gather(start, return_exceptions=True)
-        if child is not None and child.is_running():
-            child.kill()
+        # is_running() includes reparented zombies; the body already accepts those as exited.
+        # Keep the same live-child predicate here instead of signaling an already-dead PID.
+        try:
+            if child is not None and child.is_running() and child.status() != psutil.STATUS_ZOMBIE:
+                child.kill()
+        except psutil.NoSuchProcess:
+            pass  # The child may be reaped between the status check and cleanup.
 
 
 @pytest.mark.asyncio

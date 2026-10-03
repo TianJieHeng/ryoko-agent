@@ -102,6 +102,31 @@ class ConnectorClient:
         )
         return wire.ConnectorSchemasResponse.model_validate(payload).model_dump()
 
+    def pinned_read(self, connector: str, tool: str, arguments: dict, *, account: str,
+                    timeout: float) -> dict:
+        """One exact account-pinned call, with no retries or slug fallback.
+
+        Callers must certify their read adapter and transport. Older gateways
+        reject account selection; never recover by dropping the account pin.
+        """
+        body = wire.ConnectorExecuteRequest(tools=[wire.ConnectorExecuteCall(
+            connector=connector, tool=tool, arguments=arguments, account=account,
+        )]).model_dump(by_alias=True, exclude_none=True)
+        payload = self._post(wire.CONNECTOR_EXECUTE_PATH, body, timeout=timeout, retries=0)
+        parsed = self._parse(wire.ConnectorExecuteResponse, payload, "pinned connector read")
+        if len(parsed.results) != 1 or parsed.total_count != 1:
+            raise ToolGatewayError("invalid pinned read result count", code="INVALID_RESPONSE")
+        result = parsed.results[0]
+        if result.connector != connector or result.tool != tool:
+            raise ToolGatewayError("pinned read result identity changed", code="INVALID_RESPONSE")
+        return _result_dict(result)
+
+    def read_schema(self, tool: str, *, timeout: float) -> dict:
+        """Fetch one exact schema without broad discovery or automatic retries."""
+        body = wire.ConnectorSchemasRequest(tools=[tool]).model_dump(by_alias=True)
+        payload = self._post(wire.CONNECTOR_SCHEMAS_PATH, body, timeout=timeout, retries=0)
+        return self._parse(wire.ConnectorSchemasResponse, payload, "pinned connector schema").model_dump()
+
     def connections(
         self, connectors: Sequence[str], *, reinitiate: bool = False,
         return_to: Optional[str] = None, op: Optional[str] = None,

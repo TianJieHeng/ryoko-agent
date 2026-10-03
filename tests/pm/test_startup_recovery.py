@@ -20,7 +20,7 @@ from pm.lock import Facts, Lockfile
 from pm.plugin_inputs import Members
 from pm.runtime import runtime_environment
 from pm.store import current_target, tree_digest
-from tests.pm._fixtures import _wheel
+from tests.pm._fixtures import _wheel, seed_pm_runtime_cache
 
 @pytest.fixture(autouse=True)
 def isolated_machine_home(tmp_path, monkeypatch):
@@ -34,7 +34,7 @@ def isolated_machine_home(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("marker_name", [".update-incomplete", ".lazy-refresh-incomplete", None, "manual", "baseline"])
-def test_bootstrap_repairs_before_dependency_activation(tmp_path, monkeypatch, marker_name):
+def test_bootstrap_repairs_before_dependency_activation(tmp_path, monkeypatch, marker_name, request):
     import pm.paths as paths
     from pm.environments import selected_venv, site_packages
 
@@ -44,6 +44,7 @@ def test_bootstrap_repairs_before_dependency_activation(tmp_path, monkeypatch, m
     core.mkdir()
     home = tmp_path / "home"
     home.mkdir()
+    seed_pm_runtime_cache(request, home / "cache" / "uv")
     for name in ("hermes_bootstrap.py", "hermes_constants.py"):
         shutil.copy2(repo / name, core / name)
     shutil.copytree(repo / "pm", core / "pm", ignore=shutil.ignore_patterns("__pycache__"))

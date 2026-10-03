@@ -3,6 +3,8 @@ writing a second one (#111868: a Desktop freeze during a slow first agent build 
 
 from types import SimpleNamespace
 
+import pytest
+
 from agent.turn_context import _stage_turn_user_message
 from hermes_state import SessionDB
 from run_agent import AIAgent
@@ -80,7 +82,8 @@ def test_submit_ack_binds_the_written_row_even_if_worker_consumes_staging(monkey
         db.close()
 
 
-def test_turn_adopts_the_submit_row_and_writes_no_duplicate(monkeypatch, tmp_path):
+@pytest.mark.parametrize("with_image", [False, True])
+def test_turn_adopts_the_submit_row_and_writes_no_duplicate(monkeypatch, tmp_path, with_image):
     db = SessionDB(db_path=tmp_path / "state.db")
     sid, key = _desktop_session(monkeypatch, db)
     session = server._sessions[sid]
@@ -92,6 +95,9 @@ def test_turn_adopts_the_submit_row_and_writes_no_duplicate(monkeypatch, tmp_pat
         agent = _flush_agent(db, key)
         # The prologue rewrote the persisted prompt (@-expansion): the early row follows it.
         expanded = "look at @notes.md\n\n<file notes.md>todo</file>"
+        if with_image:
+            expanded = [{"type": "text", "text": expanded},
+                        {"type": "image_url", "image_url": {"url": "data:image/png;base64,AAAA"}}]
         server._adopt_submit_user_row(session, agent, expanded, "look at @notes.md")
         assert "_submit_user_row" not in session
         user_msg, _pending = _stage_turn_user_message(agent, expanded, expanded, None, None, None, None)

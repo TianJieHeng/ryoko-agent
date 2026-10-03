@@ -26,6 +26,9 @@ from agent.prompt_builder import (
 )
 
 
+pytestmark = pytest.mark.usefixtures("isolated_git_ancestors")
+
+
 @pytest.fixture(autouse=True)
 def _drain_truncation_warnings():
     """Leave no truncation warnings in the shared thread context.

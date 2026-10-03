@@ -139,7 +139,7 @@ async def test_in_process_scoped_transport_contract_finishes_headlessly(
         ],
     )
 
-    agent = MagicMock()
+    agent = MagicMock(runtime_context=None, _memory_manager=None)
     agent.run_conversation.return_value = {
         "final_response": "Scoped peer response."
     }

@@ -1,0 +1,960 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-03T08:24:06.886738+00:00",
+  "source_checkpoint": "cb889631b43e8cb252d30537c3678b95ba0e754f",
+  "source_inventory": {
+    "head_commit": "cb889631b43e8cb252d30537c3678b95ba0e754f",
+    "head_tree": "4d35bcca5c46c779633d925e3fcc2eed4254528b",
+    "dirty_worktree": true,
+    "candidate_files_digest": "bd9821b8d08e6424056f67f7ee9afc4b37f279e3737db406816f8a127bd1cdef",
+    "candidate_file_count": 15851,
+    "digest_scope": "Tracked and nonignored candidate files, excluding docs/ and Markdown/rst; no private profile scan"
+  },
+  "original_full_campaign": {
+    "source": "b323e73f7b2f6792c57341240e206a72e43e3192",
+    "files": 5356,
+    "runner_passed": 56979,
+    "runner_failed": 219,
+    "runner_skipped": 724,
+    "failed_node_outcomes_including_fixture_phases": 484,
+    "nonzero_module_receipts": 117,
+    "preserved_receipt": "docs/build/be18-final-source-validation.json"
+  },
+  "classification": {
+    "resolved_original_node_outcomes": 376,
+    "remaining_host_blocked_node_outcomes": 108,
+    "unclassified_original_failures": 0,
+    "unfixed_observed_production_regressions": 0,
+    "preexisting_production_defects_fixed": 2,
+    "production_failed_outcomes_fixed": 3,
+    "stale_test_expectation_fixed": 1,
+    "historical_cause_categories": {
+      "fixture_isolation": 122,
+      "environment_constraint": 358,
+      "baseline_code_failure": 4
+    },
+    "baseline_relationship": "Independent axis, recorded per node; source identity and earlier matching nodes are not treated as automatic proof of environment cause.",
+    "all_29_newly_observed_failure_nodes_qualified": true,
+    "qualification_caution": "No claim of no latent defects. 376/108 classify 484 phase-aware failing cases and cannot be subtracted from the 219 runner summary."
+  },
+  "host_constraints": [
+    {
+      "kind": "socket_creation_EPERM",
+      "failed_node_outcomes": 101,
+      "requirement": "A supported test environment that permits its normal Unix-domain socket/agent IPC operations. Do not disable security guards or change host permissions to force a pass here."
+    },
+    {
+      "kind": "profile_export_checkout_ancestry",
+      "failed_node_outcomes": 7,
+      "requirement": "An already-authorized temporary test root genuinely outside Git-checkout ancestry. Do not hide protected host markers or weaken the export guard."
+    }
+  ],
+  "remaining_host_module_count": 29,
+  "remaining_host_test_files": "docs/build/remaining-host-tests.txt",
+  "remaining_nodes": [
+    {
+      "node_id": "tests/cron/test_timezone.py::TestCodeExecutionTZ::test_tz_injected_when_configured",
+      "module": "tests/cron/test_timezone.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket.py::test_default_identify_payload_shape",
+      "module": "tests/gateway/test_control_socket.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket.py::test_long_home_end_to_end_via_pointer",
+      "module": "tests/gateway/test_control_socket.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket.py::test_server_answers_identify_and_status",
+      "module": "tests/gateway/test_control_socket.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket.py::test_stale_socket_file_is_replaced_on_bind",
+      "module": "tests/gateway/test_control_socket.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket.py::test_stop_removes_socket_and_pointer",
+      "module": "tests/gateway/test_control_socket.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket.py::test_unknown_verb_and_malformed_request",
+      "module": "tests/gateway/test_control_socket.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket.py::test_verb_handler_receives_params",
+      "module": "tests/gateway/test_control_socket.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket_pause.py::test_pause_client_none_when_gateway_lacks_verb",
+      "module": "tests/gateway/test_control_socket_pause.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_control_socket_pause.py::test_pause_client_roundtrip_over_real_socket",
+      "module": "tests/gateway/test_control_socket_pause.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_hosted_room_driver.py::test_first_schema_creation_is_safe_across_processes",
+      "module": "tests/gateway/test_hosted_room_driver.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_hosted_rooms.py::test_draft_schema_migration_is_safe_across_processes",
+      "module": "tests/gateway/test_hosted_rooms.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_multiplex_hot_serve.py::test_profile_lifecycle_over_real_control_socket",
+      "module": "tests/gateway/test_multiplex_hot_serve.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_scale_to_zero.py::test_suspend_self_non_2xx_is_false_not_raise",
+      "module": "tests/gateway/test_scale_to_zero.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_scale_to_zero.py::test_suspend_self_posts_suspend_for_this_machine",
+      "module": "tests/gateway/test_scale_to_zero.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_shutdown_watchdog.py::test_loop_tick_witness_arms_on_posix",
+      "module": "tests/gateway/test_shutdown_watchdog.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/gateway/test_systemd_notify.py::test_notify_supports_systemd_abstract_socket",
+      "module": "tests/gateway/test_systemd_notify.py",
+      "lane": "runtime",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-runtime-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_backup.py::TestIterBackupFiles::test_skips_unix_sockets",
+      "module": "tests/hermes_cli/test_backup.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_data_uninstall_holders.py::test_manual_gateway_drains_over_real_control_transport_before_deletion",
+      "module": "tests/hermes_cli/test_data_uninstall_holders.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_desktop_socket_tmpdir.py::test_long_scratch_tmpdir_hosts_the_singleton_socket_and_is_kept_for_children",
+      "module": "tests/hermes_cli/test_desktop_socket_tmpdir.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_desktop_socket_tmpdir.py::test_tmpdir_that_fits_the_socket_budget_is_passed_through",
+      "module": "tests/hermes_cli/test_desktop_socket_tmpdir.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py::test_a_takeover_made_by_another_process_stops_input_within_the_refresh_interval",
+      "module": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py::test_no_bridge_task_or_socket_outlives_the_bridge",
+      "module": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py::test_only_a_clean_viewer_close_hands_the_screen_back[sha256:562064025c6323c2]",
+      "module": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py::test_only_a_clean_viewer_close_hands_the_screen_back[sha256:63cbd1a6ab4bfc68]",
+      "module": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py::test_only_a_clean_viewer_close_hands_the_screen_back[sha256:ea03b3c40584299d]",
+      "module": "tests/hermes_cli/test_display_ws_drop_keeps_lease.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_default_path.py::test_checkout_detection_does_not_depend_on_cwd",
+      "module": "tests/hermes_cli/test_profile_export_default_path.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_default_path.py::test_cli_export_default_does_not_write_into_the_current_checkout",
+      "module": "tests/hermes_cli/test_profile_export_default_path.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_default_path.py::test_custom_hermes_home_inside_a_checkout_uses_a_sibling_store",
+      "module": "tests/hermes_cli/test_profile_export_default_path.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_default_path.py::test_cwd_in_unrelated_checkout_does_not_prove_safety",
+      "module": "tests/hermes_cli/test_profile_export_default_path.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_default_path.py::test_default_export_path_is_managed_and_outside_named_profiles",
+      "module": "tests/hermes_cli/test_profile_export_default_path.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_default_path.py::test_export_dir_symlink_is_rejected",
+      "module": "tests/hermes_cli/test_profile_export_default_path.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_default_path.py::test_slash_export_uses_the_same_managed_destination",
+      "module": "tests/hermes_cli/test_profile_export_default_path.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_special_files.py::test_default_profile_export_survives_unix_socket",
+      "module": "tests/hermes_cli/test_profile_export_special_files.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_profile_export_special_files.py::test_named_profile_export_survives_unix_socket",
+      "module": "tests/hermes_cli/test_profile_export_special_files.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_update_wedged_gateway.py::TestLoopTickWitness::test_legacy_fresh_file_with_dead_node_is_unknown",
+      "module": "tests/hermes_cli/test_update_wedged_gateway.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_update_wedged_gateway.py::TestLoopTickWitness::test_off_loop_completion_cannot_manufacture_fresh_liveness",
+      "module": "tests/hermes_cli/test_update_wedged_gateway.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_update_wedged_gateway.py::TestLoopTickWitness::test_producer_rebinds_over_stale_socket_node",
+      "module": "tests/hermes_cli/test_update_wedged_gateway.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_update_wedged_gateway.py::TestLoopTickWitness::test_sustained_stop_above_wedge_budget_still_escalates",
+      "module": "tests/hermes_cli/test_update_wedged_gateway.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_update_wedged_gateway.py::TestLoopTickWitness::test_transient_stall_below_wedge_budget_never_escalates",
+      "module": "tests/hermes_cli/test_update_wedged_gateway.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/hermes_cli/test_update_wedged_gateway.py::TestLoopTickWitness::test_true_wedge_requires_sustained_witness_silence",
+      "module": "tests/hermes_cli/test_update_wedged_gateway.py",
+      "lane": "cli",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-cli-failure-classification.json"
+    },
+    {
+      "node_id": "tests/scripts/test_stage_apt_repo.py::test_multi_key_import_is_rejected_not_first_key_used",
+      "module": "tests/scripts/test_stage_apt_repo.py",
+      "lane": "package",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-package-failure-classification.json"
+    },
+    {
+      "node_id": "tests/scripts/test_stage_apt_repo.py::test_real_gpg_signs_and_published_public_key_verifies[sha256:b119f18020fb13e3]",
+      "module": "tests/scripts/test_stage_apt_repo.py",
+      "lane": "package",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-package-failure-classification.json"
+    },
+    {
+      "node_id": "tests/scripts/test_stage_apt_repo.py::test_real_gpg_signs_and_published_public_key_verifies[sha256:cfae0d4248f7142f]",
+      "module": "tests/scripts/test_stage_apt_repo.py",
+      "lane": "package",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-package-failure-classification.json"
+    },
+    {
+      "node_id": "tests/scripts/test_stage_apt_repo.py::test_real_gpg_tampered_metadata_fails_closed",
+      "module": "tests/scripts/test_stage_apt_repo.py",
+      "lane": "package",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-package-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_approved_command_clean_slate.py::test_execute_code_approved_clears_stale_interrupt_bit",
+      "module": "tests/tools/test_approved_command_clean_slate.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_approved_command_clean_slate.py::test_execute_code_non_approved_still_interrupts_on_stale_bit",
+      "module": "tests/tools/test_approved_command_clean_slate.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestEnvVarFiltering::test_api_keys_excluded",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestEnvVarFiltering::test_timezone_injected_when_set",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestEnvVarFiltering::test_tokens_excluded",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_basic_print",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_concurrent_tool_calls_match_responses",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_json_parse_helper_bom",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_no_tool_call_script_does_not_wait_for_rpc_accept_timeout",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_repo_root_modules_are_importable",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_retry_helper_all_fail",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_shell_quote_helper",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_single_tool_call",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCode::test_stderr_on_error",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestExecuteCodeEdgeCases::test_nonoverlapping_tools_fallback",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestHeadTailTruncation::test_short_output_not_truncated",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution.py::TestInterruptHandling::test_interrupt_event_stops_execution",
+      "module": "tests/tools/test_code_execution.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_modes.py::test_credential_policy_and_whitelist_in_real_child[sha256:68f4329a44c208a8]",
+      "module": "tests/tools/test_code_execution_modes.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_modes.py::test_credential_policy_and_whitelist_in_real_child[sha256:8003944d5a402948]",
+      "module": "tests/tools/test_code_execution_modes.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_modes.py::test_selected_interpreter_environment_and_real_rpc[sha256:0b7860eb9ea08ec5]",
+      "module": "tests/tools/test_code_execution_modes.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_modes.py::test_selected_interpreter_environment_and_real_rpc[sha256:603b6ff2243ee1f2]",
+      "module": "tests/tools/test_code_execution_modes.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_modes.py::test_selected_interpreter_environment_and_real_rpc[sha256:fc5fe11677f007da]",
+      "module": "tests/tools/test_code_execution_modes.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_modes.py::test_selected_interpreter_environment_and_real_rpc[sha256:ffde094ed5d8f4cf]",
+      "module": "tests/tools/test_code_execution_modes.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_pm_runtime.py::test_project_interpreter_keeps_runtime_dependencies_out",
+      "module": "tests/tools/test_code_execution_pm_runtime.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_pm_runtime.py::test_runtime_dependencies_import_in_persistent_kernel[sha256:68f4329a44c208a8]",
+      "module": "tests/tools/test_code_execution_pm_runtime.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_execution_pm_runtime.py::test_runtime_dependencies_import_in_persistent_kernel[sha256:8003944d5a402948]",
+      "module": "tests/tools/test_code_execution_pm_runtime.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestBackgroundIdleReaper::test_reap_once_spares_attached_and_fresh_kernels",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestBackgroundIdleReaper::test_reap_once_sweeps_idle_kernels_without_a_new_acquire",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestInScriptToolErrors::test_ignored_helper_error_is_reported_for_that_cell_only",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelLifecycle::test_kernel_exits_when_its_backend_parent_dies",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelLifecycle::test_subprocess_fd_output_reaches_the_result",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelLifecycle::test_sys_exit_ends_the_kernel",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelLifecycle::test_timeout_kills_the_kernel_and_reports_state_loss",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_delegated_children_get_their_own_kernels",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_finished_children_release_their_kernels",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_idle_kernels_are_reaped",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_live_children_keep_their_kernels_past_the_lru_cap",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_live_kernels_are_capped_lru_across_owners",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_parallel_cells_share_one_kernel_process",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_session_clear_disposes_the_owners_kernels",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_sessions_are_isolated_from_each_other",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_state_survives_across_turns_of_one_conversation",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestKernelOwnershipAndLifecycle::test_two_delegated_children_are_isolated_from_each_other",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestModelFacingReset::test_reset_is_reachable_from_a_model_call_despite_stale_kernel_mode",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestPerCellRpcAuthority::test_a_later_cells_rpc_runs_under_that_cells_authority",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestPerCellRpcAuthority::test_cross_cell_alias_dispatches_under_the_current_cell",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestPerCellRpcAuthority::test_each_cell_installs_a_fresh_authority",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestSessionStatePersistence::test_exception_keeps_the_kernel_alive",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestSessionStatePersistence::test_imports_persist",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestSessionStatePersistence::test_reset_discards_state",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_code_kernel.py::TestSessionStatePersistence::test_state_persists_across_cells",
+      "module": "tests/tools/test_code_kernel.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_execute_code_approval_cluster.py::test_rpc_carries_authority_to_real_dispatch[sha256:03568bd3e28943be]",
+      "module": "tests/tools/test_execute_code_approval_cluster.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_execute_helper_contract.py::test_missing_helper_recovery_instructions_execute",
+      "module": "tests/tools/test_execute_helper_contract.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_execute_helper_contract.py::test_schema_helper_instructions_work_across_kernel_lifetimes",
+      "module": "tests/tools/test_execute_helper_contract.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_local_env_blocklist.py::TestNativeEnvironmentContracts::test_execute_code_composition_strips_inherited_hermes_entries[sha256:804ebf5e907c4f43]",
+      "module": "tests/tools/test_local_env_blocklist.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_local_env_blocklist.py::TestNativeEnvironmentContracts::test_execute_code_composition_strips_inherited_hermes_entries[sha256:ce905dc776fd5da5]",
+      "module": "tests/tools/test_local_env_blocklist.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_scoped_spawn_lost_user_bus_honours_configured_runtime_dir",
+      "module": "tests/tools/test_process_registry.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_systemd_probe_derives_owned_user_bus_env_for_system_gateway",
+      "module": "tests/tools/test_process_registry.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_read_special_file_guard.py::TestSpecialFileKind::test_socket",
+      "module": "tests/tools/test_read_special_file_guard.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_sandbox_failure_hints.py::TestLiveSandboxHint::test_bad_import_produces_hint_field",
+      "module": "tests/tools/test_sandbox_failure_hints.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_sandbox_failure_hints.py::TestLiveSandboxHint::test_successful_script_has_no_hint",
+      "module": "tests/tools/test_sandbox_failure_hints.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_voice_mode.py::TestPulseSocketReachable::test_listening_socket_reachable_via_xdg_runtime",
+      "module": "tests/tools/test_voice_mode.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    },
+    {
+      "node_id": "tests/tools/test_voice_mode.py::TestPulseSocketReachable::test_stale_socket_file_not_reachable",
+      "module": "tests/tools/test_voice_mode.py",
+      "lane": "tools",
+      "cause_category": "environment_constraint",
+      "status": "host_blocked",
+      "evidence_report": "docs/build/be18-tools-failure-classification.json"
+    }
+  ],
+  "reports": {
+    "runtime": {
+      "path": "docs/build/be18-runtime-failure-classification.json",
+      "sha256": "cc058be3d3f9fdca4a4c22c4e5eda7574579fd5ddcb45b67281f7b25ff8c1db0"
+    },
+    "cli": {
+      "path": "docs/build/be18-cli-failure-classification.json",
+      "sha256": "65290054c3c296ec54c1d3f537f2f50de8a385a166565f9b0b9638f5fd62a948"
+    },
+    "tools": {
+      "path": "docs/build/be18-tools-failure-classification.json",
+      "sha256": "54fe91ca47755eca191e595d61cac67728150b222150e6c3bab79868f86235b1"
+    },
+    "package": {
+      "path": "docs/build/be18-package-failure-classification.json",
+      "sha256": "f2c3f8e45e47bee2bd8e01f55ef128f9cdbdc1e35ab6a9d5eb766ac517951109"
+    }
+  },
+  "integration": {
+    "source": "097ab63c3e6507c678332c9d0b2d723581320e8f",
+    "files": 6,
+    "passed": 182,
+    "failed": 0,
+    "log": "/workspace/shared/ryoko-final-recovery-integration.log",
+    "sha256": "5151741171723056aaa2f8023a892fa051d92bbc0d1026b163b68fbd3b8d108d",
+    "later_delta": "LSP fixture-only cleanup at cb889631 passed 13/13 separately with unchanged signal guard"
+  },
+  "lint": {
+    "scope": "48 Python files changed since 05f925fb",
+    "log": "/workspace/shared/ryoko-final-recovery-ruff.log",
+    "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  "status": "all_observed_recoverable_failures_resolved_host_and_release_qualification_still_blocked",
+  "publication": "local_only_normal_git_auth_unavailable_no_blobs",
+  "not_performed": [
+    "No fourth full suite merely to repeat proven host restrictions",
+    "No Git push/API blob/CI-green claim",
+    "No model training, LAYA activation, live credentials or deployment",
+    "No native/browser/hardware or Dots consumer qualification"
+  ]
+}

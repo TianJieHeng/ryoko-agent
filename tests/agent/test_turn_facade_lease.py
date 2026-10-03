@@ -22,6 +22,9 @@ class _Db:
         self.events.append(("acquire", session_id, holder))
         return self.acquired
 
+    def assert_provider_state_compatible(self, session_id):
+        self.events.append(("provider_compatible", session_id))
+
     def refresh_session_turn_lease(self, session_id, holder, **kwargs):
         return True
 
@@ -96,7 +99,10 @@ def test_admission_sets_holder_attrs_and_release_clears_them(monkeypatch):
     lease.join_threads()
     lease.clear_interrupt()
     lease.release()
-    assert db.events == [("acquire", "s1", lease.holder), ("release", "s1", lease.holder)]
+    assert db.events == [
+        ("acquire", "s1", lease.holder), ("provider_compatible", "s1"),
+        ("release", "s1", lease.holder),
+    ]
     assert agent._active_session_turn_lease_holder is None
     assert agent._active_session_turn_lease_ttl_seconds is None
 

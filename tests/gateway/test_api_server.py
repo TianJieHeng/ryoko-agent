@@ -451,7 +451,7 @@ def auth_adapter():
 class TestAgentExecution:
     @pytest.mark.asyncio
     async def test_run_agent_uses_session_id_as_task_id(self, adapter):
-        mock_agent = MagicMock()
+        mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
         mock_agent.run_conversation.return_value = {"final_response": "ok"}
         mock_agent.session_prompt_tokens = 1
         mock_agent.session_completion_tokens = 2
@@ -491,7 +491,7 @@ class TestAgentExecution:
         TurnRunner, so it needs its own baseline snapshot/clear — verify the
         markers _reap_disconnected_agent_processes() reads are actually
         populated during the turn and cleared once it finishes."""
-        mock_agent = MagicMock()
+        mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
         mock_agent.session_prompt_tokens = 0
         mock_agent.session_completion_tokens = 0
         mock_agent.session_total_tokens = 0
@@ -2510,7 +2510,7 @@ class TestSessionKeyHeader:
 
         def _fake_create_agent(**kwargs):
             captured_kwargs.update(kwargs)
-            mock_agent = MagicMock()
+            mock_agent = MagicMock(runtime_context=None, _memory_manager=None)
             mock_agent.run_conversation.return_value = {"final_response": "ok", "messages": []}
             mock_agent.session_prompt_tokens = 0
             mock_agent.session_completion_tokens = 0

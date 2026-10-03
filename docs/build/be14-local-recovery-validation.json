@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "scope": "BE14 bounded local owning-store recovery and derived checkpoint reconstruction",
+  "validated_at": "2026-10-03T04:16:13.000936+00:00",
+  "observed_checkout_head": "74f4d4520596b65cfbfe8af91192242491faa626",
+  "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/agent/test_operations_checkpoint_recovery.py tests/hermes_cli/test_operations_profile_recovery.py tests/agent/test_operations_control.py tests/hermes_cli/test_operations_backup_extensions.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_context_projection.py tests/hermes_state/test_effect_records.py tests/hermes_state/test_delivery_outbox.py",
+  "result": {
+    "files": 8,
+    "tests_passed": 78,
+    "tests_failed": 0,
+    "raw_pytest_used": false
+  },
+  "log_path": "/tmp/be14-recovery-final.log",
+  "log_sha256": "4b40c593f7b10f8c8ab285f3529844375b68bf0fb9e9eec8c618090616c7931f",
+  "git_diff_check": "passed",
+  "source_sha256": {
+    "agent/operations_checkpoint_recovery.py": "8b804ba5f28864f3fefd3194e8876d6ecec471fdb1e23fb6cd4d09e245507ffe",
+    "agent/operations_control.py": "734875a346e27105ff6fc8133978b097299c3a5307a526136f11561278b60087",
+    "hermes_cli/operations_backup.py": "f0a9b8f70b00fe24e80c3b52d6298a08af35c2da8404c3fcde1907936b447e40",
+    "hermes_cli/operations_cli.py": "17f181401b0cba8ad109f9f6de2f4de302a6f6e25750b512906c9c7a69b995d3",
+    "hermes_cli/operations_profile_recovery.py": "deab721da2310e553c826ce053bf00ed6c77225a0c162f33a52aa5c8ad105ce7",
+    "hermes_state_runtime.py": "1ce737a12cd19bdfc598d662f8142524729ae71c4290b1578105c125087ba69d",
+    "tests/agent/test_operations_checkpoint_recovery.py": "69ffe0ba36340f867c8fe563749d06e98e11b2ec6758385a720e08ac2ed82525",
+    "tests/agent/test_operations_control.py": "2f2e743c40f7623100db3bbd7e7a7c1940a7291e744eb69f7611668b67368dc0",
+    "tests/hermes_cli/test_operations_profile_recovery.py": "fb80d96eddaff901a799d6b78bfa83c6397e270d38e5b03478d92c35d0dc7691",
+    "docs/build/be14-local-recovery.md": "0c4f9b53fad57dbdd7e324de05ee23cadef9d75c92236732abca5f362d3fa01f"
+  },
+  "commit_whitelist": [
+    "agent/operations_checkpoint_recovery.py",
+    "agent/operations_control.py",
+    "hermes_cli/operations_backup.py",
+    "hermes_cli/operations_cli.py",
+    "hermes_cli/operations_profile_recovery.py",
+    "hermes_state_runtime.py",
+    "tests/agent/test_operations_checkpoint_recovery.py",
+    "tests/agent/test_operations_control.py",
+    "tests/hermes_cli/test_operations_profile_recovery.py",
+    "docs/build/be14-local-recovery.md",
+    "docs/build/be14-local-recovery-validation.json"
+  ],
+  "boundaries": [
+    "Temporary synthetic local stores only; no live profile restore performed",
+    "Derived-only checkpoint repair retains canonical effect/approval/command/context/journal rows and monotonic owner counters",
+    "Single-actor Linux bounded stores; incompatible or populated unsupported local owners fail closed",
+    "External memory/provider/project workspace stores excluded and not certified",
+    "No production key custody/live encryption/secure-erasure/downgrade or cutover certification",
+    "No dependencies, credentials, external effects, staging, commits, root journal or plan status changes performed by this worker"
+  ],
+  "proofs": [
+    "Complete compatible state/projects/artifact/memory bundle with native reader and checkpoint-tail validation",
+    "Authenticated key rotation and wrong/missing key rejection",
+    "Artifact/catalog omission and corruption/version mismatch rejection",
+    "A-to-B-to-A profile isolation",
+    "Consumed approvals and unknown effects preserved across projection reconstruction",
+    "Old owner and stale preview fenced",
+    "Synthetic journal sink failure and actual os._exit process death roll back cache and both repair events",
+    "Isolated restore failure cleanup and payload-free CLI drill receipt"
+  ],
+  "lint": {
+    "result": "passed",
+    "log": "/tmp/be14-recovery-lint.log",
+    "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  }
+}

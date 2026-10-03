@@ -121,9 +121,33 @@ def test_wall_timeout_and_cancellation_terminate_process(tmp_path):
 
 
 def test_unavailable_enforcement_never_uses_legacy_kernel(tmp_path, monkeypatch):
-    monkeypatch.setattr("tools.environments.isolated_python.shutil.which", lambda *a, **k: None)
+    from hermes_platform.resolver import Resolution
+    monkeypatch.setattr("tools.environments.isolated_python.locate_command", lambda *a, **k: Resolution("missing"))
     with pytest.raises(IsolationUnavailable):
         execute_isolated_python("open('/tmp/should-not-run','w')", workspace=workspace(tmp_path))
+
+
+def test_executor_resolution_ignores_ambient_path(tmp_path, monkeypatch):
+    from hermes_platform.resolver import Resolution
+    seen = []
+    monkeypatch.setenv("PATH", str(tmp_path))
+
+    def missing(name, context):
+        seen.append((name, context.effective_path()))
+        return Resolution("missing")
+
+    monkeypatch.setattr("tools.environments.isolated_python.locate_command", missing)
+    with pytest.raises(IsolationUnavailable):
+        execute_isolated_python("print('not run')", workspace=workspace(tmp_path))
+    assert seen == [("unshare", "/usr/bin:/bin")]
+
+
+def test_unsupported_host_never_resolves_or_spawns(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.environments.isolated_python.host_facts.native_arch", lambda: "arm64")
+    monkeypatch.setattr("tools.environments.isolated_python.locate_command",
+                        lambda *a, **k: pytest.fail("unsupported host must stop before lookup"))
+    with pytest.raises(IsolationUnavailable):
+        execute_isolated_python("print('not run')", workspace=workspace(tmp_path))
 
 
 def test_memory_and_aggregate_tmpfs_bound(tmp_path):

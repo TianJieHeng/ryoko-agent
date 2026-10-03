@@ -1,0 +1,51 @@
+{
+  "phase": "FE08",
+  "status": "verifying",
+  "base": "24ff4dc653b3c0847ddc13a9809a0c89fa8b9b90",
+  "checks": [
+    {
+      "command": "vitest run apps/shared/src/runtime-followthrough.test.ts",
+      "result": "passed",
+      "tests": 17,
+      "files": 1
+    },
+    {
+      "command": "desktop vitest run src/app/runtime/followthrough-panel.test.tsx",
+      "result": "passed",
+      "tests": 5,
+      "files": 1
+    },
+    {
+      "command": "clean shared/TUI/Electron renderer typechecks",
+      "result": "passed"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe08-tests.log",
+      "sha256": "7f7fc28aca811ea3153ec1226a120be0477169bd9ecb4042ba3310920d38d1da"
+    },
+    {
+      "path": "/tmp/fe08-desktop-tests.log",
+      "sha256": "b81264d1ce493ef453846d02d0457feb4f5cfe7d0155ab9e3cc769248ed4aff9"
+    },
+    {
+      "path": "/tmp/fe08-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe08-clean-tui.log",
+      "sha256": "2ed66b05e3ec0f9498a06ef07cec67b41ea4b170be959bf7ad34915a4c7854a7"
+    },
+    {
+      "path": "/tmp/fe08-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "No live meeting speaker attribution, inbox/calendar refresh or actual provider send/delivery",
+    "No day/week capacity/travel planning or calendar write UI",
+    "Backend candidate decline not durable and terminal obligations cannot reopen; leaving unaccepted creates no work",
+    "Draft creation and exact existing-send evidence association do not send or certify human/provider delivery"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "phase": "FE07",
+  "status": "verifying",
+  "base": "ae35f64fef88f26f6de43692822c07d4deea069c",
+  "checks": [
+    {
+      "command": "vitest run apps/shared/src/runtime-domains.test.ts",
+      "result": "passed",
+      "tests": 4,
+      "files": 1
+    },
+    {
+      "command": "desktop vitest run src/app/runtime/domain-panel.test.tsx",
+      "result": "passed",
+      "tests": 23,
+      "files": 1
+    },
+    {
+      "command": "clean shared/TUI/Electron renderer typechecks",
+      "result": "passed"
+    },
+    {
+      "command": "scoped domain panel/test ESLint",
+      "result": "passed",
+      "warnings": 0
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/fe07-tests.log",
+      "sha256": "1b8c55c6d5e72b0aeb9410da7f79a114473a02ff6177310e8fb2f453cea3aa55"
+    },
+    {
+      "path": "/tmp/fe07-desktop-tests.log",
+      "sha256": "c40430f83080fe1f7a427cd8444c93412259d08f18d360c0256a8f9e811cf09a"
+    },
+    {
+      "path": "/tmp/fe07-clean-shared.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "path": "/tmp/fe07-clean-tui.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "path": "/tmp/fe07-clean-desktop.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/fe07-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limitations": [
+    "Selected data and creative prompt-only adapters only; lesson/tutor/demonstration breadth deferred",
+    "Typed data panel uses one retained input; advanced typed commands support declared joins/multiple inputs",
+    "Formula caches preserved, not recalculated; no visual workbook/chart fidelity or learning-quality pilot claim",
+    "No file-upload adapter, new media generation, remote production, native hardware or complete F12/F28 journey certification"
+  ]
+}

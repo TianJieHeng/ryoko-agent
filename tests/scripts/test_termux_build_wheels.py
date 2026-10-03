@@ -1,4 +1,4 @@
-"""Pinned source dependencies build online and install from wheelhouse offline."""
+"""Pinned source dependencies build locally and install from wheelhouse offline."""
 from __future__ import annotations
 
 import os
@@ -29,14 +29,36 @@ def test_requirement_readers_preserve_pins_and_reject_malformed_rows(tmp_path, b
         builder.load_entries(resolved)
 
 
-def test_source_pin_survives_resolution_build_and_offline_install(tmp_path):
+def test_source_pin_survives_resolution_build_and_offline_install(tmp_path, monkeypatch):
+    monkeypatch.setenv("PIP_NO_INDEX", "1")
+    monkeypatch.setenv("PIP_DISABLE_PIP_VERSION_CHECK", "1")
     repo = tmp_path / "source"
     repo.mkdir()
     (repo / "pyproject.toml").write_text(
-        '[build-system]\nrequires = ["setuptools>=75.3.4"]\n'
-        'build-backend = "setuptools.build_meta"\n'
+        '[build-system]\nrequires = []\n'
+        'build-backend = "local_backend"\nbackend-path = ["."]\n'
         '[project]\nname = "hermes-source-fixture"\nversion = "8.0.0"\n', encoding="utf-8")
     (repo / "source_fixture.py").write_text('VALUE = "from pinned source"\n', encoding="utf-8")
+    # Keep PEP 517 isolation and the actual Git checkout/build/install path,
+    # without consulting a package index for the fixture's build backend.
+    (repo / "local_backend.py").write_text('''
+from pathlib import Path
+from zipfile import ZipFile
+
+def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+    name = "hermes_source_fixture-8.0.0-py3-none-any.whl"
+    dist = "hermes_source_fixture-8.0.0.dist-info"
+    entries = {
+        "source_fixture.py": Path("source_fixture.py").read_text(),
+        dist + "/METADATA": "Metadata-Version: 2.1\\nName: hermes-source-fixture\\nVersion: 8.0.0\\n",
+        dist + "/WHEEL": "Wheel-Version: 1.0\\nRoot-Is-Purelib: true\\nTag: py3-none-any\\n",
+    }
+    entries[dist + "/RECORD"] = "".join(path + ",,\\n" for path in entries)
+    with ZipFile(Path(wheel_directory) / name, "w") as wheel:
+        for path, body in entries.items():
+            wheel.writestr(path, body)
+    return name
+''', encoding="utf-8")
     subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
     subprocess.run(["git", "-C", str(repo), "-c", "user.name=Fixture", "-c",
@@ -71,8 +93,6 @@ def test_source_pin_survives_resolution_build_and_offline_install(tmp_path):
     build_env = tmp_path / "build-env"
     venv.EnvBuilder(with_pip=True).create(build_env)
     python = build_env / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-    subprocess.run([str(python), "-m", "pip", "install", "pip==26.2.1"],
-                   check=True, capture_output=True)
     builder.build_wheels(list(specs), specs, wheels, python=str(python))
     assert len(list(wheels.glob("hermes_source_fixture-8.0.0-*.whl"))) == 1
     # Remove the original source URL to rule out a Git fallback.

@@ -1,0 +1,60 @@
+{
+  "scope": "LSP zombie cleanup fixture-only supplement",
+  "files": [
+    {
+      "path": "tests/agent/lsp/test_client_e2e.py",
+      "sha256": "d7f23febd362bffac42d0c306d1d704ae19cace80e5ac1510d97a84965ae53f6"
+    }
+  ],
+  "production_files_changed": false,
+  "guard_unchanged": true,
+  "guard_sha256": "29a40bb7685bce2114c52765a9a983244cac4ebd578fc4b0d8d2d5c35bd6d7c5",
+  "validation": {
+    "log": "/workspace/shared/ryoko-lsp-zombie-repair.log",
+    "log_sha256": "07421f114ad976da4947fb7a15e629b4a2a1d7cb1d634fb951a344cb6ac30d0a",
+    "passed": 13,
+    "failed": 0,
+    "files": 1,
+    "seconds": 4.3,
+    "runner": "HERMES_PYTHON=/workspace/shared/ryoko-extra-test-env/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh --scratch-parent /workspace/shared -j1 --file-retries 0 tests/agent/lsp/test_client_e2e.py -q -- -p evals.release_pytest_receipts --release-receipts=/workspace/shared/ryoko-lsp-zombie-repair-receipts",
+    "receipts": [
+      {
+        "path": "/workspace/shared/ryoko-lsp-zombie-repair-receipts/18-f2029e79f51c44939c4c75a731e077a2.json",
+        "sha256": "b67ab88d32da82ff12c1a773c3da1f7acb5939269e96737d19c8d8207692d3fd",
+        "selection": [
+          "/workspace/scratch/42f2baf55663/ryoko-agent/tests/agent/lsp/test_client_e2e.py"
+        ],
+        "exit_code": 0,
+        "counts": {
+          "collection_errors": 0,
+          "deselected": 0,
+          "failed": 0,
+          "passed": 13,
+          "skipped": 0
+        }
+      }
+    ]
+  },
+  "ruff": "All checks passed",
+  "diff_check": "Passed",
+  "classification": {
+    "path": "/workspace/shared/ryoko-runtime-failure-classification.json",
+    "sha256": "cc058be3d3f9fdca4a4c22c4e5eda7574579fd5ddcb45b67281f7b25ff8c1db0",
+    "summary": {
+      "modules": 36,
+      "original_failed_nodes": 84,
+      "cause_categories": {
+        "fixture_isolation": 67,
+        "environment_constraint": 17
+      },
+      "dispositions": {
+        "fixed_and_retested": 67,
+        "blocked": 17
+      }
+    }
+  },
+  "prior_classification": {
+    "path": "/workspace/shared/ryoko-runtime-failure-classification-before-lsp-zombie.json",
+    "sha256": "ec420086fa5158bd9ef7ab4b71177222309fe72956951244e2d55513fe92b8f5"
+  }
+}

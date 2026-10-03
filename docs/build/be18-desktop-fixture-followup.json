@@ -1,0 +1,27 @@
+{
+  "scope": "Unresolved BE18 desktop voice preference failure follow-up",
+  "production_changed": false,
+  "before": {
+    "passed": 16,
+    "failed": 2
+  },
+  "after": {
+    "passed": 18,
+    "failed": 0
+  },
+  "fix": "Inject Storage quota/security errors on Storage.prototype and assert actual call; instance spy did not intercept jsdom storage writes",
+  "logs": [
+    {
+      "path": "/tmp/ryoko-voice-prefs-fixture.log",
+      "sha256": "29eb91dbe05f5e88b94a333c3078b445d23feb73ac75f7df8fac3a6c7b0fd244"
+    },
+    {
+      "path": "/tmp/ryoko-voice-prefs-fixture-fixed.log",
+      "sha256": "4ef49c14df120d364c3da3627e217a35954c5f22aeaeb44dbc177c952eab1427"
+    }
+  ],
+  "limits": [
+    "Does not replace interrupted complete desktop aggregate run",
+    "No native voice or hardware qualification"
+  ]
+}

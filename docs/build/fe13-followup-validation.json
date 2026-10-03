@@ -1,0 +1,216 @@
+{
+  "phase": "FE13 additive consumer follow-up",
+  "status": "verifying",
+  "base": "b323e73f7b2f6792c57341240e206a72e43e3192",
+  "original_fe13_commit": "6d1a077a",
+  "publication": "local_only",
+  "validation_checkout": "/workspace/shared/ryoko-frontend-validation",
+  "checks": [
+    {
+      "stage": "shared-tests",
+      "command": "./node_modules/.bin/vitest run apps/shared/src --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-shared-tests.log",
+      "sha256": "cc0eb1f3432a37d79d0a573aaef373668ffd4f1d0358fa2e1098c919881ff00b"
+    },
+    {
+      "stage": "shared-type",
+      "command": "npm run --workspace apps/shared typecheck",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-shared-type.log",
+      "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    },
+    {
+      "stage": "shared-lint",
+      "command": "npm run --workspace apps/shared lint",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-shared-lint.log",
+      "sha256": "0cea67304f0df84f71077c567128bff3b74f57d2248939951eb2e4aa5b66e39d"
+    },
+    {
+      "stage": "tui-type",
+      "command": "npm run --workspace ui-tui typecheck",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-tui-type.log",
+      "sha256": "be6312b18afe2c90b8b228d009c42c911ef790482f5f032bf055acef940d95f2"
+    },
+    {
+      "stage": "tui-runtime-tests",
+      "command": "./node_modules/.bin/vitest run ui-tui/src/app/runtime --maxWorkers=2",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-tui-runtime-tests.log",
+      "sha256": "47d0dcf08c820313472caffb0abfae297b9920eb712f9050813adf4a6a2e6d41"
+    },
+    {
+      "stage": "web-build",
+      "command": "npm run --workspace web build",
+      "exit": 1,
+      "log": "/tmp/fe13-followup-web-build.log",
+      "sha256": "488dcaa28fd9383ec8280b70eae0e8339a1c5c7e87346aafd9786975cafbdf33"
+    },
+    {
+      "stage": "desktop-runtime-tests",
+      "command": "npm run --workspace apps/desktop test:ui -- src/app/runtime src/lib/voice-playback.test.ts --maxWorkers=2 --reporter=default --reporter=/workspace/shared/fe13-module-reporter.mjs",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-desktop-runtime-tests.log",
+      "sha256": "6e3cfae16b6731d8ea2a3d9b484505c26a3b66eee7eb66fd06515fc746ee34f7"
+    },
+    {
+      "stage": "desktop-type",
+      "command": "npm run --workspace apps/desktop typecheck",
+      "exit": 137,
+      "log": "/tmp/fe13-followup-desktop-type.log",
+      "sha256": "cbf6a59a9cb9655c820037c27054d0257b6abe28124919843237d07cd65b6042"
+    },
+    {
+      "stage": "web-build-retry",
+      "command": "npm run --workspace web build",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-web-build-retry.log",
+      "sha256": "7ca2aef861be009fb51840746ce4789fb646296aeec317ff7e0a5db42d85e192"
+    },
+    {
+      "stage": "renderer-build",
+      "command": "../../node_modules/.bin/vite build --outDir /workspace/shared/fe13-followup-build/renderer",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-renderer-build.log",
+      "sha256": "273e9a521db99b3c20af180f24672a49daa70155afa51f75bf29bbf0ab2b9d79"
+    },
+    {
+      "stage": "desktop-lint",
+      "command": "npm run --workspace apps/desktop lint",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-desktop-lint.log",
+      "sha256": "3b22eb8b819ba0102587ff51741b40b8c5646e335d2d49a9197aa035f30c9cc6"
+    },
+    {
+      "stage": "desktop-type-serial",
+      "command": "npm run --workspace apps/desktop typecheck",
+      "exit": 0,
+      "log": "/tmp/fe13-followup-desktop-type-serial.log",
+      "sha256": "4fbe6a2b1896cbf54b704ef36f1e108f2aa2a874795e613e977b591a0d8a5263"
+    }
+  ],
+  "aggregate_results": {
+    "full_shared": {
+      "files_passed": 41,
+      "tests_passed": 368
+    },
+    "all_runtime_and_voice_ui": {
+      "files_passed": 32,
+      "tests_passed": 250
+    },
+    "tui_runtime": {
+      "files_passed": 4,
+      "tests_passed": 8
+    }
+  },
+  "coverage_note": "This is the final additive affected-surface campaign. The original 1204-file/10635-test full renderer and 179-file/1618-test full TUI aggregates remain in fe13-validation.json against their original source. Overlapping focused counts are not added to those aggregates. No second native/platform aggregate, packaging attempt or browser navigation was made.",
+  "implementation": [
+    "Existing overview mounts exact operator inspection/audit/retention/checkpoint and separately confirmed broker repair/deletion plans. Logical deletion remains partial; no personal-harness or complete-erasure claim.",
+    "Account-pinned Gmail-thread/calendar selection performs explicit prepare, reads every cached preview chunk, checks full size/SHA and exact proposal/approval identities, renders inert complete text, and requires independent original/projection review before separate publication. No refetch during publication or unpinned fallback.",
+    "Named configured specialist catalog, responsibility/grants/isolated memory, typed immutable references/constraints, exact preview and separately confirmed single-child handoff; stable command status and parent review remain explicit. Teams remain disabled.",
+    "Strict speech explicit finite admission precedes recording/synthesis; stable request/account IDs and inline budget usage are separate from mission acceptance. Client microphone/playback remain explicit and scoped. Lost final speech usage retains the original identity even after discard; inspect-only, no audio replay or budget reset.",
+    "Explicit selected-project bounded deterministic opportunity discovery/list/history and exact CAS save/dismiss/accept; accepted choice navigates to existing review control with scoped target context and creates no work or approval.",
+    "Same-object reconnect/generation and scope changes invalidate pending review. Passive recovery cache distinguishes operator/speech/specialist/opportunity IDs, never restores approval, and has bounded lifetime/capacity. Nine-locale copy uses existing i18n authority."
+  ],
+  "corrections": [
+    "Worker and initial parent desktop type probes hit default 2 GiB heap OOM (exit134); original logs retained.",
+    "First clean desktop typecheck with 4 GiB heap ran concurrently with renderer build/lint and was killed (exit137). Retried once serially after those completed with the same heap; final result is listed separately.",
+    "Initial clean web build compiled but its build-input fingerprint guard caught whitespace-only normalization in connected-source test during compilation. Stable-tree retry is recorded separately; no semantic code change.",
+    "One new integration test initially had incomplete synthetic i18n notification copy; fixed fixture and affected wiring rerun passed14 tests before clean runtime aggregate.",
+    "Untracked source-test trailing spaces normalized; final source hashes below include that metadata-only change."
+  ],
+  "supplementary_logs": [
+    {
+      "path": "/tmp/operator-shared-vitest.log",
+      "sha256": "80823daa9c3bf10e6acdc0d35950b15a83334bc21dc79160978aa98b584e6f0c"
+    },
+    {
+      "path": "/tmp/operator-ui-vitest.log",
+      "sha256": "748735c901169e21d164b99d44713f69e288e828441bad745f5b9067118831fa"
+    },
+    {
+      "path": "/tmp/named-specialist-shared-tests-final.log",
+      "sha256": "a4e24d212494653201b4dd6b30bbcd0f47f76e71b4c9a03af292655c028b79a0"
+    },
+    {
+      "path": "/tmp/named-specialist-ui-tests-final.log",
+      "sha256": "d4f09f429e9211d97df558caf1cb8e40d34fbcba3675ba616898bae4149098ef"
+    },
+    {
+      "path": "/tmp/connected-shared-tests.log",
+      "sha256": "64d6d975f0d494d9a5fea1484372f20f88f14c1d24706d69d5a2b06f1678cfd9"
+    },
+    {
+      "path": "/tmp/connected-ui-tests.log",
+      "sha256": "0be9c1f7235d737a5128a855cd9224f870c22ddac05dcc776782cc140b645b73"
+    },
+    {
+      "path": "/tmp/fe13-additive-desktop-type.log",
+      "sha256": "4439bc41414d6daeddb3e6da8cb6449cfd0bf81b53ca9b0ab78ba5849fe27afb"
+    },
+    {
+      "path": "/tmp/connected-desktop-typecheck.log",
+      "sha256": "8a8ab8331a11751d588a249ec2520d12f860cf022d93bf80006b70fd918280fb"
+    },
+    {
+      "path": "/tmp/fe13-additive-desktop-type-4gb.log",
+      "sha256": "3a151b7488d26f0c2d43762cf42774980e05aa84414a1e4c2e5e2767ed980078"
+    },
+    {
+      "path": "/tmp/fe13-additive-wiring.log",
+      "sha256": "90852d099808ad69bd8b13ab5befad7a8a042b764f0590f677f291cad8be6249"
+    },
+    {
+      "path": "/tmp/fe13-additive-wiring-retry.log",
+      "sha256": "0dfb91b92e104b14c68eb0586e6f55e13dcfaeb49706ee6aec819fb46dd90b3d"
+    }
+  ],
+  "limitations": [
+    "Original FE13 browser URL-policy, native collection/socket/packaging and hardware gates remain open; no alternate route or native rebuild retry.",
+    "Live account-pin gateway support, provider results and installed local speech models/hardware remain unqualified.",
+    "Unknown speech admission/usage has no dedicated receipt RPC; budget inspection cannot manufacture the missing outcome or clear retained uncertainty.",
+    "Full teams, unsolicited opportunities and LAYA feedback/activation/training remain conditional/disabled.",
+    "General browser consequential actions, cross-device routing and broad external writes remain unqualified.",
+    "Personal external harness mutation/export/delete remains unavailable without its verified contract.",
+    "Six complete live-source journeys, ten-task human-effort pilot and independent backend full-campaign outcome remain release gates.",
+    "Dots consumer implementation and OD00 qualification remain separate; FE14 is producer-side handoff only."
+  ],
+  "frontend_source_sha256": {
+    "FrontEnd_BuildPlan.md": "e09ace9a878b0b908cd16dd465aa0c5f8c7982251ada3523ad4638c3c5e46336",
+    "apps/desktop/src/app/runtime/connected-source-copy.ts": "9063aaf4455a5423d38f91d580924c082f94a1090398c0262479c71b2387d25f",
+    "apps/desktop/src/app/runtime/connected-source-panel.test.tsx": "e0f18cfd527707f0015ed5798274937b8261e74e104a23dd4a8843b3731f720c",
+    "apps/desktop/src/app/runtime/connected-source-panel.tsx": "ad4fb1dab8e122133c64d6a248e0cdba6e34374230683365664e68e4adaefb12",
+    "apps/desktop/src/app/runtime/feature-panel.test.tsx": "dc736705dfe1bbd5147f95f25a63f6d2f430eb4c5e8e08af273eebcdebde700a",
+    "apps/desktop/src/app/runtime/feature-panel.tsx": "2a2be0aa54544e737b020f9e2cb790f486e320d86a75a0ec39ac9b02bc499ee4",
+    "apps/desktop/src/app/runtime/inspector.tsx": "216114dc7d94094b588a290d21d514c7a490a946231603ee9a4a1bc4510ddeeb",
+    "apps/desktop/src/app/runtime/named-specialist-copy.ts": "40a326be42e39532b50cfc90a98a2e023e1d02f74fde3c3690b7e1d3c8a2873f",
+    "apps/desktop/src/app/runtime/named-specialist-panel.test.tsx": "2b3af9d842732573a5ec1a448a5e5f86130fc5bb3c2e1fe7ca4068744d13e444",
+    "apps/desktop/src/app/runtime/named-specialist-panel.tsx": "85596eee05405375303354fbf8d4cf9ae42c5d96a054d7b24983d6cb49c1a142",
+    "apps/desktop/src/app/runtime/operator-repair-panel.test.tsx": "b67480f253025d62dd301bace86d1ff5541d5b30c29556be5ba3d8d53b0f4cc9",
+    "apps/desktop/src/app/runtime/operator-repair-panel.tsx": "e07cfd71dec4072e3f7addde1589339c7f824bec2cb381c8a3abb461bd427b4b",
+    "apps/desktop/src/app/runtime/opportunity-copy.ts": "4267966425e3aa0ba7115245822811227557b5773b9ce9d4a3cb5625de363256",
+    "apps/desktop/src/app/runtime/opportunity-panel.test.tsx": "ff04efdf211048b34d57a2744eeafb6e54fd5506d2326aaf5de98d5c1ab920d7",
+    "apps/desktop/src/app/runtime/opportunity-panel.tsx": "59db69e398127e769730aede1f60b6ff884595b104952289c02bdc159c466657",
+    "apps/desktop/src/app/runtime/owned-runtime-scope.test.ts": "d6742fc022893f6f6514cc0e674aa444afed97fea9f11c293cc8c0c373e054da",
+    "apps/desktop/src/app/runtime/owned-runtime-scope.ts": "efeefa7daf38baa04fe6c0c41fe621664dc64b7891666730fd05c7549cbf4dfc",
+    "apps/desktop/src/app/runtime/recovery-references.tsx": "81771264acd41f0c4640b71ff3640956506f070ee25a1acc3c19c38c3bc830a5",
+    "apps/desktop/src/app/runtime/voice-budget-copy.ts": "bf030767da2e8374196e625ae843bbc246a81101c828af5adac52bbea0b8ca91",
+    "apps/desktop/src/app/runtime/voice-panel.test.tsx": "5bc5b7060dd18e935eda38437b7004ebf3f25d2b0314a6066cdce7ffc6a0ca38",
+    "apps/desktop/src/app/runtime/voice-panel.tsx": "2de37f15ee814f10fad1cd9c516ae65e4de3022f5bb014fd21d9da55d3cf33f6",
+    "apps/shared/src/runtime-connected-sources.test.ts": "63d47f11185cc8ba64a610db8b7bffab4a4ced7b96b0e394db4bd80b11c5524f",
+    "apps/shared/src/runtime-connected-sources.ts": "e8d8cbeaab355320756c06772f136c51431c7e132ff9098f32a6282a042ff037",
+    "apps/shared/src/runtime-named-specialists.test.ts": "d54e0a06d769fe6fc4204fd2e9cedd5c59dbf265d6fbb85083d3fafaf550965b",
+    "apps/shared/src/runtime-named-specialists.ts": "d53d3d33e372358f1abcbfccabb93ad6d91792de8688b38631e7a8a9e168a786",
+    "apps/shared/src/runtime-operations.test.ts": "3c20a8abf02e0f4962f1c5a80757d01635b81c5b3891a2c82bfb5d10dcd0fbbf",
+    "apps/shared/src/runtime-operations.ts": "4d3c8ebd800b18e332e102280a518731af22583293d85fa8a688bf9c122b094e",
+    "apps/shared/src/runtime-opportunities.test.ts": "0936d91ec6f60a1f46b30e7d1c46200280c3a345e7d07f0b9308a5b68d7f68b3",
+    "apps/shared/src/runtime-opportunities.ts": "c1a8723b6560a7892191feb15be9664642c354f04e0ecbae37f86f0ebe050c68",
+    "apps/shared/src/runtime-voice-budget.test.ts": "2268e3ecef3e2c6a9a1695a8865ad3558d7ca381ed33473575de4dca785976c7",
+    "apps/shared/src/runtime-voice-budget.ts": "219e472fc2c196aa8bdc5ce02dd2dc3a15008b478f880318d331164a336a14da",
+    "apps/shared/src/runtime-voice.test.ts": "81b5873f22320159aa79537443f5738e4ba833a60cc27344c2d06691c0fe9158",
+    "apps/shared/src/runtime-voice.ts": "7b80fda5552f34a997c5dc053f738fad9dbd8dd2d1918f8b40dfca9aae3d2210",
+    "docs/build/frontend-release-scope.md": "e4959210ce4b199ffdaf39beda437b4475f0e4e87a42a234cd32346cab8e67c3"
+  }
+}

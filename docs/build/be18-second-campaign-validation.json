@@ -1,0 +1,84 @@
+{
+  "phase": "BE18 final backend campaign",
+  "started_at_utc": "2026-10-03T04:43:00Z",
+  "commit": "009255ecaf4adfe81ea114561a5f923ae9dfe605",
+  "tree": "0948d430abe4d00be907e46c791d61b205331457",
+  "source_clean_at_start": true,
+  "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh --scratch-parent /workspace/shared -j 3 --file-retries 0 -q -- -p evals.release_pytest_receipts --release-receipts=/workspace/shared/ryoko-final-python-receipts",
+  "tool_session_id": 63623,
+  "log": "/workspace/shared/ryoko-final-python.log",
+  "status": "completed_failed_source_bounded_not_release_signoff",
+  "note": "No source mutation during campaign; frontend integration separate; original failed receipt retained",
+  "exit_code": 1,
+  "files": 5348,
+  "passed": 55930,
+  "failed": 444,
+  "skipped": 730,
+  "seconds": 4480.3,
+  "completed_at_utc": "2026-10-03T05:59:00Z",
+  "log_sha256": "704c4fe898c7625d266283c67a7a0ba5b5ca880dff4846ce69167c944215a2c8",
+  "later_source_changes": "test-only fixture fixes and subsequent source63168145+new specialist/opportunity additions need separate final qualification",
+  "schema_version": 1,
+  "outcome_comparison": {
+    "files_with_receipts": 5348,
+    "unique_selection_paths": 5348,
+    "counts": {
+      "collection_errors": 46,
+      "deselected": 23,
+      "failed": 716,
+      "passed": 55969,
+      "skipped": 731
+    },
+    "failed_nodes": 762,
+    "not_in_prior_baseline": [
+      "tests/agent/test_anthropic_dead_grant_hints.py::test_claude_code_refresher_reports_dead_grant_once_per_process",
+      "tests/agent/test_durable_delegation.py::test_additive_schema40_migration_preserves_existing_runtime_and_async_records",
+      "tests/hermes_cli/test_update_completion_process.py::test_interrupt_after_child_success_demotes_gateway_marker_at_boundary[sha256:a3593886dde88044]",
+      "tests/hermes_cli/test_update_completion_process.py::test_interrupt_after_child_success_demotes_gateway_marker_at_boundary[sha256:c1d4d6ed2e3bc4c3]",
+      "tests/hermes_cli/test_update_completion_process.py::test_interrupt_after_child_success_demotes_gateway_marker_at_boundary[sha256:f37aa6c624e02f0a]",
+      "tests/hermes_cli/test_update_completion_process.py::test_missing_child_result_fails_boundary_receipt_and_releases_lock[sha256:42f78f54f79468dd]",
+      "tests/hermes_cli/test_update_completion_process.py::test_missing_child_result_fails_boundary_receipt_and_releases_lock[sha256:c909d1ab7682fb17]",
+      "tests/hermes_cli/test_update_completion_process.py::test_prepare_failure_preserves_correlated_pm_receipt",
+      "tests/tools/test_docker_session_isolation.py::TestSessionScopedMountResolution::test_isolation_mounts_session_attached_workspace"
+    ],
+    "note": "Reporter phase counts include setup/teardown and collection outcomes; do not substitute for runner summary or sum as distinct tests. Shared node IDs with baseline are comparison evidence, not automatic identical-cause classification."
+  },
+  "subsequent_evidence": [
+    {
+      "scope": "Exact owned specialist/opportunity/operator/generated combined checkpoint2244f515",
+      "files": 8,
+      "passed": 35,
+      "failed": 0,
+      "log": "/workspace/shared/ryoko-final-owned-integration.log",
+      "log_sha256": "931809d0995f78edbdf9e89e05dbdb2c8eea2aecf553bbb93f8349e84259b817"
+    },
+    {
+      "scope": "Prepared interpreter optional extras on unchanged009 source",
+      "files": 32,
+      "passed": 360,
+      "failed": 0,
+      "skipped": 1,
+      "receipt": "docs/build/be18-optional-extras-validation.json"
+    },
+    {
+      "scope": "New updater failure IDs, fixed by correctly source-owned prepared interpreter; default scratch Docker fixture separately green",
+      "log": "/workspace/shared/ryoko-final-new-failure-rerun.log",
+      "original_result": "47 passed1 failed3 skipped; Docker custom scratch remains failure",
+      "log_sha256": "edee181f93d62a39fb1fc939c7536f3341f3c6efc5d6d9c7ad73280f817093d2"
+    },
+    {
+      "scope": "Default scratch Docker host fixture no production changes or Docker execution",
+      "passed": 28,
+      "failed": 0,
+      "log": "/workspace/shared/ryoko-final-docker-host-fixture.log",
+      "log_sha256": "3e8c2696679353d32e40b373ee71e56eb287d8d4622c8f3f4c0780b57ed893ae"
+    },
+    {
+      "scope": "Inherited project root assumptions under default scratch",
+      "log": "/workspace/shared/ryoko-final-project-host-fixtures.log",
+      "result": "3 failures remain: host read-only .git markers at /tmp and /workspace/shared make test fixture assumed nonproject roots into discovered projects; no markers removed or policy bypassed",
+      "log_sha256": "10c8a9b11bffb3ed610084473b75e38f3c3816e72552f515613c85d3692438c8"
+    }
+  ],
+  "later_source": "63168145 and2244f515 source plus pending prepared-source preview require separate frozen-source final campaign; this receipt makes no claim they were covered by009 full run."
+}

@@ -4,6 +4,8 @@ from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
+import httpx
+from openai import OpenAI
 
 from agent.admission import AdmissionPolicy, AdmissionQueue
 from agent.agent_identity import resolve_agent_context
@@ -23,9 +25,14 @@ def store(tmp_path, monkeypatch):
         ctx = resolve_agent_context(config, session_id=sid, profile_home=tmp_path)
         db.create_session(sid, source="tui")
         db.claim_session_agent_identity(sid, ctx.identity.to_record())
+        client = OpenAI(api_key="fixture-only", base_url="https://fixture.invalid/v1",
+            http_client=httpx.Client(transport=httpx.MockTransport(
+                lambda _request: httpx.Response(500, json={"error": "unexpected fixture request"})) ))
         agents[sid] = SimpleNamespace(runtime_context=ctx, _session_db=db, session_id=sid,
-                                     api_mode="chat_completions", provider="fixture")
+                                     api_mode="chat_completions", provider="openai", client=client)
     yield db, agents
+    for agent in agents.values():
+        agent.client.close()
     db.close()
 
 

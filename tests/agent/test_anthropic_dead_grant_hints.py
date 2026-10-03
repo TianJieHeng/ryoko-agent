@@ -36,9 +36,10 @@ def test_dead_grant_is_classified_and_not_replayed_at_other_endpoints(monkeypatc
     assert calls == ["https://a.example/oauth/token"]  # a dead grant is not replayed at the fallback endpoint
     assert not ac.is_terminal_anthropic_refresh_error(TimeoutError("timed out"))
 
-def test_claude_code_refresher_reports_dead_grant_once_per_process(monkeypatch, caplog):
+def test_claude_code_refresher_reports_dead_grant_once_per_process(monkeypatch, caplog, tmp_path):
     """Later attempts with the same dead refresh token neither replay it at the endpoint nor re-warn; a rotated
     (re-login) token is tried again."""
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "synthetic-claude"))
     monkeypatch.setattr(ac, "_DEAD_REFRESH_TOKEN_FINGERPRINTS", set())
     monkeypatch.setattr(ac, "read_claude_code_credentials", lambda: {"accessToken": "old", "refreshToken": "rt-dead", "expiresAt": 1})
     posts = []

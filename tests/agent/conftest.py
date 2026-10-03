@@ -45,3 +45,19 @@ def _fast_retry_backoff(request, monkeypatch):
     # server-error retries don't burn real wall-clock seconds.
     from agent import retry_utils as _retry_utils
     monkeypatch.setattr(_retry_utils, "jittered_backoff", lambda *a, **k: 0.0)
+
+
+@pytest.fixture
+def isolated_git_ancestors(tmp_path, monkeypatch):
+    """Project fixtures own their markers; an enclosing developer checkout is not part of them."""
+    from pathlib import Path
+
+    outside_markers = {parent / ".git" for parent in tmp_path.resolve().parents}
+    exists = Path.exists
+
+    def fixture_exists(path, *args, **kwargs):
+        if path in outside_markers:
+            return False
+        return exists(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "exists", fixture_exists)

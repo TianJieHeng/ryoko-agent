@@ -10,13 +10,14 @@ from tools import browser_use_cli as bu
 
 
 @pytest.mark.platforms("posix", "windows")
-def test_harness_runs_on_an_interpreter_without_its_own_site_packages(monkeypatch):
+def test_harness_runs_on_an_interpreter_without_its_own_site_packages(tmp_path, monkeypatch):
     """The Desktop bundle boots its store interpreter with no venv to activate (``-S`` emulates
     that); the harness and its daemon must import from the PYTHONPATH the tool env supplies,
     never from what the agent process inherited."""
     monkeypatch.setattr(bu, "_find_cli", bu._find_cli_unpatched)
     monkeypatch.setenv("PYTHONPATH", "/wrong-abi")
     monkeypatch.setenv("PYTHONHOME", "/wrong-python")
+    monkeypatch.setenv("BH_HOME", str(tmp_path / "browser-harness"))
     cmd = bu._find_cli()
     assert cmd == [sys.executable, "-m", "browser_harness.run"]
     result = subprocess.run([cmd[0], "-S", *cmd[1:], "--version"], env=bu._base_subprocess_env(),

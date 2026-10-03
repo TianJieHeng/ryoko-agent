@@ -143,9 +143,8 @@ async def test_forum_topic_turns_are_identified_by_their_inbound_id_not_the_repl
 
 
 @pytest.mark.asyncio
-async def test_a_flood_refused_queued_final_stays_in_the_ledger_as_failed(caplog):
-    """The row survives the refusal, so the sweeps (and a flood timer, where present) can redeliver
-    it."""
+async def test_a_flood_refused_queued_final_stays_uncertain_without_recovery_replay(caplog):
+    """Flood refusal can follow accepted chunks, so retain output without replay permission."""
     adapter = _telegram_adapter(SendResult(success=False, error="flood_control:185.0"))
 
     with caplog.at_level(logging.WARNING, logger="gateway.run"):
@@ -153,8 +152,16 @@ async def test_a_flood_refused_queued_final_stays_in_the_ledger_as_failed(caplog
 
     rows = _rows()
     assert len(rows) == 1
-    assert rows[0]["state"] == "failed"
+    assert rows[0]["state"] == "outcome_unknown"
     assert rows[0]["last_error"] == "flood_control:185.0"
+    assert rows[0]["content"] == TEXT
+    # This pins recovery after the legacy inline retry ladder has returned. It
+    # does not certify that ladder as safe for every ambiguous acceptance.
+    sends_before_recovery = adapter.send.await_count
+    assert sends_before_recovery > 0
+    assert dl.sweep_failed_for_runtime("telegram", now=10**12) == []
+    assert dl.sweep_recoverable(deliverable_platforms={"telegram"}) == []
+    assert adapter.send.await_count == sends_before_recovery
 
 
 @pytest.mark.asyncio
@@ -262,8 +269,7 @@ async def test_the_terminal_turn_of_a_chain_is_ledgered_under_its_own_inbound_id
 
     The outer final send is bracketed by the adapter against the event that OPENED the chain. Keyed
     on that event's id, a terminal reply carrying the same text as an earlier refused reply computes
-    the earlier row's obligation id, replaces its outstanding row and marks it delivered, so the
-    refused reply is never redelivered. ``MessageEvent.ledger_message_id`` carries the terminal
+    the earlier row's obligation id, replaces its unresolved row and falsely marks it delivered. ``MessageEvent.ledger_message_id`` carries the terminal
     turn's own inbound id so the rows stay distinct. ``_send_with_retry`` is stubbed here because
     the retry ladder is covered elsewhere and this pins the ledger identity only.
     """
@@ -278,7 +284,7 @@ async def test_the_terminal_turn_of_a_chain_is_ledgered_under_its_own_inbound_id
 
     first = _rows()
     assert len(first) == 1
-    assert first[0]["state"] == "failed"
+    assert first[0]["state"] == "outcome_unknown"
     turn_a_id = first[0]["obligation_id"]
 
     # Turn B is the chain's TERMINAL turn (inbound 102). The adapter still holds turn A's event, so
@@ -290,8 +296,8 @@ async def test_the_terminal_turn_of_a_chain_is_ledgered_under_its_own_inbound_id
 
     rows = {r["obligation_id"]: r for r in _rows()}
     assert len(rows) == 2, "the terminal reply reused the earlier turn's obligation id"
-    assert rows[turn_a_id]["state"] == "failed", \
-        "turn A's refused reply was overwritten and would never be redelivered"
+    assert rows[turn_a_id]["state"] == "outcome_unknown", \
+        "turn A's uncertain reply must retain its own unresolved outcome"
     assert rows[dl.compute_obligation_id(SESSION_KEY, "102", same_text)]["state"] == "delivered"
 
 

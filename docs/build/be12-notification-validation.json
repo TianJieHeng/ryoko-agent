@@ -1,0 +1,345 @@
+{
+  "phase": "BE12 / FE06 local notification completion",
+  "validated_at_utc": "2026-10-03T04:02:45.004241+00:00",
+  "base_commit": "b468bde253e5e35e0e02d468d6a1c42a7f7148d0",
+  "scope": "Synthetic Linux same-client owned RPC, canonical cron occurrence and BE06 local outbox; no real-world activation",
+  "schema_version": 43,
+  "schema_note": "Monitor additive schema42 combined with separately owned output-context schema43",
+  "checks": [
+    {
+      "command": "HOME=/tmp/be12-notification-home HERMES_HOME=/tmp/be12-notification-home/.hermes HERMES_PYTHON=\"$PWD/.venv/bin/python\" HERMES_TEST_FILE_RETRIES=0 scripts/run_tests.sh -j 3 tests/tui_gateway/test_monitor_notifications_rpc.py tests/tui_gateway/test_schedules_rpc.py tests/tui_gateway/test_commitments_rpc.py tests/hermes_state/test_delivery_outbox.py tests/hermes_state/test_schedule_migration.py tests/hermes_state/test_monitor_notification_migration.py tests/agent/test_runtime_commands.py tests/cron/test_monitor_notification_policy.py tests/cron/test_durable_schedule_contract.py tests/cron/test_scheduled_owner_gate.py tests/cron/test_cron_memory_contract.py tests/cron/test_idle_tick_config_skip.py tests/cron/test_scheduled_occurrence.py tests/cron/test_execution_ledger.py tests/cron/test_delivery_queue.py tests/cron/test_fire_claim_lost_after_delivery.py tests/cron/test_monitor_kind.py tests/cron/test_scheduler.py tests/tui_gateway/contracts/test_generated.py -- -p evals.release_pytest_receipts --release-receipts=/tmp/be12-notification-final-receipts",
+      "exit_code": 0,
+      "files": 19,
+      "counts": {
+        "collection_errors": 0,
+        "deselected": 0,
+        "failed": 0,
+        "passed": 214,
+        "skipped": 0
+      },
+      "log": "/tmp/be12-notification-final-green.log",
+      "log_sha256": "75a85bf3cd0c515fcb6e71bb4eff618ff8e889e7709aa2dd43278fdd6dca13d3",
+      "receipts": [
+        {
+          "path": "/tmp/be12-notification-final-receipts/1062-3cf8211ae99a49259aa4f3fb465bc0ad.json",
+          "sha256": "2128c03d86e862d2b65de30ee91c5b9dd7654fed17536a7f405fdf4e49fa5b84",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 95,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/1961-2d382d23d5ce4fa89f2a52a7bc2e08f6.json",
+          "sha256": "4f53219cd63ccb003db01f0bcf5cdc37e37ca530b60dc63570762b87352dedd5",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 2,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/20-4f24f757f8694ebfa62c7c356f3c7d53.json",
+          "sha256": "23d1336c83fd3bf1049e9bae7d9f4e9a7911cc4515103d92019862ed86871b81",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 17,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/2142-da9ff43691944e40b5c5a1f4dd213657.json",
+          "sha256": "8cefd6767c89a437a99f739611547138339eb593874a0b40f538b59d96542820",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 1,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/22-fbcc022499cc40d9ac3ed7431495037c.json",
+          "sha256": "a6dc062e6c21a3f4ea344819ee9052a227d73c13d64dc64b12bac64903730edc",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 1,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/23-895aefcbb8d544d8a24d59fb7fdb186b.json",
+          "sha256": "1aa1b9eba931ac99da0e7ab6b1330f716b8bcf8152a8b187bf029f4e3768e453",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 10,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/2310-524a7f7e64d54b14a4eba2d1025d090d.json",
+          "sha256": "1ad14ffa85b5b62f6b3fd68c86671df48cde6dff2693519f811cd570d8ca058f",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 1,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/2381-e89ca378c500461aad8f7139f7eac7c0.json",
+          "sha256": "4148af8cd5e7ad98c7ac98d9ee9a7b53b8a797cf1016dff110766d69cdebab78",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 2,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/24-18de918ca579474ebd78966dae81dabc.json",
+          "sha256": "506750ab36c935ece423739a2235f7431dbf427f748302ba75ce8ca82b346f36",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 2,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/2429-d987eef5b24f4792afaa825620d34621.json",
+          "sha256": "d702a07ecd9abb040600f97fddae62b454fa15654cdfb63c5802ae965d7fda29",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 2,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/2820-43bffcf6cdda4ad19391d04656ab1058.json",
+          "sha256": "96bac8a5ad182b4e7bc7f3128a6849c20886a0fc15286c7d22e63f1981bfed7e",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 12,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/285-89059c608f3b4009ab76316b494c68bf.json",
+          "sha256": "acb7062a4427ce9ac0776f06cafb4c158ff16117015fafc8fa2b35fe7594f655",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 1,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/301-ae207e26bad348f6be0cb187a66f98e6.json",
+          "sha256": "5afa37e5343eb6bc1a910cb4c477ebdfadf06d97c76f72680badc4c0d469c230",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 18,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/3017-80628c4202df4ae3ab6d1014eb68870f.json",
+          "sha256": "fe2384f2359d685b6988c118d342a5cab5dbc413f6dfeb6c18891af9f2c2a7fd",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 7,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/350-a1f91e8241d94472a390aea49199c1a2.json",
+          "sha256": "aa3ed34f8e3a764233dab4caa963852f309b4410590104c86436eb4f55e78822",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 2,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/428-000bb169eb4b47f4bf6ea352efb341dd.json",
+          "sha256": "26a56c9235cbd0c3763e1858dc47f8e1d3dc3356dae596ddcc51c854fe38f12d",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 6,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/70-632b29ad84a44b1c8d77e42059f48f11.json",
+          "sha256": "4af786eb468394e1bfd556e32e65a5d1bd964b0fd1c1ca3dd55597e6503e0ae1",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 24,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/99-3c28c358b1d24b429687c56abf1914f4.json",
+          "sha256": "dbff65fcfa7d9c90dfa6e08ed41305c3bd64ec580a64ce7cae77b9b8aea19b96",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 6,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "/tmp/be12-notification-final-receipts/996-0fe40bc3d1a445f3b76f342e34254cad.json",
+          "sha256": "10f0f29107deb5db3f93026354e9914bc48d45fa1786eebe847df29318462999",
+          "exit_code": 0,
+          "counts": {
+            "collection_errors": 0,
+            "deselected": 0,
+            "failed": 0,
+            "passed": 5,
+            "skipped": 0
+          }
+        }
+      ]
+    },
+    {
+      "command": "python -m ruff check (monitor topical whitelist)",
+      "status": "passed",
+      "log": "/tmp/be12-notification-final-ruff.log",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed",
+      "log": "/tmp/be12-notification-diff-check.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "file_whitelist": [
+    "agent/artifact_commands.py",
+    "apps/shared/src/gateway-contract.generated.ts",
+    "apps/shared/src/gateway-contract.openrpc.json",
+    "cron/durable_contract.py",
+    "cron/durable_runtime.py",
+    "cron/durable_notifications.py",
+    "cron/monitor_notification_delivery.py",
+    "docs/build/be12-durable-schedules.md",
+    "docs/build/be12-local-notifications.md",
+    "docs/build/be12-notification-validation.json",
+    "gateway/durable_outbox.py",
+    "gateway/monitor_notification_outbox.py",
+    "hermes_state_common.py",
+    "hermes_state_delivery.py",
+    "hermes_state_monitor_notification_schema.py",
+    "hermes_state_monitor_notifications.py",
+    "tests/cron/test_monitor_notification_policy.py",
+    "tests/hermes_state/test_monitor_notification_migration.py",
+    "tests/tui_gateway/test_monitor_notifications_rpc.py",
+    "tui_gateway/contracts/__init__.py",
+    "tui_gateway/contracts/monitor_notifications.py",
+    "tui_gateway/methods_monitor_notifications.py",
+    "tui_gateway/server.py"
+  ],
+  "source_sha256": {
+    "agent/artifact_commands.py": "bc7cd720d1f5b2111cfc7f213767e2d332886b57b6da411125fc01ccd075ec5e",
+    "apps/shared/src/gateway-contract.generated.ts": "a35ce1aeeca218f9d0d0c2a38c56e29c22e99ecbcd2f6fa93b8cb6da330e1126",
+    "apps/shared/src/gateway-contract.openrpc.json": "40d398eddb59c96fa7b5f3deb97dbf1bf67b082e8229d3d8a3c9ade6efe33a8b",
+    "cron/durable_contract.py": "021742c026563cb3b00ae104ab3010617645a377457265e16395c6b924add2c3",
+    "cron/durable_runtime.py": "8e4afd074675fa0a577b303a2b9dc6e6e4aebf16b44ca4cc7877976a674e85b9",
+    "cron/durable_notifications.py": "177deda0cfca26ddd1114ad61ae1a414acdbd84fcbbafd603ecfe91f23b495fb",
+    "cron/monitor_notification_delivery.py": "a9203216f91c241ff56919ab73ccafc19d6832bb15f5a9976c7075f60db0396a",
+    "docs/build/be12-durable-schedules.md": "90f313b5ec6fbc741309f0e01280617e655c576abd818b5c70fba04b4b1f2378",
+    "docs/build/be12-local-notifications.md": "027622719281b40385cd1dd0639f3007f7d56e8f653518683966e51fa04ebd3e",
+    "gateway/durable_outbox.py": "6f18825fc47b4646423bd73cdc07f57856a39e828a8221e2930cadf394a8616b",
+    "gateway/monitor_notification_outbox.py": "aa789d7fe477e3f3cd61dfcdda882f58d9bb2f5cb2b9024ab18dbb13446075cd",
+    "hermes_state_common.py": "e526b23283909c5610312061a147b444b8fd80763b338ec0d72d375f810f12f0",
+    "hermes_state_delivery.py": "e59b37d9f60eeafd1f682f4ca5e935fec5bb6d95892293ac26c8799f2bb7ce9a",
+    "hermes_state_monitor_notification_schema.py": "4cae8a735b44d9221f298faac17142f664eb6c803649306d55ddd103aba492dd",
+    "hermes_state_monitor_notifications.py": "4874b4234a3773d5f66cc68e9a6be0c33273d428fa3d515f6a32eba5b83826ba",
+    "tests/cron/test_monitor_notification_policy.py": "8e0b5cb4c3c5c379636053186856fcc50d646c8b4959a24b67dbec65df795022",
+    "tests/hermes_state/test_monitor_notification_migration.py": "7be7dbe3d69901b3636a59d3d978a01f3c159994fe45cc2ed3d7e13eabaf540d",
+    "tests/tui_gateway/test_monitor_notifications_rpc.py": "34b41a66cffa8ec45999df2cb42e2c42b25ddb57c09b6feeecd82d8b0be47736",
+    "tui_gateway/contracts/__init__.py": "b449ff76383eb19e9e3500dfa75b0b00f14133667e474daa64346d598cd9ba92",
+    "tui_gateway/contracts/monitor_notifications.py": "a4dbd9df680da03b21c71712769aa7aacd600570ffdaf192a91b970edd8f7955",
+    "tui_gateway/methods_monitor_notifications.py": "3e30db85fd810f3f0f8a80a93a01682efa305408bbc4895da48542dc330753ac",
+    "tui_gateway/server.py": "ea0c51ce58c5c151c295a21b33824f3327745ebb7e3549593779f2b15fde67e5"
+  },
+  "shared_files": [
+    "agent/artifact_commands.py",
+    "hermes_state_common.py",
+    "tui_gateway/contracts/__init__.py",
+    "tui_gateway/server.py",
+    "apps/shared/src/gateway-contract.generated.ts",
+    "apps/shared/src/gateway-contract.openrpc.json"
+  ],
+  "demonstrated": [
+    "human-created bounded policy, exact principal/profile/agent/session and transport binding",
+    "actual canonical ticker/outbox delivery with separate client acknowledgement",
+    "quiet-hours both DST folds, next-real-minute gaps, midnight/end boundaries",
+    "snooze expiry suppresses delivery while healthy/unhealthy checks and bounded costs continue",
+    "digest preserves every included old/new immutable source version; failed or unknown retry never reruns checks",
+    "persistent dismissal and semantic/version dedup through restart",
+    "pending budget/expiry/revoke/pause/policy-change holds remain inspectable through bounded paging",
+    "claim-vs-pause race, stale attempt restart to unknown, explicit three-attempt local replay",
+    "two-profile A-B-A ticks with identical schedule and session IDs remain isolated"
+  ],
+  "not_certified": [
+    "live user schedules or production activation",
+    "external destinations, live mailbox/calendar/HTTP sends",
+    "model or semantic quality, OS notification daemons/toasts",
+    "macOS/Windows/remote deployment",
+    "full repository release after these follow-up edits; parent owns consolidated gate",
+    "frontend visible notification consumer; frontend worker owns this qualification"
+  ],
+  "external_sends_supported": false,
+  "live_user_state_changed": false,
+  "staging_commits_pushes_performed": false
+}

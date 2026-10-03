@@ -24,6 +24,9 @@ from agent.lsp.manager import LSPService
 from agent.lsp.workspace import clear_cache
 
 
+pytestmark = pytest.mark.usefixtures("isolated_git_ancestors")
+
+
 @pytest.fixture(autouse=True)
 def _clear_workspace_cache():
     clear_cache()

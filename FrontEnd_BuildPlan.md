@@ -2,7 +2,7 @@
 
 This plan chronicles the user-facing behavior of the upgraded runtime through the existing CLI, TUI and control surfaces, then the separate OpenDots handoff. It is a product/control plan rather than a new dashboard design. Use it with [BackEnd_BuildPlan.md](BackEnd_BuildPlan.md) and the shared [buildjournal.md](buildjournal.md).
 
-**Status:** implementation plan only. This documentation change implements no application behavior, deploys no service and does not claim tests or benchmarks passed.
+**Status:** local implementation checkpoints recorded through FE13; acceptance remains verifying against the exact receipts below. [Current frontend scope](docs/build/frontend-release-scope.md) distinguishes implemented consumers from conditional breadth and unqualified visual/native/live gates. No deployment, remote publication or release sign-off is claimed.
 
 **Reviewed:** 2 October 2026. **Runtime repository:** `TianJieHeng/ryoko-agent`, `main` baseline [`b78931e3b0959c42dca7400c78a4dffd1bb48575`](https://github.com/TianJieHeng/ryoko-agent/commit/b78931e3b0959c42dca7400c78a4dffd1bb48575). The checkout is substantially newer than the supplied Hermes 0.21.1 / `cbd03e6e4ca143c1d5c2db881320afb85783c30b` analysis. Its packaging `0.0.0` placeholder is not a release version; use the recorded commit and the runtime version resolver.
 
@@ -119,7 +119,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE00 Inventory existing surfaces and agree shared contracts
 
-**Status:** planned. **Objective and value:** Establish what FrontEnd means in this fork: current CLI/TUI/control interfaces, necessary compatibility for existing desktop/web clients, and a later separate OpenDots consumer.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE00 receipt](docs/build/fe00-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Establish what FrontEnd means in this fork: current CLI/TUI/control interfaces, necessary compatibility for existing desktop/web clients, and a later separate OpenDots consumer.
 
 **Prerequisites:** BE00/BE01; contract work pairs with BE02 before broad UI changes.
 
@@ -150,7 +150,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE01 Show identity configuration and usable connections
 
-**Status:** planned. **Objective and value:** Make F34 and per-agent ownership understandable before users act through new capabilities.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE01 receipt](docs/build/fe01-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Make F34 and per-agent ownership understandable before users act through new capabilities.
 
 **Prerequisites:** BE01/BE04/BE05 plus FE00. Minimum setup ships in Slice A; broader setup remains FE11.
 
@@ -181,7 +181,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE02 Support projects capture resumption and scoped memory
 
-**Status:** planned. **Objective and value:** Deliver F01/F03/F04/F05/F06 using current controls and explicit scope.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE02 receipt](docs/build/fe02-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F01/F03/F04/F05/F06 using current controls and explicit scope.
 
 **Prerequisites:** BE07/BE08 and FE01; capture can arrive after the first project/artifact slice.
 
@@ -215,7 +215,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE03 Deliver complete files precise revisions templates and branches
 
-**Status:** planned. **Objective and value:** Deliver F10/F11/F32 and the first reusable output slice.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE03 receipt](docs/build/fe03-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F10/F11/F32 and the first reusable output slice.
 
 **Prerequisites:** BE06/BE07/BE10 and FE02. Markdown first; each further format needs its own validator.
 
@@ -247,7 +247,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE04 Make missions steerable and completion truthful
 
-**Status:** planned. **Objective and value:** Deliver F02 with clear review, cancellation and partial results, using existing goal controls as the starting point.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE04 receipt](docs/build/fe04-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F02 with clear review, cancellation and partial results, using existing goal controls as the starting point.
 
 **Prerequisites:** BE03/BE06/BE09 and FE03.
 
@@ -279,7 +279,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE05 Expose connected research living briefs and decisions
 
-**Status:** planned. **Objective and value:** Deliver F07/F08/F09 with verifiable evidence rather than opaque summaries.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE05 receipt](docs/build/fe05-validation.json) plus [additive consumer receipt](docs/build/fe13-followup-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F07/F08/F09 with verifiable evidence rather than opaque summaries.
 
 **Prerequisites:** BE07/BE09/BE10, FE03; automatic refresh waits for FE06/BE12.
 
@@ -310,7 +310,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE06 Make workflows monitors and conditions understandable
 
-**Status:** planned. **Objective and value:** Deliver F19/F20/F21 and scheduled F08 with visible scope and health.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE06 receipt](docs/build/fe06-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F19/F20/F21 and scheduled F08 with visible scope and health.
 
 **Prerequisites:** BE11/BE12 plus FE04/FE05.
 
@@ -344,7 +344,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE07 Package data teaching tutoring and creative production
 
-**Status:** planned. **Objective and value:** Cover F12/F14/F15/F18/F28 as focused domains on the shared project/artifact/workflow spine.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE07 receipt](docs/build/fe07-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Cover F12/F14/F15/F18/F28 as focused domains on the shared project/artifact/workflow spine.
 
 **Prerequisites:** BE10/BE11 and FE03/FE06; choose one or two Slice-D packages first, keep others explicitly planned.
 
@@ -382,7 +382,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE08 Turn communications into reviewed follow-through
 
-**Status:** planned. **Objective and value:** Deliver F13/F22/F23/F24 and daily operations without inventing commitments or sending by implication.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE08 receipt](docs/build/fe08-validation.json) plus [additive consumer receipt](docs/build/fe13-followup-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F13/F22/F23/F24 and daily operations without inventing commitments or sending by implication.
 
 **Prerequisites:** BE06/BE10/BE12 and FE04/FE06.
 
@@ -419,7 +419,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE09 Show coding browser and device work with real outcomes
 
-**Status:** planned. **Objective and value:** Deliver F25/F26/F27 with clear execution placement, review and effect evidence.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE09 receipt](docs/build/fe09-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F25/F26/F27 with clear execution placement, review and effect evidence.
 
 **Prerequisites:** BE05/BE06/BE09/BE10/BE13 and FE04.
 
@@ -452,7 +452,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE10 Expose specialists teams voice screen and handoff
 
-**Status:** planned. **Objective and value:** Deliver F16/F17/F29/F30/F31 on the same runtime contracts, without duplicate memory or mission authority.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE10 receipt](docs/build/fe10-validation.json) plus [additive consumer receipt](docs/build/fe13-followup-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver F16/F17/F29/F30/F31 on the same runtime contracts, without duplicate memory or mission authority.
 
 **Prerequisites:** BE08/BE13 plus FE04/FE09. OpenDots renderers remain FE14; this phase defines and exposes current supported controls first.
 
@@ -488,7 +488,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE11 Provide useful status setup repair and opportunity controls
 
-**Status:** planned. **Objective and value:** Finish F33/F34 and on-demand F35 while making U28/U29/U34 operationally usable.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE11 receipt](docs/build/fe11-validation.json) plus [additive consumer receipt](docs/build/fe13-followup-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Finish F33/F34 and on-demand F35 while making U28/U29/U34 operationally usable.
 
 **Prerequisites:** BE07/BE12/BE14 and preceding feature contracts.
 
@@ -521,7 +521,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE12 Explain and control LAYA decisions without exposing authority
 
-**Status:** planned. **Objective and value:** Deliver P11–P16 and the user-facing parts of DP01–DP16 only as their backend gates pass.
+**Status:** verifying (local implementation checkpoint; original acceptance gates remain individually qualified). Evidence: [FE12 receipt](docs/build/fe12-validation.json) and the matching [build chronicle](buildjournal.md) entry. **Objective and value:** Deliver P11–P16 and the user-facing parts of DP01–DP16 only as their backend gates pass.
 
 **Prerequisites:** BE15/BE16; FE06 monitors, FE04 mission verification and FE10 channels as applicable.
 
@@ -553,7 +553,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE13 Validate complete user journeys and release behavior
 
-**Status:** planned. **Objective and value:** Consolidate frontend/product acceptance after focused phase checks. Do not spend hours repeatedly testing a documentation-only change.
+**Status:** verifying. Local consumer integration and consolidated offline checks are recorded in [FE13 validation](docs/build/fe13-validation.json) and [additive consumer validation](docs/build/fe13-followup-validation.json); remaining visual/native/live gates and conditional breadth are explicit in [release scope](docs/build/frontend-release-scope.md). No release sign-off is claimed. **Objective and value:** Consolidate frontend/product acceptance after focused phase checks. Do not spend hours repeatedly testing a documentation-only change.
 
 **Prerequisites:** The candidate assembled in the first part of BE18 for the selected slice, plus mandatory authority/memory/recovery gates and enabled FE phases. FE13 returns journey receipts to BE18 for final sign-off; it does not depend on BE18 already being complete.
 
@@ -585,7 +585,7 @@ Mandatory safety gates apply even to a narrow slice. Optional U23 indexing, U24 
 
 ### FE14 Hand the stable runtime contract to the separate Dots fork
 
-**Status:** planned. **Objective and value:** Prepare and later integrate OpenDots after the custom Hermes runtime is usable and safe. Full Dots implementation does not belong in this repository.
+**Status:** partial, producer-side handoff recorded in [FE14 handoff](docs/build/frontend-adapter-handoff.md) and [validation receipt](docs/build/fe14-validation.json). Separate Dots implementation and OD00 consumer proof remain pending. **Objective and value:** Prepare and later integrate OpenDots after the custom Hermes runtime is usable and safe. Full Dots implementation does not belong in this repository.
 
 **Prerequisites:** BE02 early contract, BE05/BE06 authority/effects, BE07/BE08/BE09 Slice A/B, FE13 and BE18 production readiness. Follow Integration_Handoff.md in ryoko-dots.
 

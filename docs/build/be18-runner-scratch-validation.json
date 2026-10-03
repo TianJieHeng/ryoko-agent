@@ -1,0 +1,32 @@
+{
+  "scope": "BE18 explicit runner-owned scratch placement",
+  "reason": "This host maps /var/tmp to tmpfs; an explicit disk-backed parent avoids fixture ENOSPC without system changes",
+  "option": "scripts/run_tests.sh --scratch-parent <existing-absolute-disk-directory>",
+  "default_changed": false,
+  "test_result": {
+    "files": 1,
+    "passed": 20,
+    "failed": 0
+  },
+  "log": "/tmp/ryoko-disk-scratch-runner-final.log",
+  "log_sha256": "18e92ef596f4003bd41a51b85f23d112c7b714f3e08810ede2a32648f3b2753d",
+  "source_sha256": {
+    "scripts/run_tests_parallel.py": "b37507e6172a560a5c4c8b98983acec324519eb617275115bbefc72d06647399",
+    "scripts/run_tests.sh": "06f59e25187f0025c43fa50e8ecf4eddb070b07bccc31355d0b78a6ef9f0286e",
+    "tests/scripts/test_run_tests_parallel.py": "d0e3135171ac1dabc4b953262efc8f7626b068f25450a87e591527139081c191"
+  },
+  "verified": [
+    "Distinct temporary root for each file",
+    "Per-user dedicated runner scratch subdirectory",
+    "Per-file cleanup leaves unrelated parent contents intact",
+    "Relative/missing parent rejected",
+    "Existing timeout/process-tree/retry/slicing/parser runner tests unchanged and pass"
+  ],
+  "limits": [
+    "Caller chooses actual disk storage; directory existence alone does not certify filesystem type",
+    "Keep parent path short for AF_UNIX fixtures",
+    "Changing scratch location is recorded in later aggregate receipts"
+  ],
+  "lint": "passed",
+  "initial_construction_error": "Duplicate argparse option alias corrected before final20-test green run"
+}

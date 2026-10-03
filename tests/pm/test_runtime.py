@@ -8,9 +8,10 @@ import subprocess
 import sys
 
 import pytest
+from tests.pm._fixtures import seed_pm_runtime_cache
 
 
-def test_pm_runtime_discovers_plugins_without_application_dependencies(tmp_path, monkeypatch):
+def test_pm_runtime_discovers_plugins_without_application_dependencies(tmp_path, monkeypatch, request):
     from pm.runtime import prepare_runtime
 
     uv = shutil.which("uv")
@@ -23,7 +24,10 @@ def test_pm_runtime_discovers_plugins_without_application_dependencies(tmp_path,
     monkeypatch.setenv("HERMES_RUNTIME_DIR", str(home / "tools"))
     (home / "config.yaml").write_text("plugins:\n  enabled: []\n", encoding="utf-8")
     repo = Path(__file__).resolve().parents[2]
-    python = prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime")
+    cache = tmp_path / "prepared-cache"
+    prepared = seed_pm_runtime_cache(request, cache)
+    cache = cache if prepared else None
+    python = prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime", cache=cache, offline=prepared)
     env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "UV_"))}
     env.update(HERMES_HOME=str(home), HERMES_RUNTIME_DIR=str(home / "tools"))
     # Import real PM, including its production plugin-discovery chain.
@@ -44,17 +48,17 @@ print(json.dumps({{"prefix": sys.prefix, "yaml": importlib.util.find_spec("ruame
     assert result.returncode == 0, result.stdout + result.stderr
     report = json.loads(result.stdout)
     assert Path(report["yaml"]).is_relative_to(Path(report["prefix"]))
-    assert prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime", offline=True) == python
+    assert prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime", cache=cache, offline=True) == python
     # Repair PM itself from its own lock, without trusting an existing marker.
     (Path(report["yaml"]).parent / "main.py").unlink()
-    repaired = prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime", offline=True)
+    repaired = prepare_runtime(Path(uv), Path(sys.executable), tmp_path / "runtime", cache=cache, offline=True)
     assert repaired != python
     checked = subprocess.run([str(repaired), "-I", "-B", "-c", code], env=env,
                              capture_output=True, text=True, timeout=30)
     assert checked.returncode == 0, checked.stdout + checked.stderr
 
 
-def test_cold_worker_bootstrap_reuses_the_requests_cache(tmp_path, monkeypatch):
+def test_cold_worker_bootstrap_reuses_the_requests_cache(tmp_path, monkeypatch, request):
     import pm
     from hermes_constants import get_default_hermes_root
     from pm import client, runtime
@@ -64,6 +68,7 @@ def test_cold_worker_bootstrap_reuses_the_requests_cache(tmp_path, monkeypatch):
     assert uv, "the bootstrap cache contract requires real uv"
     tools = Path(uv), Path(sys.executable)
     cache = tmp_path / "shared-cache"
+    prepared = seed_pm_runtime_cache(request, cache)
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home/.hermes"))
@@ -71,7 +76,7 @@ def test_cold_worker_bootstrap_reuses_the_requests_cache(tmp_path, monkeypatch):
     monkeypatch.setattr("pm.paths.repo_root", lambda: tmp_path / "project")
     monkeypatch.setattr("pm._uv._toolchain", lambda **kwargs: tools)
     monkeypatch.setattr(client, "is_runtime", lambda: False)
-    stage_runtime(*tools, tmp_path / "warmup", cache=cache)
+    stage_runtime(*tools, tmp_path / "warmup", cache=cache, offline=prepared)
     shutil.rmtree(tmp_path / "warmup")
 
     def offline_stage(*args, **kwargs):

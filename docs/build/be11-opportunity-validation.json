@@ -1,0 +1,95 @@
+{
+  "slice": "FE11 on-demand opportunity candidates",
+  "timestamp_utc": "2026-10-03T06:03:00Z",
+  "scope": "bounded local deterministic evidence review only",
+  "schema_version": 45,
+  "base_head_at_receipt": "6316814532a5df2d89568880a51f619bbf421e78",
+  "owned_whitelist": [
+    "agent/project_opportunities.py",
+    "hermes_state_opportunities.py",
+    "hermes_state_opportunity_schema.py",
+    "tui_gateway/contracts/opportunities.py",
+    "tui_gateway/methods_opportunities.py",
+    "tests/tui_gateway/test_opportunities_rpc.py",
+    "tests/tui_gateway/test_opportunity_recovery_rpc.py",
+    "docs/build/be11-opportunity-review.md"
+  ],
+  "shared_coordination_whitelist": [
+    "hermes_state_common.py",
+    "hermes_cli/operations_profile_recovery.py",
+    "tui_gateway/contracts/__init__.py",
+    "tui_gateway/server.py",
+    "apps/shared/src/gateway-contract.generated.ts",
+    "apps/shared/src/gateway-contract.openrpc.json"
+  ],
+  "receipt_path": "docs/build/be11-opportunity-validation.json",
+  "source_sha256": {
+    "agent/project_opportunities.py": "bec05eb0130697c301163012ea9971167bfeea17df348714e904e9b0e17341d2",
+    "hermes_state_opportunities.py": "fdf0ba8853be251064e183c60bbb1f4da0d190cee7bb6e38a780af2c4e4eb5d0",
+    "hermes_state_opportunity_schema.py": "7e797b9ae41359a2565929e8177223f9a96bb0df10a9738c891edd2e69ce1748",
+    "tui_gateway/contracts/opportunities.py": "5511acca6a965e24b701a53dc78d1ee04d0da64e6bbc28a0ca82ffe524426724",
+    "tui_gateway/methods_opportunities.py": "ab553767fa20be2cb5c3d0c73bed69c4de33e94f9b46f9969494b1a763efb510",
+    "tests/tui_gateway/test_opportunities_rpc.py": "ce8574f2683f4f75bd3f356187e46d2c046a2ff4c4774864392bec8e8a03aee5",
+    "tests/tui_gateway/test_opportunity_recovery_rpc.py": "45344bb56ec73ed846ba480894d896acb57126177fa9aa9d6b863c181c6b9596",
+    "docs/build/be11-opportunity-review.md": "027e14c66f859456464d6020f6caee1cfff9142fb9750829054364f272d2f81f",
+    "hermes_state_common.py": "922c61da5e75e367ca8c7cd3428b811ddc7c9b0e2125222d934180ece3fa8c8a",
+    "hermes_cli/operations_profile_recovery.py": "93f2879bcac0caf121c395ef9a816ec9a85bc3d1633ad9fd142f7d27122a15e1",
+    "tui_gateway/contracts/__init__.py": "7b97d9f28a10429ead2ea75fd155bf3025ee2698a2dde90bd60611c0bb395fd6",
+    "tui_gateway/server.py": "6e767f2936ed928af89b942d3b98e003d6c2e375625b4cf3f7026c895dd04d00",
+    "apps/shared/src/gateway-contract.generated.ts": "d710c9c388e301775e68708958886ea2d72c918b2abebf6bc56497297c970d13",
+    "apps/shared/src/gateway-contract.openrpc.json": "3cceb1f92caaec84b987b391d3971246c7098a24a1cbfbb5f7020959a05581ab"
+  },
+  "checks": [
+    {
+      "name": "focused registered RPC, real recovery and generated parity",
+      "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/tui_gateway/test_opportunities_rpc.py tests/tui_gateway/test_opportunity_recovery_rpc.py tests/tui_gateway/contracts/test_generated.py --scratch-parent /workspace/shared -j2",
+      "files": 3,
+      "passed": 9,
+      "failed": 0,
+      "flaky": 0,
+      "exit_code": 0,
+      "log": "/tmp/be11-opportunity-focused.log"
+    },
+    {
+      "name": "adjacent regression",
+      "command": "HERMES_PYTHON=/workspace/scratch/42f2baf55663/ryoko-agent/.venv/bin/python HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime scripts/run_tests.sh tests/tui_gateway/test_opportunities_rpc.py tests/tui_gateway/test_opportunity_recovery_rpc.py tests/tui_gateway/test_artifact_rpc.py tests/tui_gateway/test_project_sources_rpc.py tests/tui_gateway/test_workflows_rpc.py tests/tui_gateway/test_commitments_rpc.py tests/tui_gateway/test_commitment_review_rpc.py tests/tui_gateway/test_operations_control_rpc.py tests/tui_gateway/test_failed_agent_build_retry.py tests/tui_gateway/contracts tests/hermes_state/test_schema_read_probe.py tests/hermes_state/test_workflow_migration.py tests/hermes_state/test_artifact_records.py tests/hermes_cli/test_operations_profile_recovery.py --scratch-parent /workspace/shared -j2",
+      "files": 16,
+      "passed": 63,
+      "failed": 0,
+      "flaky": 0,
+      "exit_code": 0,
+      "wall_seconds": 42.2,
+      "log": "/tmp/be11-opportunity-regression.log"
+    },
+    {
+      "name": "git diff --check",
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "verified": [
+    "three evidence rules use canonical registered stores",
+    "explicit selected project set only; excluded corrupt B is not enumerated",
+    "A→B→A profile isolation and foreign transport rejection",
+    "live grant revocation blocks new and replayed review access",
+    "save/dismiss/accept create no runtime command, mission, accepted commitment, effect or approval",
+    "restart and old-scan replay preserve unchanged dismissal suppression",
+    "non-material revision does not resurface; material changed evidence explains resurfacing",
+    "atomic current-source acceptance guard and candidate revision CAS",
+    "concurrent distinct choices have one winner; same request retries retain one outcome",
+    "source/result bounds and truthful incompleteness",
+    "schema44→45 migration preserves exact existing effects and approvals",
+    "real owning-store bundle/restore retains review state and rejects foreign owner rows in all three tables",
+    "generated TS/OpenRPC parity"
+  ],
+  "boundaries": [
+    "no background discovery, schedules, semantic cross-project search, teams or dashboard",
+    "no model calls, external sources, network or live services",
+    "no automatic refresh/evaluation/promotion/approval/mission dispatch",
+    "no personal-harness writes or real profile configuration changes",
+    "no Git staging/commit/push/root buildjournal/buildplan edits by this worker",
+    "full Python009255ec campaign belongs to parent and is not covered by this receipt",
+    "frontend visual/end-to-end opportunity panel validation belongs to frontend lead"
+  ],
+  "integration_note": "Shared registration/generated files include coordinated specialist additions; hash receipt captures complete combined bytes. Schema and operations recovery shared edits are opportunity-specific. Receipt excludes its own self-hash; parent should freeze exact bytes when staging."
+}
