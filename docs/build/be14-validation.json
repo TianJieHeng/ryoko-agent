@@ -1,0 +1,134 @@
+{
+  "phase": "BE14",
+  "schema_version": 1,
+  "recorded_at": "2026-10-03T01:11:32.420003+00:00",
+  "base_commit": "a35020dede80abe3871d6d72f9c146225cff6773",
+  "worktree": "shared phase-separated changes; no BE14 commit or push by worker",
+  "status": "local operator and pinned-plugin code checks passed; live acceptance remains partial",
+  "runs": [
+    {
+      "name": "operator_effect_memory_regression",
+      "status": "passed",
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/agent/test_operations_control.py tests/hermes_cli/test_operations_backup_extensions.py tests/agent/test_effect_reconciler.py tests/hermes_state/test_effect_records.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_delivery_outbox.py tests/tui_gateway/test_runtime_effects_rpc.py tests/tui_gateway/contracts/test_runtime_v1.py tests/tools/test_individual_memory_store.py -q",
+      "passed": 107,
+      "failed": 0,
+      "files": 9,
+      "wall_seconds": 11.0,
+      "log_sha256": "c2faf1610478793d5d805a6dcb50a5c0efb0d84aa51cc5056d0b3a11e23cb134",
+      "worker_log": "/tmp/be14-validation.txt"
+    },
+    {
+      "name": "lifecycle_operator_general_plugin_regression",
+      "status": "passed",
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/agent/test_operations_control.py tests/hermes_cli/test_operations_extension_lifecycle.py tests/hermes_cli/test_plugins.py tests/plugins/test_plugin_loader.py tests/hermes_cli/test_operations_backup_extensions.py -q",
+      "passed": 119,
+      "failed": 0,
+      "files": 5,
+      "wall_seconds": 9.8,
+      "log_sha256": "aad7a967415ee094eb82f34c42825ec83b475a0ca909d4e9e09902f486c93d95",
+      "worker_log": "/tmp/be14-lifecycle-validation.txt"
+    },
+    {
+      "name": "affected_category_loader_regression",
+      "status": "passed",
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/hermes_cli/test_operations_extension_lifecycle.py tests/plugins/test_plugin_loader.py tests/plugins/memory/test_discovery_sources.py tests/plugins/memory/test_disabled_provider_not_loaded.py tests/plugins/memory/test_memory_lazy_install.py tests/providers/test_plugin_discovery.py tests/providers/test_entry_point_discovery.py tests/providers/test_installed_plugin_discovery.py tests/providers/test_profile_home_layers.py -q",
+      "passed": 35,
+      "failed": 0,
+      "files": 9,
+      "wall_seconds": 1.7,
+      "log_sha256": "8acc5294e9a58ef5f7151e83cbcc324b122fe44147d254e84816e00a32b9c575",
+      "worker_log": "/tmp/be14-plugin-regression.txt"
+    },
+    {
+      "name": "final_checkpoint_inventory_and_lifecycle",
+      "status": "passed",
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/agent/test_operations_control.py tests/hermes_cli/test_operations_extension_lifecycle.py -q",
+      "passed": 24,
+      "failed": 0,
+      "files": 2,
+      "wall_seconds": 1.7,
+      "log_sha256": "fd412dbaf053b19ecd376f4671579417426ae72485f931156f06e898ccfae718",
+      "worker_log": "/tmp/be14-final-focused.txt"
+    },
+    {
+      "name": "final_descriptor_anchored_pin_and_backup",
+      "status": "passed",
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/hermes_cli/test_operations_extension_lifecycle.py tests/hermes_cli/test_operations_backup_extensions.py -q",
+      "passed": 13,
+      "failed": 0,
+      "files": 2,
+      "log_sha256": "3c21c2458ded6aa76fe0c74da449b50a4373fe6bcaf07c843253e6c45e39f02f",
+      "worker_log": "/tmp/be14-pin-final.txt",
+      "wall_seconds": 1.5
+    },
+    {
+      "name": "final_BE13_privacy_scope",
+      "status": "passed",
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/agent/test_operations_control.py -q",
+      "passed": 18,
+      "failed": 0,
+      "files": 1,
+      "wall_seconds": 2.1,
+      "log_sha256": "16774c462c752376eed72296e106e1fd1fa75650addfcb9e6a9b9e5f5d99809a",
+      "worker_log": "/tmp/be14-privacy-final.txt"
+    },
+    {
+      "name": "operational_event_wire_replay_and_generated_freshness",
+      "status": "passed",
+      "command": "HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/agent/test_operations_control.py tests/tui_gateway/contracts/test_runtime_v1.py tests/tui_gateway/contracts/test_generated.py -q",
+      "passed": 23,
+      "failed": 0,
+      "files": 3,
+      "wall_seconds": 2.8,
+      "log_sha256": "6e3e4dbad76af4cd951e401c319d3714a38717022565ff23d57b2fc264ccae9e",
+      "worker_log": "/tmp/be14-event-final.txt"
+    }
+  ],
+  "lint": {
+    "status": "passed",
+    "command": ".venv/bin/python -m ruff check agent/operations_*.py hermes_cli/operations_*.py tests/agent/test_operations_control.py tests/hermes_cli/test_operations_*.py"
+  },
+  "diff_check": {
+    "status": "passed",
+    "command": "git diff --check"
+  },
+  "pending_checks": [],
+  "qualification": {
+    "sensitive_ingestion_certified": false,
+    "live_store_encryption": false,
+    "full_profile_recovery_certified": false,
+    "general_pinned_plugin_activation": "fixture verified on sealed artifacts",
+    "pinned_category_entrypoint_activation": "unsupported and denied",
+    "production_key_custody": "not provisioned",
+    "remote_deletion": "not claimed",
+    "portable_deployment": "not certified"
+  },
+  "prohibited_live_actions_performed": [],
+  "notes": [
+    "Test counts across runs overlap and must not be summed as unique tests.",
+    "Only temporary synthetic stores/plugins/keys were used.",
+    "Earlier runs precede later lifecycle/inventory additions, whose affected tests were rerun."
+  ],
+  "integration_base_commit": "cb69a57bd8310fa04c5f4eb8e72d0d518e506ab9",
+  "generation": {
+    "status": "passed",
+    "command": ".venv/bin/python scripts/gen_gateway_contracts.py",
+    "outputs": [
+      "apps/shared/src/gateway-contract.generated.ts",
+      "apps/shared/src/gateway-contract.openrpc.json"
+    ]
+  },
+  "not_run": [
+    "entire repository suite",
+    "live provider or remote harness acceptance",
+    "macOS/Windows/daemon deployment",
+    "production key custody or encrypted volumes",
+    "full-profile upgrade/downgrade recovery"
+  ],
+  "parent_shared_typescript": {
+    "command": "npm run typecheck --workspace @hermes/shared",
+    "result": "passed",
+    "log": "/tmp/be14-shared-typecheck.log",
+    "sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+  }
+}

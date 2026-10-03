@@ -38939,7 +38939,11 @@
               "model.failed",
               "tool.started",
               "tool.completed",
-              "tool.failed"
+              "tool.failed",
+              "operations.repair_started",
+              "operations.repair_finished",
+              "operations.deletion_requested",
+              "operations.deletion_finished"
             ],
             "title": "Type",
             "type": "string"

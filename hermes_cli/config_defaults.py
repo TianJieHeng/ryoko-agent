@@ -1719,6 +1719,9 @@ DEFAULT_CONFIG = {
     # Plugin system. `enabled`/`disabled` lists are written by `hermes plugins enable|disable` and
     # deliberately omitted here so an empty default never clobbers a user allow-list.
     "plugins": {
+        # Opt-in immutable extension pins, published by the explicit operator
+        # lifecycle. Empty keeps existing selection/activation behavior.
+        "pinned_manifests": {},
         # Deadline (seconds) for one plugin Git clone, fetch or checkout. Slow repositories may
         # need more time; each network operation is capped at one hour.
         "clone_timeout_seconds": 300,

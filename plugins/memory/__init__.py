@@ -230,6 +230,8 @@ def import_memory_provider_module(name: Optional[str] = None) -> bool:
         return False
     imported = False
     try:
+        from hermes_cli.operations_extension_lifecycle import refuse_unsupported_activation
+        refuse_unsupported_activation(name)
         if provider_dir := find_provider_dir(name):
             imported = _load_package(provider_dir, name) is not None
         elif (entry_point := find_provider_entry_point(name)) is not None:
@@ -298,6 +300,8 @@ def _load_provider_from_entry_point(entry_point, *, register_skills: bool = True
     instance, a subclass, a module with ``register(ctx)``, a factory / ``register``
     callable, or a namespace holding a subclass — in that order."""
     from agent.memory_provider import MemoryProvider
+    from hermes_cli.operations_extension_lifecycle import refuse_unsupported_activation
+    refuse_unsupported_activation(entry_point.name)
 
     loaded = entry_point.load()
     if isinstance(loaded, MemoryProvider):

@@ -420,6 +420,14 @@ class PluginLoaderMixin:
         from hermes_cli.plugins import LoadedPlugin, PluginContext, _PLUGINS_DEBUG
         loaded = LoadedPlugin(manifest=manifest)
         plugin_key = manifest_key(manifest)
+        from hermes_cli.operations_extension_lifecycle import enforce_activation
+        try:
+            manifest = enforce_activation(manifest)
+            loaded.manifest = manifest
+        except (ValueError, OSError) as error:
+            loaded.error = getattr(error, "code", "extension_pin_unavailable")
+            self._plugins[plugin_key] = loaded
+            return
         logger.debug(
             "Loading plugin '%s' (source=%s, kind=%s, path=%s)",
             plugin_key, manifest.source, manifest.kind, manifest.path,

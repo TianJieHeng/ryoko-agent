@@ -323,3 +323,140 @@ Limits/rollback: parallel strict teams are blocked with delegation_team_unqualif
 Interface consumer follow-up: FE10 specialists should project recorded handoff/completion/delivery state; later F16/F17/F27 clients should consume advertised unsupported capabilities and explicit processing location. Current FE builds have typed contracts but no claim of completed frontend UX or live capability qualification.
 
 Exact changed files: /tmp/be13-files.txt (34 paths). Implementation docs: docs/build/delegation-contracts.md and docs/build/media-service-contracts.md. Parent owns the root buildjournal append, direct-main checkpoint, push and CI verification.
+
+## 2026-10-03 BE14 — Scoped operator controls, privacy manifests and offline qualification
+
+**Status:** backend operator slice implemented; BE14 acceptance remains partial.
+Sensitive-ingestion, deployment and full-recovery certification are explicitly
+false, not inferred from passing synthetic fixtures.
+
+**Before → after:** Operators previously had separate raw database/effect/outbox
+utilities but no common bounded, identity-bound preview/apply consumer. New
+`python -m hermes_cli.operations_cli` supports read-only redacted inspect/audit,
+retention inventory, exact authorized repair/deletion previews and applies.
+Repairs reuse existing SessionDB writer, turn lease, effect reconciler, outbox and
+FTS admission. A separate explicit digest is required after reviewing the saved
+preview. Wrong-profile, stale revision, target drift, policy revocation and
+partial strict fences fail closed. There is no mark-success endpoint.
+
+Supported repairs are read-only effect reconciliation, same-budget outbox
+requeue without sending, exact-generation lease revocation without claiming
+remote cancellation, and small single-actor FTS rebuild. Mandatory journal
+failure blocks the adapter, and revoke/deletion audit writes are transactional.
+The optional analytics sink is opt-in, allowlisted/HMAC-pseudonymized, bounded
+drop-newest and nonblocking even under a hung sink.
+
+**Privacy:** Transcript manifests actually erase selected message rows/sidecars,
+FTS projections, title/system-prompt reference and unreferenced system prompts.
+Individual-memory manifests remove content/source/author payloads from every
+logical record version and conflicting proposal, synchronize Markdown and retain
+structural tombstones. Preview is read-only. Accepted/claimed/unresolved work and
+nonterminal missions block erasure; competing leases and source CAS protect
+apply. Memory catalog and audit are separate existing stores: a crash between
+them remains a requested manifest without a false closure acknowledgment.
+Recovery journals, context projections, mission evidence, artifacts, activity
+metadata, session JSON/JSONL/request dumps, exports, backups, external caches,
+provider copies and frozen process copies are explicitly retained/unverified.
+Logical deletion is not forensic erasure; all receipts say complete_deletion=false.
+
+**Backup/provisioning:** Authenticated AES-256-GCM archive envelopes use the
+already installed cryptography implementation and caller-supplied ephemeral
+fixture keys; no key provisioning or persistent credential was performed.
+Synthetic real SessionDB snapshots reuse the updater's WAL-safe copier and
+restore only into disposable directories, proving integrity/foreign keys,
+expected schema/session scope, key-loss failure, tamper rejection and rotation.
+This does not encrypt a live store or alter updater snapshots. Offline extension
+inventory uses PM declaration parsing, pins actual source/lock/environment bytes
+and exact grants, refuses changed/revoked metadata and executes no extension code,
+network probe or dependency install. PM remains the provisioning authority.
+
+**Lifecycle completion:** Explicit pin approval now publishes a private sealed
+artifact copy and trusted per-profile registry. The actual general-plugin loader
+checks source/artifact digests, exact existing grants, revocation and interpreter/
+platform before native/portable activation; imports use the sealed copy, so a
+post-validation source swap cannot change executed code. Targeted revoke uses
+the existing manager unload without removing unrelated registrations. Opted-in
+category/memory/model/entrypoint bypasses fail closed before imports. Absent pins
+preserve existing behavior. No real plugin activation/install was performed.
+
+**Migration/flags:** No new database, table, schema bump, environment variable,
+model tool, background retention daemon or telemetry default. The new
+plugins.pinned_manifests config key defaults to an empty opt-in registry. Four
+closed operations event kinds extend the existing mandatory runtime journal.
+`repair_runtime_delivery` accepts a complete optional lease/state/attempt fence
+for strict operator calls while preserving existing caller behavior.
+
+**Changed files owned by BE14:**
+- agent/operations_audit.py
+- agent/operations_control.py
+- agent/operations_privacy.py
+- hermes_cli/operations_backup.py
+- hermes_cli/operations_cli.py
+- hermes_cli/operations_extensions.py
+- hermes_cli/operations_extension_lifecycle.py
+- hermes_cli/config_defaults.py (empty opt-in pinned_manifests default)
+- hermes_cli/plugins_loader.py (pre-import pin gate)
+- plugins/plugin_loader.py (unsupported pinned category gates)
+- plugins/memory/__init__.py (pinned entrypoint/warm-up gates)
+- providers/__init__.py (pinned model-provider/entrypoint gates)
+- hermes_state_runtime.py (four event kinds only)
+- hermes_state_delivery.py (strict repair transaction fence only)
+- tests/agent/test_operations_control.py
+- tests/hermes_cli/test_operations_backup_extensions.py
+- tests/hermes_cli/test_operations_extension_lifecycle.py
+- docs/build/operations-contracts.md
+- docs/build/be14-validation.json
+- tui_gateway/contracts/runtime_v1.py (four operational event Literal values)
+- apps/shared/src/gateway-contract.generated.ts (generated event union)
+- apps/shared/src/gateway-contract.openrpc.json (generated event enum)
+
+**Validation:** Standard wrapper with the existing interpreter:
+
+`HERMES_PYTHON=$PWD/.venv/bin/python scripts/run_tests.sh tests/agent/test_operations_control.py tests/hermes_cli/test_operations_backup_extensions.py tests/agent/test_effect_reconciler.py tests/hermes_state/test_effect_records.py tests/hermes_state/test_runtime_store.py tests/hermes_state/test_delivery_outbox.py tests/tui_gateway/test_runtime_effects_rpc.py tests/tui_gateway/contracts/test_runtime_v1.py tests/tools/test_individual_memory_store.py -q`
+
+The saved output is `/tmp/be14-validation.txt`: 107 passed/9 files in 11.0s.
+Lifecycle/operator/general plugin regression: 119 passed/5 files in 9.8s,
+`/tmp/be14-lifecycle-validation.txt`. Affected category/memory/model/entrypoint
+loader regression: 35 passed/9 files in 1.7s,
+`/tmp/be14-plugin-regression.txt`. Final checkpoint qualification/BE13 retained-
+store inventory additions are rerun with the new operator/lifecycle tests in
+`/tmp/be14-final-focused.txt`: 24 passed/2 files in 1.7s. Exact commands, counts,
+log SHA256 values and pending integration are in docs/build/be14-validation.json.
+Ruff for all BE14 Python files/tests and `git diff --check` passed. No dependency
+installation, live call, deployment, real deletion, persistent key, training,
+staging, commit or push was performed by this worker.
+
+**Event integration completed:** after BE13 checkpoint
+cb69a57bd8310fa04c5f4eb8e72d0d518e506ab9, added the four event kinds to
+`RuntimeEventEnvelope.type` and regenerated the shared TypeScript/OpenRPC
+contracts using `.venv/bin/python scripts/gen_gateway_contracts.py`. A real
+transcript erasure and lease revocation produce all four journal event kinds;
+the new replay test passes them through the actual wire projection and typed
+serialization, proves operation correlation survives, and proves private payloads
+do not. Final event/operator/contract-freshness check: 23 passed/3 files in 2.8s,
+`/tmp/be14-event-final.txt`. All pending code checks are settled. Live acceptance
+gates below remain deliberately unclaimed.
+
+**Additional guards:** read-only checkpoint restore qualification verifies actual
+schema/config/policy/runtime/projection versions, watermark and replay retention,
+but still refuses history mutation. BE13 bounded-service blobs/receipts, channel
+bindings, delegation roots/handoffs/workspaces and BE12 schedule/monitor/commitment
+copies are explicitly retained; scoped counts expose their presence without
+payloads. Incomplete service pipelines/delegations block transcript erasure.
+
+**Unresolved acceptance gates:** no checkpoint-history restore mutation; no live
+database/filesystem encryption; no approved production key custody or retirement;
+no full-store/full-profile disaster recovery or upgrade/downgrade proof; no remote
+provider/harness deletion/backup expiry proof; no publisher-authenticity or actual
+environment reproduction proof; pinned category/entrypoint activation remains
+intentionally unsupported/fail-closed; other running plugin processes require a
+drain/restart to revoke; no macOS/Windows/daemon-client portable deployment certification
+or production-scale contention proof. No distributed storage or training added.
+
+**FE/rollback linkage:** FE11/Dots needs authenticated operator preview/approval,
+partial receipt and uncertainty rendering; no Dots files changed. Old readers must
+understand added event kinds. Drain work and preserve compatible complete profile
+backups/code/keys/manifests before downgrade; backup recovery does not imply schema
+rollback. See docs/build/operations-contracts.md for the concrete runbook.
+
+Parent validation: shared TypeScript passed (`npm run typecheck --workspace @hermes/shared`); exact log SHA-256 is retained in the phase validation receipt. Phase base is verified BE13 `a35020dede80abe3871d6d72f9c146225cff6773`.

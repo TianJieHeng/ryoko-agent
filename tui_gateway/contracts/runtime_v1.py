@@ -292,6 +292,8 @@ class RuntimeEventEnvelope(Result):
         "command.blocked", "command.cancelled", "checkpoint.published", "runtime.output",
         "runtime.state", "approval.requested", "approval.resolved", "effect.recorded",
         "model.started", "model.completed", "model.failed", "tool.started", "tool.completed", "tool.failed",
+        "operations.repair_started", "operations.repair_finished",
+        "operations.deletion_requested", "operations.deletion_finished",
     ]
     payload: RuntimeEventPayload
 

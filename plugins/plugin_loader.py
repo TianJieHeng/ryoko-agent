@@ -96,6 +96,8 @@ def load_plugin_module(module_name: str, plugin_dir: Path, *, parents: Tuple[str
     Order matters: parents first (relative imports need them), then siblings as ``module_name.<stem>``
     (so ``from ._x import Y`` resolves), then the module. Finally child is bound onto parent and
     siblings onto module — the shape normal imports produce, which monkeypatch relies on."""
+    from hermes_cli.operations_extension_lifecycle import refuse_unsupported_activation
+    refuse_unsupported_activation(plugin_dir.name, plugin_dir)
     init_file = plugin_dir / "__init__.py"
     if not init_file.exists():
         return None
@@ -167,6 +169,8 @@ def load_named(name: str, plugin_dir: Path, load_from_dir: Callable[[Path], Opti
                noun: str, logger: logging.Logger) -> Optional[Any]:
     """Shared body of ``load_<kind>(name)``: load from *plugin_dir*, warn + None on failure."""
     try:
+        from hermes_cli.operations_extension_lifecycle import refuse_unsupported_activation
+        refuse_unsupported_activation(name, plugin_dir)
         instance = load_from_dir(plugin_dir)
     except Exception as e:
         logger.warning("Failed to load %s '%s': %s", kind.lower(), name, e)

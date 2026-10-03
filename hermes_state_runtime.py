@@ -20,6 +20,8 @@ MAX_SNAPSHOT_REFERENCES = 100
 _OPERATIONS = frozenset({"submit", "steer", "cancel", "approval", "artifact"})
 _FINISH_STATES = frozenset({"completed", "failed", "blocked", "cancelled"})
 _RECORDED_TYPES = frozenset({"runtime.output", "runtime.state", "approval.requested",
+                             "operations.repair_started", "operations.repair_finished",
+                             "operations.deletion_requested", "operations.deletion_finished",
                              "approval.resolved", "effect.recorded", "model.started", "model.completed", "model.failed",
                              "tool.started", "tool.completed", "tool.failed"})
 _EVENT_TYPES = _RECORDED_TYPES | {"command.accepted", "command.claimed", "checkpoint.published"} | {

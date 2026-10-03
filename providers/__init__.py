@@ -396,6 +396,12 @@ def _import_plugin_dir(plugin_dir: Path, source: str, *, home_key: str = "") -> 
     ``source`` is "bundled" or "user"; it is recorded per registered profile (``_SOURCES``).
     """
     global _current_source
+    from hermes_cli.operations_extension_lifecycle import refuse_unsupported_activation
+    try:
+        refuse_unsupported_activation(plugin_dir.name, plugin_dir)
+    except (ValueError, OSError):
+        logger.warning("Pinned provider %s requires a supported activation adapter", plugin_dir.name)
+        return
     init_file = plugin_dir / "__init__.py"
     if not init_file.exists():
         return
@@ -500,6 +506,8 @@ def _discover_entry_point_providers() -> None:
             )
             continue
         try:
+            from hermes_cli.operations_extension_lifecycle import refuse_unsupported_activation
+            refuse_unsupported_activation(ep.name)
             loaded = ep.load()
         except Exception as exc:
             logger.warning(

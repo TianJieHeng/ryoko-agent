@@ -279,15 +279,24 @@ class SessionDeliveryMixin:
             return _receipt(self._delivery_on_conn(conn, session_id, actor, delivery_id))
         return self._execute_write(write)
 
-    def repair_runtime_delivery(self, session_id, actor, delivery_id):
+    def repair_runtime_delivery(self, session_id, actor, delivery_id, *, holder=None, generation=None,
+                                expected_attempt_count=None, expected_state=None):
         """Explicit authorized local replay, retaining the same result, actor and attempt budget.
 
         Local clients can deduplicate by delivery_id, unlike non-idempotent legacy
         external sends. This is the only path out of an ambiguous local write.
         """
         now = time.time()
+        guarded = (holder, generation, expected_attempt_count, expected_state)
+        _require(all(value is None for value in guarded) or all(value is not None for value in guarded),
+                 "invalid_delivery_repair_fence", "A strict repair requires its complete owner and target fence")
         def write(conn):
             row = self._delivery_on_conn(conn, session_id, actor, delivery_id)
+            if holder is not None:
+                self._runtime_fence_on_conn(conn, row["session_key"], holder, generation)
+                _require(type(expected_attempt_count) is int and row["attempts"] == expected_attempt_count
+                         and row["state"] == expected_state,
+                         "delivery_repair_conflict", "Delivery state changed after its repair preview")
             if row["state"] == "delivered":
                 return _receipt(row)
             if row["attempts"] >= row["max_attempts"] or now >= row["deadline_at"]:
