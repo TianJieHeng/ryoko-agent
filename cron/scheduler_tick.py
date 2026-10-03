@@ -4,19 +4,27 @@ import concurrent.futures
 import contextlib
 
 
-def tick(verbose=True, adapters=None, loop=None, sync=True, *, can_dispatch=None):
+def _observe(observer, phase):
+    # An internal read-only observer cannot change scheduling semantics.
+    if observer is not None:
+        with contextlib.suppress(Exception):
+            observer(phase)
+
+
+def tick(verbose=True, adapters=None, loop=None, sync=True, *, can_dispatch=None, _observer=None):
     from hermes_cli.backend_retirement import retirement
 
     # Hold admission through the entire scan/advance/submit handoff. A predicate alone races
     # prepare after the check but before a due job enters the running-job ledger.
     with retirement.work() as admitted:
         if not admitted:
+            _observe(_observer, "retired")
             return 0
-        return _tick_admitted(verbose, adapters, loop, sync, can_dispatch=can_dispatch)
+        return _tick_admitted(verbose, adapters, loop, sync, can_dispatch=can_dispatch, _observer=_observer)
 
 
 def _tick_admitted(
-    verbose: bool = True, adapters=None, loop=None, sync: bool = True, *, can_dispatch=None):
+    verbose: bool = True, adapters=None, loop=None, sync: bool = True, *, can_dispatch=None, _observer=None):
     """Check and run all due jobs. File-locked so only one tick runs at a time (gateway ticker vs
     standalone daemon / manual tick). ``can_dispatch``: optional gate; false leaves due jobs for the
     next allowed tick. Returns the number of jobs executed (0 if another tick holds the lock)."""
@@ -34,16 +42,20 @@ def _tick_admitted(
     _sched._ensure_cron_dir(lock_dir)
     lock_fd = _sched._acquire_tick_lock(lock_file)
     if lock_fd is None:
+        _observe(_observer, "contended")
         return 0
+    _observe(_observer, "acquired")
 
     try:
         # `hermes pause` ESTOP: skip dispatch, never touch in-flight runs; check_paused logs once.
         with contextlib.suppress(ImportError):
             from agent.estop import check_paused as _estop_check_paused
             if _estop_check_paused("cron", _sched.logger):
+                _observe(_observer, "paused")
                 return 0
 
         if can_dispatch is not None and not can_dispatch():
+            _observe(_observer, "draining")
             _sched.logger.debug("Cron dispatch paused while gateway drains existing work")
             return 0
 
@@ -122,3 +134,4 @@ def _tick_admitted(
         return durable_count + sum(_results)
     finally:
         _sched._release_tick_lock(lock_fd)
+        _observe(_observer, "released")

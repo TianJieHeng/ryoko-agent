@@ -5569,6 +5569,24 @@
       }
     },
     {
+      "name": "runtime.schedule.scheduler.status",
+      "summary": "Read owned profile stdio scheduler lifecycle and actual locked-tick evidence; never activate scheduling or dispatch work",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeSessionParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleSchedulerStatusResult"
+        }
+      }
+    },
+    {
       "name": "runtime.schedule.update",
       "summary": "Pause, resume or revoke an exact schedule revision",
       "params": [
@@ -50359,6 +50377,186 @@
           "expected_revision"
         ],
         "title": "ScheduleRunNowParams",
+        "type": "object"
+      },
+      "ScheduleSchedulerStatusResult": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "authority": {
+            "const": "runtime_cron",
+            "title": "Authority",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "surface": {
+            "enum": [
+              "stdio",
+              "other"
+            ],
+            "title": "Surface",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "disabled",
+              "awaiting_maintenance",
+              "waiting",
+              "ticking",
+              "healthy",
+              "lock_busy",
+              "standby_other_owner",
+              "paused",
+              "draining",
+              "retired",
+              "error",
+              "stopping",
+              "unsupported_surface"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "maintenance_started": {
+            "title": "Maintenance Started",
+            "type": "boolean"
+          },
+          "maintenance_live": {
+            "title": "Maintenance Live",
+            "type": "boolean"
+          },
+          "recurring_admission_ready": {
+            "title": "Recurring Admission Ready",
+            "type": "boolean"
+          },
+          "tick_lock_held": {
+            "title": "Tick Lock Held",
+            "type": "boolean"
+          },
+          "other_gateway_owner_live": {
+            "title": "Other Gateway Owner Live",
+            "type": "boolean"
+          },
+          "poll_interval_seconds": {
+            "anyOf": [
+              {
+                "maximum": 300,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poll Interval Seconds"
+          },
+          "last_maintenance_at": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Maintenance At"
+          },
+          "last_tick_started_at": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tick Started At"
+          },
+          "last_tick_completed_at": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tick Completed At"
+          },
+          "last_tick_succeeded_at": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tick Succeeded At"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "enum": [
+                  "invalid_config",
+                  "tick_failed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code"
+          },
+          "execution_requires_live_owned_session": {
+            "const": true,
+            "title": "Execution Requires Live Owned Session",
+            "type": "boolean"
+          },
+          "scheduler_pause_cancels_running": {
+            "const": false,
+            "title": "Scheduler Pause Cancels Running",
+            "type": "boolean"
+          },
+          "dispatch_performed": {
+            "const": false,
+            "title": "Dispatch Performed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "schema_version",
+          "authority",
+          "enabled",
+          "surface",
+          "state",
+          "maintenance_started",
+          "maintenance_live",
+          "recurring_admission_ready",
+          "tick_lock_held",
+          "other_gateway_owner_live",
+          "poll_interval_seconds",
+          "last_maintenance_at",
+          "last_tick_started_at",
+          "last_tick_completed_at",
+          "last_tick_succeeded_at",
+          "last_error_code",
+          "execution_requires_live_owned_session",
+          "scheduler_pause_cancels_running",
+          "dispatch_performed"
+        ],
+        "title": "ScheduleSchedulerStatusResult",
         "type": "object"
       },
       "ScheduleUpdateParams": {

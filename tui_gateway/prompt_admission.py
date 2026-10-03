@@ -108,6 +108,17 @@ def wake(server):
 
 
 def _maintenance(server):
+    # Stdio has no gateway cron thread. Reuse this already-running maintenance
+    # handle and the ordinary cron authority, only under explicit profile opt-in.
+    # Shutdown takes the same lock before retiring accepted queue references.
+    with _LOCK:
+        if _STOPPING:
+            return
+        try:
+            from tui_gateway.runtime_schedule_tick import tick_if_owned
+            tick_if_owned(server)
+        except Exception:
+            log.exception("Opted-in stdio cron tick failed; durable work retained")
     from hermes_state_registry import borrow_live_shared_session_dbs
     # Includes the launch store before any conversation is resumed, and every
     # currently served named profile. Unattached commands expire durably; only

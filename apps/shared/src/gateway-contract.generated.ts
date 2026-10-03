@@ -4594,6 +4594,27 @@ export interface ScheduleCutoverParams {
   retirement_receipt: string
   unresolved_occurrences: string[]
 }
+export interface ScheduleSchedulerStatusResult {
+  schema_version: 1
+  authority: 'runtime_cron'
+  enabled: boolean
+  surface: 'stdio' | 'other'
+  state: 'disabled' | 'awaiting_maintenance' | 'waiting' | 'ticking' | 'healthy' | 'lock_busy' | 'standby_other_owner' | 'paused' | 'draining' | 'retired' | 'error' | 'stopping' | 'unsupported_surface'
+  maintenance_started: boolean
+  maintenance_live: boolean
+  recurring_admission_ready: boolean
+  tick_lock_held: boolean
+  other_gateway_owner_live: boolean
+  poll_interval_seconds: number | null
+  last_maintenance_at: number | null
+  last_tick_started_at: number | null
+  last_tick_completed_at: number | null
+  last_tick_succeeded_at: number | null
+  last_error_code: 'invalid_config' | 'tick_failed' | null
+  execution_requires_live_owned_session: true
+  scheduler_pause_cancels_running: false
+  dispatch_performed: false
+}
 export interface MonitorPolicyParams {
   session_id: string
   schema_version: 1
@@ -8798,6 +8819,8 @@ export interface RpcMethods {
   'runtime.schedule.reconcile': { params: ScheduleReconcileParams; result: ScheduleRecordResult }
   /** Admit one idempotent occurrence through the ordinary durable command queue */
   'runtime.schedule.run_now': { params: ScheduleRunNowParams; result: ScheduleRecordResult }
+  /** Read owned profile stdio scheduler lifecycle and actual locked-tick evidence; never activate scheduling or dispatch work */
+  'runtime.schedule.scheduler.status': { params: RuntimeSessionParams; result: ScheduleSchedulerStatusResult }
   /** Pause, resume or revoke an exact schedule revision */
   'runtime.schedule.update': { params: ScheduleUpdateParams; result: ScheduleRecordResult }
   /** Validate an overlay region and guide the supported selected-text workflow. */
@@ -9362,6 +9385,7 @@ export const RPC_METHODS = [
   'runtime.schedule.output.publish',
   'runtime.schedule.reconcile',
   'runtime.schedule.run_now',
+  'runtime.schedule.scheduler.status',
   'runtime.schedule.update',
   'runtime.screen.annotate',
   'runtime.screen.capture',

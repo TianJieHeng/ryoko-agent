@@ -94,5 +94,15 @@ for _name, (_model, _doc) in {**_SPECS, **COMMAND_SCHEDULE_SPECS}.items():
     method(_name)(_schedule_handler(_name, _model))
 
 
+@method("runtime.schedule.scheduler.status")
+@_profile_scoped
+def _schedule_scheduler_status(rid, params):
+    from tui_gateway.contracts.runtime_v1 import RuntimeSessionParams
+    from tui_gateway.runtime_schedule_tick import scheduler_status
+    from tui_gateway import server
+    return _artifact_request(rid, params, RuntimeSessionParams,
+        lambda agent, db, request: scheduler_status(server, agent.runtime_context.profile_home))
+
+
 def register(server):
     bind_module(globals(), server)
