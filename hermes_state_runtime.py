@@ -380,6 +380,16 @@ class SessionRuntimeMixin:
                 "claimed_holder": row["claimed_holder"], "claimed_generation": row["claimed_generation"],
                 "result": json.loads(row["result_json"]) if row["result_json"] is not None else None}
 
+    def read_runtime_command_receipt(self, session_id, command_id):
+        """Observe status and its revision in one snapshot without claiming work."""
+        with self._runtime_read() as conn:
+            sid = self._runtime_session_on_conn(conn, session_id)
+            row = self._runtime_command_on_conn(conn, sid, command_id)
+            state = self._runtime_state_on_conn(conn, sid)
+            return {"receipt": json.loads(row["receipt_json"]) if row is not None else None,
+                    "status": row["status"] if row is not None else None,
+                    "durable_revision": state["revision"] if state is not None else 0}
+
     def read_runtime_run_accepted_at(self, session_id, run_id):
         """Original acceptance time; retries and queue recovery cannot reset it."""
         with self._runtime_read() as conn:

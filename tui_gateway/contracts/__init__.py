@@ -34,6 +34,7 @@ from . import (  # noqa: F401
     projects_pets,
     prompt_voice,
     runtime_v1,
+    runtime_conversations,
     runtime_effects,
     runtime_results,
     server_requests,

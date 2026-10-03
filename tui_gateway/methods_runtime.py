@@ -269,6 +269,37 @@ def _runtime_snapshot(rid, params):
         return _runtime_store_error(rid, exc)
 
 
+@method("runtime.command.receipt")
+@_profile_scoped
+def _runtime_command_receipt(rid, params):
+    from hermes_state_runtime import RuntimeStoreError
+    from tui_gateway.contracts.runtime_v1 import (
+        CommandReceipt, RuntimeCommandReceiptParams, RuntimeConflict,
+    )
+
+    request, error = _runtime_validate(rid, params, RuntimeCommandReceiptParams)
+    if error:
+        return error
+    agent, db, error = _runtime_authority(rid, request.model_dump())
+    if error:
+        return error
+    try:
+        command = db.read_runtime_command_receipt(agent.session_id, request.command_id)
+    except RuntimeStoreError as exc:
+        return _runtime_store_error(rid, exc)
+    # Reconnect recovery must never enter submission/admission: even an accepted
+    # or orphaned claimed command remains an observation, not a retry request.
+    receipt = None
+    if command["receipt"] is not None:
+        receipt = {key: command["receipt"][key] for key in CommandReceipt.model_fields
+                   if key in command["receipt"]}
+        if receipt.get("conflict") is not None:
+            receipt["conflict"] = {key: receipt["conflict"][key] for key in RuntimeConflict.model_fields}
+    return _ok(rid, {"schema_version": 1, "command_id": request.command_id,
+                     "found": receipt is not None, "receipt": receipt,
+                     "status": command["status"], "durable_revision": command["durable_revision"]})
+
+
 @method("runtime.events.since")
 @_profile_scoped
 def _runtime_events_since(rid, params):

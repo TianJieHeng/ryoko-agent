@@ -178,6 +178,21 @@ class CommandReceipt(Result):
     conflict: RuntimeConflict | None = None
 
 
+class RuntimeCommandReceiptParams(RuntimeSessionParams):
+    command_id: RuntimeIdentifier
+
+
+class RuntimeCommandReceiptResult(Result):
+    """Read-only recovery of an original receipt and its latest recorded state."""
+
+    schema_version: Literal[1]
+    command_id: str
+    found: bool
+    receipt: CommandReceipt | None
+    status: Literal["accepted", "claimed", "completed", "failed", "blocked", "cancelled"] | None
+    durable_revision: int
+
+
 class RuntimeSnapshotState(Result):
     status: RuntimeStatus
     run_id: str | None
@@ -324,6 +339,8 @@ method("runtime.capabilities", params=RuntimeCapabilitiesParams, result=RuntimeC
        doc="Negotiate the owned session's durable runtime API and executable operations.")
 method("runtime.command", params=RuntimeCommandParams, result=CommandReceipt,
        doc="Accept one idempotent command. Retries return the original durable receipt.")
+method("runtime.command.receipt", params=RuntimeCommandReceiptParams, result=RuntimeCommandReceiptResult,
+       doc="Read an owned command's original receipt and recorded status without submitting or recovering execution.")
 method("runtime.snapshot", params=RuntimeSessionParams, result=MissionSnapshot,
        doc="Read a consistent durable mission projection and its restart-stable cursor.")
 method("runtime.events.since", params=RuntimeEventsSinceParams, result=RuntimeEventsSinceResult,

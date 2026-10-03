@@ -76,6 +76,7 @@ from hermes_state_gateway import SessionGatewayMixin
 from hermes_state_compression import SessionCompressionMixin
 from hermes_state_search import SessionSearchMixin
 from hermes_state_runtime import SessionRuntimeMixin
+from hermes_state_conversations import SessionConversationsMixin
 from hermes_state_budgets import SessionBudgetsMixin
 from hermes_state_effects import SessionEffectsMixin
 from hermes_state_delivery import SessionDeliveryMixin
@@ -461,7 +462,7 @@ class SessionDB(
     SessionSessionsMixin, SessionFtsSetupMixin, SessionSearchMixin, SessionSchemaMixin,
     SessionPortabilityMixin, SessionTelegramTopicsMixin, SessionCompressionMixin,
     SessionGatewayMixin, SessionMaintenanceMixin, SessionUsageMixin, SessionTitlesMixin,
-    SessionMessagesMixin, SessionRewindMixin, SessionProfileRepairMixin, SessionRuntimeMixin, SessionBudgetsMixin, SessionEffectsMixin, SessionDeliveryMixin, SessionArtifactsMixin, SessionCapturesMixin, SessionContextMixin, SessionMissionsMixin, SessionMissionTestsMixin,
+    SessionMessagesMixin, SessionRewindMixin, SessionProfileRepairMixin, SessionRuntimeMixin, SessionConversationsMixin, SessionBudgetsMixin, SessionEffectsMixin, SessionDeliveryMixin, SessionArtifactsMixin, SessionCapturesMixin, SessionContextMixin, SessionMissionsMixin, SessionMissionTestsMixin,
 ):
     """SQLite-backed session storage with FTS5 search; many reader threads, one writer (WAL)."""
 
