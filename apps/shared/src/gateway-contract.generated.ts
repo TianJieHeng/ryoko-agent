@@ -3333,6 +3333,147 @@ export interface WorkflowHistoryResult {
   runs_json: string
   complete: false
 }
+export interface ScheduleCreateParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  definition_json: string
+  expected_revision?: number | null
+}
+export interface ScheduleRecordResult {
+  record_json: string
+}
+export interface ScheduleImportParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  definition_json: string
+  expected_revision?: number | null
+  import_json: string
+}
+export interface ScheduleUpdateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  schedule_id: string
+  command_id: string
+  expected_revision: number
+  state: 'active' | 'paused' | 'revoked'
+}
+export interface ScheduleGrantParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  schedule_id: string
+  command_id: string
+  expected_revision: number
+  expires_at: number
+  max_age_seconds: number
+  max_fires: number
+}
+export interface ScheduleReconcileParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  schedule_id: string
+  command_id: string
+  occurrence: string
+  evidence_ref_json: string
+}
+export interface ScheduleGetParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  schedule_id: string
+}
+export interface ScheduleProjectParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+}
+export interface InboxPrepareParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  source_ref_json: string
+  selection_json: string
+}
+export interface CommitmentCandidateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  candidate_id: string
+}
+export interface CommitmentAcceptParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  candidate_id: string
+  command_id: string
+  expected_revision: number
+  owner: string
+  outcome: string
+  due_or_check_at?: CommitmentDue | null
+}
+export interface CommitmentDue {
+  at: string
+  timezone: string
+  kind: 'due' | 'check'
+}
+export interface CommitmentUpdateParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  commitment_id: string
+  command_id: string
+  expected_revision: number
+  state: 'ready' | 'waiting' | 'done' | 'cancelled' | 'superseded'
+  evidence_ref_json: string
+  superseded_by?: string | null
+  due_or_check_at?: CommitmentDue | null
+}
+export interface CommitmentGetParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  commitment_id: string
+}
+export interface CorrespondenceDraftParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  correspondence_id: string
+  command_id: string
+  recipients: string[]
+  content: string
+  source_refs_json: string
+}
+export interface CorrespondenceReceiptParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  correspondence_id: string
+  command_id: string
+  effect_id: string
+}
+export interface CorrespondenceGetParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  correspondence_id: string
+}
+export interface CalendarPreviewParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  availability_ref_json: string
+  timezone: string
+  participants: string[]
+  start_at: string
+  end_at: string
+  duration_minutes?: number
+}
 export interface ResearchResolveParams {
   session_id: string
   schema_version: 1
@@ -6883,6 +7024,8 @@ export interface RpcMethods {
   'runtime.brief.prepare': { params: BriefPrepareParams; result: ResearchResponse }
   /** Revalidate source grants and evidence, publish the exact approved brief first and its dependency manifest last; not atomic. */
   'runtime.brief.publish': { params: BriefPublishParams; result: ResearchResponse }
+  /** Preview supplied availability; no live calendar certification or invitation */
+  'runtime.calendar.preview': { params: CalendarPreviewParams; result: ScheduleRecordResult }
   /** Negotiate the owned session's durable runtime API and executable operations. */
   'runtime.capabilities': { params: RuntimeCapabilitiesParams; result: RuntimeCapabilities }
   'runtime.capture.create': { params: CaptureCreateParams; result: CaptureResult }
@@ -6896,6 +7039,24 @@ export interface RpcMethods {
   'runtime.capture.read': { params: CaptureReadParams; result: ArtifactReadResult }
   /** Accept one idempotent command. Retries return the original durable receipt. */
   'runtime.command': { params: RuntimeCommandParams; result: CommandReceipt }
+  /** Human-accept a sourced obligation */
+  'runtime.commitment.accept': { params: CommitmentAcceptParams; result: ScheduleRecordResult }
+  /** Read an imported nonbinding commitment candidate */
+  'runtime.commitment.candidate': { params: CommitmentCandidateParams; result: ScheduleRecordResult }
+  /** Read an accepted obligation */
+  'runtime.commitment.get': { params: CommitmentGetParams; result: ScheduleRecordResult }
+  /** Read authoritative accepted obligations */
+  'runtime.commitment.list': { params: ScheduleProjectParams; result: ScheduleRecordResult }
+  /** Review currently active accepted and waiting obligations without reopening them */
+  'runtime.commitment.review': { params: ScheduleProjectParams; result: ScheduleRecordResult }
+  /** Record sourced waiting or terminal commitment evidence */
+  'runtime.commitment.update': { params: CommitmentUpdateParams; result: ScheduleRecordResult }
+  /** Prepare an exact sourced draft and flag possible new promises without sending */
+  'runtime.correspondence.draft': { params: CorrespondenceDraftParams; result: ScheduleRecordResult }
+  /** Read draft versus sent proof and exact correspondence recipients */
+  'runtime.correspondence.get': { params: CorrespondenceGetParams; result: ScheduleRecordResult }
+  /** Associate existing exact confirmed send evidence; never sends a message */
+  'runtime.correspondence.receipt': { params: CorrespondenceReceiptParams; result: ScheduleRecordResult }
   /** Record exact attempt/digest-bound client component receipt, not human read confirmation. */
   'runtime.delivery.ack': { params: RuntimeDeliveryAckParams; result: RuntimeDeliveryReceipt }
   /** Explicitly retry only a result notification on the owned local transport; never rerun inference. */
@@ -6917,6 +7078,8 @@ export interface RpcMethods {
   'runtime.evidence.create': { params: EvidenceCreateParams; result: EvidenceResult }
   'runtime.evidence.get': { params: EvidenceParams; result: EvidenceResult }
   'runtime.evidence.list': { params: SourceListParams; result: EvidenceListResult }
+  /** Classify selected immutable imported inbox messages as nonbinding candidates */
+  'runtime.inbox.prepare': { params: InboxPrepareParams; result: ScheduleRecordResult }
   /** Read a revision-bound local structured export in bounded chunks; no remote sharing. */
   'runtime.memory.export': { params: MemoryExportParams; result: MemoryExportResult }
   /** Tombstone one exact built-in record version; this is not physical erasure of backups. */
@@ -6961,6 +7124,20 @@ export interface RpcMethods {
   'runtime.result.get': { params: RuntimeResultGetParams; result: RuntimeResultChunk }
   /** Assemble bounded authorized project references and blockers without private memory or a completeness claim. */
   'runtime.resume.get': { params: ProjectResumeParams; result: ProjectResumeResult }
+  /** Create a paused immutable owner-bound local schedule */
+  'runtime.schedule.create': { params: ScheduleCreateParams; result: ScheduleRecordResult }
+  /** Read owned schedule health, occurrences and retained notification intents */
+  'runtime.schedule.get': { params: ScheduleGetParams; result: ScheduleRecordResult }
+  /** Grant bounded fresh local review authority separate from observation */
+  'runtime.schedule.grant': { params: ScheduleGrantParams; result: ScheduleRecordResult }
+  /** Import a declared paused reconciled foreign schedule with deterministic identity */
+  'runtime.schedule.import': { params: ScheduleImportParams; result: ScheduleRecordResult }
+  /** List owned project schedules */
+  'runtime.schedule.list': { params: ScheduleProjectParams; result: ScheduleRecordResult }
+  /** Retain manual evidence for an unknown occurrence without replaying it */
+  'runtime.schedule.reconcile': { params: ScheduleReconcileParams; result: ScheduleRecordResult }
+  /** Pause, resume or revoke an exact schedule revision */
+  'runtime.schedule.update': { params: ScheduleUpdateParams; result: ScheduleRecordResult }
   /** Read a consistent durable mission projection and its restart-stable cursor. */
   'runtime.snapshot': { params: RuntimeSessionParams; result: MissionSnapshot }
   'runtime.template.create': { params: TemplateCreateParams; result: TemplateResult }
@@ -7345,6 +7522,7 @@ export const RPC_METHODS = [
   'runtime.artifact.status',
   'runtime.brief.prepare',
   'runtime.brief.publish',
+  'runtime.calendar.preview',
   'runtime.capabilities',
   'runtime.capture.create',
   'runtime.capture.duplicates',
@@ -7354,6 +7532,15 @@ export const RPC_METHODS = [
   'runtime.capture.list',
   'runtime.capture.read',
   'runtime.command',
+  'runtime.commitment.accept',
+  'runtime.commitment.candidate',
+  'runtime.commitment.get',
+  'runtime.commitment.list',
+  'runtime.commitment.review',
+  'runtime.commitment.update',
+  'runtime.correspondence.draft',
+  'runtime.correspondence.get',
+  'runtime.correspondence.receipt',
   'runtime.delivery.ack',
   'runtime.delivery.retry',
   'runtime.delivery.status',
@@ -7366,6 +7553,7 @@ export const RPC_METHODS = [
   'runtime.evidence.create',
   'runtime.evidence.get',
   'runtime.evidence.list',
+  'runtime.inbox.prepare',
   'runtime.memory.export',
   'runtime.memory.record.delete',
   'runtime.memory.record.get',
@@ -7392,6 +7580,13 @@ export const RPC_METHODS = [
   'runtime.research.resolve',
   'runtime.result.get',
   'runtime.resume.get',
+  'runtime.schedule.create',
+  'runtime.schedule.get',
+  'runtime.schedule.grant',
+  'runtime.schedule.import',
+  'runtime.schedule.list',
+  'runtime.schedule.reconcile',
+  'runtime.schedule.update',
   'runtime.snapshot',
   'runtime.template.create',
   'runtime.template.get',

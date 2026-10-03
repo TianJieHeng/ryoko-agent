@@ -80,7 +80,7 @@ Hardening invariants — each guards a real failure; don't weaken without answer
   exits before its ownership ack (a reported dispatch failure) rather than run on an unleased
   generation the collector may delete. The gateway never re-runs the boot — `hermes_bootstrap`
   already did at its own launch (#122222).
-- Cron sessions pass `skip_memory=True`; memory providers intentionally do not run during cron.
+- Legacy cron sessions pass `skip_memory=False`. Strict agent/script/URL cron fails closed before source or provider work; bounded durable schedules resolve their persisted owner before all reads and never inherit the active default agent's memory.
 - Cron execution has its own session. Eligible continuable deliveries may mirror or seed the
   reply-facing conversation: origin, origin-less home fallback, user-written bare-platform home,
   or opted-in explicit targets. `all` expansions do not gain home mirror eligibility. Mirrored

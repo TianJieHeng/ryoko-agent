@@ -563,3 +563,28 @@ def resolve_agent_context(
     return AgentContext(
         identity=binding, policy=policy, config_digest=parsed.digest, profile_home=home
     )
+
+
+def resolve_owned_agent_context(config: Mapping, *, owner_binding: Mapping,
+                                session_id: str, profile_home: str | Path) -> AgentContext:
+    """Resolve a persisted stable job owner, never the profile's current default.
+
+    This seam is for trusted durable records, not model arguments. Policy/home/
+    principal changes revoke the record; changing only the default active agent
+    cannot silently give its memory or credentials to an existing schedule.
+    """
+    from agent.runtime_context import AgentContext, canonical_profile_home
+
+    owner = IdentityBinding.from_record(owner_binding)
+    parsed = parse_agent_identity_config(config)
+    home = canonical_profile_home(profile_home)
+    _identifier(session_id, "session_id")
+    if (parsed is None or owner.lifecycle != "stable"
+            or owner.principal_id != parsed.principal_id or owner.profile_id != parsed.profile_id
+            or owner.profile_home_digest != _digest(home) or owner.agent_id not in parsed.agents):
+        raise IdentityPolicyError("Scheduled owner is unavailable or belongs to another profile")
+    policy = parsed.agents[owner.agent_id]
+    if policy.digest != owner.policy_digest:
+        raise IdentityPolicyError("Scheduled owner policy changed; explicit reauthorization is required")
+    binding = replace(owner, session_id=session_id, config_digest=parsed.digest)
+    return AgentContext(identity=binding, policy=policy, config_digest=parsed.digest, profile_home=home)

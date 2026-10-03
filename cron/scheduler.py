@@ -2547,6 +2547,21 @@ def run_job(
     job: dict, *, defer_agent_teardown: Optional[list] = None, extra_prompt: Optional[str] = None,
     cancel_event: Optional[_CancelEventLike] = None, execution_id: Optional[str] = None,
 ) -> tuple[bool, str, str, Optional[str]]:
+    """Bind/check the persisted owner before any source, script or provider work."""
+    from cron.scheduler_identity import job_identity_scope
+    from agent.agent_identity import IdentityPolicyError
+    try:
+        with job_identity_scope(job):
+            return _run_legacy_job(job, defer_agent_teardown=defer_agent_teardown,
+                extra_prompt=extra_prompt, cancel_event=cancel_event, execution_id=execution_id)
+    except IdentityPolicyError as exc:
+        return False, "", "", f"IdentityPolicyError: {exc}"
+
+
+def _run_legacy_job(
+    job: dict, *, defer_agent_teardown: Optional[list] = None, extra_prompt: Optional[str] = None,
+    cancel_event: Optional[_CancelEventLike] = None, execution_id: Optional[str] = None,
+) -> tuple[bool, str, str, Optional[str]]:
     """Execute a single cron job. Returns (success, full_output_doc, final_response, error).
     ``defer_agent_teardown``: if a list, the live agent is appended instead of torn down; the caller
     MUST call ``_teardown_cron_agent(agent)`` AFTER delivery (a torn-down async client can't

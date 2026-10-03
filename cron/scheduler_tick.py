@@ -59,6 +59,9 @@ def _tick_admitted(
         except Exception as _wt_exc:
             _sched.logger.debug("Worktree maintenance dispatch failed: %s", _wt_exc)
 
+        from cron.durable_runtime import tick_durable_schedules
+        durable_count = tick_durable_schedules()
+
         due_jobs = _sched.get_due_jobs()
         _sched._sweep_stale_inflight_for_tick(due_jobs)
 
@@ -72,7 +75,7 @@ def _tick_admitted(
                 # due.
                 _sched.logger.info("%s - No jobs due", _sched._hermes_now().strftime('%H:%M:%S'))
             _sched._sweep_mcp_orphans()
-            return 0
+            return durable_count
 
         if verbose:
             _sched.logger.info("%s - %s job(s) due", _sched._hermes_now().strftime('%H:%M:%S'), len(due_jobs))
@@ -113,9 +116,9 @@ def _tick_admitted(
                     _sched.logger.error("Cron job future failed: %s", exc)
                     _results.append(False)
             _sched._sweep_mcp_orphans()
-            return sum(_results)
+            return durable_count + sum(_results)
 
         _sched._sweep_mcp_orphans_when_all_done(_all_futures)
-        return sum(_results)
+        return durable_count + sum(_results)
     finally:
         _sched._release_tick_lock(lock_fd)

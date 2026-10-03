@@ -3283,6 +3283,24 @@
       }
     },
     {
+      "name": "runtime.calendar.preview",
+      "summary": "Preview supplied availability; no live calendar certification or invitation",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CalendarPreviewParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
       "name": "runtime.capabilities",
       "summary": "Negotiate the owned session's durable runtime API and executable operations.",
       "params": [
@@ -3441,6 +3459,168 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/CommandReceipt"
+        }
+      }
+    },
+    {
+      "name": "runtime.commitment.accept",
+      "summary": "Human-accept a sourced obligation",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CommitmentAcceptParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.commitment.candidate",
+      "summary": "Read an imported nonbinding commitment candidate",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CommitmentCandidateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.commitment.get",
+      "summary": "Read an accepted obligation",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CommitmentGetParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.commitment.list",
+      "summary": "Read authoritative accepted obligations",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleProjectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.commitment.review",
+      "summary": "Review currently active accepted and waiting obligations without reopening them",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleProjectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.commitment.update",
+      "summary": "Record sourced waiting or terminal commitment evidence",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CommitmentUpdateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.correspondence.draft",
+      "summary": "Prepare an exact sourced draft and flag possible new promises without sending",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CorrespondenceDraftParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.correspondence.get",
+      "summary": "Read draft versus sent proof and exact correspondence recipients",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CorrespondenceGetParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.correspondence.receipt",
+      "summary": "Associate existing exact confirmed send evidence; never sends a message",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/CorrespondenceReceiptParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
         }
       }
     },
@@ -3657,6 +3837,24 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/EvidenceListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.inbox.prepare",
+      "summary": "Classify selected immutable imported inbox messages as nonbinding candidates",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/InboxPrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
         }
       }
     },
@@ -4125,6 +4323,132 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/ProjectResumeResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.create",
+      "summary": "Create a paused immutable owner-bound local schedule",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleCreateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.get",
+      "summary": "Read owned schedule health, occurrences and retained notification intents",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleGetParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.grant",
+      "summary": "Grant bounded fresh local review authority separate from observation",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleGrantParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.import",
+      "summary": "Import a declared paused reconciled foreign schedule with deterministic identity",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleImportParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.list",
+      "summary": "List owned project schedules",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleProjectParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.reconcile",
+      "summary": "Retain manual evidence for an unknown occurrence without replaying it",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleReconcileParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.schedule.update",
+      "summary": "Pause, resume or revoke an exact schedule revision",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ScheduleUpdateParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ScheduleRecordResult"
         }
       }
     },
@@ -10612,6 +10936,76 @@
         "title": "BrowserProgressPayload",
         "type": "object"
       },
+      "CalendarPreviewParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "availability_ref_json": {
+            "maxLength": 2048,
+            "minLength": 2,
+            "title": "Availability Ref Json",
+            "type": "string"
+          },
+          "timezone": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "participants": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Participants",
+            "type": "array"
+          },
+          "start_at": {
+            "title": "Start At",
+            "type": "string"
+          },
+          "end_at": {
+            "title": "End At",
+            "type": "string"
+          },
+          "duration_minutes": {
+            "default": 30,
+            "maximum": 480,
+            "minimum": 5,
+            "title": "Duration Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "availability_ref_json",
+          "timezone",
+          "participants",
+          "start_at",
+          "end_at"
+        ],
+        "title": "CalendarPreviewParams",
+        "type": "object"
+      },
       "CapabilityEntry": {
         "additionalProperties": false,
         "properties": {
@@ -11946,6 +12340,273 @@
           }
         },
         "title": "CommandsCatalogResult",
+        "type": "object"
+      },
+      "CommitmentAcceptParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "owner": {
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Owner",
+            "type": "string"
+          },
+          "outcome": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Outcome",
+            "type": "string"
+          },
+          "due_or_check_at": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommitmentDue"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "candidate_id",
+          "command_id",
+          "expected_revision",
+          "owner",
+          "outcome"
+        ],
+        "title": "CommitmentAcceptParams",
+        "type": "object"
+      },
+      "CommitmentCandidateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Candidate Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "candidate_id"
+        ],
+        "title": "CommitmentCandidateParams",
+        "type": "object"
+      },
+      "CommitmentDue": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "due",
+              "check"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "timezone",
+          "kind"
+        ],
+        "title": "CommitmentDue",
+        "type": "object"
+      },
+      "CommitmentGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "commitment_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Commitment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "commitment_id"
+        ],
+        "title": "CommitmentGetParams",
+        "type": "object"
+      },
+      "CommitmentUpdateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "commitment_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Commitment Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "ready",
+              "waiting",
+              "done",
+              "cancelled",
+              "superseded"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "evidence_ref_json": {
+            "maxLength": 2048,
+            "minLength": 2,
+            "title": "Evidence Ref Json",
+            "type": "string"
+          },
+          "superseded_by": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Superseded By"
+          },
+          "due_or_check_at": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommitmentDue"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "commitment_id",
+          "command_id",
+          "expected_revision",
+          "state",
+          "evidence_ref_json"
+        ],
+        "title": "CommitmentUpdateParams",
         "type": "object"
       },
       "CompletePathParams": {
@@ -14896,6 +15557,159 @@
         ],
         "title": "CorrectionStatus",
         "type": "string"
+      },
+      "CorrespondenceDraftParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "correspondence_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Correspondence Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "recipients": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Recipients",
+            "type": "array"
+          },
+          "content": {
+            "maxLength": 16000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "source_refs_json": {
+            "maxLength": 16384,
+            "minLength": 2,
+            "title": "Source Refs Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "correspondence_id",
+          "command_id",
+          "recipients",
+          "content",
+          "source_refs_json"
+        ],
+        "title": "CorrespondenceDraftParams",
+        "type": "object"
+      },
+      "CorrespondenceGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "correspondence_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Correspondence Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "correspondence_id"
+        ],
+        "title": "CorrespondenceGetParams",
+        "type": "object"
+      },
+      "CorrespondenceReceiptParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "correspondence_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Correspondence Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "effect_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Effect Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "correspondence_id",
+          "command_id",
+          "effect_id"
+        ],
+        "title": "CorrespondenceReceiptParams",
+        "type": "object"
       },
       "CronAction": {
         "enum": [
@@ -20493,6 +21307,56 @@
           "available"
         ],
         "title": "ImageGenerateResult",
+        "type": "object"
+      },
+      "InboxPrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "source_ref_json": {
+            "maxLength": 2048,
+            "minLength": 2,
+            "title": "Source Ref Json",
+            "type": "string"
+          },
+          "selection_json": {
+            "maxLength": 8192,
+            "minLength": 2,
+            "title": "Selection Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "source_ref_json",
+          "selection_json"
+        ],
+        "title": "InboxPrepareParams",
         "type": "object"
       },
       "InflightTurn": {
@@ -39192,6 +40056,375 @@
           "status"
         ],
         "title": "RuntimeUnresolvedInvocation",
+        "type": "object"
+      },
+      "ScheduleCreateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "definition_json": {
+            "maxLength": 131072,
+            "minLength": 2,
+            "title": "Definition Json",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "definition_json"
+        ],
+        "title": "ScheduleCreateParams",
+        "type": "object"
+      },
+      "ScheduleGetParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id"
+        ],
+        "title": "ScheduleGetParams",
+        "type": "object"
+      },
+      "ScheduleGrantParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "number"
+          },
+          "max_age_seconds": {
+            "maximum": 3600,
+            "minimum": 1,
+            "title": "Max Age Seconds",
+            "type": "integer"
+          },
+          "max_fires": {
+            "maximum": 100,
+            "minimum": 1,
+            "title": "Max Fires",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "expected_revision",
+          "expires_at",
+          "max_age_seconds",
+          "max_fires"
+        ],
+        "title": "ScheduleGrantParams",
+        "type": "object"
+      },
+      "ScheduleImportParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "definition_json": {
+            "maxLength": 131072,
+            "minLength": 2,
+            "title": "Definition Json",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          },
+          "import_json": {
+            "maxLength": 4096,
+            "minLength": 2,
+            "title": "Import Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "definition_json",
+          "import_json"
+        ],
+        "title": "ScheduleImportParams",
+        "type": "object"
+      },
+      "ScheduleProjectParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id"
+        ],
+        "title": "ScheduleProjectParams",
+        "type": "object"
+      },
+      "ScheduleReconcileParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "occurrence": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Occurrence",
+            "type": "string"
+          },
+          "evidence_ref_json": {
+            "maxLength": 2048,
+            "minLength": 2,
+            "title": "Evidence Ref Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "occurrence",
+          "evidence_ref_json"
+        ],
+        "title": "ScheduleReconcileParams",
+        "type": "object"
+      },
+      "ScheduleRecordResult": {
+        "additionalProperties": false,
+        "properties": {
+          "record_json": {
+            "maxLength": 131072,
+            "title": "Record Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_json"
+        ],
+        "title": "ScheduleRecordResult",
+        "type": "object"
+      },
+      "ScheduleUpdateParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "schedule_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "paused",
+              "revoked"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "schedule_id",
+          "command_id",
+          "expected_revision",
+          "state"
+        ],
+        "title": "ScheduleUpdateParams",
         "type": "object"
       },
       "SecretRequestParams": {

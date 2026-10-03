@@ -262,6 +262,15 @@ cron never loses its trigger. Recurring jobs re-arm after each fire; `repeat`-N
 jobs stop cleanly when the count is exhausted (no orphaned one-shot). The full
 agent↔Nous wire contract lives in [Chronos managed-cron contract](chronos-managed-cron-contract.md).
 
+### Owned durable schedules
+
+The existing tick also consumes owner-bound durable local schedules in `state.db`.
+The BE12 implementation and its explicit finite-source, identity, clock, recovery and
+delivery limits are documented in `docs/build/be12-durable-schedules.md`.
+Strict legacy script/URL/agent jobs are rejected before pre-agent source activity;
+legacy unbound jobs retain the behavior described below. This is one ticker, not a
+second scheduling process.
+
 ### Fresh Session Isolation
 
 Each cron job runs in a completely fresh agent session:

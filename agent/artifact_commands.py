@@ -26,7 +26,11 @@ _CONTROL_RPCS = frozenset({"runtime.artifact.prepare", "runtime.artifact.publish
     "runtime.brief.prepare", "runtime.brief.publish",
     "runtime.workflow.create", "runtime.workflow.template.create", "runtime.workflow.evaluate",
     "runtime.workflow.decision.prepare", "runtime.workflow.decision.commit", "runtime.workflow.feedback",
-    "runtime.workflow.run.prepare", "runtime.workflow.run.publish"})
+    "runtime.workflow.run.prepare", "runtime.workflow.run.publish",
+    "runtime.schedule.create", "runtime.schedule.import", "runtime.schedule.update",
+    "runtime.schedule.grant", "runtime.schedule.reconcile",
+    "runtime.inbox.prepare", "runtime.commitment.accept", "runtime.commitment.update",
+    "runtime.correspondence.draft", "runtime.correspondence.receipt"})
 
 
 @dataclass(frozen=True)

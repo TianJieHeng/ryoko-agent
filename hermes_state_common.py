@@ -279,7 +279,7 @@ def _sql_session_last_active_by_id(session_id_expr: str) -> str:
         f"(SELECT started_at FROM sessions _act_s WHERE _act_s.id = {session_id_expr})")
 
 
-SCHEMA_VERSION = 39
+SCHEMA_VERSION = 40
 
 # Auto-maintenance VACUUMs only above this freelist fraction; below it a rewrite costs more I/O than it returns.
 # Auto-maintenance only VACUUMs when at least this fraction of the database file is reclaimable (``PRAGMA
@@ -1023,6 +1023,11 @@ CREATE INDEX IF NOT EXISTS idx_async_delegations_delivery
 # BE11 additive immutable workflows share the canonical SessionDB migration path.
 from hermes_state_workflow_schema import WORKFLOW_SCHEMA_SQL
 SCHEMA_SQL += WORKFLOW_SCHEMA_SQL
+
+# BE12 schedules and obligations use this same additive migration owner.
+from hermes_state_schedule_schema import SCHEDULE_SCHEMA_SQL
+from hermes_state_commitment_schema import COMMITMENT_SCHEMA_SQL
+SCHEMA_SQL += SCHEDULE_SCHEMA_SQL + COMMITMENT_SCHEMA_SQL
 
 # Indexes on later-added columns must run AFTER _reconcile_columns(), or executescript fails on legacy DBs.
 DEFERRED_INDEX_SQL = """

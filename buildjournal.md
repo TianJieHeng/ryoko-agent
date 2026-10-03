@@ -252,3 +252,49 @@ Authority/recovery: runtime uses existing live project ceilings, Mission revisio
 Validation receipts: eight-suite focused runner passed 86 tests / 0 failures in 11.2s; after fixing the concrete concurrent-export revocation race, final affected RPC+authority rerun passed 11 tests / 0 failures in 11.7s (nine RPC and two authority tests). The unique final selected suite set contains 87 cases. Coverage includes schema38 legacy session/Mission/dispatched-effect/consumed-approval preservation with A→B→A reopen, project/profile isolation, varied reruns, held-out split preservation, immutable edits, exact promotion, rollback, wrong-recipient export denial, demonstration consent, templates, correction evidence, finite domain reuse, revocation between prepare/publish, parameter pins, cancellation and literal byte-bounded interpolation. Ruff passed all BE11 Python files/tests. Generated-contract freshness passed. Parent ran `npm run typecheck --workspace @hermes/shared` successfully; generated shapes unchanged afterward. BE11 tracked-path `git diff --check` passed. Commands and limits: `docs/build/be11-validation.json`; interface: `docs/build/versioned-workflow-contracts.md`.
 
 Scope/remaining gates: finite local Markdown and installed BE10 producers only; no live host shell/browser/account execution, arbitrary imports, model inference, actual external sharing, automatic personal-harness discovery, training, or measured user-cleanup savings. Generalist outputs and exact expected digests are explicitly human supplied rather than independently attested. Scheduling and paused scheduled occurrence integration belong to BE12, which can use the exact approved-version `resolve_executable` consumer. FE03/FE06/FE07 can consume generated APIs; no frontend behavior added. Full repository suite not run. No dependency installs, live secrets, hardware provisioning, Git staging/commit or publication performed by this worker.
+
+## 2026-10-03 BE12 — Durable local schedules, monitors and accepted commitments
+
+Base: verified remote BE11 `52560ba9fd12ee0dc553e62f305583a96e6762b0` (same tree as locally validated BE11 checkpoint).
+
+Status: implemented and locally verified for the explicitly finite local adapter boundary. Live inbox/calendar/HTTP/agent/script/event/send adapters, semantic extraction and autonomous memory/skill promotion are not certified or enabled. Parent owns commit and publication. No live user configuration, credentials, scripts, providers or external actions were used.
+
+Before: inherited cron already had tick locks, execution claims, pending-slot recovery, process fencing and unknown-send safeguards, but strict pre-agent prompt preparation could run scripts/URL sources before owner binding. There was no immutable SQLite schedule/version/monitor/commitment authority or owned finite consumer.
+
+After:
+- Schema40 appends imported schedule and commitment table SQL to canonical SessionDB migration; no second writer/database or tick loop
+- Existing scheduler.tick, under its existing per-profile lock and drain/ESTOP gate, scans finite owner-bound SQLite schedules
+- Runtime submit admission callback atomically commits occurrence ID, immutable version, runtime command/run linkage, original deadline, next-due advance and check-budget debit
+- Stable persisted owner resolution precedes all reads and ignores current active-agent default; home/principal/policy changes deny. Strict legacy run_job gates before monitor/script/provider/MCP activity, even no_agent/prerun paths. Legacy skip_memory=False source assumption corrected
+- UTC occurrence digest, explicit IANA clock/fold/gap rules, skip/latest missed policy, bounded scan, overlap block and dedup tombstones. Unclaimed accepted work can recover; claimed unknown work never replays. Pause/revoke cancels unclaimed admissions and preserves claims/unknown effects
+- Exact local artifact monitors with normalized/structured/threshold predicates, silent baseline, cosmetic suppression, unhealthy source failures and atomic observation/baseline/notification-action intents
+- Conditional observation is distinct from human local-review grant; exact target/input/schedule digest, expiry, freshness, bounded fires revalidated and consumed at trigger. No standing external communication authority
+- Immutable bounded memory/skill review records use the BE11 resolve_executable version/digest/template/revocation seam and produce completion receipts, never inherit primary memory, ingest memory or selfpromote a skill
+- Imported inbox snapshot candidates, explicit accepted obligation authority/history, terminal-safe waiting/weekly review, exact correspondence draft-vs-confirmed-effect proof, and availability-only timezone-aware calendar preview with current participants/attachments/date uncertainty retained
+- Owned typed RPC handlers registered and Python-generated TypeScript/OpenRPC refreshed, including exact human-only schedule, inbox, acceptance, correspondence controls
+- Paused deterministic Dots import rejects active/unknown declaration, retains declaration+command/run, explicitly does not certify foreign retirement. No external cutover occurred
+- Delivery matrix documents local intent versus legacy cron and BE06 gateway ambiguity. No blanket exactly-once or at-least-once assertion and no delivery failure reruns completed execution
+
+Migration / rollback:
+Additive schema40, no auto-import or job activation. New records are paused. Before ownership or binary rollback, pause, drain/reconcile old accepted/claimed/unknown occurrences and retain tombstones. Foreign Runner retirement requires operator verification; imported snapshot says foreign_cutover_verified:false. Existing strict agent/script/URL paths remain fail-closed pending certified adapters.
+
+Validation receipts (2026-10-03 UTC):
+- Initial unprefixed runner attempt: tests NOT RUN; stale activation attempted /home/agent/.hermes and failed read-only. Corrected with existing verified .venv interpreter; no install performed
+- Canonical runner prefix: HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON="$PWD/.venv/bin/python" scripts/run_tests.sh
+- Four early focused cron/identity files: 9 passed
+- Commitment worker regression: 45 passed across test_commitments.py, test_commitments_rpc.py, test_artifact_commands.py and test_artifact_rpc.py; final affected commitment rerun12 passed. Details /tmp/be12-commitment-journal.md
+- Initial owned schedule E2E found an incorrect internal fence argument; corrected. Next run exposed test raw microsecond anchor versus canonical millisecond due; corrected test to use returned authoritative next_due. Subsequent owned E2E6 passed
+- Main focused/regression gate: 16 files, 257 passed, 0 failed, no retries,18.7 seconds. Exact log /tmp/be12-validation.log. Includes actual scheduler/occurrence/execution/delivery/monitor regression, owner construction, commitments and generated-contract freshness
+- Final-code gate after bounded status/truncation metadata and schedule-scoped RPC helper naming: 3 files, 10 passed, 0 failed, no retries. Includes atomic-intent rollback, actual schema39→40 reopen and generated-contract freshness; exact settled log /tmp/be12-final-focused.log
+- Ruff over all new/changed topical Python and tests: passed
+- git diff --check: passed
+- Generated contracts regenerated through .venv/bin/python scripts/gen_gateway_contracts.py; generated freshness included above
+- Full repository suite: NOT RUN. Live provider/mailbox/calendar/browser/Dots cutover/remote execution and live sends: NOT RUN; no certification claimed
+
+Evidence:
+Real owned RPC dispatch and immutable artifact bytes feed actual scheduler.tick and reopened SessionDB. Tests assert silent baseline, cosmetic suppression, meaningful changes, missing bytes unhealthy, false-to-true predicate, separate finite grant, original immutable inputs, approved workflow revoke, atomic command admission rollback, restart of accepted work, death after runtime claim but before occurrence stamp, never replaying unknown, cancel-before-claim, expiry, version/import controls, DST fold/gap and A→B→A identity scope. Commitment tests verify false urgency suppression, unresolved source dates, one accepted obligation, evidence CAS, terminal/supersession preservation, revoked ACL, draft promise flags, exact sent-effect proof and supplied availability honesty.
+
+Consumer cross-links:
+Backend owned RPC + existing cron consumer ship in this phase. No FE consumer/renderer implementation is included. BE11 canonical resolve_executable is reused. BE13 and BE14 working files are excluded; exact BE12 staging whitelist is /tmp/be12-files.txt. Do not stage hermes_state_runtime.py or hermes_state_delivery.py (BE14), or specialist/delegation files (BE13).
+
+Final settled receipt manifest: `docs/build/be12-validation.json` contains exact canonical commands/counts plus SHA256s of main/final logs and parent shared TypeScript log. Parent shared check `npm run typecheck --workspace @hermes/shared` passed with unchanged generated contracts. All BE12 implementation files are frozen for parent checkpoint; no staging or commit performed by this worker.

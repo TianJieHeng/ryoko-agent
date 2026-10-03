@@ -18,6 +18,7 @@ from . import (  # noqa: F401
     missions,
     domains,
     workflows,
+    schedules,
     research,
     profiles_vault_complete_foreign_subagents,
     projects_pets,

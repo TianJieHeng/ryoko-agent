@@ -1,0 +1,52 @@
+{
+  "phase": "BE12",
+  "validated_at_utc": "2026-10-03",
+  "base_commit": "52560ba9fd12ee0dc553e62f305583a96e6762b0",
+  "scope": "finite local source adapters; inherited scheduler regression",
+  "schema_version": 40,
+  "checks": [
+    {
+      "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tui_gateway/test_schedules_rpc.py tests/tui_gateway/test_commitments_rpc.py tests/hermes_state/test_commitments.py tests/cron/test_durable_schedule_contract.py tests/cron/test_scheduled_owner_gate.py tests/cron/test_cron_memory_contract.py tests/cron/test_idle_tick_config_skip.py tests/cron/test_scheduled_occurrence.py tests/cron/test_execution_ledger.py tests/cron/test_delivery_queue.py tests/cron/test_fire_claim_lost_after_delivery.py tests/cron/test_monitor_kind.py tests/cron/test_scheduler.py tests/agent/test_agent_identity.py tests/agent/test_identity_lifecycle.py tests/tui_gateway/contracts/test_generated.py -j 5 --file-retries 0",
+      "status": "passed",
+      "files": 16,
+      "tests_passed": 257,
+      "tests_failed": 0,
+      "summary": "=== Summary: 16 files, 257 tests passed, 0 failed (100% complete) in 18.7s (5 workers) ===",
+      "log": "/tmp/be12-validation.log",
+      "log_sha256": "90d791fa05ee3c7819885f13819629173d9eecf724838e89a4e9a108475933a1"
+    },
+    {
+      "command": "HERMES_HOME=/workspace/shared/ryoko-dev-home HERMES_RUNTIME_DIR=/workspace/shared/ryoko-runtime HERMES_PYTHON=\"$PWD/.venv/bin/python\" scripts/run_tests.sh tests/tui_gateway/test_schedules_rpc.py tests/hermes_state/test_schedule_migration.py tests/tui_gateway/contracts/test_generated.py -j 5 --file-retries 0",
+      "status": "passed",
+      "files": 3,
+      "tests_passed": 10,
+      "tests_failed": 0,
+      "summary": "=== Summary: 3 files, 10 tests passed, 0 failed (100% complete) in 8.7s (5 workers) ===",
+      "log": "/tmp/be12-final-focused.log",
+      "log_sha256": "5d583015790b7671ebe5c1e43e969f5275f08eea20c6495726cfa7675feff370"
+    },
+    {
+      "command": "npm run typecheck --workspace @hermes/shared",
+      "status": "passed",
+      "files": null,
+      "tests_passed": null,
+      "tests_failed": null,
+      "summary": "TypeScript typecheck completed successfully (parent receipt)",
+      "log": "/tmp/be12-shared-typecheck.log",
+      "log_sha256": "31ca7f87efc64d746d46876ef8fe1dc9c44f73c6ac794d79810d4bb803ccb1c1"
+    }
+  ],
+  "additional_checks": {
+    "ruff_new_topical_python": "passed",
+    "git_diff_check": "passed",
+    "generated_contract_freshness": "passed in both canonical gates"
+  },
+  "not_run": [
+    "full repository suite",
+    "live provider or agent/script execution",
+    "live mailbox/calendar/HTTP/event/send adapters",
+    "Dots cutover"
+  ],
+  "live_external_actions": false,
+  "file_whitelist": "/tmp/be12-files.txt"
+}
