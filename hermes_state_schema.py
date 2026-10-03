@@ -957,6 +957,8 @@ class SessionSchemaMixin:
 
         # Column reconciliation, then the two table-shape repairs ADD COLUMN cannot express.
         self._reconcile_columns(cursor)
+        from hermes_state_conversation_schema import backfill_conversation_display_titles
+        backfill_conversation_display_titles(cursor)
         self._heal_gateway_routing_pk(cursor)
         self._heal_artifact_version_uniqueness(cursor)
         # Rebuild session_model_usage if its PRIMARY KEY lacks the ``task`` column (5-column PK on installs

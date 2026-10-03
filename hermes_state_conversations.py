@@ -55,7 +55,7 @@ def _conversation_decode_cursor(value, scope, size):
 
 
 def _conversation_summary(row):
-    return {"conversation_id": row["conversation_id"], "title": row["title"] or "",
+    return {"conversation_id": row["conversation_id"], "title": row["display_title"] if row["display_title"] is not None else row["title"] or "",
             "archived": bool(row["archived"]), "revision": row["revision"],
             "created_at": row["created_at"], "updated_at": row["updated_at"], "source": "web"}
 
@@ -128,10 +128,10 @@ class SessionConversationsMixin:
             binding = context.identity.to_record()
             conn.execute("INSERT INTO sessions(id,source,created_source,user_id,started_at,title,title_source,"
                          "model_config,profile_name) VALUES(?,?,?,?,?,?,?,?,?)",
-                         (sid, "web", "web", binding["principal_id"], now, title, "user",
+                         (sid, "web", "web", binding["principal_id"], now, None, None,
                           _json({"agent_identity": binding}), self._own_profile_name()))
-            conn.execute("INSERT INTO runtime_conversations(conversation_id,owner_key,binding_json,created_at,updated_at) "
-                         "VALUES(?,?,?,?,?)", (sid, owner, _json(binding), now, now))
+            conn.execute("INSERT INTO runtime_conversations(conversation_id,owner_key,binding_json,display_title,created_at,updated_at) "
+                         "VALUES(?,?,?,?,?,?)", (sid, owner, _json(binding), title, now, now))
             result = {"schema_version": 1, "conversation": _conversation_summary(
                 self._conversation_owned_on_conn(conn, owner, sid)), "created": True}
             self._conversation_record_operation(conn, owner, key, digest, request["operation"], result)
@@ -155,7 +155,7 @@ class SessionConversationsMixin:
         if page is not None:
             _require(type(page[0]) in (int, float) and isinstance(page[1], str), "invalid_cursor", "Invalid list cursor")
         with self._runtime_read() as conn:
-            sql = _CONVERSATION_SELECT + "WHERE c.owner_key=? AND s.archived=? AND instr(lower(coalesce(s.title,'')),lower(?))>0 "
+            sql = _CONVERSATION_SELECT + "WHERE c.owner_key=? AND s.archived=? AND instr(lower(coalesce(c.display_title,s.title,'')),lower(?))>0 "
             args = [owner, int(archived), query]
             if page:
                 sql += "AND (c.created_at < ? OR (c.created_at=? AND c.conversation_id<?)) "
@@ -184,7 +184,9 @@ class SessionConversationsMixin:
             if operation == "rename":
                 title = _conversation_title(request.get("title"))
                 _require(bool(title), "invalid_command", "Title cannot be blank")
-                conn.executemany("UPDATE sessions SET title=?,title_source='user' WHERE id=?", [(title, sid) for sid in lineage])
+                # Canonical display metadata is independent from the legacy
+                # global-unique alias on each physical/compression session row.
+                conn.execute("UPDATE runtime_conversations SET display_title=? WHERE conversation_id=?", (title, row["conversation_id"]))
             else:
                 _require(type(request.get("archived")) is bool, "invalid_command", "Archived must be boolean")
                 conn.executemany("UPDATE sessions SET archived=?,auto_archived=0 WHERE id=?",

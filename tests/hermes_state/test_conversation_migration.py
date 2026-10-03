@@ -54,3 +54,52 @@ def test_conversation_migration_is_additive_and_creation_is_atomic(tmp_path, mon
             assert not db.read_runtime_conversation_operation(context, "absent")["found"]
     finally:
         db.close()
+
+
+def test_display_title_backfill_keeps_legacy_aliases_and_allows_duplicate_canonical_names(tmp_path, monkeypatch):
+    import hermes_state_schema as schema
+    from agent.agent_identity import resolve_agent_context
+    from hermes_state_conversations import _conversation_owner
+
+    monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    config = {'agent_identity': {'schema_version': 1, 'principal_id': 'owner', 'profile_id': 'profile',
+        'primary_agent_id': 'ryoko', 'active_agent_id': 'ryoko',
+        'agents': {'ryoko': {'policy_version': 1, 'role': 'primary', 'memory_backend': 'personal_mcp'}}}}
+    root = resolve_agent_context(config, session_id='existing-canonical', profile_home=tmp_path)
+    with monkeypatch.context() as old:
+        old.setattr(schema, 'SCHEMA_SQL', schema.SCHEMA_SQL.replace('    display_title TEXT,\n', ''))
+        old.setattr(schema, '_READ_PROBE_STATEMENTS', None)
+        db = SessionDB(tmp_path / 'state.db')
+        db.create_session('legacy', source='cli')
+        db.set_session_title('legacy', 'Legacy alias')
+        db.create_session(root.identity.session_id, source='web')
+        db.claim_session_agent_identity(root.identity.session_id, root.identity.to_record())
+        db.publish_compression_child(parent_session_id=root.identity.session_id, child_session_id='existing-tip',
+            source='web', messages=[{'role': 'user', 'content': 'Prior discussion'}],
+            model_config={'agent_identity': root.identity.to_record()}, require_compression_lease=False)
+        db.set_session_title('existing-tip', 'A new thought')
+        db._execute_write(lambda conn: conn.execute('INSERT INTO runtime_conversations '
+            '(conversation_id,owner_key,binding_json,created_at,updated_at) VALUES(?,?,?,?,?)',
+            (root.identity.session_id, _conversation_owner(root), json.dumps(root.identity.to_record()), 1, 1)))
+        db.close()
+    for repeat in range(2):
+        db = SessionDB(tmp_path / 'state.db')
+        try:
+            old = db.read_runtime_conversation(root, root.identity.session_id)['conversation']
+            assert old['title'] == 'A new thought'
+            assert db.get_session_title('existing-tip') == 'A new thought'
+            assert db.get_session_title('legacy') == 'Legacy alias'
+            if repeat == 0:
+                peer = resolve_agent_context(config, session_id='same-title-new', profile_home=tmp_path)
+                made = db.create_runtime_conversation(peer, {'schema_version': 1, 'idempotency_key': 'duplicate-title', 'title': 'A new thought'})
+                assert made['conversation']['title'] == old['title']
+                assert db.get_session_title('same-title-new') is None
+                renamed = db.mutate_runtime_conversation(root, {'schema_version': 1, 'conversation_id': root.identity.session_id,
+                    'idempotency_key': 'rename', 'expected_revision': 1, 'title': 'A new thought'}, operation='rename')
+                assert renamed['conversation']['revision'] == 2
+            rows = db.list_runtime_conversations(root, query='new thought')['conversations']
+            assert {row['conversation_id'] for row in rows} == {'existing-canonical', 'same-title-new'}
+            assert all(row['title'] == 'A new thought' for row in rows)
+        finally:
+            db.close()
