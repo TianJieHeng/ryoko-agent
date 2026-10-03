@@ -112,11 +112,14 @@ def _artifact_control_operation(agent, db, request, *, mode, publish=False):
     from hermes_cli import artifact_store
     from hermes_state_runtime import RuntimeStoreError
     functions = {"write": artifact_store.prepare_markdown, "edit": artifact_store.prepare_markdown_edit,
-                 "merge": artifact_store.prepare_markdown_merge}
+                 "merge": artifact_store.prepare_markdown_merge, "bytes": artifact_store.prepare_artifact}
     arguments = _artifact_prepare_args(request)
     run = begin_artifact_control(agent, request.session_id, request.command_id,
                                  _artifact_control_payload(arguments, mode))
     with artifact_control_scope(run):
+        if mode == "bytes":
+            import base64
+            arguments["content_bytes"] = base64.b64decode(arguments.pop("content_base64"), validate=True)
         proposal = functions[mode](run, **arguments,
             **({"approval_id": request.approval_id} if publish else {}))
         preview = proposal.public_record()
@@ -129,7 +132,7 @@ def _artifact_control_operation(agent, db, request, *, mode, publish=False):
         if decision["status"] == "pending":
             db.resolve_effect_approval(request.approval_id, actor, holder=run.holder,
                 generation=run.generation, approval_digest=request.approval_digest, choice="once")
-        result = artifact_store.publish_markdown(run, proposal)
+        result = artifact_store.publish_artifact(run, proposal)
         finish_artifact_control(run, result)
         return result
 
@@ -140,6 +143,22 @@ def _runtime_artifact_prepare(rid, params):
     from tui_gateway.contracts.artifacts import ArtifactPrepareParams
     return _artifact_request(rid, params, ArtifactPrepareParams,
         lambda agent, db, request: _artifact_control_operation(agent, db, request, mode="write"))
+
+
+@method("runtime.artifact.bytes.prepare")
+@_profile_scoped
+def _runtime_artifact_bytes_prepare(rid, params):
+    from tui_gateway.contracts.artifacts import ArtifactBytesPrepareParams
+    return _artifact_request(rid, params, ArtifactBytesPrepareParams,
+        lambda agent, db, request: _artifact_control_operation(agent, db, request, mode="bytes"))
+
+
+@method("runtime.artifact.bytes.publish")
+@_profile_scoped
+def _runtime_artifact_bytes_publish(rid, params):
+    from tui_gateway.contracts.artifacts import ArtifactBytesPublishParams
+    return _artifact_request(rid, params, ArtifactBytesPublishParams,
+        lambda agent, db, request: _artifact_control_operation(agent, db, request, mode="bytes", publish=True))
 
 
 @method("runtime.artifact.publish")

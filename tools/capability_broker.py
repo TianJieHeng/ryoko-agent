@@ -155,9 +155,11 @@ def project_artifact_action(scope):
     descriptor = scope["descriptor"]
     if not isinstance(descriptor, dict):
         raise CapabilityDenied("invalid_artifact_action", "An immutable artifact descriptor is required")
+    from hermes_cli.artifact_formats import artifact_format
+    contract = artifact_format(descriptor.get("mime")).contract
     return ActionSpec("runtime.project_artifact_publish", scope, "project_artifact_publish",
         destination=f"project:{scope['project_id']}", destination_purpose="project_artifact",
-        contract_digest=hashlib.sha256(b"be07.project-artifact-markdown.v1").hexdigest())
+        contract_digest=hashlib.sha256(contract.encode()).hexdigest())
 
 
 _SESSION_MODULES = {"todo_list": "tools.todo_tool", "clarify": "tools.clarify_tool",
@@ -554,6 +556,15 @@ def invoke_effect_dispatch(operation_type, *, run, input_ref, payload, operation
     output. The adapter rechecks owner/policy and commits intent before any write.
     Opaque tool callbacks cannot acquire this authority by supplying a class name.
     """
+    if operation_type == "project_artifact_publish":
+        from hermes_cli.artifact_formats import validate_artifact
+        validation = validate_artifact(payload, input_ref.get("mime"))
+        scope = json.loads(action.input_json) if action is not None else {}
+        if (scope.get("descriptor") != input_ref or validation["sha256"] != input_ref.get("sha256")
+                or validation["size"] != input_ref.get("size")
+                or scope.get("metadata", {}).get("validation") != {
+                    key: validation[key] for key in ("status", "receipt_ref")}):
+            raise CapabilityDenied("invalid_artifact_validation", "Complete artifact bytes or validation receipt changed")
     from agent.effect_reconciler import dispatch_certified_effect
     return dispatch_certified_effect(operation_type, run=run, input_ref=input_ref,
         payload=payload, operation_id=operation_id, intent_key=intent_key, action=action, approval=approval)

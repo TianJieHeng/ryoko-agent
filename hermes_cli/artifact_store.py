@@ -1,4 +1,4 @@
-"""Approved Markdown revisions over the existing durable artifact catalog.
+"""Approved bounded-format revisions over the existing durable artifact catalog.
 
 The blob, immutable version, and artifact-head CAS have distinct receipts.
 Project filing is separate: this service never claims a cross-database commit.
@@ -16,8 +16,7 @@ from agent.result_artifacts import (
     read_project_artifact, read_result_artifact, result_artifact_descriptor,
 )
 from hermes_state_runtime import RuntimeStoreError
-
-MARKDOWN_MIME = "text/markdown"
+from hermes_cli.artifact_formats import MARKDOWN_MIME, validate_artifact
 MAX_CHUNK_BYTES = 65536
 _HEADING = re.compile(r"^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$")
 _FENCE = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})")
@@ -130,7 +129,7 @@ def _action(scope):
     return project_artifact_action(scope)
 
 
-def prepare_markdown(run, *, project_id, request_id, content, artifact_id=None,
+def prepare_artifact(run, *, project_id, request_id, content_bytes, mime, artifact_id=None,
                      parent_version=None, expected_head_version=None, locked_sections=(),
                      source_refs=(), derived_from=(), provenance=None, merge_from=None,
                      approval_id=None):
@@ -140,7 +139,9 @@ def prepare_markdown(run, *, project_id, request_id, content, artifact_id=None,
     from tools.capability_broker import preview_action, recover_approval_preview
     assert_artifact_dispatch(run)
     project = authorize_project(run.context, project_id, "write")
-    actor, access, data = artifact_actor(run.context), project_access(run.context), _text(content)
+    actor, access = artifact_actor(run.context), project_access(run.context)
+    validation = validate_artifact(content_bytes, mime)
+    data = content_bytes
     if not isinstance(request_id, str) or not 0 < len(request_id) <= 256:
         raise ArtifactConflict("A stable bounded request identity is required")
     identity = descriptor_digest({"actor": actor, "run_id": run.run_id, "project_id": project_id,
@@ -154,7 +155,10 @@ def prepare_markdown(run, *, project_id, request_id, content, artifact_id=None,
         row = _version_row(run.context, run.db, project_id, artifact_id, parent_version)
         previous, base_sha = row["metadata"], row["descriptor"]["sha256"]
         # Revalidate baseline bytes, not merely historical metadata.
-        read_project_artifact(run.context, run.db, project_id, artifact_id, parent_version)
+        baseline = read_project_artifact(run.context, run.db, project_id, artifact_id, parent_version)
+        validate_artifact(baseline, row["descriptor"]["mime"])
+        if row["descriptor"]["mime"] != mime:
+            raise ArtifactConflict("Format changes require a new derived artifact, not an in-place revision")
         if expected_head_version is None:
             expected_head_version = parent_version
     elif expected_head_version is not None:
@@ -164,19 +168,25 @@ def prepare_markdown(run, *, project_id, request_id, content, artifact_id=None,
     lineage = {"kind": "revision" if parent_version is not None else origin} if provenance is None else dict(provenance)
     if merge_from is not None:
         lineage = {"kind": "revision", "source_ref": f"artifact:{artifact_id}:{merge_from}"}
+    if mime == MARKDOWN_MIME:
+        locks = _locks(data.decode("utf-8"), locked_sections, previous.get("locked_sections", []))
+    else:
+        if locked_sections or previous.get("locked_sections") or merge_from is not None:
+            raise ArtifactConflict("Section locks and selected-section merges are supported only for Markdown")
+        locks = []
     metadata = {"parent_version": parent_version, "branch_of": None,
         "derived_from": list(derived_from or previous.get("derived_from", [])),
-        "locked_sections": _locks(content, locked_sections, previous.get("locked_sections", [])),
+        "locked_sections": locks,
         "source_refs": _refs(previous.get("source_refs", []), source_refs), "provenance": lineage,
-        "validation": {"status": "passed", "receipt_ref": "markdown-utf8-sha256:" + _sha(content)},
+        "validation": {key: validation[key] for key in ("status", "receipt_ref")},
         "approval_status": "approved", "approval_id": approved_id}
     reservation = run.db.reserve_artifact_version(run.session_id, actor, holder=run.holder,
         generation=run.generation, run_id=run.run_id, command_id=run.command_id,
         project_id=project_id, artifact_id=artifact_id, request_id=request_id,
-        parent_version=parent_version, content_sha256=_sha(content), size=len(data), mime=MARKDOWN_MIME,
+        parent_version=parent_version, content_sha256=validation["sha256"], size=len(data), mime=mime,
         metadata=metadata, expected_head_version=expected_head_version, access=access)
     descriptor = result_artifact_descriptor(run.context, run.run_id, data, artifact_id,
-                                            reservation["version"], MARKDOWN_MIME)
+                                            reservation["version"], mime)
     scope = {"project_id": project_id, "request_id": request_id, "descriptor": descriptor,
              "metadata": metadata, "expected_head_version": expected_head_version,
              "project_revision": project["revision"], "base_sha256": base_sha}
@@ -192,6 +202,18 @@ def prepare_markdown(run, *, project_id, request_id, content, artifact_id=None,
                             preview.approval_digest, preview.expires_at)
 
 
+def prepare_markdown(run, *, project_id, request_id, content, artifact_id=None,
+                     parent_version=None, expected_head_version=None, locked_sections=(),
+                     source_refs=(), derived_from=(), provenance=None, merge_from=None,
+                     approval_id=None):
+    """Compatibility API for exact UTF-8 Markdown revisions and section locks."""
+    return prepare_artifact(run, project_id=project_id, request_id=request_id,
+        content_bytes=_text(content), mime=MARKDOWN_MIME, artifact_id=artifact_id,
+        parent_version=parent_version, expected_head_version=expected_head_version,
+        locked_sections=locked_sections, source_refs=source_refs, derived_from=derived_from,
+        provenance=provenance, merge_from=merge_from, approval_id=approval_id)
+
+
 def _safe_version(row):
     metadata, descriptor = row["metadata"], row["descriptor"]
     disposition = row["disposition"]
@@ -204,17 +226,22 @@ def _safe_version(row):
         "approval_status": metadata["approval_status"]}
 
 
-def publish_markdown(run, proposal):
+def publish_artifact(run, proposal):
     """Consume one exact approval with effect admission, then commit head or branch."""
     from agent.artifact_commands import assert_artifact_dispatch
     from agent.project_context import project_access
     from tools.capability_broker import invoke_effect_dispatch, recover_approval_preview
     assert_artifact_dispatch(run)
     if not isinstance(proposal, ArtifactProposal):
-        raise ArtifactConflict("An exact prepared Markdown proposal is required")
+        raise ArtifactConflict("An exact prepared artifact proposal is required")
     scope, actor = proposal.scope, artifact_actor(run.context)
     if proposal.request_id != scope["request_id"]:
         raise ArtifactConflict("Artifact proposal request identity changed")
+    validation = validate_artifact(proposal.content_bytes, scope["descriptor"]["mime"])
+    if (validation["sha256"] != scope["descriptor"]["sha256"]
+            or validation["size"] != scope["descriptor"]["size"]
+            or scope["metadata"]["validation"] != {key: validation[key] for key in ("status", "receipt_ref")}):
+        raise ArtifactConflict("Artifact bytes or validation receipt changed after preparation")
     action = _action(scope)
     preview = recover_approval_preview(proposal.approval_id, action)
     if preview.approval_digest != proposal.approval_digest:
@@ -231,21 +258,29 @@ def publish_markdown(run, proposal):
     return _safe_version(row)
 
 
+def publish_markdown(run, proposal):
+    """Compatibility API, retaining the original Markdown-only contract."""
+    if not isinstance(proposal, ArtifactProposal) or proposal.scope["descriptor"]["mime"] != MARKDOWN_MIME:
+        raise ArtifactConflict("An exact prepared Markdown proposal is required")
+    return publish_artifact(run, proposal)
+
+
 def _chunk(project_id, descriptor, data, offset, limit):
     if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= MAX_CHUNK_BYTES:
         raise ArtifactConflict("Invalid artifact chunk bounds")
     if offset > len(data):
         raise ArtifactConflict("Artifact offset exceeds its complete size")
+    validation = validate_artifact(data, descriptor["mime"])
     chunk = data[offset:offset + limit]
     return {"project_id": project_id,
             **{key: descriptor[key] for key in ("artifact_id", "version", "sha256", "size", "mime")},
             "offset": offset, "data_base64": base64.b64encode(chunk).decode("ascii"),
             "next_offset": offset + len(chunk), "eof": offset + len(chunk) == len(data),
-            "preview_mode": "plain_text"}
+            "preview_mode": validation["preview_mode"]}
 
 
 def read_artifact(context, db, project_id, artifact_id, version=None, offset=0, limit=MAX_CHUNK_BYTES):
-    """Safe plain-text chunks; the complete immutable file is digest-checked each time."""
+    """Digest/format-check complete bytes; binary chunks are download-only."""
     from agent.project_context import project_access
     if version is None:
         head = db.get_artifact_head(artifact_id, artifact_actor(context), access=project_access(context))
@@ -304,6 +339,9 @@ def _apply_edits(content, edits):
 
 def prepare_markdown_edit(run, *, project_id, artifact_id, parent_version, request_id, edits,
                           expected_head_version=None, approval_id=None):
+    row = _version_row(run.context, run.db, project_id, artifact_id, parent_version)
+    if row["descriptor"]["mime"] != MARKDOWN_MIME:
+        raise ArtifactConflict("Section edits require a Markdown artifact")
     baseline = read_project_artifact(run.context, run.db, project_id, artifact_id, parent_version).decode("utf-8")
     content = _apply_edits(baseline, edits)
     return prepare_markdown(run, project_id=project_id, request_id=request_id, content=content,
@@ -315,6 +353,8 @@ def prepare_markdown_merge(run, *, project_id, artifact_id, branch_version, curr
                            request_id, approved_anchors, approval_id=None):
     """Three-way merge only explicitly selected, unchanged-at-head source sections."""
     branch = _version_row(run.context, run.db, project_id, artifact_id, branch_version)
+    if branch["descriptor"]["mime"] != MARKDOWN_MIME:
+        raise ArtifactConflict("Section merges require a Markdown artifact")
     base_version = branch["metadata"]["parent_version"]
     if base_version is None or not isinstance(approved_anchors, (list, tuple)) or not approved_anchors:
         raise ArtifactConflict("A merge requires a branch baseline and explicit section selection")

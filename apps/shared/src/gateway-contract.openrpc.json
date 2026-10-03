@@ -3031,6 +3031,42 @@
       }
     },
     {
+      "name": "runtime.artifact.bytes.prepare",
+      "summary": "Prepare bounded complete bytes using an allowlisted structural format validator; no active preview.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactBytesPrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactProposalResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.artifact.bytes.publish",
+      "summary": "Approve and publish exact validated bytes; visual fidelity is not implied.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactBytesPublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ArtifactPublishResult"
+        }
+      }
+    },
+    {
       "name": "runtime.artifact.cancel",
       "summary": "",
       "params": [
@@ -3207,6 +3243,42 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/ArtifactControlStatus"
+        }
+      }
+    },
+    {
+      "name": "runtime.brief.prepare",
+      "summary": "Prepare exact changed-claim edits and an immutable JSON dependency sidecar, each requiring approval.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/BriefPrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ResearchResponse"
+        }
+      }
+    },
+    {
+      "name": "runtime.brief.publish",
+      "summary": "Revalidate source grants and evidence, publish the exact approved brief first and its dependency manifest last; not atomic.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/BriefPublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ResearchResponse"
         }
       }
     },
@@ -3423,6 +3495,42 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/RuntimeDeliveryReceipt"
+        }
+      }
+    },
+    {
+      "name": "runtime.domain.prepare",
+      "summary": "Transform exact authorized sources with a bounded local adapter and prepare complete outputs; no publication.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DomainPrepareParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DomainPrepareResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.domain.publish",
+      "summary": "Approve each exact prepared output and publish its manifest last; bundle publication is not atomic.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/DomainPublishParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/DomainPublishResult"
         }
       }
     },
@@ -3963,6 +4071,24 @@
         "name": "result",
         "schema": {
           "$ref": "#/components/schemas/RuntimeProjectResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.research.resolve",
+      "summary": "Read exact granted local source originals and return bounded provenance, citation and freshness metadata.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ResearchResolveParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ResearchResponse"
         }
       }
     },
@@ -6353,6 +6479,273 @@
         "title": "ArtifactBlockedResult",
         "type": "object"
       },
+      "ArtifactBundleResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactPublishResult"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/ArtifactPublishResult"
+          },
+          "state": {
+            "const": "published",
+            "title": "State",
+            "type": "string"
+          },
+          "publication_atomic": {
+            "const": false,
+            "title": "Publication Atomic",
+            "type": "boolean"
+          },
+          "external_production": {
+            "const": "not_performed",
+            "title": "External Production",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "outputs",
+          "manifest",
+          "state",
+          "publication_atomic",
+          "external_production"
+        ],
+        "title": "ArtifactBundleResult",
+        "type": "object"
+      },
+      "ArtifactBytesPrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "content_base64": {
+            "maxLength": 65536,
+            "title": "Content Base64",
+            "type": "string"
+          },
+          "mime": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Mime",
+            "type": "string"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifact Id"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parent Version"
+          },
+          "expected_head_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Head Version"
+          },
+          "derived_from": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "maxItems": 100,
+            "title": "Derived From",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "content_base64",
+          "mime"
+        ],
+        "title": "ArtifactBytesPrepareParams",
+        "type": "object"
+      },
+      "ArtifactBytesPublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "content_base64": {
+            "maxLength": 65536,
+            "title": "Content Base64",
+            "type": "string"
+          },
+          "mime": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Mime",
+            "type": "string"
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifact Id"
+          },
+          "parent_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parent Version"
+          },
+          "expected_head_version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Head Version"
+          },
+          "derived_from": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ArtifactVersionRef"
+            },
+            "maxItems": 100,
+            "title": "Derived From",
+            "type": "array"
+          },
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "content_base64",
+          "mime",
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "ArtifactBytesPublishParams",
+        "type": "object"
+      },
       "ArtifactCancelledResult": {
         "additionalProperties": false,
         "properties": {
@@ -6450,6 +6843,12 @@
               },
               {
                 "$ref": "#/components/schemas/ArtifactBlockedResult"
+              },
+              {
+                "$ref": "#/components/schemas/ArtifactBundleResult"
+              },
+              {
+                "$ref": "#/components/schemas/ArtifactResponseJSON"
               },
               {
                 "type": "null"
@@ -7333,7 +7732,10 @@
             "type": "boolean"
           },
           "preview_mode": {
-            "const": "plain_text",
+            "enum": [
+              "plain_text",
+              "download_only"
+            ],
             "title": "Preview Mode",
             "type": "string"
           }
@@ -7448,7 +7850,10 @@
             "type": "boolean"
           },
           "preview_mode": {
-            "const": "plain_text",
+            "enum": [
+              "plain_text",
+              "download_only"
+            ],
             "title": "Preview Mode",
             "type": "string"
           },
@@ -7476,6 +7881,33 @@
           "publication_state"
         ],
         "title": "ArtifactRecoveryResult",
+        "type": "object"
+      },
+      "ArtifactResponseJSON": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Project Id"
+          },
+          "response_json": {
+            "maxLength": 3145728,
+            "title": "Response Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "response_json"
+        ],
+        "title": "ArtifactResponseJSON",
         "type": "object"
       },
       "ArtifactSectionEdit": {
@@ -9390,6 +9822,208 @@
           "count"
         ],
         "title": "BotRelayRosterSyncResult",
+        "type": "object"
+      },
+      "BriefManifestRef": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "title": "Version",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "version",
+          "sha256"
+        ],
+        "title": "BriefManifestRef",
+        "type": "object"
+      },
+      "BriefPrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "parent_version": {
+            "minimum": 1,
+            "title": "Parent Version",
+            "type": "integer"
+          },
+          "request_json": {
+            "maxLength": 2097152,
+            "minLength": 2,
+            "title": "Request Json",
+            "type": "string"
+          },
+          "manifest_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefManifestRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "artifact_id",
+          "parent_version",
+          "request_json"
+        ],
+        "title": "BriefPrepareParams",
+        "type": "object"
+      },
+      "BriefPublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Project Id",
+            "type": "string"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "artifact_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "parent_version": {
+            "minimum": 1,
+            "title": "Parent Version",
+            "type": "integer"
+          },
+          "request_json": {
+            "maxLength": 2097152,
+            "minLength": 2,
+            "title": "Request Json",
+            "type": "string"
+          },
+          "manifest_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefManifestRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "brief_approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Brief Approval Id",
+            "type": "string"
+          },
+          "brief_approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Brief Approval Digest",
+            "type": "string"
+          },
+          "manifest_approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Manifest Approval Id",
+            "type": "string"
+          },
+          "manifest_approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Manifest Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "project_id",
+          "command_id",
+          "request_id",
+          "artifact_id",
+          "parent_version",
+          "request_json",
+          "brief_approval_id",
+          "brief_approval_digest",
+          "manifest_approval_id",
+          "manifest_approval_digest"
+        ],
+        "title": "BriefPublishParams",
         "type": "object"
       },
       "BrowserAction": {
@@ -16407,6 +17041,177 @@
           }
         },
         "title": "DisplayThumbnailResult",
+        "type": "object"
+      },
+      "DomainApproval": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Approval Id",
+            "type": "string"
+          },
+          "approval_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Approval Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approval_id",
+          "approval_digest"
+        ],
+        "title": "DomainApproval",
+        "type": "object"
+      },
+      "DomainPrepareParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "job_json": {
+            "maxLength": 65536,
+            "minLength": 2,
+            "title": "Job Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "job_json"
+        ],
+        "title": "DomainPrepareParams",
+        "type": "object"
+      },
+      "DomainPrepareResult": {
+        "additionalProperties": false,
+        "properties": {
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactProposalResult"
+            },
+            "title": "Proposals",
+            "type": "array"
+          },
+          "publication_atomic": {
+            "const": false,
+            "title": "Publication Atomic",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "proposals",
+          "publication_atomic"
+        ],
+        "title": "DomainPrepareResult",
+        "type": "object"
+      },
+      "DomainPublishParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "command_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "job_json": {
+            "maxLength": 65536,
+            "minLength": 2,
+            "title": "Job Json",
+            "type": "string"
+          },
+          "approvals": {
+            "items": {
+              "$ref": "#/components/schemas/DomainApproval"
+            },
+            "maxItems": 17,
+            "minItems": 2,
+            "title": "Approvals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "command_id",
+          "job_json",
+          "approvals"
+        ],
+        "title": "DomainPublishParams",
+        "type": "object"
+      },
+      "DomainPublishResult": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactPublishResult"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/ArtifactPublishResult"
+          },
+          "state": {
+            "const": "published",
+            "title": "State",
+            "type": "string"
+          },
+          "publication_atomic": {
+            "const": false,
+            "title": "Publication Atomic",
+            "type": "boolean"
+          },
+          "external_production": {
+            "const": "not_performed",
+            "title": "External Production",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "outputs",
+          "manifest",
+          "state",
+          "publication_atomic",
+          "external_production"
+        ],
+        "title": "DomainPublishResult",
         "type": "object"
       },
       "EmptyRequestParams": {
@@ -33593,6 +34398,65 @@
           "reason"
         ],
         "title": "RequestCancelPayload",
+        "type": "object"
+      },
+      "ResearchResolveParams": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "request_json": {
+            "maxLength": 2097152,
+            "minLength": 2,
+            "title": "Request Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "schema_version",
+          "request_json"
+        ],
+        "title": "ResearchResolveParams",
+        "type": "object"
+      },
+      "ResearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Project Id"
+          },
+          "response_json": {
+            "maxLength": 3145728,
+            "minLength": 2,
+            "title": "Response Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "response_json"
+        ],
+        "title": "ResearchResponse",
         "type": "object"
       },
       "ResumeArtifact": {

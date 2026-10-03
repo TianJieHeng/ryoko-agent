@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "domain": "rational_arithmetic",
+  "version": "1.0.0",
+  "title": "Exact fraction arithmetic",
+  "prerequisites": ["Read whole numbers and fractions", "Multiply and divide whole numbers", "Recognize equivalent fractions"],
+  "objectives": [
+    {"id": "same_denominator", "text": "Add and subtract fractions with a common denominator", "teaching": "With equal denominators, add or subtract the numerators and retain the denominator. Reduce the result using a common factor.", "exercise_id": "p1"},
+    {"id": "unlike_denominators", "text": "Use equivalent fractions to add or subtract unlike denominators", "teaching": "Choose a common multiple of both denominators. Scale each numerator and denominator by the same whole number, then add or subtract the numerators and reduce.", "exercise_id": "p4"},
+    {"id": "products_quotients", "text": "Multiply and divide rational numbers and simplify exactly", "teaching": "Multiply numerators and denominators. To divide by a nonzero fraction, multiply by its reciprocal. Reduce the result and check the sign.", "exercise_id": "p7"}
+  ],
+  "practice": [
+    {"id": "p1", "objective_id": "same_denominator", "difficulty": 1, "prompt": "Calculate 2/7 + 3/7.", "expression": {"op": "add", "left": "2/7", "right": "3/7"}, "answer": "5/7", "hints": ["Both pieces use sevenths.", "Keep denominator 7 and add the two numerators.", "Add 2 + 3, then place that number over 7."]},
+    {"id": "p2", "objective_id": "same_denominator", "difficulty": 1, "prompt": "Calculate 7/9 - 4/9.", "expression": {"op": "subtract", "left": "7/9", "right": "4/9"}, "answer": "1/3", "hints": ["The denominators already match.", "Subtract 4 from 7 and keep denominator 9.", "Reduce 3/9 by dividing its numerator and denominator by 3."]},
+    {"id": "p3", "objective_id": "same_denominator", "difficulty": 1, "prompt": "Calculate 3/8 + 1/8.", "expression": {"op": "add", "left": "3/8", "right": "1/8"}, "answer": "1/2", "hints": ["Both quantities are eighths.", "Add the numerators and keep denominator 8.", "Reduce 4/8 using a factor of 4."]},
+    {"id": "p4", "objective_id": "unlike_denominators", "difficulty": 2, "prompt": "Calculate 1/3 + 1/4.", "expression": {"op": "add", "left": "1/3", "right": "1/4"}, "answer": "7/12", "hints": ["Find a common denominator for thirds and fourths.", "Use twelfths: 1/3 = 4/12 and 1/4 = 3/12.", "Add 4 + 3 and keep denominator 12."]},
+    {"id": "p5", "objective_id": "unlike_denominators", "difficulty": 2, "prompt": "Calculate 5/6 - 1/4.", "expression": {"op": "subtract", "left": "5/6", "right": "1/4"}, "answer": "7/12", "hints": ["Use equivalent fractions with a common denominator.", "5/6 is 10/12; 1/4 is 3/12.", "Subtract 3 from 10 and keep denominator 12."]},
+    {"id": "p6", "objective_id": "unlike_denominators", "difficulty": 2, "prompt": "Calculate 2/5 + 1/6.", "expression": {"op": "add", "left": "2/5", "right": "1/6"}, "answer": "17/30", "hints": ["Choose a common multiple of 5 and 6.", "Use 30: 2/5 = 12/30 and 1/6 = 5/30.", "Add 12 + 5 and keep denominator 30."]},
+    {"id": "p7", "objective_id": "products_quotients", "difficulty": 3, "prompt": "Calculate 3/4 × 2/5.", "expression": {"op": "multiply", "left": "3/4", "right": "2/5"}, "answer": "3/10", "hints": ["Multiply the numerators and the denominators separately.", "The unreduced result is (3 × 2)/(4 × 5).", "Reduce 6/20 by a common factor of 2."]},
+    {"id": "p8", "objective_id": "products_quotients", "difficulty": 3, "prompt": "Calculate 2/3 ÷ 4/5.", "expression": {"op": "divide", "left": "2/3", "right": "4/5"}, "answer": "5/6", "hints": ["Division by a fraction uses its reciprocal.", "Multiply 2/3 by 5/4.", "Reduce 10/12 by a common factor of 2."]},
+    {"id": "p9", "objective_id": "products_quotients", "difficulty": 3, "prompt": "Calculate -3/7 × 14/9.", "expression": {"op": "multiply", "left": "-3/7", "right": "14/9"}, "answer": "-2/3", "hints": ["One negative factor makes the product negative.", "Multiply to get -42/63.", "Divide numerator and denominator by their common factor 21."]}
+  ],
+  "transfer": [
+    {"id": "t1", "objective_id": "transfer", "difficulty": 3, "prompt": "A recipe uses 2/3 cup of oats and 1/4 cup of seeds per batch. You make 3/2 batches. How many cups of oats and seeds are needed altogether? Give an exact fraction of a cup.", "expression": {"op": "multiply", "left": {"op": "add", "left": "2/3", "right": "1/4"}, "right": "3/2"}, "answer": "11/8", "unit": "cups"}
+  ]
+}

@@ -1,0 +1,4 @@
+order_id,region,amount,day
+o1,north,10.25,2026-01-01
+o2,south,20.00,2026-01-02
+o3,north,4.75,2026-01-03

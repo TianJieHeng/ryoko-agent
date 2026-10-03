@@ -117,6 +117,22 @@ class ArtifactPublishParams(ArtifactPrepareParams):
     approval_digest: Digest
 
 
+class ArtifactBytesPrepareParams(RuntimeProjectParams):
+    command_id: RuntimeIdentifier
+    request_id: RuntimeIdentifier
+    content_base64: Annotated[str, Field(max_length=65536)]
+    mime: Annotated[str, Field(min_length=1, max_length=128)]
+    artifact_id: RuntimeIdentifier | None = None
+    parent_version: PositiveVersion | None = None
+    expected_head_version: PositiveVersion | None = None
+    derived_from: Annotated[list[ArtifactVersionRef], Field(max_length=100)] = []
+
+
+class ArtifactBytesPublishParams(ArtifactBytesPrepareParams):
+    approval_id: RuntimeIdentifier
+    approval_digest: Digest
+
+
 class ArtifactSectionEdit(Params):
     anchor: RuntimeIdentifier
     expected_sha256: Digest
@@ -199,7 +215,7 @@ class ArtifactReadResult(Result):
     data_base64: str
     next_offset: int
     eof: bool
-    preview_mode: Literal["plain_text"]
+    preview_mode: Literal["plain_text", "download_only"]
 
 
 class ArtifactCommandParams(RuntimeSessionParams):
@@ -216,13 +232,27 @@ class ArtifactBlockedResult(Result):
     reason: Literal["budget_unavailable"]
 
 
+class ArtifactBundleResult(Result):
+    project_id: str
+    outputs: list[ArtifactPublishResult]
+    manifest: ArtifactPublishResult
+    state: Literal["published"]
+    publication_atomic: Literal[False]
+    external_production: Literal["not_performed"]
+
+
+class ArtifactResponseJSON(Result):
+    project_id: str | None = None
+    response_json: Annotated[str, Field(max_length=3145728)]
+
+
 class ArtifactControlStatus(Result):
     command_id: str
     run_id: str
     status: Literal["accepted", "claimed", "completed", "cancelled", "failed", "blocked"]
     owner_live: bool
     expires_at: float | None
-    result: ArtifactPublishResult | ArtifactCancelledResult | ArtifactBlockedResult | None
+    result: ArtifactPublishResult | ArtifactCancelledResult | ArtifactBlockedResult | ArtifactBundleResult | ArtifactResponseJSON | None
 
 
 method("runtime.project.create", params=RuntimeProjectCreateParams, result=RuntimeProjectResult)
@@ -235,6 +265,10 @@ method("runtime.artifact.prepare", params=ArtifactPrepareParams, result=Artifact
        doc="Prepare one exact owned edit for approval; does not dispatch a model or publish bytes.")
 method("runtime.artifact.publish", params=ArtifactPublishParams, result=ArtifactPublishResult,
        doc="Approve and publish exactly the prepared content under the same live bounded control claim.")
+method("runtime.artifact.bytes.prepare", params=ArtifactBytesPrepareParams, result=ArtifactProposalResult,
+       doc="Prepare bounded complete bytes using an allowlisted structural format validator; no active preview.")
+method("runtime.artifact.bytes.publish", params=ArtifactBytesPublishParams, result=ArtifactPublishResult,
+       doc="Approve and publish exact validated bytes; visual fidelity is not implied.")
 method("runtime.artifact.get", params=ArtifactReadParams, result=ArtifactReadResult,
        doc="Read complete immutable bytes in bounded chunks; render only as plain text.")
 method("runtime.artifact.status", params=ArtifactCommandParams, result=ArtifactControlStatus)

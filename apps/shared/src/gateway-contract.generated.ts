@@ -435,6 +435,34 @@ export interface ArtifactPublishResult {
   validation_status: 'passed'
   approval_status: 'approved'
 }
+export interface ArtifactBytesPrepareParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  content_base64: string
+  mime: string
+  artifact_id?: string | null
+  parent_version?: number | null
+  expected_head_version?: number | null
+  derived_from?: ArtifactVersionRef[]
+}
+export interface ArtifactBytesPublishParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  content_base64: string
+  mime: string
+  artifact_id?: string | null
+  parent_version?: number | null
+  expected_head_version?: number | null
+  derived_from?: ArtifactVersionRef[]
+  approval_id: string
+  approval_digest: string
+}
 export interface ArtifactReadParams {
   session_id: string
   schema_version: 1
@@ -455,7 +483,7 @@ export interface ArtifactReadResult {
   data_base64: string
   next_offset: number
   eof: boolean
-  preview_mode: 'plain_text'
+  preview_mode: 'plain_text' | 'download_only'
 }
 export interface ArtifactCommandParams {
   session_id: string
@@ -468,7 +496,7 @@ export interface ArtifactControlStatus {
   status: 'accepted' | 'claimed' | 'completed' | 'cancelled' | 'failed' | 'blocked'
   owner_live: boolean
   expires_at: number | null
-  result: ArtifactPublishResult | ArtifactCancelledResult | ArtifactBlockedResult | null
+  result: ArtifactPublishResult | ArtifactCancelledResult | ArtifactBlockedResult | ArtifactBundleResult | ArtifactResponseJSON | null
 }
 export interface ArtifactCancelledResult {
   cancel_requested: boolean
@@ -477,6 +505,18 @@ export interface ArtifactCancelledResult {
 export interface ArtifactBlockedResult {
   blocked: true
   reason: 'budget_unavailable'
+}
+export interface ArtifactBundleResult {
+  project_id: string
+  outputs: ArtifactPublishResult[]
+  manifest: ArtifactPublishResult
+  state: 'published'
+  publication_atomic: false
+  external_production: 'not_performed'
+}
+export interface ArtifactResponseJSON {
+  project_id?: string | null
+  response_json: string
 }
 export interface ArtifactEditParams {
   session_id: string
@@ -550,7 +590,7 @@ export interface ArtifactRecoveryResult {
   data_base64: string
   next_offset: number
   eof: boolean
-  preview_mode: 'plain_text'
+  preview_mode: 'plain_text' | 'download_only'
   publication_state: 'committed' | 'published_uncommitted'
 }
 export interface CaptureCreateParams {
@@ -3097,6 +3137,75 @@ export interface MissionReceiptListResult {
   limit: number
   limit_reached: boolean
   complete: false
+}
+export interface DomainPrepareParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  job_json: string
+}
+export interface DomainPrepareResult {
+  proposals: ArtifactProposalResult[]
+  publication_atomic: false
+}
+export interface DomainPublishParams {
+  session_id: string
+  schema_version: 1
+  command_id: string
+  job_json: string
+  approvals: DomainApproval[]
+}
+export interface DomainApproval {
+  approval_id: string
+  approval_digest: string
+}
+export interface DomainPublishResult {
+  project_id: string
+  outputs: ArtifactPublishResult[]
+  manifest: ArtifactPublishResult
+  state: 'published'
+  publication_atomic: false
+  external_production: 'not_performed'
+}
+export interface ResearchResolveParams {
+  session_id: string
+  schema_version: 1
+  request_json: string
+}
+export interface ResearchResponse {
+  project_id?: string | null
+  response_json: string
+}
+export interface BriefPrepareParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  artifact_id: string
+  parent_version: number
+  request_json: string
+  manifest_ref?: BriefManifestRef | null
+}
+export interface BriefManifestRef {
+  artifact_id: string
+  version: number
+  sha256: string
+}
+export interface BriefPublishParams {
+  session_id: string
+  schema_version: 1
+  project_id: string
+  command_id: string
+  request_id: string
+  artifact_id: string
+  parent_version: number
+  request_json: string
+  manifest_ref?: BriefManifestRef | null
+  brief_approval_id: string
+  brief_approval_digest: string
+  manifest_approval_id: string
+  manifest_approval_digest: string
 }
 /** ``word`` is the token under the cursor (``@`` prefix = context reference); ``cwd`` / ``session_id`` pick the directory the listing resolves against. */
 export interface CompletePathParams {
@@ -6586,6 +6695,10 @@ export interface RpcMethods {
   'runtime.approval.resolve': { params: RuntimeApprovalResolveParams; result: RuntimeApprovalResolveResult }
   /** Read an owned oldest-first bounded approval snapshot. This is not complete history or permission to act. */
   'runtime.approvals.list': { params: RuntimeApprovalListParams; result: RuntimeApprovalListResult }
+  /** Prepare bounded complete bytes using an allowlisted structural format validator; no active preview. */
+  'runtime.artifact.bytes.prepare': { params: ArtifactBytesPrepareParams; result: ArtifactProposalResult }
+  /** Approve and publish exact validated bytes; visual fidelity is not implied. */
+  'runtime.artifact.bytes.publish': { params: ArtifactBytesPublishParams; result: ArtifactPublishResult }
   'runtime.artifact.cancel': { params: ArtifactCommandParams; result: ArtifactControlStatus }
   'runtime.artifact.edit.prepare': { params: ArtifactEditParams; result: ArtifactProposalResult }
   'runtime.artifact.edit.publish': { params: ArtifactEditPublishParams; result: ArtifactPublishResult }
@@ -6600,6 +6713,10 @@ export interface RpcMethods {
   /** Recover exact confirmed publication bytes without publishing a catalog version or moving a head. */
   'runtime.artifact.recovery.get': { params: ArtifactRecoveryParams; result: ArtifactRecoveryResult }
   'runtime.artifact.status': { params: ArtifactCommandParams; result: ArtifactControlStatus }
+  /** Prepare exact changed-claim edits and an immutable JSON dependency sidecar, each requiring approval. */
+  'runtime.brief.prepare': { params: BriefPrepareParams; result: ResearchResponse }
+  /** Revalidate source grants and evidence, publish the exact approved brief first and its dependency manifest last; not atomic. */
+  'runtime.brief.publish': { params: BriefPublishParams; result: ResearchResponse }
   /** Negotiate the owned session's durable runtime API and executable operations. */
   'runtime.capabilities': { params: RuntimeCapabilitiesParams; result: RuntimeCapabilities }
   'runtime.capture.create': { params: CaptureCreateParams; result: CaptureResult }
@@ -6619,6 +6736,10 @@ export interface RpcMethods {
   'runtime.delivery.retry': { params: RuntimeDeliveryParams; result: RuntimeDeliveryReceipt }
   /** Read delivery truth without creating a delivery attempt. */
   'runtime.delivery.status': { params: RuntimeDeliveryParams; result: RuntimeDeliveryReceipt }
+  /** Transform exact authorized sources with a bounded local adapter and prepare complete outputs; no publication. */
+  'runtime.domain.prepare': { params: DomainPrepareParams; result: DomainPrepareResult }
+  /** Approve each exact prepared output and publish its manifest last; bundle publication is not atomic. */
+  'runtime.domain.publish': { params: DomainPublishParams; result: DomainPublishResult }
   /** Inspect one owned effect and its bounded receipt metadata without exposing private input or paths. */
   'runtime.effect.get': { params: RuntimeEffectParams; result: RuntimeEffectGetResult }
   /** Inspect local artifact state under a bounded server-owned lease and record evidence. Never replay a mutation. */
@@ -6668,6 +6789,8 @@ export interface RpcMethods {
   'runtime.project.grants.set': { params: RuntimeProjectGrantsParams; result: RuntimeProjectResult }
   'runtime.project.list': { params: RuntimeSessionParams; result: RuntimeProjectListResult }
   'runtime.project.update': { params: RuntimeProjectUpdateParams; result: RuntimeProjectResult }
+  /** Read exact granted local source originals and return bounded provenance, citation and freshness metadata. */
+  'runtime.research.resolve': { params: ResearchResolveParams; result: ResearchResponse }
   /** Read bounded digest-checked immutable result bytes without executing or delivering work. */
   'runtime.result.get': { params: RuntimeResultGetParams; result: RuntimeResultChunk }
   /** Assemble bounded authorized project references and blockers without private memory or a completeness claim. */
@@ -7018,6 +7141,8 @@ export const RPC_METHODS = [
   'rollback.restore',
   'runtime.approval.resolve',
   'runtime.approvals.list',
+  'runtime.artifact.bytes.prepare',
+  'runtime.artifact.bytes.publish',
   'runtime.artifact.cancel',
   'runtime.artifact.edit.prepare',
   'runtime.artifact.edit.publish',
@@ -7028,6 +7153,8 @@ export const RPC_METHODS = [
   'runtime.artifact.publish',
   'runtime.artifact.recovery.get',
   'runtime.artifact.status',
+  'runtime.brief.prepare',
+  'runtime.brief.publish',
   'runtime.capabilities',
   'runtime.capture.create',
   'runtime.capture.duplicates',
@@ -7040,6 +7167,8 @@ export const RPC_METHODS = [
   'runtime.delivery.ack',
   'runtime.delivery.retry',
   'runtime.delivery.status',
+  'runtime.domain.prepare',
+  'runtime.domain.publish',
   'runtime.effect.get',
   'runtime.effect.reconcile',
   'runtime.effects.list',
@@ -7070,6 +7199,7 @@ export const RPC_METHODS = [
   'runtime.project.grants.set',
   'runtime.project.list',
   'runtime.project.update',
+  'runtime.research.resolve',
   'runtime.result.get',
   'runtime.resume.get',
   'runtime.snapshot',

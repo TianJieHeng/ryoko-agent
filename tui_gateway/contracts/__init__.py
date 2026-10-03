@@ -16,6 +16,8 @@ from . import (  # noqa: F401
     liveness,
     memory,
     missions,
+    domains,
+    research,
     profiles_vault_complete_foreign_subagents,
     projects_pets,
     prompt_voice,

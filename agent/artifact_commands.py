@@ -19,9 +19,11 @@ from hermes_state_runtime import RuntimeStoreError
 CONTROL_TTL_SECONDS = 300
 _CONTROL = ContextVar("runtime_artifact_control", default=None)
 _CONTROL_RPCS = frozenset({"runtime.artifact.prepare", "runtime.artifact.publish",
+    "runtime.artifact.bytes.prepare", "runtime.artifact.bytes.publish",
     "runtime.artifact.edit.prepare", "runtime.artifact.edit.publish",
     "runtime.artifact.merge.prepare", "runtime.artifact.merge.publish",
-    "runtime.artifact.status", "runtime.artifact.cancel"})
+    "runtime.artifact.status", "runtime.artifact.cancel", "runtime.domain.prepare", "runtime.domain.publish",
+    "runtime.brief.prepare", "runtime.brief.publish"})
 
 
 @dataclass(frozen=True)
