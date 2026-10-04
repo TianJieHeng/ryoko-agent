@@ -7,6 +7,12 @@ past that); see the **routing table** at the end and read the area file before e
 
 **Never give up on the right solution.**
 
+## Repository CI Policy (owner directive)
+
+**NEVER USE CI.** Do not create, enable, re-enable, dispatch, or rerun continuous-integration workflows in this repository unless the owner explicitly changes this policy. Use local checks when needed. This directive supersedes older CI instructions in this document.
+
+Disabled workflow originals and restoration requirements are documented in `.github/disabled-workflows/README.md`. Some existing workflows also perform release/deployment or security work and remain unchanged pending a separate scope decision; their presence is not permission to run CI.
+
 ## What Hermes Is
 
 Hermes is a personal AI agent that runs the same agent core across a CLI, a messaging
