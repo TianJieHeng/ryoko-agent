@@ -9,9 +9,11 @@ past that); see the **routing table** at the end and read the area file before e
 
 ## Repository CI Policy (owner directive)
 
-**NEVER USE CI.** Do not create, enable, re-enable, dispatch, or rerun continuous-integration workflows in this repository unless the owner explicitly changes this policy. Use local checks when needed. This directive supersedes older CI instructions in this document.
+**NEVER USE CI.** Do not create, enable, re-enable, dispatch, or rerun CI or GitHub Actions workflows unless the owner explicitly changes this policy. This includes hosted security, release, and deployment workflows. This directive supersedes older CI instructions in this document.
 
-Disabled workflow originals and restoration requirements are documented in `.github/disabled-workflows/README.md`. Some existing workflows also perform release/deployment or security work and remain unchanged pending a separate scope decision; their presence is not permission to run CI.
+When the owner asks to test and verify, perform the relevant checks directly in the selected development/test environment and report actual commands and results. Do not substitute GitHub Actions for direct validation. Keep application security controls, tests, dependencies, and local validation scripts intact.
+
+All 52 Actions workflows formerly on main are archived in `.github/disabled-workflows/`; see its README for local commands, exact restoration requirements, and old-branch/required-check limitations. Their preserved definitions are not permission to run them.
 
 ## What Hermes Is
 
