@@ -1269,3 +1269,13 @@ Qualification is limited to this focused producer prerequisite. Full Dots HTTP â
 **Open prerequisites:** approved secure credential provisioning, real-host endpoint/auth/route acceptance, service and loaded-artifact identity, network/intermediary and local logging/privacy qualification, end-to-end performance/quality evidence, and exact-scope rollout approval. No credential value or source secret file is included.
 
 **Verification scope:** documentation-only content, whitespace/diff, unchanged synthetic JSON examples, and link checks. No code, configuration, environment, workflow, or runtime changes; no model/server calls, application tests, CI, paid compute, deployment, or activation. The publication receipt verifies the exact remote files and commit; this journal entry does not claim live readiness.
+
+## 2026-10-05 L00 â€” contract and baseline frozen
+
+**Status:** complete for offline contract freeze; production remains off. Base `37d78be063d7876c92c54bc4a4b91ec8ace7fdd6` preserves the corrected endpoint documentation. User authorized phase-by-phase implementation; separate credential/private-data/rollout gates remain unchanged.
+
+**Delivered:** ADR 013 in `docs/build/laya-integration-contract.md`, versioned `laya-integration-readiness.json`, linked architecture/node documentation, and updated plan implementation status. DP16 v2 renderer/catalog/body/stage/receipt bounds are explicit; existing v1/LAN behavior stays compatible. Configured release hashes and measured loaded-artifact evidence are distinct. Unknown deployment semantics and Jetson boot-without-login availability have named owners.
+
+**Checks:** baseline diff is documentation-only since reviewed `a45b0d9`; readiness JSON parsing, source-fingerprint verification, internal links, changed-document secret-pattern review, `git diff --check`, and no-active-workflow checks passed. No live endpoint request. Existing pinned Python 3.14.7 restored locally without dependency mutation; canonical smoke `HERMES_PYTHON=<existing-test-interpreter> scripts/run_tests.sh tests/test_hermes_yaml.py` passed 9 tests (runtime restoration evidence only). Available local Linux resources inventoried; no CI or paid compute.
+
+**Open gates:** operator-controlled secure credential entry; real Ryoko/Jetson endpoint and loaded-artifact evidence; privacy/retention/custody and exact-category authorization; full-plan performance and independent quality/net-benefit evaluation; exact-release rollout approval. None blocks the independent synthetic implementation phases. Rollback remains off/no-traffic; no runtime config changed. Next: L01 authorized description-rich catalog. The containing Git commit identifies this checkpoint and is verified remotely after push.

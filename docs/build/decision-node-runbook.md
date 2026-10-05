@@ -4,6 +4,8 @@
 
 The [LAYA integration build plan](../../LAYA_Integration_BuildPlan.md) describes a separate, pending authenticated HTTPS/systemone transport for the user's inference-specific tunnel. This runbook continues to describe the existing pinned-mTLS LAN protocol; its manifest cannot take a Cloudflare hostname. Any new route requires the plan's explicit trust-boundary review and destination/privacy qualification. No tunnel, credentials, deployment, or model activation is configured by that plan.
 
+The selected systemone trust-boundary decision is [ADR 013](laya-integration-contract.md); consult its [readiness gates](laya-integration-readiness.json). LAN-only requirements below are not instructions to reconfigure the supplied tunnel.
+
 ## Safety and deployment ownership
 
 The proposed Jetson Orin Nano 8 GB / JetPack 6.2 configuration is unverified.

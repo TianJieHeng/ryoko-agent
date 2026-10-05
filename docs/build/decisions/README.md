@@ -19,6 +19,8 @@ capabilities. Actual IDs, destinations, credentials and hardware remain configur
 | 011 | Initial intention/DP16 candidate precedes optional Guard breadth. Additional DP05 harness dataset follows real agent integration, using authorized synthetic/redacted data | User sequencing accepted; BE17. No mandatory sixteen-model training or private export |
 | 012 | PostgreSQL/fleet/federation/hybrid indexing require measured need; no duplicate Ryoko personal semantic index. Dots implementation stays in its separate repository | Conditional work disabled; BE08/BE14/BE18 and later Dots gates |
 
+| 013 | [LAYA systemone HTTPS adapter](../laya-integration-contract.md) is separate from pinned LAN; DP16 v2 batches use explicit destination/privacy gates and cache-owned effects | Implementation authorized; synthetic/offline first, live/privacy/rollout qualification open |
+
 ## Updating a decision
 
 Append a numbered ADR when a choice materially changes behavior: motivating invariant,

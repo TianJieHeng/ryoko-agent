@@ -1,6 +1,6 @@
 # LAYA Integration Build Plan
 
-**Status:** planning only. All implementation phases below are pending. This document does not enable LAYA, configure networking, call inference, train a model, or qualify a release.
+**Status:** authorized implementation in progress. Phase checkpoints and explicit qualification blockers are tracked in [the readiness record](docs/build/laya-integration-readiness.json) and [buildjournal.md](buildjournal.md). Production remains off; code implementation does not authorize credentials, private transmission, deployment, training, or rollout.
 
 **Connection-details update:** 5 October 2026, based on the user's corrected operator note. Endpoint/auth discovery is supplied; live acceptance and all implementation/qualification gates remain open.
 
@@ -18,7 +18,7 @@ The current model should be evaluated before deciding whether more training is n
 
 - **Never use CI.** Do not create, enable, dispatch, rerun, restore, or depend on GitHub Actions or other hosted CI. Run checks directly with existing local resources. Keep `.github/disabled-workflows/` disabled.
 - Publish verified implementation checkpoints directly to `main`, without PRs or force pushes. Preserve concurrent changes. Use ordinary Git when available; an authorized connector commit may use inline tree content without a separate Git-blob creation step.
-- Keep this change documentation-only. Future code, live requests, deployment, credential handling, private-data transmission, and activation require their applicable authorization. A plan is not that authorization.
+- The user has authorized phase-by-phase code implementation and direct-main checkpoints. Credential handling, private-data transmission, deployment, training, and activation retain their separate applicable authorization gates; implement and test independently with synthetic local fixtures.
 - Use the user's existing machines, runtime, checkpoint, and available local test environments. Do not purchase compute or introduce a paid inference dependency.
 - Behavioral settings belong in profile-scoped `config.yaml`; credentials belong in the existing secret mechanism. Commit no secret input file, token, credential-bearing URL, certificate key, raw transcript, or private memory export.
 - Run focused local checks after each implementation phase. Reserve the heavy combined regression campaign for the final qualification phase, while still testing security and correctness at the phase that introduces them.

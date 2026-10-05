@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "base_sha": "37d78be063d7876c92c54bc4a4b91ec8ace7fdd6",
+  "implementation_status": "in_progress",
+  "production_mode": "off",
+  "contract": {
+    "protocol": "laya_systemone",
+    "dp16_version": 2,
+    "renderer_version": "dp16-systemone-v1",
+    "catalog_version": 2,
+    "max_state_bytes": 12288,
+    "max_body_bytes": 32768,
+    "max_response_bytes": 32768,
+    "max_families": 16,
+    "max_candidates": 32,
+    "max_selected": 12,
+    "max_selected_per_family": 4,
+    "max_batches": 3,
+    "max_questions": 64,
+    "max_receipts": 62
+  },
+  "destination": {
+    "inference_endpoint": "https://laya.ryoko.okinawa/v1/systemone",
+    "health_endpoint": "https://laya.ryoko.okinawa/health",
+    "credential_reference": "LAYA_API_KEY",
+    "authentication": "bearer",
+    "evidence_level": "operator_supplied"
+  },
+  "operator_reports": {
+    "authenticated_200": true,
+    "missing_key_401": true,
+    "independently_verified": false,
+    "model": "i1",
+    "export": "ONNX fp16",
+    "model_service_start": "desktop_login",
+    "tunnel_service_start": "boot",
+    "public_routes": [
+      "/v1/systemone",
+      "/health"
+    ]
+  },
+  "artifact_bindings": {
+    "model": {
+      "configured_digest": null,
+      "measured_loaded_digest": null,
+      "evidence": "unverified"
+    },
+    "tokenizer": {
+      "configured_digest": null,
+      "measured_loaded_digest": null,
+      "evidence": "unverified"
+    },
+    "export": {
+      "configured_digest": null,
+      "measured_loaded_digest": null,
+      "evidence": "unverified"
+    },
+    "calibration": {
+      "configured_digest": null,
+      "measured_loaded_digest": null,
+      "evidence": "unverified"
+    },
+    "service": {
+      "configured_digest": null,
+      "measured_loaded_digest": null,
+      "evidence": "unverified"
+    }
+  },
+  "baseline_sources": {
+    "agent/decisions/contracts.py": "f9831b5d9ab793fc09420cc302ae40f2c1d8c2d3656a3c546d9c8f882c196404",
+    "agent/decisions/registry.py": "0cac35b4ebeb5f9a805c484a6aa36fbfad3b014a1162006ce9875c2b9f9e9880",
+    "agent/decisions/client.py": "7b4ca3af7ece1f332496138350e1a1625e27b14ce0e838cc3e20841d7ca0e0c1",
+    "agent/decisions/tool_planner.py": "61e2b17ed24f40463b08c939fda7b544b8c37f53cf82e7e7e726025d3cf1c08e",
+    "agent/decisions/planner_runtime.py": "4d232961a4aaaae64162563b8ca333f2cc6c0d1973831edbcba14237f9e16e9f",
+    "agent/decisions/integration.py": "805bbe6e5d26382c75f2f27753a0921a11cb1be0cf1e48f03162c5d61b6f0ce2",
+    "agent/decisions/transport.py": "0d54c743cfeb6cddcd60274e25b860d4cc1c8039c58babaf456546c37fda0ef9",
+    "agent/decisions/state.py": "9b6158d8e6ece74f732b147c39266b0342713d9d57f1f36524307ed0303a8674"
+  },
+  "gates": [
+    {
+      "id": "credential_provisioning",
+      "owner": "operator",
+      "status": "blocked",
+      "required": "Secure user-controlled installation of LAYA_API_KEY in the existing profile secret mechanism and explicit identity secret grant; never chat or repository entry"
+    },
+    {
+      "id": "destination_acceptance",
+      "owner": "operator_with_qualification_tooling",
+      "status": "unmeasured",
+      "required": "Actual Ryoko-host synthetic authenticated inference, auth rejection, route isolation and origin protection"
+    },
+    {
+      "id": "loaded_artifacts",
+      "owner": "Jetson_operator",
+      "status": "unmeasured",
+      "required": "Measured loaded checkpoint, tokenizer/export, calibration and service identity/provenance/license"
+    },
+    {
+      "id": "private_data_authorization",
+      "owner": "operator",
+      "status": "blocked",
+      "required": "Exact destination, category, identity and profile authorization with privacy/retention/key-custody evidence; private packets remain denied"
+    },
+    {
+      "id": "hardware_performance",
+      "owner": "operator_with_qualification_tooling",
+      "status": "unmeasured",
+      "required": "Full-plan warm/cold/load/outage/reboot-without-login and recovery on existing Ryoko/Jetson machines"
+    },
+    {
+      "id": "quality_and_net_benefit",
+      "owner": "qualification_owner",
+      "status": "unmeasured",
+      "required": "Frozen disjoint holdouts, independent paired outcomes and uncertainty bounds, real recovery and all release gates"
+    },
+    {
+      "id": "production_rollout",
+      "owner": "operator",
+      "status": "blocked",
+      "required": "Approval of exact qualified release, scope, effect and observation window"
+    }
+  ],
+  "phases": {
+    "L00": "complete",
+    "L01": "pending",
+    "L02": "pending",
+    "L03": "pending",
+    "L04": "pending",
+    "L05": "pending",
+    "L06": "pending",
+    "L07": "pending",
+    "L08": "pending",
+    "L09": "pending",
+    "L10": "pending"
+  },
+  "evidence_limitations": [
+    "No live endpoint request in L00",
+    "No loaded-artifact attestation",
+    "No model quality or performance qualification",
+    "No private payload authorization",
+    "No CI or paid compute"
+  ]
+}
