@@ -1,6 +1,6 @@
 # LAYA Integration Build Plan
 
-**Status:** authorized implementation in progress. Phase checkpoints and explicit qualification blockers are tracked in [the readiness record](docs/build/laya-integration-readiness.json) and [buildjournal.md](buildjournal.md). Production remains off; code implementation does not authorize credentials, private transmission, deployment, training, or rollout.
+**Status:** offline implementation and the assembled local campaign are complete: 1,267 tests passed across 69 files. Actual L07 qualification, L09 real-model shadow/paired evidence and L10 rollout remain blocked; this is not a completed production deployment. See [the handoff](docs/build/laya-integration-handoff.md), [local evidence](docs/build/laya-local-campaign.md), [readiness](docs/build/laya-integration-readiness.json) and [buildjournal.md](buildjournal.md). Production remains off; code implementation does not authorize credentials, private transmission, deployment, training, or rollout.
 
 **Connection-details update:** 5 October 2026, based on the user's corrected operator note. Endpoint/auth discovery is supplied; live acceptance and all implementation/qualification gates remain open.
 

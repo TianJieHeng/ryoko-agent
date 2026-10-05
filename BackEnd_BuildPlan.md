@@ -2,7 +2,7 @@
 
 This plan chronicles the full runtime upgrade, its dependencies, implementation seams and evidence required to finish each phase. Use it with [FrontEnd_BuildPlan.md](FrontEnd_BuildPlan.md) and the shared [buildjournal.md](buildjournal.md).
 
-**LAYA integration roadmap:** [LAYA_Integration_BuildPlan.md](LAYA_Integration_BuildPlan.md) records the 5 October 2026 DP16-first integration plan against current source and the supplied systemone API. It is planning-only; the corrected inference/health routes and Bearer contract were supplied on 5 October 2026, while secure credential provisioning and independently verified runtime, network, privacy, performance, and rollout gates remain pending. See that plan for the explicitly separate HTTPS transport path; existing LAN transport constraints remain unchanged.
+**LAYA integration status:** the 5 October 2026 [DP16-first integration](LAYA_Integration_BuildPlan.md) is implemented and locally validated (1,267 tests across 69 files). The supplied systemone inference/health routes and Bearer secret-reference contract have a separate HTTPS path; existing LAN transport constraints remain unchanged. Production stays off: secure operator-controlled provisioning and actual runtime/artifact, network, privacy, performance, independent outcome and rollout qualification remain blocked. See the [handoff and exact remaining actions](docs/build/laya-integration-handoff.md); local code evidence does not complete the deployment plan.
 
 **Role:** implementation roadmap. Current completed checkpoints, exact commits, validation and remaining limits are recorded in [buildjournal.md](buildjournal.md). The original planning-only status is historical; this roadmap itself is not execution evidence.
 

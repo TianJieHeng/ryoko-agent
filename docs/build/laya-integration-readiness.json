@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "base_sha": "37d78be063d7876c92c54bc4a4b91ec8ace7fdd6",
-  "implementation_status": "in_progress",
+  "implementation_status": "offline_implementation_complete_live_qualification_blocked",
   "production_mode": "off",
   "contract": {
     "protocol": "laya_systemone",
@@ -131,7 +131,7 @@
     "L07": "blocked_live_qualification_offline_tooling_complete",
     "L08": "complete_synthetic_qualified_owner",
     "L09": "local_campaign_complete_real_qualification_blocked",
-    "L10": "pending"
+    "L10": "blocked_live_qualification_and_operator_approval_synthetic_rollback_verified"
   },
   "evidence_limitations": [
     "No live endpoint request in L00",
@@ -170,5 +170,14 @@
     "files": 69,
     "evidence": "docs/build/laya-local-campaign.json",
     "qualifies_production": false
+  },
+  "handoff": {
+    "document": "docs/build/laya-integration-handoff.md",
+    "production_mode": "off",
+    "production_activation_performed": false,
+    "production_rollback_performed": false,
+    "synthetic_owner_rollback_verified": true,
+    "observation_window_started": false,
+    "requires_operator_action": true
   }
 }
