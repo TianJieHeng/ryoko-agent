@@ -1257,3 +1257,15 @@ Qualification is limited to this focused producer prerequisite. Full Dots HTTP â
 **Verification:** source review and independent technical cross-check; documentation structure/local-link checks, both synthetic JSON examples parsed, phase coverage and documentation-only diff/whitespace checks. No application tests, CI, model calls, credentials, network setup, training, private-data export, deployment, or activation. Actual endpoint/auth details, loaded-model evidence, privacy qualification, latency/quality measurements, and rollout approval remain pending. No secret source file or credential value is included.
 
 **Publication:** direct-main documentation checkpoint; remote SHA and exact changed files are verified after publication and reported in chat. This entry is planning evidence only, not implementation or runtime readiness.
+
+## 2026-10-05 LAYA connection-details planning update
+
+**Status:** planning-only correction on base [040dfe75904877be1cfe6a1df3367164cca6598d](https://github.com/TianJieHeng/ryoko-agent/commit/040dfe75904877be1cfe6a1df3367164cca6598d). L00â€“L10 implementation and qualification are not completed by this entry.
+
+**Updated:** [LAYA_Integration_BuildPlan.md](LAYA_Integration_BuildPlan.md) and its backend roadmap summary now record the corrected operator-supplied inference route `POST https://laya.ryoko.okinawa/v1/systemone`, JSON with a Bearer `LAYA_API_KEY` secret reference, and unauthenticated `GET https://laya.ryoko.okinawa/health`. The supplied runtime is `i1` ONNX fp16. Only inference and health are reported exposed; dashboard/activity are reported unexposed, and Observatory remains telemetry-only.
+
+**Evidence level:** the operator note reports authenticated HTTP 200 with a sample `memory_search` result at confidence `0.9452`, and missing-key HTTP 401 on 5 October 2026. These outcomes were not independently reproduced in this change and are not a full test suite, calibration, or release evidence. Existing thresholds remain unchanged. The tunnel reportedly starts at boot while the model starts at desktop login; restart without login and subsequent recovery remain explicit qualification cases.
+
+**Open prerequisites:** approved secure credential provisioning, real-host endpoint/auth/route acceptance, service and loaded-artifact identity, network/intermediary and local logging/privacy qualification, end-to-end performance/quality evidence, and exact-scope rollout approval. No credential value or source secret file is included.
+
+**Verification scope:** documentation-only content, whitespace/diff, unchanged synthetic JSON examples, and link checks. No code, configuration, environment, workflow, or runtime changes; no model/server calls, application tests, CI, paid compute, deployment, or activation. The publication receipt verifies the exact remote files and commit; this journal entry does not claim live readiness.

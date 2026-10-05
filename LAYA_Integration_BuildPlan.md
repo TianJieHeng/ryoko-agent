@@ -2,11 +2,13 @@
 
 **Status:** planning only. All implementation phases below are pending. This document does not enable LAYA, configure networking, call inference, train a model, or qualify a release.
 
+**Connection-details update:** 5 October 2026, based on the user's corrected operator note. Endpoint/auth discovery is supplied; live acceptance and all implementation/qualification gates remain open.
+
 **Reviewed baseline:** [`a45b0d9b3202691da805b954336135d7ba7378f7`](https://github.com/TianJieHeng/ryoko-agent/commit/a45b0d9b3202691da805b954336135d7ba7378f7), 5 October 2026. Recheck current `main` before implementation. Use this with [BackEnd_BuildPlan.md](BackEnd_BuildPlan.md), [buildjournal.md](buildjournal.md), and the [existing DP16 foundations](docs/build/laya-point-policies.md).
 
 ## Outcome and scope
 
-Integrate the existing LAYA candidate with Ryoko's front-door tool planner, starting with DP16. Ryoko runs on a different machine from LAYA. The user will arrange an inference-specific Cloudflare tunnel; its actual endpoint, authentication contract, and readiness are pending. The current Observatory tunnel serves fleet MCP/telemetry and must not be used as an inference endpoint.
+Integrate the existing LAYA candidate with Ryoko's front-door tool planner, starting with DP16. Ryoko runs on a different machine from LAYA. The user has supplied the inference-specific Cloudflare route `https://laya.ryoko.okinawa/v1/systemone` and its Bearer authentication contract. The operator reports successful smoke responses; this planning update has not independently verified connectivity, authentication, availability, or runtime readiness. The current Observatory tunnel serves fleet MCP/telemetry and must not be used as an inference endpoint.
 
 The first useful result is a real, bounded, authenticated DP16 shadow observation with meaningful context and an authorized tool catalog. A later, separately qualified result is a reduced tool-schema bundle installed only at a safe conversation boundary, with reliable authorized tool recovery. Neither result is already delivered by the current observer.
 
@@ -44,11 +46,25 @@ Source anchors: [integration](agent/decisions/integration.py), [planner runtime]
 
 ### Supplied LAYA details requiring runtime verification
 
-The supplied operator documentation describes a Hermes-fine-tuned `i1` ONNX checkpoint served by `laya` 0.3.11 through `POST /v1/systemone`. The endpoint accepts `state` as a string/object and a `questions` object keyed by question ID. Supported question types are `choice`, `score`, and `noul`. For `choice`, `criteria` maps option IDs to descriptions; answers contain a choice, probabilities, and confidence. Model aliases reportedly select the same attached checkpoint.
+The supplied operator documentation describes a Hermes-fine-tuned `i1` ONNX fp16 checkpoint served by `laya` 0.3.11 through `POST /v1/systemone`. The endpoint accepts `state` as a string/object and a `questions` object keyed by question ID. Supported question types are `choice`, `score`, and `noul`. For `choice`, `criteria` maps option IDs to descriptions; answers contain a choice, probabilities, and confidence. Model aliases reportedly select the same attached checkpoint.
 
 The documented service is local to its Jetson host at loopback port 8000, serializes inference, and permits at most 64 questions per request, a 2 MB body, and 50,000 characters of flattened state. These are supplied API facts, not observed deployment measurements. Ryoko will impose smaller limits. A remote machine cannot use the Jetson's loopback address directly.
 
-The supplied documentation also describes an unauthenticated `/v1/activity` ring containing short input snippets. That is a private-data exposure gate even if the route is not publicly reachable. Do not expose activity, logs, generic MCP, documentation, or unnecessary health routes through the new tunnel. Verify local retention and logging before admitting private traffic.
+The corrected operator note, supplied on 5 October 2026, reports the following connection details. These are supplied/reported facts, not independently observed acceptance evidence:
+
+| Item | Supplied contract or reported observation |
+|---|---|
+| Inference | `POST https://laya.ryoko.okinawa/v1/systemone`, JSON request body |
+| Authentication | `Authorization: Bearer <LAYA_API_KEY>`; the angle-bracket value is a secret reference placeholder, never a literal key |
+| Health | `GET https://laya.ryoko.okinawa/health`, unauthenticated |
+| Model/runtime | `i1`, ONNX fp16; exact loaded artifact identity still requires measurement |
+| Smoke result | Authenticated HTTP 200 with sample `memory_search` classification and confidence `0.9452`; missing-key HTTP 401, reported on 5 October 2026 |
+| Exposed surface | Inference and health only; dashboard and activity are reported unexposed |
+| Startup | Cloudflare tunnel service starts at boot; model service starts at desktop login |
+
+A successful sample and a missing-key rejection are not a full test suite, quality/calibration evidence, or proof of the complete DP16 integration. The reported confidence does not change existing thresholds or qualify a decision. An unauthenticated health response alone does not establish inference readiness or model identity. Cold boot without desktop login, login-triggered model startup, and recovery from that unavailable state remain explicit availability qualification cases.
+
+The earlier supplied documentation describes a local unauthenticated `/v1/activity` ring containing short input snippets. Its reported absence from the public route reduces exposed surface but does not clear the private-data gate: audit local retention, logging, and access before admitting private traffic. Preserve the reported inference/health-only route boundary; do not expose dashboard, activity, logs, generic MCP, or documentation. Audit the public health response for sensitive fields.
 
 No credential values or private source document contents are included here. The model alias is not checkpoint identity, a configured hash is not proof of loaded weights, and this review did not contact the service.
 
@@ -56,14 +72,14 @@ No credential values or private source document contents are included here. The 
 
 | Prerequisite | Owner and evidence needed | Blocks |
 |---|---|---|
-| Inference-specific tunnel | User: exact HTTPS origin/path, how requests are authenticated, which routes are exposed, and confirmation it reaches the intended inference service | Real cross-machine calls; not offline adapter work |
-| Credential provisioning | User/operator: provision through an approved secure path and provide secret references, never secret values in the repo | Authenticated remote calls |
+| Inference-specific tunnel | Exact inference/health routes, Bearer header, and exposed surface supplied above; operator reports 200/401. Future authorized qualification must verify them from the Ryoko host, intended service identity, route isolation, and boot/login readiness | Acceptance of real cross-machine calls; not offline adapter work |
+| Credential provisioning | User/operator: corrected credential supplied separately; secure handoff/provisioning remains pending. Install through the approved secret path as `LAYA_API_KEY`, providing only its reference to the implementation; never secret values in the repo | Authenticated remote calls |
 | Deployed API and artifact identity | Future implementation/qualification work: actual versions, loaded checkpoint/tokenizer/export hashes, supported API shape, local artifact provenance and license | Real-candidate evidence and promotion |
 | Private-data destination authorization | User/operator plus runtime implementation: permitted data categories, exact service/transport destination, intermediary handling, retention/deletion/key-custody evidence | Any private packet, including private shadow traffic |
 | Local hardware qualification | Future authorized qualification on existing Ryoko and Jetson machines: resource, latency, queue, and recovery evidence | Production performance claims |
 | Rollout decision | User/operator: approve exact DP16 evidence, release bundle, effect, scope, and rollback plan | Any enforcement |
 
-Offline phases can proceed while the user handles the tunnel. Do not invent an endpoint, repurpose Observatory, create credentials, change firewall rules, or provision infrastructure to clear a missing prerequisite.
+Offline phases can proceed using the supplied contract while secure credential provisioning and live network acceptance remain pending. Do not infer that a reported tunnel is qualified, repurpose Observatory, create credentials, change firewall rules, or provision infrastructure to clear a missing prerequisite.
 
 ## Proposed integration architecture
 
@@ -82,9 +98,9 @@ LAYA returns classification signals, never tool calls, arguments, permissions, a
 
 ### Transport decision and compatibility
 
-Proposed production route: a Ryoko-side, explicitly selected `laya_systemone` codec plus an HTTPS inference transport using the user-provided endpoint. Preserve the existing `LanTransport` and typed `/v1/decide` service as a separate protocol. Do not relax `NodeManifest` to accept an arbitrary URL, set TLS verification off, ignore pins, or treat a tunnel hostname as an RFC1918 address.
+Proposed production route: a Ryoko-side, explicitly selected `laya_systemone` codec plus an HTTPS inference transport restricted to the supplied `https://laya.ryoko.okinawa/v1/systemone` destination, with JSON and a transport-only Bearer `LAYA_API_KEY` secret reference. The unauthenticated `/health` route is a separate health surface, not an inference substitute. Preserve the existing `LanTransport` and typed `/v1/decide` service as a separate protocol. Do not relax `NodeManifest` to accept an arbitrary URL, set TLS verification off, ignore pins, or treat a tunnel hostname as an RFC1918 address.
 
-Phase L00 records an ADR for the new trust boundary; Phase L05 implements it only after the concrete authentication contract is known. At minimum the new path needs an exact origin/path allowlist, hostname/certificate verification, no redirects, no ambient proxy inheritance, scoped credentials, bounded bodies/timeouts, and authenticated service identity. If TLS terminates at an intermediary, explicitly document who can read plaintext and how origin access is authenticated and restricted. Cloudflare routing by itself does not establish endpoint authorization, end-to-end confidentiality, or loaded-model identity.
+Phase L00 records an ADR for the new trust boundary; Phase L05 implements the supplied authentication contract only through the approved secret/destination mechanisms, retaining live acceptance and private-data qualification gates. At minimum the new path needs an exact origin/path allowlist, hostname/certificate verification, no redirects, no ambient proxy inheritance, scoped credentials, bounded bodies/timeouts, and authenticated service identity. If TLS terminates at an intermediary, explicitly document who can read plaintext and how origin access is authenticated and restricted. Cloudflare routing by itself does not establish endpoint authorization, end-to-end confidentiality, or loaded-model identity.
 
 Keep inference credentials in the transport layer; never put them in model state, question instructions, tool metadata, fixtures, receipts, query strings, or logs. Authentication errors stop the decision attempt and fall back; they must not trigger interactive login or credential discovery from a model turn.
 
@@ -228,7 +244,7 @@ Each phase starts **planned**. Existing file paths below are seams to extend, an
 
 ### L00 Freeze the integration contract and baseline
 
-**Depends on:** this plan. Offline work does not depend on the tunnel.
+**Depends on:** this plan and the supplied connection contract above. Offline work does not depend on live tunnel availability or credential installation.
 
 **Files and symbols:** `docs/build/decisions/README.md`; `docs/build/decision-node-runbook.md`; `agent/decisions/{registry,contracts,transport,service}.py` as read-only reference; **new** `docs/build/laya-integration-contract.md` and `docs/build/laya-integration-readiness.json`.
 
@@ -236,9 +252,9 @@ Each phase starts **planned**. Existing file paths below are seams to extend, an
 
 - Inventory current branch SHA, relevant module versions, canonical test runner, and available local resources. Reconcile drift from the reviewed baseline.
 - Record the separate `laya_systemone` transport/codec ADR, backward compatibility, and the changed network trust boundary. Link the older LAN-only runbook as the existing protocol, not a tunnel setup recipe.
-- Freeze documented API shapes and sanitized synthetic fixtures. List unknowns explicitly: deployed build, token/auth headers, origin controls, choice/Unicode/duplicate-key behavior, queue semantics, loaded checkpoint provenance, and logging.
+- Freeze documented API shapes, the supplied Bearer header and inference/health routes, and sanitized synthetic fixtures. List remaining unknowns explicitly: independently verified deployed build/auth behavior, origin controls, choice/Unicode/duplicate-key behavior, queue semantics, loaded checkpoint provenance, logging, and cold-boot-without-login availability.
 - Define model, tokenizer/export, prompt renderer, catalog, contract, calibration, and service version bindings. A manifest must distinguish a configured digest from a measured loaded-artifact digest.
-- Record user-owned tunnel/auth prerequisites without putting endpoints containing secrets into checked-in documents.
+- Record supplied versus reported versus independently measured evidence separately. Keep secure credential installation and live tunnel/auth acceptance as pending prerequisites; put no credential value or secret-bearing URL into checked-in documents.
 
 **Focused tests/checks:** source/path review, JSON fixture/schema validation, docs/link/diff and secret-pattern checks; no live requests. **Done when:** the implementation contract has no invented endpoint/auth/API facts and unresolved readiness gates have owners. **Risk:** accidentally presenting supplied documentation as runtime proof; keep evidence levels explicit.
 
@@ -294,7 +310,7 @@ The documented LAYA service serializes requests. Start with one in-flight batch 
 
 ### L05 Implement the explicit secure destination and privacy gates
 
-**Depends on:** L00 and L03–L04; concrete user-provided auth contract for the production path. Offline transport tests can proceed first.
+**Depends on:** L00 and L03–L04; use the supplied Bearer contract, with secure credential provisioning and destination approval before real authenticated calls. Offline transport tests can proceed first.
 
 **Files and symbols:** **new** `agent/decisions/laya_transport.py` with a proposed `LayaHttpsTransport` and separate destination manifest; `integration.parse_settings`/`_transport`; `DecisionClient._admit`; existing profile-scoped secret/destination authorization and privacy infrastructure; `agent/operations_privacy.py` only for justified qualification integration; **new** `tests/agent/test_laya_transport.py` and `test_laya_destination_authorization.py`; runbook updates.
 
@@ -326,9 +342,9 @@ Private authorization must be destination- and data-category-specific, revocable
 
 **Tasks:**
 
-- Verify the actual deployed API using synthetic requests from the real Ryoko host, including auth rejection and route isolation; do not publish credentials or sensitive endpoint details.
+- Verify the supplied inference and health routes using authorized synthetic requests from the real Ryoko host, including valid/missing/revoked authentication, inference/health-only route isolation, and intended service identity. Reproduce the operator-reported smoke outcomes rather than treating them as our measurements; do not publish credentials or sensitive endpoint details.
 - Inspect actual hardware/runtime versions and loaded ONNX/checkpoint/tokenizer/export identity locally. Verify model aliases, language routing, distribution semantics, serialization/queue limits, and activity/log behavior.
-- Record warm/cold p50/p95/p99, timeout/fallback rate, queue wait, per-stage/whole-plan timings, peak memory, temperature/power behavior, simultaneous Ryoko load, tunnel/network delay, and outage/recovery. Do not equate a single-question benchmark with the complete DP16 plan.
+- Record warm/cold p50/p95/p99, timeout/fallback rate, queue wait, per-stage/whole-plan timings, peak memory, temperature/power behavior, simultaneous Ryoko load, tunnel/network delay, and outage/recovery. Explicitly test restart without desktop login, when the tunnel reportedly starts but the model does not, then login-triggered startup and recovery. Do not equate tunnel health or a single-question benchmark with the complete DP16 plan.
 - Audit existing training/calibration/holdout provenance, licenses, episode-level overlap, label coverage, and languages. Use independent labels and frozen holdouts; quantify missing evidence rather than claiming the source checkpoint is calibrated for Ryoko.
 - Evaluate the existing model first. If contract coverage or quality fails, stop at shadow/off and propose a separate authorized data/calibration/training task using existing resources. Never export Memory Harness data or download/train another model as an automatic fallback.
 
