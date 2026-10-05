@@ -108,7 +108,38 @@ def _bounded_json(value, depth=0):
         canonical(value)
 
 
-def _catalog_aliases(catalog):
+def _summary_catalog_aliases(catalog, stage):
+    require(stage == 1 and set(catalog) == _CATALOG_FIELDS | {"projection"}
+            and catalog["projection"] == "family_summaries_v1" and catalog["tools"] == [],
+            "invalid_laya_catalog")
+    for key in ("version", "scope_digest", "policy_digest", "tool_view_revision"):
+        sha256(catalog[key])
+    require(type(catalog["bridges"]) is list and len(catalog["bridges"]) == 3
+            and set(catalog["bridges"]) == {"tool_search", "tool_describe", "tool_call"},
+            "invalid_laya_catalog")
+    require(type(catalog["families"]) is list and len(catalog["families"]) <= 16,
+            "invalid_laya_catalog")
+    ids, membership, total = set(), {}, 0
+    for family in catalog["families"]:
+        require(type(family) is dict and set(family) ==
+                {"id", "description", "member_count", "membership_digest"}, "invalid_laya_catalog")
+        alias = label(family["id"])
+        require(alias not in ids and type(family["description"]) is str
+                and 0 < len(family["description"]) <= 384, "invalid_laya_catalog")
+        count = family["member_count"]
+        require(type(count) is int and 0 <= count <= 1024, "invalid_laya_catalog")
+        sha256(family["membership_digest"])
+        total += count
+        ids.add(alias)
+        membership[alias] = ()
+    require(total <= 1024, "invalid_laya_catalog")
+    return ids, set(), membership
+
+
+def _catalog_aliases(catalog, stage=None):
+    if type(catalog) is dict and "projection" in catalog:
+        return _summary_catalog_aliases(catalog, stage)
+
     require(type(catalog) is dict and set(catalog) <= _CATALOG_FIELDS, "invalid_laya_catalog")
     require({"version", "scope_digest", "families", "tools"} <= set(catalog), "invalid_laya_catalog")
     sha256(catalog["version"])
@@ -157,7 +188,7 @@ def render_dp16_state(context, *, catalog, stage, bindings=None, prior=None):
     require(type(flags) is dict and "fallback" in flags, "invalid_planner_context")
     require(flags["fallback"] is None, "planner_context_not_usable")
     require(type(stage) is int and stage in _STAGE_QUESTIONS, "invalid_laya_stage")
-    family_ids, tool_ids, membership = _catalog_aliases(catalog)
+    family_ids, tool_ids, membership = _catalog_aliases(catalog, stage)
     if scope is not None:
         require(scope == catalog["scope_digest"], "planner_owner_mismatch")
     require(bindings is None or type(bindings) is dict, "invalid_question_bindings")
@@ -165,6 +196,8 @@ def render_dp16_state(context, *, catalog, stage, bindings=None, prior=None):
     for qid, raw in (bindings or {}).items():
         label(qid)
         bound = _binding(raw)
+        if catalog.get("projection") == "family_summaries_v1":
+            require(set(bound) <= {"selected_family"}, "invalid_question_binding")
         family, tool = bound.get("selected_family"), bound.get("selected_tool")
         require(family is None or family in family_ids, "unknown_family_alias")
         require(tool is None or tool in tool_ids, "unknown_tool_alias")
@@ -179,6 +212,8 @@ def render_dp16_state(context, *, catalog, stage, bindings=None, prior=None):
     require(prior is None or type(prior) is dict and set(prior) <=
             {"need", "effort", "selected_families", "selected_tools"}, "invalid_laya_prior")
     prior = {} if prior is None else prior
+    if catalog.get("projection") == "family_summaries_v1":
+        require(not prior, "invalid_laya_prior")
     if "need" in prior:
         require(prior["need"] in _CRITERIA["need"], "invalid_laya_prior")
     if "effort" in prior:

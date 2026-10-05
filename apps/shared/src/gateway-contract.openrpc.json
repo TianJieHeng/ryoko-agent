@@ -20371,6 +20371,62 @@
         "title": "DecisionOutcomeLabel",
         "type": "object"
       },
+      "DecisionPlannerMetrics": {
+        "additionalProperties": false,
+        "properties": {
+          "batch_count": {
+            "default": 0,
+            "maximum": 3,
+            "minimum": 0,
+            "title": "Batch Count",
+            "type": "integer"
+          },
+          "question_count": {
+            "default": 0,
+            "maximum": 62,
+            "minimum": 0,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "inference_ms": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Inference Ms",
+            "type": "number"
+          },
+          "receipt_ms": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Receipt Ms",
+            "type": "number"
+          },
+          "admission_ms": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Admission Ms",
+            "type": "number"
+          },
+          "input_tokens": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "remote_unknown": {
+            "default": false,
+            "title": "Remote Unknown",
+            "type": "boolean"
+          }
+        },
+        "title": "DecisionPlannerMetrics",
+        "type": "object"
+      },
       "DecisionPlannerMiss": {
         "additionalProperties": false,
         "properties": {
@@ -20469,6 +20525,40 @@
             "pattern": "^DP(0[1-9]|1[0-6])$",
             "title": "Point Id",
             "type": "string"
+          },
+          "contract_version": {
+            "anyOf": [
+              {
+                "enum": [
+                  1,
+                  2
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Contract Version"
+          },
+          "binding_digests": {
+            "anyOf": [
+              {
+                "patternProperties": {
+                  "^[A-Za-z0-9_.:-]{1,96}$": {
+                    "pattern": "^[0-9a-f]{64}$",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Binding Digests"
           },
           "policy_digest": {
             "pattern": "^[0-9a-f]{64}$",
@@ -20868,7 +20958,12 @@
                   "unclear",
                   "below_threshold",
                   "shadow_observation",
-                  "receipt_unavailable"
+                  "receipt_unavailable",
+                  "remote_completion_unknown",
+                  "native_batch_required",
+                  "batch_admission_key_required",
+                  "invalid_batch_usage",
+                  "planner_fence_failed"
                 ],
                 "type": "string"
               },
@@ -20999,7 +21094,8 @@
           },
           "families": {
             "items": {
-              "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "maxItems": 16,
@@ -21008,7 +21104,8 @@
           },
           "verified_tool_ids": {
             "items": {
-              "pattern": "^[A-Za-z0-9_.:-]{1,96}$",
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "maxItems": 16,
@@ -21062,7 +21159,7 @@
               "pattern": "^[0-9a-f]{64}$",
               "type": "string"
             },
-            "maxItems": 50,
+            "maxItems": 62,
             "title": "Decision Receipt Ids",
             "type": "array"
           },
@@ -21070,6 +21167,18 @@
             "minimum": 0,
             "title": "Elapsed Ms",
             "type": "number"
+          },
+          "protocol_version": {
+            "default": 1,
+            "enum": [
+              1,
+              2
+            ],
+            "title": "Protocol Version",
+            "type": "integer"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/DecisionPlannerMetrics"
           }
         },
         "required": [

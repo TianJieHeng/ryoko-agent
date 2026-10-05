@@ -262,7 +262,7 @@ export interface DecisionReceipt {
   selected: string | null
   unclear: boolean
   actual_route: 'incumbent' | 'advisory' | 'qualified_recommendation'
-  fallback: 'off' | 'privacy_not_qualified' | 'private_transport_unqualified' | 'private_destination_authorization_required' | 'point_gate_required' | 'durable_receipt_required' | 'transport_unconfigured' | 'deadline_exceeded' | 'node_capacity' | 'node_unavailable' | 'node_http_error' | 'circuit_open' | 'invalid_response_schema' | 'response_binding_mismatch' | 'bundle_mismatch' | 'invalid_distribution_options' | 'invalid_probability' | 'invalid_distribution_sum' | 'invalid_selection' | 'invalid_unclear' | 'selection_not_argmax' | 'invalid_latency' | 'unclear' | 'below_threshold' | 'shadow_observation' | 'receipt_unavailable' | null
+  fallback: 'off' | 'privacy_not_qualified' | 'private_transport_unqualified' | 'private_destination_authorization_required' | 'point_gate_required' | 'durable_receipt_required' | 'transport_unconfigured' | 'deadline_exceeded' | 'node_capacity' | 'node_unavailable' | 'node_http_error' | 'circuit_open' | 'invalid_response_schema' | 'response_binding_mismatch' | 'bundle_mismatch' | 'invalid_distribution_options' | 'invalid_probability' | 'invalid_distribution_sum' | 'invalid_selection' | 'invalid_unclear' | 'selection_not_argmax' | 'invalid_latency' | 'unclear' | 'below_threshold' | 'shadow_observation' | 'receipt_unavailable' | 'remote_completion_unknown' | 'native_batch_required' | 'batch_admission_key_required' | 'invalid_batch_usage' | 'planner_fence_failed' | null
   incumbent: string
   latency_ms: number
   node_latency_ms: number | null
@@ -289,11 +289,25 @@ export interface DecisionToolPlan {
   fallback: string | null
   decision_receipt_ids: string[]
   elapsed_ms: number
+  protocol_version?: 1 | 2
+  metrics?: DecisionPlannerMetrics
+}
+export interface DecisionPlannerMetrics {
+  batch_count?: number
+  question_count?: number
+  inference_ms?: number
+  receipt_ms?: number
+  admission_ms?: number
+  input_tokens?: number
+  output_tokens?: number
+  remote_unknown?: boolean
 }
 export interface DecisionPolicyRecord {
   kind: 'point_policy'
   operation: 'observer' | 'promote' | 'rollback'
   point_id: string
+  contract_version?: 1 | 2 | null
+  binding_digests?: Record<string, unknown> | null
   policy_digest: string
   scope_digest: string
   mode?: 'off' | 'shadow' | 'advisory' | 'enforce' | null

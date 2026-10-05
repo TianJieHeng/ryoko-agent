@@ -38,7 +38,8 @@ class DecisionReceipt(Result):
         "circuit_open", "invalid_response_schema", "response_binding_mismatch", "bundle_mismatch",
         "invalid_distribution_options", "invalid_probability", "invalid_distribution_sum", "invalid_selection",
         "invalid_unclear", "selection_not_argmax", "invalid_latency", "unclear", "below_threshold",
-        "shadow_observation", "receipt_unavailable"] | None
+        "shadow_observation", "receipt_unavailable", "remote_completion_unknown",
+        "native_batch_required", "batch_admission_key_required", "invalid_batch_usage", "planner_fence_failed"] | None
     incumbent: Option
     latency_ms: Annotated[float, Field(ge=0, allow_inf_nan=False)]
     node_latency_ms: Annotated[float, Field(ge=0, allow_inf_nan=False)] | None

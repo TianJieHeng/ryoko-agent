@@ -72,25 +72,44 @@ def _authorized_definitions(run, request_definitions):
 
 
 def observe_front_door(run, client, *, request_definitions, request, goal=""):
-    """Invoked from the real pre_api_request seam, once per front-door message."""
+    """One front-door operation includes all stages and receipt ledger work."""
     from tui_gateway.contracts.decision_plans import DecisionToolPlan
+    from agent.decisions.integration import _observe_with_budget
+    from agent.runtime_commands import assert_runtime_dispatch
+    from tools.capability_broker import require_live_policy
     policy = client.policy("DP16")
     if policy.mode == "off":
         return None
     require(policy.mode != "enforce", "owner_consumer_not_qualified")
-    record_observer_policy(run, "DP16", policy)
     scope = scope_digest(run.context)
     deadline = time.time() + policy.timeout_seconds
     if run.budget is not None:
         deadline = min(deadline, run.budget.deadline)
-    planner = ToolPlanner(client, catalog_lookup=lambda: live_catalog(
-        _authorized_definitions(run, request_definitions), scope_digest=scope))
-    plan = planner.plan(request=request, goal=goal, scope_digest=scope, deadline=deadline)
-    payload = DecisionToolPlan.model_validate(plan.to_record()).model_dump(mode="json")
-    run.db.append_runtime_event(run.session_id, "decision.tool_plan", payload,
-        holder=run.holder, generation=run.generation, run_id=run.run_id)
-    run.agent._decision_tool_plan = (run.run_id, plan, digest(request_definitions))
-    return plan
+
+    def fence():
+        require(assert_runtime_dispatch(run.agent) is run and require_live_policy() == run.context,
+                "planner_owner_mismatch")
+
+    def operation():
+        fence()
+        record_observer_policy(run, "DP16", policy)
+        planner = ToolPlanner(client, catalog_lookup=lambda: live_catalog(
+            _authorized_definitions(run, request_definitions), scope_digest=scope), fence=fence)
+        plan = planner.plan(request=request, goal=goal, scope_digest=scope, deadline=deadline)
+        payload = DecisionToolPlan.model_validate(plan.to_record()).model_dump(mode="json")
+        with run.control_lock:
+            fence()
+            run.db.append_runtime_event(run.session_id, "decision.tool_plan", payload,
+                holder=run.holder, generation=run.generation, run_id=run.run_id)
+            run.agent._decision_tool_plan = (run.run_id, plan, digest(request_definitions))
+        return plan
+
+    def remote_unknown():
+        key = getattr(client.transport, "admission_key", None)
+        return bool(client.native_batches and isinstance(key, str)
+                    and client._batch_admission.remote_unknown(key))
+
+    return _observe_with_budget(run, deadline, operation, completion_unknown=remote_unknown)
 
 
 def observe_bridge_recovery(requested_names, described_names, *, current_tool_defs):

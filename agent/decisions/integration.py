@@ -112,7 +112,7 @@ def observe_core(point_id, values, *, question_id=None):
         return None
 
 
-def _observe_with_budget(run, deadline, callback):
+def _observe_with_budget(run, deadline, callback, *, completion_unknown=None):
     """Reserve actual observer wall time without poisoning the main retry controller."""
     if run.budget is None:
         return callback()
@@ -136,8 +136,10 @@ def _observe_with_budget(run, deadline, callback):
     try:
         return callback()
     finally:
+        unknown = bool(completion_unknown is not None and completion_unknown())
         budget.db.settle_budget(budget.account_id, budget.actor, operation,
-            {"wall_ms": math.ceil((time.monotonic() - started) * 1000)}, **budget.fence)
+            {"wall_ms": math.ceil((time.monotonic() - started) * 1000)},
+            unknown_usage=unknown, slots_released=not unknown, **budget.fence)
 
 
 def _compact(value):

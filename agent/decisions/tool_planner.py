@@ -13,6 +13,7 @@ import json
 import time
 
 from agent.decisions.contracts import canonical, digest, require, sha256
+from agent.decisions.batching import PlannerMetrics
 from agent.decisions.registry import contract_for
 from agent.decisions.state import build_state
 
@@ -135,16 +136,23 @@ class ToolPlan:
     fallback: str | None
     decision_receipt_ids: tuple[str, ...]
     elapsed_ms: float
+    protocol_version: int = 1
+    metrics: PlannerMetrics = field(default_factory=PlannerMetrics)
 
     def to_record(self):
         return asdict(self)
 
 
 class ToolPlanner:
-    def __init__(self, client, *, catalog_lookup):
-        self.client, self.catalog_lookup = client, catalog_lookup
+    def __init__(self, client, *, catalog_lookup, fence=None):
+        self.client, self.catalog_lookup, self.fence = client, catalog_lookup, fence
 
-    def plan(self, *, request, scope_digest, deadline, goal="", context="", classification="private"):
+    def plan(self, *, request, scope_digest, deadline, goal="", context="", classification="private",
+             planner_context=None):
+        if self.client.native_batches:
+            from agent.decisions.planner_v2 import NativeToolPlanner
+            return NativeToolPlanner(self, request=request, scope_digest=scope_digest, deadline=deadline,
+                goal=goal, context=context, classification=classification, planner_context=planner_context).run()
         started = time.monotonic()
         catalog = self.catalog_lookup()
         require(catalog.scope_digest == scope_digest, "planner_owner_mismatch")

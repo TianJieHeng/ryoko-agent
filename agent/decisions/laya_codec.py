@@ -137,7 +137,13 @@ def _load_json(raw):
         raise DecisionError("invalid_json") from None
 
 
-def _catalog_index(catalog, scope):
+def _catalog_index(catalog, scope, stage):
+    if type(catalog) is dict and "projection" in catalog:
+        from agent.decisions.laya_prompts import _summary_catalog_aliases
+        _summary_catalog_aliases(catalog, stage)
+        require(catalog["scope_digest"] == scope, "catalog_scope_mismatch")
+        return {_alias(family["id"], "family"): family for family in catalog["families"]}, {}
+
     require(type(catalog) is dict and set(catalog) == {
         "version", "scope_digest", "policy_digest", "tool_view_revision", "families", "tools", "bridges"},
         "invalid_catalog")
@@ -191,6 +197,9 @@ def _target_binding(question_id, state, families, tools):
         return target
     family = _alias(target["selected_family"], "family")
     require(family in families, "unknown_family_alias")
+    if "member_count" in families[family]:
+        require(question_id == "family" and set(target) == {"selected_family"}, "invalid_question_binding")
+        return target
     if "selected_tool" in target:
         tool = _alias(target["selected_tool"], "tool")
         require(tool in tools and tools[tool]["family"] == family, "unknown_tool_alias")
@@ -277,7 +286,7 @@ def encode_laya_batch(requests, *, model_alias=None):
         common_json = canonical(common)
         if shared is None:
             shared = common_json
-            families, tools = _catalog_index(state["catalog"], identity[0])
+            families, tools = _catalog_index(state["catalog"], identity[0], state["stage"])
         require(common_json == shared, "batch_state_mismatch")
         target = _target_binding(question.question_id, state, families, tools)
         signature = (question.question_id, target.get("selected_family"), target.get("selected_tool"))
@@ -293,6 +302,11 @@ def encode_laya_batch(requests, *, model_alias=None):
     common = json.loads(shared)
     require(len(requests) <= {1: 18, 2: 32, 3: 12}[common["stage"]], "batch_stage_bound")
     _validate_prior(common, bindings, families, tools)
+    if common["catalog"].get("projection") == "family_summaries_v1":
+        # The planner may not omit a family or independently call only the most
+        # convenient initial question. All summaries share one causal decision.
+        require(seen == {("need", None, None), ("effort", None, None)} |
+                {("family", alias, None) for alias in families}, "incomplete_family_stage")
     wire_bindings = {binding.wire_qid: json.loads(binding.target_json) for binding in bindings}
     state_json = render_dp16_state(common["context"], catalog=common["catalog"], stage=common["stage"],
                                    bindings=wire_bindings, prior=common["prior"])
