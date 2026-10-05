@@ -1,0 +1,95 @@
+▶ not activated — using HERMES_PYTHON: <existing Python 3.14.7 test interpreter>
+▶ running per-file parallel test suite via run_tests_parallel.py
+  (TZ=UTC LANG=C.UTF-8 PYTHONHASHSEED=0; clean env)
+▶ pre-compiling bytecode cache
+▶ launching test runner
+Discovered 69 test files (~828 tests) under ['tests/agent/test_agent_identity.py', 'tests/agent/test_anthropic_prompt_cache_policy.py', 'tests/agent/test_budget_runtime.py', 'tests/agent/test_compression_attempt_lifecycle.py', 'tests/agent/test_compression_attempt_ownership.py', 'tests/agent/test_compression_attempt_telemetry.py', 'tests/agent/test_compression_boundary.py', 'tests/agent/test_compression_boundary_hook.py', 'tests/agent/test_compression_commit_fence_race.py', 'tests/agent/test_compression_worker_isolation.py', 'tests/agent/test_decision_calibration.py', 'tests/agent/test_decision_client.py', 'tests/agent/test_decision_planner_catalog.py', 'tests/agent/test_decision_planner_context.py', 'tests/agent/test_decision_planner_evaluation.py', 'tests/agent/test_decision_planner_runtime.py', 'tests/agent/test_decision_planner_v2.py', 'tests/agent/test_decision_point_policies.py', 'tests/agent/test_decision_runtime.py', 'tests/agent/test_decision_tool_planner.py', 'tests/agent/test_decision_transport.py', 'tests/agent/test_fresh_context_projection.py', 'tests/agent/test_identity_flush.py', 'tests/agent/test_identity_lifecycle.py', 'tests/agent/test_laya_batching.py', 'tests/agent/test_laya_budget_settlement.py', 'tests/agent/test_laya_bundle_owner.py', 'tests/agent/test_laya_codec.py', 'tests/agent/test_laya_configuration.py', 'tests/agent/test_laya_destination_authorization.py', 'tests/agent/test_laya_journal_deadlines.py', 'tests/agent/test_laya_observer_integration.py', 'tests/agent/test_laya_plan_projection.py', 'tests/agent/test_laya_prompts.py', 'tests/agent/test_laya_qualification.py', 'tests/agent/test_laya_stage1_projection.py', 'tests/agent/test_laya_transport.py', 'tests/agent/test_prompt_cache_boundary.py', 'tests/agent/test_prompt_cache_scope.py', 'tests/agent/test_prompt_cache_ttl_auto.py', 'tests/agent/test_prompt_cache_ttl_propagation.py', 'tests/agent/test_replay_budget_accounting.py', 'tests/agent/test_run_budget.py', 'tests/agent/test_runtime_commands.py', 'tests/agent/test_secret_scope.py', 'tests/agent/test_secret_scope_env_cache.py', 'tests/agent/test_secret_scope_pinned_launch_home.py', 'tests/agent/test_secret_scope_tier1_migration.py', 'tests/agent/test_secret_scope_user_message.py', 'tests/agent/test_system_prompt_restore.py', 'tests/agent/test_tool_view.py', 'tests/agent/test_tool_view_construction.py', 'tests/hermes_state/test_budget_accounts.py', 'tests/hermes_state/test_context_projection.py', 'tests/hermes_state/test_runtime_store.py', 'tests/hermes_state/test_session_agent_identity.py', 'tests/hermes_state/test_session_turn_lease.py', 'tests/tools/test_agent_policy_boundaries.py', 'tests/tools/test_capability_broker.py', 'tests/tools/test_egress_policy.py', 'tests/tools/test_mcp_agent_trust_lifecycle.py', 'tests/tools/test_refresh_agent_mcp_tools.py', 'tests/tools/test_tool_search.py', 'tests/tools/test_tool_search_context_provider.py', 'tests/tools/test_tool_search_multiquery.py', 'tests/tui_gateway/contracts/test_generated.py', 'tests/tui_gateway/test_profiles_describe_secret_scope.py', 'tests/tui_gateway/test_runtime_controls_rpc.py', 'tests/tui_gateway/test_runtime_identity.py']; running with -j 4
+[  1.6% |    13/~828 | ✓49 | ✗ 0] ✓ tests/agent/test_agent_identity.py (49✓, 0.9s)
+[  8.8% |    73/~828 | ✓127 | ✗  0] ✓ tests/agent/test_anthropic_prompt_cache_policy.py (78✓, 3.3s)
+[ 10.7% |    89/~828 | ✓143 | ✗  0] ✓ tests/agent/test_compression_attempt_ownership.py (16✓, 3.0s)
+[ 11.1% |    92/~828 | ✓146 | ✗  0] ✓ tests/agent/test_compression_boundary.py (3✓, 1.0s)
+[ 11.6% |    96/~828 | ✓150 | ✗  0] ✓ tests/agent/test_compression_attempt_telemetry.py (4✓, 3.5s)
+[ 12.1% |   100/~828 | ✓154 | ✗  0] ✓ tests/agent/test_compression_commit_fence_race.py (4✓, 4.7s)
+[ 12.9% |   107/~828 | ✓161 | ✗  0] ✓ tests/agent/test_compression_boundary_hook.py (7✓, 9.9s)
+[ 14.7% |   122/~828 | ✓219 | ✗  0] ✓ tests/agent/test_decision_calibration.py (58✓, 1.0s)
+[ 15.9% |   132/~828 | ✓239 | ✗  0] ✓ tests/agent/test_decision_client.py (20✓, 0.7s)
+[ 17.3% |   143/~828 | ✓250 | ✗  0] ✓ tests/agent/test_compression_attempt_lifecycle.py (11✓, 18.6s)
+[ 18.4% |   152/~828 | ✓266 | ✗  0] ✓ tests/agent/test_decision_planner_catalog.py (16✓, 2.1s)
+[ 18.6% |   154/~828 | ✓268 | ✗  0] ✓ tests/agent/test_decision_planner_evaluation.py (2✓, 0.7s)
+[ 21.0% |   174/~828 | ✓307 | ✗  0] ✓ tests/agent/test_decision_planner_context.py (39✓, 0.8s)
+[ 23.2% |   192/~828 | ✓334 | ✗  0] ✓ tests/agent/test_decision_planner_v2.py (27✓, 2.2s)
+[ 25.0% |   207/~828 | ✓382 | ✗  0] ✓ tests/agent/test_decision_point_policies.py (48✓, 0.9s)
+[ 25.5% |   211/~828 | ✓386 | ✗  0] ✓ tests/agent/test_compression_worker_isolation.py (4✓, 12.0s)
+[ 26.2% |   217/~828 | ✓395 | ✗  0] ✓ tests/agent/test_decision_tool_planner.py (9✓, 0.8s)
+[ 26.8% |   222/~828 | ✓400 | ✗  0] ✓ tests/agent/test_decision_transport.py (5✓, 3.3s)
+[ 27.2% |   225/~828 | ✓403 | ✗  0] ✓ tests/agent/test_fresh_context_projection.py (3✓, 3.6s)
+[ 27.5% |   228/~828 | ✓406 | ✗  0] ✓ tests/agent/test_decision_planner_runtime.py (3✓, 12.1s)
+[ 28.0% |   232/~828 | ✓410 | ✗  0] ✓ tests/agent/test_decision_runtime.py (4✓, 12.0s)
+[ 29.5% |   244/~828 | ✓430 | ✗  0] ✓ tests/agent/test_identity_lifecycle.py (20✓, 3.5s)
+[ 30.9% |   256/~828 | ✓442 | ✗  0] ✓ tests/agent/test_laya_batching.py (12✓, 1.0s)
+[ 31.8% |   263/~828 | ✓449 | ✗  0] ✓ tests/agent/test_identity_flush.py (7✓, 6.9s)
+[ 34.2% |   283/~828 | ✓517 | ✗  0] ✓ tests/agent/test_laya_codec.py (68✓, 1.2s)
+[ 34.4% |   285/~828 | ✓531 | ✗  0] ✓ tests/agent/test_laya_configuration.py (14✓, 0.9s)
+[ 35.4% |   293/~828 | ✓558 | ✗  0] ✓ tests/agent/test_laya_destination_authorization.py (27✓, 2.8s)
+[ 38.5% |   319/~828 | ✓593 | ✗  0] ✓ tests/agent/test_budget_runtime.py (35✓, 43.6s)
+[ 38.9% |   322/~828 | ✓596 | ✗  0] ✓ tests/agent/test_laya_budget_settlement.py (3✓, 9.2s)
+[ 39.1% |   324/~828 | ✓598 | ✗  0] ✓ tests/agent/test_laya_plan_projection.py (2✓, 1.8s)
+[ 40.5% |   335/~828 | ✓621 | ✗  0] ✓ tests/agent/test_laya_prompts.py (23✓, 0.8s)
+[ 42.4% |   351/~828 | ✓661 | ✗  0] ✓ tests/agent/test_laya_qualification.py (40✓, 0.8s)
+[ 43.0% |   356/~828 | ✓676 | ✗  0] ✓ tests/agent/test_laya_stage1_projection.py (15✓, 0.7s)
+[ 44.3% |   367/~828 | ✓708 | ✗  0] ✓ tests/agent/test_laya_transport.py (32✓, 4.3s)
+[ 46.9% |   388/~828 | ✓729 | ✗  0] ✓ tests/agent/test_prompt_cache_boundary.py (21✓, 2.1s)
+[ 50.2% |   416/~828 | ✓758 | ✗  0] ✓ tests/agent/test_prompt_cache_scope.py (29✓, 1.4s)
+[ 50.5% |   418/~828 | ✓767 | ✗  0] ✓ tests/agent/test_laya_journal_deadlines.py (9✓, 15.5s)
+[ 51.6% |   427/~828 | ✓776 | ✗  0] ✓ tests/agent/test_prompt_cache_ttl_propagation.py (9✓, 1.0s)
+[ 51.8% |   429/~828 | ✓778 | ✗  0] ✓ tests/agent/test_prompt_cache_ttl_auto.py (2✓, 4.1s)
+[ 52.8% |   437/~828 | ✓791 | ✗  0] ✓ tests/agent/test_replay_budget_accounting.py (13✓, 1.0s)
+[ 53.6% |   444/~828 | ✓800 | ✗  0] ✓ tests/agent/test_laya_observer_integration.py (9✓, 22.3s)
+[ 56.0% |   464/~828 | ✓831 | ✗  0] ✓ tests/agent/test_run_budget.py (31✓, 7.8s)
+[ 60.5% |   501/~828 | ✓868 | ✗  0] ✓ tests/agent/test_secret_scope.py (37✓, 2.7s)
+[ 60.7% |   503/~828 | ✓870 | ✗  0] ✓ tests/agent/test_secret_scope_env_cache.py (2✓, 0.8s)
+[ 61.0% |   505/~828 | ✓872 | ✗  0] ✓ tests/agent/test_secret_scope_pinned_launch_home.py (2✓, 0.7s)
+[ 64.4% |   533/~828 | ✓900 | ✗  0] ✓ tests/agent/test_secret_scope_tier1_migration.py (28✓, 0.7s)
+[ 64.5% |   534/~828 | ✓901 | ✗  0] ✓ tests/agent/test_secret_scope_user_message.py (1✓, 0.6s)
+[ 67.5% |   559/~828 | ✓926 | ✗  0] ✓ tests/agent/test_system_prompt_restore.py (25✓, 3.3s)
+[ 69.3% |   574/~828 | ✓941 | ✗  0] ✓ tests/agent/test_tool_view.py (15✓, 7.9s)
+[ 69.4% |   575/~828 | ✓943 | ✗  0] ✓ tests/agent/test_tool_view_construction.py (2✓, 5.1s)
+[ 71.3% |   590/~828 | ✓958 | ✗  0] ✓ tests/hermes_state/test_budget_accounts.py (15✓, 1.5s)
+[ 72.0% |   596/~828 | ✓966 | ✗  0] ✓ tests/hermes_state/test_context_projection.py (8✓, 2.0s)
+[ 72.2% |   598/~828 | ✓968 | ✗  0] ✓ tests/hermes_state/test_session_agent_identity.py (2✓, 0.8s)
+[ 73.8% |   611/~828 | ✓981 | ✗  0] ✓ tests/hermes_state/test_runtime_store.py (13✓, 1.4s)
+[ 75.7% |   627/~828 | ✓998 | ✗  0] ✓ tests/agent/test_runtime_commands.py (17✓, 20.6s)
+[ 78.3% |   648/~828 | ✓1019 | ✗   0] ✓ tests/hermes_state/test_session_turn_lease.py (21✓, 2.7s)
+[ 78.6% |   651/~828 | ✓1022 | ✗   0] ✓ tests/tools/test_capability_broker.py (3✓, 2.5s)
+[ 80.6% |   667/~828 | ✓1049 | ✗   0] ✓ tests/tools/test_agent_policy_boundaries.py (27✓, 5.5s)
+[ 82.4% |   682/~828 | ✓1084 | ✗   0] ✓ tests/tools/test_egress_policy.py (35✓, 6.1s)
+[ 84.2% |   697/~828 | ✓1103 | ✗   0] ✓ tests/tools/test_refresh_agent_mcp_tools.py (19✓, 4.1s)
+[ 86.8% |   719/~828 | ✓1128 | ✗   0] ✓ tests/tools/test_mcp_agent_trust_lifecycle.py (25✓, 8.9s)
+[ 87.3% |   723/~828 | ✓1132 | ✗   0] ✓ tests/tools/test_tool_search_context_provider.py (4✓, 4.3s)
+[ 90.5% |   749/~828 | ✓1159 | ✗   0] ✓ tests/tools/test_tool_search_multiquery.py (27✓, 2.8s)
+[ 95.4% |   790/~828 | ✓1204 | ✗   0] ✓ tests/tools/test_tool_search.py (45✓, 7.7s)
+[ 95.7% |   792/~828 | ✓1206 | ✗   0] ✓ tests/tui_gateway/contracts/test_generated.py (2✓, 3.1s)
+[ 95.8% |   793/~828 | ✓1207 | ✗   0] ✓ tests/tui_gateway/test_profiles_describe_secret_scope.py (1✓, 3.2s)
+[ 95.9% |   794/~828 | ✓1208 | ✗   0] ✓ tests/tui_gateway/test_runtime_identity.py (1✓, 2.9s)
+[ 96.3% |   797/~828 | ✓1214 | ✗   0] ✓ tests/tui_gateway/test_runtime_controls_rpc.py (6✓, 6.5s)
+[100.0% |   828/~828 | ✓1267 | ✗   0] ✓ tests/agent/test_laya_bundle_owner.py (53✓, 92.3s)
+
+=== Summary: 69 files, 1267 tests passed, 0 failed (100% complete) in 127.7s (4 workers) ===
+  Durations cached to test_durations.json (69 files)
+
+=== Per-file subprocess time distribution ===
+  Files:   69
+  Total subprocess CPU-wall: 430.5s  (runner wall: 127.7s, parallelism: 4x)
+  P50: 2.86s  P90: 12.12s  P95: 20.59s  P99: 92.30s  Max: 92.30s
+  <1s: 18 files (26%)  <2s: 26 files (38%)
+  Top 10 slowest:
+     92.30s  tests/agent/test_laya_bundle_owner.py
+     43.60s  tests/agent/test_budget_runtime.py
+     22.34s  tests/agent/test_laya_observer_integration.py
+     20.59s  tests/agent/test_runtime_commands.py
+     18.57s  tests/agent/test_compression_attempt_lifecycle.py
+     15.52s  tests/agent/test_laya_journal_deadlines.py
+     12.12s  tests/agent/test_decision_planner_runtime.py
+     12.03s  tests/agent/test_decision_runtime.py
+     12.00s  tests/agent/test_compression_worker_isolation.py
+      9.93s  tests/agent/test_compression_boundary_hook.py

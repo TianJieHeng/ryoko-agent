@@ -1,0 +1,483 @@
+{
+  "schema_version": 1,
+  "candidate_sha": "1a3ec3dc6a2edab5a52702c568ce28bb98640f0c",
+  "candidate_tree": "2da7a0f2ee88e35da2650d1291e637b55bd20797",
+  "equivalent_local_source_sha": "95ebe8bf666e4617ff114267b64a19bf640059c9",
+  "environment": "assistant_cloud_linux_existing_free_local_tooling",
+  "started_at_utc": "2026-10-05T11:13:20Z",
+  "completion_observed_at_utc": "2026-10-05T11:15:42Z",
+  "python_version": "3.14.7",
+  "argv": [
+    "scripts/run_tests.sh",
+    "-j",
+    "4",
+    "tests/agent/test_agent_identity.py",
+    "tests/agent/test_anthropic_prompt_cache_policy.py",
+    "tests/agent/test_budget_runtime.py",
+    "tests/agent/test_compression_attempt_lifecycle.py",
+    "tests/agent/test_compression_attempt_ownership.py",
+    "tests/agent/test_compression_attempt_telemetry.py",
+    "tests/agent/test_compression_boundary.py",
+    "tests/agent/test_compression_boundary_hook.py",
+    "tests/agent/test_compression_commit_fence_race.py",
+    "tests/agent/test_compression_worker_isolation.py",
+    "tests/agent/test_decision_calibration.py",
+    "tests/agent/test_decision_client.py",
+    "tests/agent/test_decision_planner_catalog.py",
+    "tests/agent/test_decision_planner_context.py",
+    "tests/agent/test_decision_planner_evaluation.py",
+    "tests/agent/test_decision_planner_runtime.py",
+    "tests/agent/test_decision_planner_v2.py",
+    "tests/agent/test_decision_point_policies.py",
+    "tests/agent/test_decision_runtime.py",
+    "tests/agent/test_decision_tool_planner.py",
+    "tests/agent/test_decision_transport.py",
+    "tests/agent/test_fresh_context_projection.py",
+    "tests/agent/test_identity_flush.py",
+    "tests/agent/test_identity_lifecycle.py",
+    "tests/agent/test_laya_batching.py",
+    "tests/agent/test_laya_budget_settlement.py",
+    "tests/agent/test_laya_bundle_owner.py",
+    "tests/agent/test_laya_codec.py",
+    "tests/agent/test_laya_configuration.py",
+    "tests/agent/test_laya_destination_authorization.py",
+    "tests/agent/test_laya_journal_deadlines.py",
+    "tests/agent/test_laya_observer_integration.py",
+    "tests/agent/test_laya_plan_projection.py",
+    "tests/agent/test_laya_prompts.py",
+    "tests/agent/test_laya_qualification.py",
+    "tests/agent/test_laya_stage1_projection.py",
+    "tests/agent/test_laya_transport.py",
+    "tests/agent/test_prompt_cache_boundary.py",
+    "tests/agent/test_prompt_cache_scope.py",
+    "tests/agent/test_prompt_cache_ttl_auto.py",
+    "tests/agent/test_prompt_cache_ttl_propagation.py",
+    "tests/agent/test_replay_budget_accounting.py",
+    "tests/agent/test_run_budget.py",
+    "tests/agent/test_runtime_commands.py",
+    "tests/agent/test_secret_scope.py",
+    "tests/agent/test_secret_scope_env_cache.py",
+    "tests/agent/test_secret_scope_pinned_launch_home.py",
+    "tests/agent/test_secret_scope_tier1_migration.py",
+    "tests/agent/test_secret_scope_user_message.py",
+    "tests/agent/test_system_prompt_restore.py",
+    "tests/agent/test_tool_view.py",
+    "tests/agent/test_tool_view_construction.py",
+    "tests/hermes_state/test_budget_accounts.py",
+    "tests/hermes_state/test_context_projection.py",
+    "tests/hermes_state/test_runtime_store.py",
+    "tests/hermes_state/test_session_agent_identity.py",
+    "tests/hermes_state/test_session_turn_lease.py",
+    "tests/tools/test_agent_policy_boundaries.py",
+    "tests/tools/test_capability_broker.py",
+    "tests/tools/test_egress_policy.py",
+    "tests/tools/test_mcp_agent_trust_lifecycle.py",
+    "tests/tools/test_refresh_agent_mcp_tools.py",
+    "tests/tools/test_tool_search.py",
+    "tests/tools/test_tool_search_context_provider.py",
+    "tests/tools/test_tool_search_multiquery.py",
+    "tests/tui_gateway/contracts/test_generated.py",
+    "tests/tui_gateway/test_profiles_describe_secret_scope.py",
+    "tests/tui_gateway/test_runtime_controls_rpc.py",
+    "tests/tui_gateway/test_runtime_identity.py"
+  ],
+  "runner_environment": {
+    "HERMES_PYTHON": "existing Python 3.14.7 test interpreter",
+    "HERMES_TEST_FILE_RETRIES": "0",
+    "TZ": "UTC",
+    "LANG": "C.UTF-8",
+    "PYTHONHASHSEED": "0"
+  },
+  "results": {
+    "files": 69,
+    "passed": 1267,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "flaky_files": 0,
+    "runner_wall_seconds": 127.7
+  },
+  "per_file_results": [
+    {
+      "file": "tests/agent/test_agent_identity.py",
+      "passed": 49,
+      "seconds": 0.9
+    },
+    {
+      "file": "tests/agent/test_anthropic_prompt_cache_policy.py",
+      "passed": 78,
+      "seconds": 3.3
+    },
+    {
+      "file": "tests/agent/test_compression_attempt_ownership.py",
+      "passed": 16,
+      "seconds": 3.0
+    },
+    {
+      "file": "tests/agent/test_compression_boundary.py",
+      "passed": 3,
+      "seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_compression_attempt_telemetry.py",
+      "passed": 4,
+      "seconds": 3.5
+    },
+    {
+      "file": "tests/agent/test_compression_commit_fence_race.py",
+      "passed": 4,
+      "seconds": 4.7
+    },
+    {
+      "file": "tests/agent/test_compression_boundary_hook.py",
+      "passed": 7,
+      "seconds": 9.9
+    },
+    {
+      "file": "tests/agent/test_decision_calibration.py",
+      "passed": 58,
+      "seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_decision_client.py",
+      "passed": 20,
+      "seconds": 0.7
+    },
+    {
+      "file": "tests/agent/test_compression_attempt_lifecycle.py",
+      "passed": 11,
+      "seconds": 18.6
+    },
+    {
+      "file": "tests/agent/test_decision_planner_catalog.py",
+      "passed": 16,
+      "seconds": 2.1
+    },
+    {
+      "file": "tests/agent/test_decision_planner_evaluation.py",
+      "passed": 2,
+      "seconds": 0.7
+    },
+    {
+      "file": "tests/agent/test_decision_planner_context.py",
+      "passed": 39,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/agent/test_decision_planner_v2.py",
+      "passed": 27,
+      "seconds": 2.2
+    },
+    {
+      "file": "tests/agent/test_decision_point_policies.py",
+      "passed": 48,
+      "seconds": 0.9
+    },
+    {
+      "file": "tests/agent/test_compression_worker_isolation.py",
+      "passed": 4,
+      "seconds": 12.0
+    },
+    {
+      "file": "tests/agent/test_decision_tool_planner.py",
+      "passed": 9,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/agent/test_decision_transport.py",
+      "passed": 5,
+      "seconds": 3.3
+    },
+    {
+      "file": "tests/agent/test_fresh_context_projection.py",
+      "passed": 3,
+      "seconds": 3.6
+    },
+    {
+      "file": "tests/agent/test_decision_planner_runtime.py",
+      "passed": 3,
+      "seconds": 12.1
+    },
+    {
+      "file": "tests/agent/test_decision_runtime.py",
+      "passed": 4,
+      "seconds": 12.0
+    },
+    {
+      "file": "tests/agent/test_identity_lifecycle.py",
+      "passed": 20,
+      "seconds": 3.5
+    },
+    {
+      "file": "tests/agent/test_laya_batching.py",
+      "passed": 12,
+      "seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_identity_flush.py",
+      "passed": 7,
+      "seconds": 6.9
+    },
+    {
+      "file": "tests/agent/test_laya_codec.py",
+      "passed": 68,
+      "seconds": 1.2
+    },
+    {
+      "file": "tests/agent/test_laya_configuration.py",
+      "passed": 14,
+      "seconds": 0.9
+    },
+    {
+      "file": "tests/agent/test_laya_destination_authorization.py",
+      "passed": 27,
+      "seconds": 2.8
+    },
+    {
+      "file": "tests/agent/test_budget_runtime.py",
+      "passed": 35,
+      "seconds": 43.6
+    },
+    {
+      "file": "tests/agent/test_laya_budget_settlement.py",
+      "passed": 3,
+      "seconds": 9.2
+    },
+    {
+      "file": "tests/agent/test_laya_plan_projection.py",
+      "passed": 2,
+      "seconds": 1.8
+    },
+    {
+      "file": "tests/agent/test_laya_prompts.py",
+      "passed": 23,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/agent/test_laya_qualification.py",
+      "passed": 40,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/agent/test_laya_stage1_projection.py",
+      "passed": 15,
+      "seconds": 0.7
+    },
+    {
+      "file": "tests/agent/test_laya_transport.py",
+      "passed": 32,
+      "seconds": 4.3
+    },
+    {
+      "file": "tests/agent/test_prompt_cache_boundary.py",
+      "passed": 21,
+      "seconds": 2.1
+    },
+    {
+      "file": "tests/agent/test_prompt_cache_scope.py",
+      "passed": 29,
+      "seconds": 1.4
+    },
+    {
+      "file": "tests/agent/test_laya_journal_deadlines.py",
+      "passed": 9,
+      "seconds": 15.5
+    },
+    {
+      "file": "tests/agent/test_prompt_cache_ttl_propagation.py",
+      "passed": 9,
+      "seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_prompt_cache_ttl_auto.py",
+      "passed": 2,
+      "seconds": 4.1
+    },
+    {
+      "file": "tests/agent/test_replay_budget_accounting.py",
+      "passed": 13,
+      "seconds": 1.0
+    },
+    {
+      "file": "tests/agent/test_laya_observer_integration.py",
+      "passed": 9,
+      "seconds": 22.3
+    },
+    {
+      "file": "tests/agent/test_run_budget.py",
+      "passed": 31,
+      "seconds": 7.8
+    },
+    {
+      "file": "tests/agent/test_secret_scope.py",
+      "passed": 37,
+      "seconds": 2.7
+    },
+    {
+      "file": "tests/agent/test_secret_scope_env_cache.py",
+      "passed": 2,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/agent/test_secret_scope_pinned_launch_home.py",
+      "passed": 2,
+      "seconds": 0.7
+    },
+    {
+      "file": "tests/agent/test_secret_scope_tier1_migration.py",
+      "passed": 28,
+      "seconds": 0.7
+    },
+    {
+      "file": "tests/agent/test_secret_scope_user_message.py",
+      "passed": 1,
+      "seconds": 0.6
+    },
+    {
+      "file": "tests/agent/test_system_prompt_restore.py",
+      "passed": 25,
+      "seconds": 3.3
+    },
+    {
+      "file": "tests/agent/test_tool_view.py",
+      "passed": 15,
+      "seconds": 7.9
+    },
+    {
+      "file": "tests/agent/test_tool_view_construction.py",
+      "passed": 2,
+      "seconds": 5.1
+    },
+    {
+      "file": "tests/hermes_state/test_budget_accounts.py",
+      "passed": 15,
+      "seconds": 1.5
+    },
+    {
+      "file": "tests/hermes_state/test_context_projection.py",
+      "passed": 8,
+      "seconds": 2.0
+    },
+    {
+      "file": "tests/hermes_state/test_session_agent_identity.py",
+      "passed": 2,
+      "seconds": 0.8
+    },
+    {
+      "file": "tests/hermes_state/test_runtime_store.py",
+      "passed": 13,
+      "seconds": 1.4
+    },
+    {
+      "file": "tests/agent/test_runtime_commands.py",
+      "passed": 17,
+      "seconds": 20.6
+    },
+    {
+      "file": "tests/hermes_state/test_session_turn_lease.py",
+      "passed": 21,
+      "seconds": 2.7
+    },
+    {
+      "file": "tests/tools/test_capability_broker.py",
+      "passed": 3,
+      "seconds": 2.5
+    },
+    {
+      "file": "tests/tools/test_agent_policy_boundaries.py",
+      "passed": 27,
+      "seconds": 5.5
+    },
+    {
+      "file": "tests/tools/test_egress_policy.py",
+      "passed": 35,
+      "seconds": 6.1
+    },
+    {
+      "file": "tests/tools/test_refresh_agent_mcp_tools.py",
+      "passed": 19,
+      "seconds": 4.1
+    },
+    {
+      "file": "tests/tools/test_mcp_agent_trust_lifecycle.py",
+      "passed": 25,
+      "seconds": 8.9
+    },
+    {
+      "file": "tests/tools/test_tool_search_context_provider.py",
+      "passed": 4,
+      "seconds": 4.3
+    },
+    {
+      "file": "tests/tools/test_tool_search_multiquery.py",
+      "passed": 27,
+      "seconds": 2.8
+    },
+    {
+      "file": "tests/tools/test_tool_search.py",
+      "passed": 45,
+      "seconds": 7.7
+    },
+    {
+      "file": "tests/tui_gateway/contracts/test_generated.py",
+      "passed": 2,
+      "seconds": 3.1
+    },
+    {
+      "file": "tests/tui_gateway/test_profiles_describe_secret_scope.py",
+      "passed": 1,
+      "seconds": 3.2
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_identity.py",
+      "passed": 1,
+      "seconds": 2.9
+    },
+    {
+      "file": "tests/tui_gateway/test_runtime_controls_rpc.py",
+      "passed": 6,
+      "seconds": 6.5
+    },
+    {
+      "file": "tests/agent/test_laya_bundle_owner.py",
+      "passed": 53,
+      "seconds": 92.3
+    }
+  ],
+  "log": {
+    "path": "docs/build/laya-local-campaign.log",
+    "sha256": "66ac70b883d24050b04303715aec5271d394cd100549da7b4284c8337a38a884",
+    "redactions": [
+      "absolute interpreter path replaced with versioned role"
+    ]
+  },
+  "other_checks": {
+    "configured_ruff_changed_python_files": "passed",
+    "shared_typescript_no_emit": "passed TypeScript 6.0.3",
+    "generated_contracts": "included in campaign, 2 tests passed",
+    "git_diff_check": "passed",
+    "installed_base_dependencies": "135 requirements checked; none unsatisfied; packaging/importlib.metadata fallback because pip module absent",
+    "credential_signature_review": "62 changed tracked files; one match confined to explicitly synthetic redaction fixtures; no real key found; signature scan is not a complete secret audit"
+  },
+  "review": {
+    "scoped_findings_closed": 4,
+    "regressions": [
+      "off-mode multipart digest containment",
+      "exact frozen-prefix restoration",
+      "attempt-local uncertain completion attribution",
+      "bounded journal publication without lifecycle lock over storage"
+    ]
+  },
+  "qualifies_production": false,
+  "live_inference_performed": false,
+  "real_model_shadow_collected": false,
+  "real_paired_task_outcomes_collected": false,
+  "limitations": [
+    "Not the full approximately 39000-test repository suite",
+    "Linux cloud only; actual Ryoko/Jetson, macOS and Windows hosts untested",
+    "Synthetic decisions and local TLS fixtures do not establish model quality, calibration or network latency",
+    "No vulnerability database scan or credential-custody audit",
+    "Genuine SQLite/filesystem stalls remain storage-engine limits",
+    "L07 actual qualification, L09 real-candidate evidence and L10 rollout approval remain blocked"
+  ]
+}

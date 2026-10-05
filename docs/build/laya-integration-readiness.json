@@ -130,7 +130,7 @@
     "L06": "complete_synthetic_observer",
     "L07": "blocked_live_qualification_offline_tooling_complete",
     "L08": "complete_synthetic_qualified_owner",
-    "L09": "pending",
+    "L09": "local_campaign_complete_real_qualification_blocked",
     "L10": "pending"
   },
   "evidence_limitations": [
@@ -160,5 +160,15 @@
     "restoration": "exact_frozen_pin_or_dispatch_deferred",
     "uncertain_commit": "fail_closed",
     "documentation": "docs/build/laya-bundle-owner.md"
+  },
+  "local_campaign": {
+    "candidate_sha": "1a3ec3dc6a2edab5a52702c568ce28bb98640f0c",
+    "candidate_tree": "2da7a0f2ee88e35da2650d1291e637b55bd20797",
+    "passed": 1267,
+    "failed": 0,
+    "skipped": 0,
+    "files": 69,
+    "evidence": "docs/build/laya-local-campaign.json",
+    "qualifies_production": false
   }
 }
