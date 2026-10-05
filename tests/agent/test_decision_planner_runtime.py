@@ -37,7 +37,7 @@ def agents(tmp_path, monkeypatch):
     from tools.todo_tool import TODO_SCHEMA
     monkeypatch.setattr("model_tools.get_tool_definitions", lambda *a, **k: [{"type": "function", "function": TODO_SCHEMA}])
     monkeypatch.setattr("model_tools.check_toolset_requirements", lambda *a, **k: {})
-    def make(name, mode="shadow", *, budget=False):
+    def make(name, mode="shadow", *, budget=False, secrets=None):
         home = tmp_path / name
         home.mkdir()
         monkeypatch.setenv("HERMES_HOME", str(home))
@@ -50,7 +50,8 @@ def agents(tmp_path, monkeypatch):
                     "max_output_tokens": 64, "input_overhead_tokens": 128, "output_token_parameter": "max_tokens",
                     "input_cost_micros_per_million": None, "output_cost_micros_per_million": None, "bounds_verified": True}]}
         (home / "config.yaml").write_text(json.dumps(config), encoding="utf-8")
-        (home / ".env").write_text("OPENAI_API_KEY=synthetic-provider-key\n", encoding="utf-8")
+        extras = "".join(key + "=" + value + "\n" for key, value in (secrets or {}).items())
+        (home / ".env").write_text("OPENAI_API_KEY=synthetic-provider-key\n" + extras, encoding="utf-8")
         requests = []
         def respond(request):
             requests.append(json.loads(request.content))

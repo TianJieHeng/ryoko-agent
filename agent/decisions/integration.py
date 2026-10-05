@@ -104,6 +104,30 @@ def _client(run, raw, parsed):
     return cached[1]
 
 
+def prepare_turn_planner(agent, *, original_user_message, conversation_history, turn_id, client=None):
+    """Earlier schema-owner seam; configuration never creates an enforcing client."""
+    try:
+        from agent.runtime_commands import assert_runtime_dispatch
+        from tools.capability_broker import require_live_policy
+        from agent.decisions.planner_runtime import prepare_front_door
+        if client is None:
+            raw = _settings()
+            parsed = parse_settings(raw)
+            if parsed is None or raw.get("schema_version") != 2:
+                return None
+            run = assert_runtime_dispatch(agent)
+            require(run is not None and require_live_policy() == run.context, "decision_owner_required")
+            client = _client(run, raw, parsed)
+        else:
+            run = assert_runtime_dispatch(agent)
+            require(run is not None and require_live_policy() == run.context, "decision_owner_required")
+        return prepare_front_door(run, client, request_definitions=agent.tools,
+            request=original_user_message, history=conversation_history, turn_id=turn_id)
+    except Exception:
+        # Optional preparation neither changes the provider nor reveals payloads.
+        return None
+
+
 def observe_core(point_id, values, *, question_id=None):
     """Returns an inspectable outcome for hosts, never a control directive."""
     try:
@@ -194,7 +218,7 @@ def _observe_lifecycle(hook_name, **kwargs):
         context = require_live_policy()
         run = assert_runtime_dispatch()
         require(context is not None and context == run.context, "decision_owner_required")
-        if any(authorize_tool(name, context=context) is not None for name in BRIDGES):
+        if raw.get("schema_version") == 1 and any(authorize_tool(name, context=context) is not None for name in BRIDGES):
             # Do not strand a profile behind an ungranted escape path. Preserve
             # the incumbent need-only observer when planning cannot be applied.
             menu = [tool.get("function", {}).get("name", "") for tool in tools[:64]
@@ -204,7 +228,8 @@ def _observe_lifecycle(hook_name, **kwargs):
         from agent.decisions.planner_runtime import observe_front_door
         return observe_front_door(run, _client(run, raw, parsed),
             request_definitions=tools if isinstance(tools, list) else [],
-            request=_compact(kwargs.get("user_message", "")))
+            request=kwargs.get("user_message", ""),
+            history=kwargs.get("conversation_history", ()), turn_id=kwargs.get("turn_id", ""))
     if hook_name == "pre_tool_call":
         return observe_core("DP06", {"tool_name": _compact(kwargs.get("tool_name", "")),
             "arguments": _compact(kwargs.get("args", {}))})

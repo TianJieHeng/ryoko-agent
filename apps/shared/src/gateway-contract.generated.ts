@@ -291,6 +291,11 @@ export interface DecisionToolPlan {
   elapsed_ms: number
   protocol_version?: 1 | 2
   metrics?: DecisionPlannerMetrics
+  context_digest?: string | null
+  renderer_version?: 'dp16-systemone-v1' | null
+  context_redactions?: number
+  context_omissions?: number
+  authorization_status?: 'not_attempted' | 'privacy_blocked' | 'transport_attempted'
 }
 export interface DecisionPlannerMetrics {
   batch_count?: number

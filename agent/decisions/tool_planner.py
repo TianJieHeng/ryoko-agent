@@ -138,6 +138,11 @@ class ToolPlan:
     elapsed_ms: float
     protocol_version: int = 1
     metrics: PlannerMetrics = field(default_factory=PlannerMetrics)
+    context_digest: str | None = None
+    renderer_version: str | None = None
+    context_redactions: int = 0
+    context_omissions: int = 0
+    authorization_status: str = "not_attempted"
 
     def to_record(self):
         return asdict(self)

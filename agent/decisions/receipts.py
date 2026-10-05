@@ -31,14 +31,15 @@ class JournalSink:
         self.run = run
 
     def __call__(self, receipt):
-        from agent.runtime_commands import assert_runtime_dispatch
-        from tools.capability_broker import require_live_policy
-        run = assert_runtime_dispatch()
-        require(run is self.run and require_live_policy() == run.context, "receipt_authority_mismatch")
-        expected_scope = scope_digest(run.context)
-        require(receipt["scope_digest"] == expected_scope, "receipt_scope_mismatch")
-        return run.db.append_runtime_event(run.session_id, "decision.observed", receipt,
-            holder=run.holder, generation=run.generation, run_id=run.run_id)
+        with self.run.control_lock:
+            from agent.runtime_commands import assert_runtime_dispatch
+            from tools.capability_broker import require_live_policy
+            run = assert_runtime_dispatch()
+            require(run is self.run and require_live_policy() == run.context, "receipt_authority_mismatch")
+            expected_scope = scope_digest(run.context)
+            require(receipt["scope_digest"] == expected_scope, "receipt_scope_mismatch")
+            return run.db.append_runtime_event(run.session_id, "decision.observed", receipt,
+                holder=run.holder, generation=run.generation, run_id=run.run_id)
 
     def annotate(self, receipt_id, *, label, outcome, source_digest):
         from agent.runtime_commands import assert_runtime_dispatch

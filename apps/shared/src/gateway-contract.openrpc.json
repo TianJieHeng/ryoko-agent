@@ -21179,6 +21179,54 @@
           },
           "metrics": {
             "$ref": "#/components/schemas/DecisionPlannerMetrics"
+          },
+          "context_digest": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context Digest"
+          },
+          "renderer_version": {
+            "anyOf": [
+              {
+                "const": "dp16-systemone-v1",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Renderer Version"
+          },
+          "context_redactions": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Context Redactions",
+            "type": "integer"
+          },
+          "context_omissions": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Context Omissions",
+            "type": "integer"
+          },
+          "authorization_status": {
+            "default": "not_attempted",
+            "enum": [
+              "not_attempted",
+              "privacy_blocked",
+              "transport_attempted"
+            ],
+            "title": "Authorization Status",
+            "type": "string"
           }
         },
         "required": [

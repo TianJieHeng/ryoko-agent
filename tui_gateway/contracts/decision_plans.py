@@ -40,6 +40,11 @@ class DecisionToolPlan(Result):
     elapsed_ms: Nonnegative
     protocol_version: Literal[1, 2] = 1
     metrics: DecisionPlannerMetrics = Field(default_factory=DecisionPlannerMetrics)
+    context_digest: Digest | None = None
+    renderer_version: Literal["dp16-systemone-v1"] | None = None
+    context_redactions: Annotated[StrictInt, Field(ge=0)] = 0
+    context_omissions: Annotated[StrictInt, Field(ge=0)] = 0
+    authorization_status: Literal["not_attempted", "privacy_blocked", "transport_attempted"] = "not_attempted"
 
     @model_validator(mode="after")
     def versioned_bounds(self):
