@@ -1,0 +1,440 @@
+{
+  "L07_complete": false,
+  "L09_release_qualified": false,
+  "L10_authorized": false,
+  "accepted_prediction_count": 1,
+  "blocking_reasons": [
+    "readiness:credential_provisioning:blocked",
+    "readiness:destination_acceptance:unmeasured",
+    "readiness:loaded_artifacts:unmeasured",
+    "readiness:private_data_authorization:blocked",
+    "readiness:hardware_performance:unmeasured",
+    "readiness:quality_and_net_benefit:unmeasured",
+    "readiness:production_rollout:blocked",
+    "synthetic_is_not_production_evidence",
+    "actual_host_measurements_missing",
+    "independent_labels_and_outcomes_required",
+    "missing_metric:heldout_precision_lower_bound",
+    "missing_metric:calibration_ece",
+    "missing_metric:safety_violations",
+    "missing_metric:budget_violations",
+    "failed_metric:shadow_receipts",
+    "missing_metric:p95_end_to_end_latency_ms",
+    "missing_metric:no_tools_precision_lower_bound",
+    "missing_metric:needed_tool_recall_lower_bound",
+    "missing_metric:recovery_success_lower_bound",
+    "missing_metric:paired_success_delta_lower_bound",
+    "missing_metric:net_token_savings_lower_bound",
+    "missing_metric:net_cost_savings_lower_bound",
+    "missing_metric:total_latency_ratio_upper_bound",
+    "missing_metric:first_response_latency_ratio_upper_bound",
+    "missing_metric:permission_leaks",
+    "missing_metric:cache_prefix_mutations",
+    "external_verification_required:actual_host_auth_and_route_acceptance",
+    "external_verification_required:loaded_checkpoint_tokenizer_export_identity",
+    "external_verification_required:artifact_provenance_and_license",
+    "external_verification_required:cold_boot_without_login_and_recovery",
+    "external_verification_required:representative_hardware_load_power_and_outage",
+    "external_verification_required:retention_and_key_custody_audit",
+    "external_verification_required:private_data_consent_if_applicable",
+    "external_verification_required:independent_frozen_holdout_verification",
+    "external_verification_required:exact_release_operator_approval"
+  ],
+  "bounds": {
+    "calibration_ece": {
+      "estimate": 0.99,
+      "method": "ten_fixed_bins_mcdiarmid",
+      "n": 1,
+      "upper": null
+    },
+    "first_response_latency_ratio": {
+      "estimate": 1.2,
+      "method": "paired_bounded_mean_ratio",
+      "n": 1,
+      "upper": null
+    },
+    "heldout_precision": {
+      "estimate": 0.0,
+      "lower": null,
+      "method": "wilson",
+      "n": 1,
+      "upper": null
+    },
+    "needed_tool_recall": {
+      "denominator_events": 1,
+      "estimate": 0.0,
+      "lower": null,
+      "method": "bounded_episode_count_ratio",
+      "n": 1,
+      "upper": null
+    },
+    "net_cost_savings": {
+      "estimate": -0.009999999999999981,
+      "lower": null,
+      "method": "bounded_episode_hoeffding",
+      "n": 1,
+      "upper": null
+    },
+    "net_token_savings": {
+      "estimate": 0.0,
+      "lower": null,
+      "method": "bounded_episode_hoeffding",
+      "n": 1,
+      "upper": null
+    },
+    "no_tools_precision": {
+      "estimate": 0.0,
+      "lower": null,
+      "method": "wilson",
+      "n": 1,
+      "upper": null
+    },
+    "paired_success_delta": {
+      "estimate": 0.0,
+      "lower": null,
+      "method": "bounded_episode_hoeffding",
+      "n": 1,
+      "upper": null
+    },
+    "recovery_success": {
+      "denominator_events": 1,
+      "estimate": 1.0,
+      "lower": null,
+      "method": "bounded_episode_count_ratio",
+      "n": 1,
+      "upper": null
+    },
+    "total_latency_ratio": {
+      "estimate": 0.9666666666666667,
+      "method": "paired_bounded_mean_ratio",
+      "n": 1,
+      "upper": null
+    }
+  },
+  "candidate_sha": "18aa40685b7a2129f939ea5e338163293eb809af",
+  "descriptive_paired_report": {
+    "accounting_note": "Compatibility prompt_tokens includes task output and classifier input/output; not an input-only measure",
+    "calibration_digest": "c94919d7f2ce44ff1d9768c9cde0cc742caccf0147893d8fc1b312e61a09e5ce",
+    "contract_digest": "f5e6750e7a68c36bf3730497d45eee93cd6cbcc627d9595cd7c8376bee9fe758",
+    "cost_components": {
+      "baseline": {
+        "bridge_tokens": 0.0,
+        "cache_hit_tokens": 100.0,
+        "cache_miss_tokens": 100.0,
+        "first_response_ms": 100.0,
+        "prompt_tokens": 120.0,
+        "recovery_tokens": 0.0,
+        "schema_tokens": 100.0,
+        "task_success": 1.0,
+        "total_cost": 0.2,
+        "total_latency_ms": 300.0
+      },
+      "candidate": {
+        "bridge_tokens": 10.0,
+        "cache_hit_tokens": 0.0,
+        "cache_miss_tokens": 130.0,
+        "first_response_ms": 120.0,
+        "prompt_tokens": 190.0,
+        "recovery_tokens": 20.0,
+        "schema_tokens": 0.0,
+        "task_success": 1.0,
+        "total_cost": 0.21,
+        "total_latency_ms": 290.0
+      }
+    },
+    "excluded_unknown_completion_pairs": 0,
+    "excluded_unknown_usage_pairs": 0,
+    "metrics": {
+      "first_response_delta_ms": 20.0,
+      "needed_tool_recall": 0.0,
+      "net_cost_savings": -0.009999999999999981,
+      "net_token_savings": 0.0,
+      "no_tools_precision": 0.0,
+      "paired_task_success_delta": 0.0,
+      "planner_miss_rate": 1.0,
+      "recovery_success": 1.0,
+      "total_latency_delta_ms": -10.0
+    },
+    "model_digest": "988b95fea10a38475dc37db83cf1cd409b95b424fb4a8eae489c8c544eef91d8",
+    "provenance": "synthetic_fixture",
+    "purpose": "descriptive_paired_planner_evaluation",
+    "qualification_pending": [
+      "independent_labels",
+      "frozen_disjoint_holdout",
+      "confidence_bounds",
+      "live_shadow",
+      "point_release_gate",
+      "operator_approval"
+    ],
+    "qualifies_production": false,
+    "schema_version": 1,
+    "trial_count": 1,
+    "trials_digest": "72a0b50a072339e515e5a4a30001ddd430f8a54429e503bdba13ba9c7fd21303"
+  },
+  "evidence_digest": "00aaca6f907b1c45fcf63f332d3cb8d466e24478388893f995f8260e9a86086f",
+  "gate_checks": [
+    {
+      "maximum": null,
+      "minimum": 0.99,
+      "name": "heldout_precision_lower_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": 0.05,
+      "minimum": null,
+      "name": "calibration_ece",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": 0,
+      "minimum": null,
+      "name": "safety_violations",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": 0,
+      "minimum": null,
+      "name": "budget_violations",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": null,
+      "minimum": 500,
+      "name": "shadow_receipts",
+      "status": "failed",
+      "value": 0
+    },
+    {
+      "maximum": 150,
+      "minimum": null,
+      "name": "p95_end_to_end_latency_ms",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": null,
+      "minimum": 0.99,
+      "name": "no_tools_precision_lower_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": null,
+      "minimum": 0.99,
+      "name": "needed_tool_recall_lower_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": null,
+      "minimum": 0.99,
+      "name": "recovery_success_lower_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": null,
+      "minimum": -0.01,
+      "name": "paired_success_delta_lower_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": null,
+      "minimum": 0.001,
+      "name": "net_token_savings_lower_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": null,
+      "minimum": 0.001,
+      "name": "net_cost_savings_lower_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": 1,
+      "minimum": null,
+      "name": "total_latency_ratio_upper_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": 1,
+      "minimum": null,
+      "name": "first_response_latency_ratio_upper_bound",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": 0,
+      "minimum": null,
+      "name": "permission_leaks",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "maximum": 0,
+      "minimum": null,
+      "name": "cache_prefix_mutations",
+      "status": "missing",
+      "value": null
+    }
+  ],
+  "measurement_environment": "local_fixture",
+  "observations": {
+    "batches": 1,
+    "classifier_usage": {
+      "cost": {
+        "known_subtotal": 0.09,
+        "total": 0.09,
+        "unknown_plans": 0
+      },
+      "input_tokens": {
+        "known_subtotal": 60.0,
+        "total": 60.0,
+        "unknown_plans": 0
+      },
+      "output_tokens": {
+        "known_subtotal": 10.0,
+        "total": 10.0,
+        "unknown_plans": 0
+      }
+    },
+    "fallback_counts": {
+      "none": 1
+    },
+    "fallback_rate": 0.0,
+    "network": {
+      "bound_method": "dkw_with_predeclared_cap",
+      "maximum": 10,
+      "n": 1,
+      "p50": 10,
+      "p95": 10,
+      "p95_upper_bound": null,
+      "p99": 10,
+      "units": "ms"
+    },
+    "plans": 1,
+    "questions": 4,
+    "queue_rejection_rate": 0.0,
+    "queue_rejections": 0,
+    "queue_wait": {
+      "bound_method": "dkw_with_predeclared_cap",
+      "maximum": 5,
+      "n": 1,
+      "p50": 5,
+      "p95": 5,
+      "p95_upper_bound": null,
+      "p99": 5,
+      "units": "ms"
+    },
+    "scenario_whole_plan": {
+      "local_fixture": {
+        "bound_method": "dkw_with_predeclared_cap",
+        "maximum": 40,
+        "n": 1,
+        "p50": 40,
+        "p95": 40,
+        "p95_upper_bound": null,
+        "p99": 40,
+        "units": "ms"
+      }
+    },
+    "stage_wall": {
+      "1": {
+        "bound_method": "dkw_with_predeclared_cap",
+        "maximum": 30,
+        "n": 1,
+        "p50": 30,
+        "p95": 30,
+        "p95_upper_bound": null,
+        "p99": 30,
+        "units": "ms"
+      },
+      "2": {
+        "bound_method": "dkw_with_predeclared_cap",
+        "maximum": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p95_upper_bound": null,
+        "p99": null,
+        "units": "ms"
+      },
+      "3": {
+        "bound_method": "dkw_with_predeclared_cap",
+        "maximum": null,
+        "n": 0,
+        "p50": null,
+        "p95": null,
+        "p95_upper_bound": null,
+        "p99": null,
+        "units": "ms"
+      }
+    },
+    "unknown_completion": 0,
+    "unknown_completion_rate": 0.0,
+    "unknown_usage_batches": 0,
+    "whole_plan": {
+      "bound_method": "dkw_with_predeclared_cap",
+      "maximum": 40,
+      "measurement": "whole_completed_operation",
+      "n": 1,
+      "p50": 40,
+      "p95": 40,
+      "p95_upper_bound": null,
+      "p99": 40,
+      "units": "ms"
+    }
+  },
+  "pair_count": 1,
+  "provenance": "synthetic_fixture",
+  "purpose": "offline_laya_evidence_inspection",
+  "qualifies_production": false,
+  "reduced_bundle_pair_count": 1,
+  "release_metrics": {
+    "calibration_ece": null,
+    "first_response_latency_ratio_upper_bound": null,
+    "heldout_precision_lower_bound": null,
+    "needed_tool_recall_lower_bound": null,
+    "net_cost_savings_lower_bound": null,
+    "net_token_savings_lower_bound": null,
+    "no_tools_precision_lower_bound": null,
+    "p95_end_to_end_latency_ms": null,
+    "paired_success_delta_lower_bound": null,
+    "recovery_success_lower_bound": null,
+    "shadow_receipts": 0,
+    "total_latency_ratio_upper_bound": null
+  },
+  "schema_version": 1,
+  "shadow_receipts": 0,
+  "statistics": {
+    "assumptions": [
+      "Independent representative episodes; within-episode tools are not independent trials",
+      "Predeclared finite population bounds, not maxima selected after viewing results",
+      "Wilson binomial intervals are approximate; Hoeffding, DKW and McDiarmid bounds are conservative",
+      "ECE uses ten bins fixed before evaluation, a frozen predictor/acceptance rule and independent representative accepted episodes",
+      "The ECE bound targets fixed-bin population ECE, not unbinned calibration error",
+      "Saved attestations and numeric passes require independent external verification",
+      "No model confidence is treated as a statistical confidence interval",
+      "Shadow elapsed times can be censored; unknown completion blocks end-to-end latency qualification",
+      "Savings units are absolute tokens per episode and USD per episode; latency ratios compare means"
+    ],
+    "confidence_level": 0.95,
+    "minimum_independent_episodes": 30,
+    "per_assertion_alpha": 0.0015625,
+    "simultaneous_assertion_budget": 32
+  },
+  "target_hardware": "unverified_by_offline_inspector",
+  "units": {
+    "cost": "USD",
+    "latency": "ms",
+    "tokens": "token"
+  }
+}

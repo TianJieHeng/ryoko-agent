@@ -128,7 +128,7 @@
     "L04": "complete",
     "L05": "complete_offline_live_gates_open",
     "L06": "complete_synthetic_observer",
-    "L07": "pending",
+    "L07": "blocked_live_qualification_offline_tooling_complete",
     "L08": "pending",
     "L09": "pending",
     "L10": "pending"
@@ -139,5 +139,18 @@
     "No model quality or performance qualification",
     "No private payload authorization",
     "No CI or paid compute"
-  ]
+  ],
+  "public_health_observation": {
+    "observed_at_utc": "2026-10-05T10:33:25.907Z",
+    "origin": "assistant_cloud_diagnostic_not_Ryoko_host",
+    "method": "GET",
+    "endpoint": "https://laya.ryoko.okinawa/health",
+    "authentication_sent": false,
+    "http_status": 403,
+    "content_type": "application/json",
+    "response_bytes": 708,
+    "health_verified": false,
+    "response_origin_verified": false,
+    "limitation": "Response may originate from service or intermediary; no inference/auth/artifact/hardware conclusion"
+  }
 }
