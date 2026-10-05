@@ -14,7 +14,8 @@ from hermes_state import SessionDB
 
 def configuration(profile="fixture", mode="shadow"):
     return {"decisions": {"schema_version": 1, "bundle": asdict(ModelBundle("1"*64, "2"*64, "3"*64)),
-        "points": {key: {"mode": mode} for key in ("DP06", "DP07", "DP16")}},
+        # These tests assert durable behavior, not the production latency limit.
+        "points": {key: {"mode": mode, "timeout_seconds": 1} for key in ("DP06", "DP07", "DP16")}},
         "agent_identity": {"schema_version": 1, "principal_id": "owner", "profile_id": profile,
         "primary_agent_id": "primary", "active_agent_id": "primary", "agents": {"primary": {
             "policy_version": 1, "role": "primary", "memory_backend": "personal_mcp", "secret_refs": ["OPENAI_API_KEY"],

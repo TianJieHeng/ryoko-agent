@@ -202,7 +202,8 @@ def assemble_api_request(
     # Build the request-local cache sections LAST, after every transcript mutation;
     # the canonical tool registry stays undecorated. Marked ``content`` becomes text
     # blocks the whitespace pass skips, so the same row's bytes vary across turns.
-    tools_for_api = agent.tools
+    from agent.decisions.planner_owner import request_schemas
+    tools_for_api = request_schemas(agent)
     if agent._use_prompt_caching and agent.provider != "moa":
         from agent.prompt_caching import envelope_tool_part_cache_markers_supported
 

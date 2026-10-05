@@ -1,7 +1,8 @@
 """BE02 bounded command journal, fenced transitions and restart-safe projections.
 
-SQLite owns acceptance and execution admission. This module never invokes a model,
-tool or callback: recovery consumes recorded facts, never re-executes a claim.
+SQLite owns acceptance and execution admission. This module never invokes a model
+or tool: recovery consumes recorded facts, never re-executes a claim. Optional
+append guards only recheck write admission inside the journal transaction.
 The existing compression-root turn lease remains the sole execution owner.
 """
 from __future__ import annotations
@@ -21,7 +22,7 @@ _OPERATIONS = frozenset({"submit", "steer", "cancel", "approval", "artifact"})
 _FINISH_STATES = frozenset({"completed", "failed", "blocked", "cancelled"})
 _RECORDED_TYPES = frozenset({"runtime.output", "runtime.state", "approval.requested",
                              "decision.observed", "decision.outcome",
-                             "decision.tool_plan", "decision.policy", "decision.planner_miss",
+                             "decision.tool_plan", "decision.policy", "decision.planner_miss", "decision.bundle",
                              "operations.repair_started", "operations.repair_finished",
                              "operations.deletion_requested", "operations.deletion_finished",
                              "approval.resolved", "effect.recorded", "model.started", "model.completed", "model.failed",
@@ -486,17 +487,25 @@ class SessionRuntimeMixin:
         return self.read_runtime_command(session_id, command_id)
 
     def append_runtime_event(self, session_id, event_type, payload, *, holder, generation,
-                             schema_version=1, expected_revision=None, **correlations):
+                             schema_version=1, expected_revision=None, transaction_guard=None, **correlations):
         _version(schema_version)
+        _require(transaction_guard is None or callable(transaction_guard), "invalid_command", "Invalid transaction guard")
         _require(isinstance(event_type, str) and event_type in _RECORDED_TYPES, "invalid_command", "Use transactional command/checkpoint operations")
         _require(isinstance(payload, dict), "invalid_command", "Event payload must be an object")
         _json(payload)
         def write(conn):
+            if transaction_guard is not None:
+                transaction_guard(conn, after_append=False)
             sid = self._runtime_session_on_conn(conn, session_id)
             self._runtime_fence_on_conn(conn, sid, holder, generation)
             row = self._runtime_state_on_conn(conn, sid, create=True)
             _revision(row["revision"], expected_revision)
-            return self._append_runtime_event_on_conn(conn, sid, event_type, payload, generation, **correlations)
+            event = self._append_runtime_event_on_conn(conn, sid, event_type, payload, generation, **correlations)
+            # Optional decision writes may have been abandoned while storage
+            # waited. Reject them inside this transaction, including retries.
+            if transaction_guard is not None:
+                transaction_guard(conn, after_append=True)
+            return event
         return self._execute_write(write)
 
     def read_runtime_snapshot(self, session_id):

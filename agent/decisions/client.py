@@ -113,7 +113,7 @@ class DecisionClient:
             try:
                 remaining = min(.05, deadline - time.time())
                 require(remaining >= .001, "receipt_deadline")
-                self._bounded(lambda: self.sink(receipt), remaining)
+                self._receipt_workers.persist(self.sink, (receipt,), deadline=time.time() + remaining)
                 persisted = True
             except Exception:
                 # Optional observers cannot abort a turn or leak sink exception payloads.
@@ -203,7 +203,8 @@ class DecisionClient:
             require(timeout >= .001, "deadline_exceeded")
             admission_ms = (time.monotonic() - started) * 1000
             inference_started = time.monotonic()
-            future = self._batch_admission.submit(key, lambda: self.transport.decide_many(requests, timeout), timeout=timeout)
+            future = self._batch_admission.submit(key, lambda: self.transport.decide_many(requests, timeout),
+                timeout=timeout, completion_unknown=lambda: getattr(self.transport, "remote_completion_unknown", False))
             dispatched = True
             try:
                 raw = future.result(timeout=timeout)
@@ -212,6 +213,7 @@ class DecisionClient:
                 raise DecisionError("deadline_exceeded") from None
             finally:
                 inference_ms = (time.monotonic() - inference_started) * 1000
+                remote_unknown |= getattr(future, "decision_remote_unknown", False) is True
             require(inference_ms <= timeout * 1000 and time.time() < deadline, "deadline_exceeded")
             self._fence(fence)
             records = getattr(raw, "records", None)
@@ -227,15 +229,13 @@ class DecisionClient:
             reason = exc.code if exc.code in _BATCH_REASONS else "invalid_response_schema"
             results = ()
             input_tokens = output_tokens = 0
-            remote_unknown |= dispatched and (reason in {"remote_completion_unknown", "deadline_exceeded"}
-                               or getattr(self.transport, "remote_completion_unknown", False) is True)
+            remote_unknown |= dispatched and reason in {"remote_completion_unknown", "deadline_exceeded"}
         except Exception:
             reason, results = "invalid_response_schema", ()
             input_tokens = output_tokens = 0
         if dispatched:
             self._batch_admission.settle(key, failed=reason is not None and reason != "planner_fence_failed",
                 failure_limit=self._failure_limit, cooldown_seconds=self._cooldown, remote_unknown=remote_unknown)
-        remote_unknown |= isinstance(key, str) and self._batch_admission.remote_unknown(key)
         outcomes = tuple(self._batch_outcome(request, result, contract, policy, reason, started)
                          for request, result in zip(requests, results or (None,) * len(requests)))
         receipt_started = time.monotonic()

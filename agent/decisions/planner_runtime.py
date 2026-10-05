@@ -18,26 +18,21 @@ class PolicyJournal:
     def __init__(self, run):
         self.run = run
 
-    def __call__(self, record):
-        with self.run.control_lock:
-            from agent.runtime_commands import assert_runtime_dispatch
-            from tools.capability_broker import require_live_policy
-            from tui_gateway.contracts.decision_plans import DecisionPolicyRecord, DecisionPlannerMiss
-            run = assert_runtime_dispatch()
-            require(run is self.run and require_live_policy() == run.context, "receipt_authority_mismatch")
-            scope = scope_digest(run.context)
-            require(record.get("scope_digest", scope) == scope, "receipt_scope_mismatch")
-            kind = record.get("kind")
-            models = {"point_policy": ("decision.policy", DecisionPolicyRecord),
-                      "planner_miss": ("decision.planner_miss", DecisionPlannerMiss)}
-            require(kind in models, "unknown_decision_record")
-            event, model = models[kind]
-            payload = model.model_validate({**record, "scope_digest": scope}).model_dump(mode="json")
-            return run.db.append_runtime_event(run.session_id, event, payload,
-                holder=run.holder, generation=run.generation, run_id=run.run_id)
+    def __call__(self, record, *, deadline=None):
+        from agent.decisions.receipts import persist_decision_event
+        from tui_gateway.contracts.decision_plans import DecisionPolicyRecord, DecisionPlannerMiss
+        scope = scope_digest(self.run.context)
+        require(record.get("scope_digest", scope) == scope, "receipt_scope_mismatch")
+        kind = record.get("kind")
+        models = {"point_policy": ("decision.policy", DecisionPolicyRecord),
+                  "planner_miss": ("decision.planner_miss", DecisionPlannerMiss)}
+        require(kind in models, "unknown_decision_record")
+        event, model = models[kind]
+        payload = model.model_validate({**record, "scope_digest": scope}).model_dump(mode="json")
+        return persist_decision_event(self.run, event, payload, deadline=deadline)
 
 
-def record_observer_policy(run, point_id, policy):
+def record_observer_policy(run, point_id, policy, *, deadline=None):
     """Record effective observer configuration once per point/run/config tuple."""
     from agent.decisions.point_policies import PointRule
     scope = scope_digest(run.context)
@@ -48,7 +43,7 @@ def record_observer_policy(run, point_id, policy):
     if key not in recorded:
         from dataclasses import asdict
         PolicyJournal(run)({"kind": "point_policy", "operation": "observer", **asdict(rule),
-                            "policy_digest": rule.policy_digest})
+                            "policy_digest": rule.policy_digest}, deadline=deadline)
         # Bound in-memory bookkeeping; durable history is in the governed journal.
         run.agent._decision_observer_policy_keys = set(list(recorded)[-31:]) | {key}
     return rule
@@ -151,11 +146,13 @@ def prepare_front_door(run, client, *, request_definitions, request, history=(),
     if run.budget is not None:
         deadline = min(deadline, run.budget.deadline)
     scope = scope_digest(run.context)
+    attempt_remote_unknown = False
 
     def operation():
+        nonlocal attempt_remote_unknown
         _current_fence(run)
         if policy.mode != "enforce":
-            record_observer_policy(run, "DP16", policy)
+            record_observer_policy(run, "DP16", policy, deadline=deadline)
         context = owner_planner_context(run, request=request, history=history, turn_id=turn_id, goal=goal)
         lookup = lambda: live_catalog(_authorized_definitions(run, request_definitions), scope_digest=scope)
         catalog = lookup()
@@ -164,6 +161,7 @@ def prepare_front_door(run, client, *, request_definitions, request, history=(),
         plan = planner.plan(request=values.get("request", ""), goal=goal if isinstance(goal, str) else "",
             scope_digest=scope, deadline=deadline, classification=context.classification,
             planner_context=context if client.native_batches else None)
+        attempt_remote_unknown = plan.metrics.remote_unknown
         flags = values.get("context_flags", {})
         status = ("privacy_blocked" if context.classification == "private" else
                   "transport_attempted" if plan.metrics.batch_count else "not_attempted")
@@ -175,23 +173,25 @@ def prepare_front_door(run, client, *, request_definitions, request, history=(),
         payload = DecisionToolPlan.model_validate(plan.to_record()).model_dump(mode="json")
         prepared = PreparedFrontDoor(run.run_id, turn_id, run.generation, run.agent.session_id,
             scope, _request_digest(request, turn_id), catalog, plan, client, context)
-        with run.control_lock:
-            _current_fence(run)
+        prefix_digest = digest(request_definitions)
+        from agent.decisions.receipts import check_decision_owner, persist_decision_event
+        require(time.time() < deadline, "receipt_deadline")
+        persist_decision_event(run, "decision.tool_plan", payload, deadline=deadline,
+                               fence=lambda: _current_fence(run))
+        remaining = deadline - time.time()
+        require(remaining > 0 and run.control_lock.acquire(timeout=max(0, remaining)), "receipt_deadline")
+        try:
+            require(time.time() < deadline, "receipt_deadline")
+            check_decision_owner(run)
             require(client.policy("DP16") == policy, "planner_policy_changed")
-            # The runtime sink checks run cancellation/command ownership before
-            # this append, not only the lease generation checked by SessionDB.
-            run.db.append_runtime_event(run.session_id, "decision.tool_plan", payload,
-                holder=run.holder, generation=run.generation, run_id=run.run_id)
-            run.agent._decision_tool_plan = (run.run_id, plan, digest(request_definitions))
+            run.agent._decision_tool_plan = (run.run_id, plan, prefix_digest)
             run.agent._decision_prepared_frontdoor = prepared
+        finally:
+            run.control_lock.release()
         return prepared
 
-    def remote_unknown():
-        key = getattr(client.transport, "admission_key", None)
-        return bool(client.native_batches and isinstance(key, str)
-                    and client._batch_admission.remote_unknown(key))
-
-    return _observe_with_budget(run, deadline, operation, completion_unknown=remote_unknown)
+    return _observe_with_budget(run, deadline, operation,
+                                completion_unknown=lambda: attempt_remote_unknown)
 
 
 def observe_front_door(run, client, *, request_definitions, request, goal="", history=(), turn_id=""):

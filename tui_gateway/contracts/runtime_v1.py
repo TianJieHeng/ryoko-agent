@@ -12,7 +12,7 @@ from pydantic import ConfigDict, Field, StrictInt, field_validator, model_valida
 
 from .base import Params, Result
 from .decisions import DecisionReceipt, DecisionOutcomeLabel
-from .decision_plans import DecisionToolPlan, DecisionPolicyRecord, DecisionPlannerMiss
+from .decision_plans import DecisionToolPlan, DecisionPolicyRecord, DecisionPlannerMiss, DecisionBundleRecord
 from .registry import method
 
 RuntimeIdentifier = Annotated[str, Field(min_length=1, max_length=256)]
@@ -303,6 +303,7 @@ class RuntimeEventPayload(Result):
     decision_outcome: DecisionOutcomeLabel | None = None
     decision_tool_plan: DecisionToolPlan | None = None
     decision_policy: DecisionPolicyRecord | None = None
+    decision_bundle: DecisionBundleRecord | None = None
     decision_planner_miss: DecisionPlannerMiss | None = None
     command_id: str | None = None
     operation: RuntimeOperation | Literal["artifact"] | None = None
@@ -342,7 +343,7 @@ class RuntimeEventEnvelope(Result):
         "runtime.state", "approval.requested", "approval.resolved", "effect.recorded",
         "model.started", "model.completed", "model.failed", "tool.started", "tool.completed", "tool.failed",
         "decision.observed", "decision.outcome",
-        "decision.tool_plan", "decision.policy", "decision.planner_miss",
+        "decision.tool_plan", "decision.policy", "decision.planner_miss", "decision.bundle",
         "operations.repair_started", "operations.repair_finished",
         "operations.deletion_requested", "operations.deletion_finished",
     ]

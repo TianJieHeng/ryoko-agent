@@ -105,3 +105,16 @@ class DecisionPolicyRecord(Result):
     recorded_at: Nonnegative | None = None
     reason: Literal["operator", "drift", "false_allow", "missed_direct_request", "stale_menu",
                     "tool_recovery_failed", "budget_violation", "latency_regression"] | None = None
+
+
+class DecisionBundleRecord(Result):
+    schema_version: Literal[1]
+    context_id: Digest
+    boundary: Literal["new_context", "compression"]
+    scope_digest: Digest
+    catalog_version: Digest
+    prefix_digest: Digest
+    plan_bundle_id: Digest | None
+    receipt_ids: Annotated[list[Digest], Field(max_length=62)]
+    turn_id: Annotated[str, Field(min_length=1, max_length=256)]
+    generation: Annotated[StrictInt, Field(ge=1)]

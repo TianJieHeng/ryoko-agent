@@ -20333,6 +20333,90 @@
         "title": "CurrentSubscription",
         "type": "object"
       },
+      "DecisionBundleRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "context_id": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Context Id",
+            "type": "string"
+          },
+          "boundary": {
+            "enum": [
+              "new_context",
+              "compression"
+            ],
+            "title": "Boundary",
+            "type": "string"
+          },
+          "scope_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Scope Digest",
+            "type": "string"
+          },
+          "catalog_version": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Catalog Version",
+            "type": "string"
+          },
+          "prefix_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Prefix Digest",
+            "type": "string"
+          },
+          "plan_bundle_id": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Bundle Id"
+          },
+          "receipt_ids": {
+            "items": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "maxItems": 62,
+            "title": "Receipt Ids",
+            "type": "array"
+          },
+          "turn_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Turn Id",
+            "type": "string"
+          },
+          "generation": {
+            "minimum": 1,
+            "title": "Generation",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "context_id",
+          "boundary",
+          "scope_digest",
+          "catalog_version",
+          "prefix_digest",
+          "plan_bundle_id",
+          "receipt_ids",
+          "turn_id",
+          "generation"
+        ],
+        "title": "DecisionBundleRecord",
+        "type": "object"
+      },
       "DecisionOutcomeLabel": {
         "additionalProperties": false,
         "properties": {
@@ -48186,6 +48270,7 @@
               "decision.tool_plan",
               "decision.policy",
               "decision.planner_miss",
+              "decision.bundle",
               "operations.repair_started",
               "operations.repair_finished",
               "operations.deletion_requested",
@@ -48259,6 +48344,17 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/DecisionPolicyRecord"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "decision_bundle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionBundleRecord"
               },
               {
                 "type": "null"

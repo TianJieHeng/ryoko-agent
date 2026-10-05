@@ -150,9 +150,9 @@ class OperatorApproval:
 
 
 def inspect_release(evidence, approval, *, point_id, bundle, policy_digest, scope_digest, now,
-                    consumer_ready=False):
+                    consumer_ready=False, contract_version=1):
     """Return every blocking reason. No single enable flag can pass this gate."""
-    contract = contract_for(point_id)
+    contract = contract_for(point_id, contract_version)
     reasons = []
     if evidence is None:
         return {"qualified": False, "point_id": point_id, "reasons": ["candidate_evidence_missing"]}
@@ -175,6 +175,9 @@ def inspect_release(evidence, approval, *, point_id, bundle, policy_digest, scop
     if point_id in {"DP03", "DP16"}:
         required |= {"paired_outcomes", "cache_costs"}
     reasons.extend("missing_report:" + name for name in sorted(required - reports.keys()))
+    if point_id == "DP16" and contract_version == 2:
+        reasons.extend("release_binding_mismatch:" + name for name, value in dp16_release_bindings().items()
+                       if reports.get(name) != value)
     metrics = dict(evidence.metrics)
     for gate in metric_gates(point_id):
         if gate.name not in metrics:
@@ -191,3 +194,28 @@ def inspect_release(evidence, approval, *, point_id, bundle, policy_digest, scop
     return {"qualified": not reasons, "point_id": point_id, "reasons": reasons,
             "evidence_digest": evidence.evidence_digest,
             "approval_digest": approval.approval_digest if approval else None}
+
+
+def dp16_release_bindings():
+    """Exact local renderer/catalog/evaluation contracts, not loaded-model attestation."""
+    from agent.decisions import laya_prompts, planner_catalog, planner_context
+    from dataclasses import fields
+    return {
+        "renderer_contract": digest({"version": laya_prompts.RENDERER_VERSION,
+            "instructions": laya_prompts.COMMON_INSTRUCTIONS, "suffixes": laya_prompts._SUFFIXES,
+            "criteria": laya_prompts._CRITERIA,
+            "context_fields": sorted(laya_prompts._CONTEXT_FIELDS),
+            "binding_fields": sorted(laya_prompts._BINDING_FIELDS),
+            "stage1_projection": "family_summaries_v1", "json_encoding": "canonical_ascii_sorted_keys"}),
+        "catalog_contract": digest({"version": 2,
+            "tool_fields": [field.name for field in fields(planner_catalog.CatalogTool)],
+            "family_fields": [field.name for field in fields(planner_catalog.CatalogFamily)],
+            "alias": "sha256_kind_identifier_24", "description_chars": planner_catalog.MAX_DESCRIPTION_CHARS,
+            "family_description_chars": planner_catalog.MAX_FAMILY_DESCRIPTION_CHARS,
+            "input_hints": planner_catalog.MAX_INPUT_HINTS,
+            "input_hint_chars": planner_catalog.MAX_INPUT_HINT_CHARS,
+            "stage1_projection": "family_summaries_v1", "state_bytes": planner_context.MAX_STATE_BYTES}),
+        "qualification_contract": digest({"version": 2, "metrics": [asdict(gate) for gate in metric_gates("DP16")],
+            "max_families": 16, "max_candidates": 32, "max_selected": 12, "max_per_family": 4,
+            "max_batches": 3, "max_receipts": 62, "bridge_required": True}),
+    }

@@ -1076,6 +1076,8 @@ def build_turn_context(
         persist_user_timestamp, persist_user_platform_id,
     )
     _reset_per_turn_agent_state(agent)
+    from agent.decisions.planner_owner import capture_turn_boundary
+    capture_turn_boundary(agent, conversation_history=conversation_history)
 
     _preview_text = summarize_user_message_for_log(user_message)
     _msg_preview = _preview_text[:80] + ("..." if len(_preview_text) > 80 else "")
@@ -1161,6 +1163,10 @@ def build_turn_context(
     active_system_prompt = compaction.active_system_prompt
     conversation_history = compaction.conversation_history
     current_turn_user_idx = compaction.current_turn_user_idx
+
+    from agent.decisions.planner_owner import prepare_turn_owner
+    prepare_turn_owner(agent, original_user_message=original_user_message,
+                       conversation_history=conversation_history, turn_id=turn_id)
 
     plugin_user_context = _collect_pre_llm_call_context(
         agent, effective_task_id=effective_task_id, turn_id=turn_id,

@@ -214,7 +214,7 @@ export interface RuntimeEventEnvelope {
   delivery_id: string | null
   approval_id: string | null
   occurred_at: number
-  type: 'command.accepted' | 'command.claimed' | 'command.completed' | 'command.failed' | 'command.blocked' | 'command.cancelled' | 'checkpoint.published' | 'runtime.output' | 'runtime.state' | 'approval.requested' | 'approval.resolved' | 'effect.recorded' | 'model.started' | 'model.completed' | 'model.failed' | 'tool.started' | 'tool.completed' | 'tool.failed' | 'decision.observed' | 'decision.outcome' | 'decision.tool_plan' | 'decision.policy' | 'decision.planner_miss' | 'operations.repair_started' | 'operations.repair_finished' | 'operations.deletion_requested' | 'operations.deletion_finished'
+  type: 'command.accepted' | 'command.claimed' | 'command.completed' | 'command.failed' | 'command.blocked' | 'command.cancelled' | 'checkpoint.published' | 'runtime.output' | 'runtime.state' | 'approval.requested' | 'approval.resolved' | 'effect.recorded' | 'model.started' | 'model.completed' | 'model.failed' | 'tool.started' | 'tool.completed' | 'tool.failed' | 'decision.observed' | 'decision.outcome' | 'decision.tool_plan' | 'decision.policy' | 'decision.planner_miss' | 'decision.bundle' | 'operations.repair_started' | 'operations.repair_finished' | 'operations.deletion_requested' | 'operations.deletion_finished'
   payload: RuntimeEventPayload
 }
 /** Safe correlation metadata only. Raw model/tool outputs stay off this wire. */
@@ -223,6 +223,7 @@ export interface RuntimeEventPayload {
   decision_outcome?: DecisionOutcomeLabel | null
   decision_tool_plan?: DecisionToolPlan | null
   decision_policy?: DecisionPolicyRecord | null
+  decision_bundle?: DecisionBundleRecord | null
   decision_planner_miss?: DecisionPlannerMiss | null
   command_id?: string | null
   operation?: 'submit' | 'steer' | 'cancel' | 'approval' | 'artifact' | null
@@ -332,6 +333,18 @@ export interface DecisionReleaseBundle {
   model_digest: string
   calibration_digest: string
   service_digest: string
+}
+export interface DecisionBundleRecord {
+  schema_version: 1
+  context_id: string
+  boundary: 'new_context' | 'compression'
+  scope_digest: string
+  catalog_version: string
+  prefix_digest: string
+  plan_bundle_id: string | null
+  receipt_ids: string[]
+  turn_id: string
+  generation: number
 }
 export interface DecisionPlannerMiss {
   kind: 'planner_miss'

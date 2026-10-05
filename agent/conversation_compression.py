@@ -3474,6 +3474,10 @@ def _finish_compaction_boundary(
     _old_sid = old_session_id
     _boundary_parent = _old_sid or agent.session_id or ""
 
+    from agent.decisions.planner_owner import committed_compaction
+    committed_compaction(agent, session_commit_succeeded=session_commit_succeeded,
+                         old_session_id=old_session_id, compacted_in_place=compacted_in_place)
+
     # The heartbeat's terminal stamp landed on the PARENT before the id re-pointed;
     # clear labels (keep last_activity_at) so the archived row isn't falsely fresh.
     if _old_sid and session_commit_succeeded:

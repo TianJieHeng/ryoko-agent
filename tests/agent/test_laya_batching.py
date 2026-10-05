@@ -226,3 +226,35 @@ def test_inflight_occupancy_without_timeout_and_registry_cardinality_are_bounded
             admission.submit("two", lambda: None)
     finally:
         release.set()
+
+
+def test_later_client_quarantine_does_not_relabel_a_completed_batch():
+    shared = SharedBatchAdmission()
+    entered, release = threading.Event(), threading.Event()
+    key, outputs = "synthetic-interleaving:" + uuid.uuid4().hex, []
+    class PausedResult:
+        def __init__(self, requests):
+            self._records = tuple(response(request) for request in requests)
+            self.usage = SimpleNamespace(input_tokens=1, output_tokens=3)
+        @property
+        def records(self):
+            entered.set()
+            assert release.wait(3)
+            return self._records
+    first = client(Transport(lambda requests, timeout: PausedResult(requests), key=key), lambda _: None,
+                   timeout=1, admission=shared)
+    thread = threading.Thread(target=lambda: outputs.append(call(first, deadline=time.time() + 3)))
+    thread.start()
+    try:
+        assert entered.wait(2)
+        def unknown(*args):
+            raise DecisionError("remote_completion_unknown")
+        later = call(client(Transport(unknown, key=key), lambda _: None, timeout=1, admission=shared))
+        assert later.metrics.remote_unknown and shared.remote_unknown(key)
+    finally:
+        release.set()
+        thread.join(3)
+    assert not thread.is_alive() and len(outputs) == 1
+    assert outputs[0].fallback is None and outputs[0].metrics.batch_count == 1
+    assert not outputs[0].metrics.remote_unknown
+    assert shared.remote_unknown(key)  # Its global admission quarantine remains.

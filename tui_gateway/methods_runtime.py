@@ -113,14 +113,15 @@ def _runtime_event_projection(event):
     projection["payload"] = {key: event["payload"][key]
                              for key in _RUNTIME_EVENT_PAYLOAD_FIELDS.get(event["type"], ())
                              if key in event["payload"]}
-    if event["type"] in {"decision.observed", "decision.outcome", "decision.tool_plan", "decision.policy", "decision.planner_miss"}:
+    if event["type"] in {"decision.observed", "decision.outcome", "decision.tool_plan", "decision.policy", "decision.planner_miss", "decision.bundle"}:
         from tui_gateway.contracts.decisions import DecisionReceipt, DecisionOutcomeLabel
-        from tui_gateway.contracts.decision_plans import DecisionToolPlan, DecisionPolicyRecord, DecisionPlannerMiss
+        from tui_gateway.contracts.decision_plans import DecisionToolPlan, DecisionPolicyRecord, DecisionPlannerMiss, DecisionBundleRecord
         key, model = {"decision.observed": ("decision_receipt", DecisionReceipt),
                       "decision.outcome": ("decision_outcome", DecisionOutcomeLabel),
                       "decision.tool_plan": ("decision_tool_plan", DecisionToolPlan),
                       "decision.policy": ("decision_policy", DecisionPolicyRecord),
-                      "decision.planner_miss": ("decision_planner_miss", DecisionPlannerMiss)}[event["type"]]
+                      "decision.planner_miss": ("decision_planner_miss", DecisionPlannerMiss),
+                      "decision.bundle": ("decision_bundle", DecisionBundleRecord)}[event["type"]]
         try:
             projection["payload"][key] = model.model_validate(event["payload"]).model_dump(mode="json")
         except ValidationError:

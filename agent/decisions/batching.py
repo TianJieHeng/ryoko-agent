@@ -64,7 +64,7 @@ class SharedBatchAdmission:
         self._lock = threading.Lock()
         self._destinations = {}
 
-    def submit(self, key, callback, *, timeout=None):
+    def submit(self, key, callback, *, timeout=None, completion_unknown=None):
         require(isinstance(key, str) and 0 < len(key) <= 512, "batch_admission_key_required")
         with self._lock:
             state = self._destinations.get(key)
@@ -87,10 +87,19 @@ class SharedBatchAdmission:
             except Exception:
                 error = DecisionError("node_unavailable")
             finally:
+                own_unknown = ((error is not None and error.code in
+                    {"remote_completion_unknown", "deadline_exceeded"}) or
+                    (expires is not None and time.monotonic() >= expires))
+                if completion_unknown is not None:
+                    try:
+                        own_unknown |= completion_unknown() is True
+                    except Exception:
+                        own_unknown = True
                 with self._lock:
-                    state.remote_unknown |= ((error is not None and error.code in
-                        {"remote_completion_unknown", "deadline_exceeded"}) or
-                        (expires is not None and time.monotonic() >= expires))
+                    state.remote_unknown |= own_unknown
+                    # Snapshot this submission BEFORE admitting the next one.
+                    # A later client's quarantine must not be attributed here.
+                    future.decision_remote_unknown = own_unknown
                     state.inflight = False
             # Publish only after release, so dependent stages cannot race it.
             if error is not None:
@@ -133,24 +142,25 @@ class ReceiptWorkers:
         self._capacity = threading.BoundedSemaphore(capacity)
 
     def persist(self, sink, receipts, *, deadline, fence=None):
+        from agent.decisions.receipts import RECEIPT_ADMISSION, ReceiptAdmission
         require(sink is not None, "receipt_unavailable")
         remaining = deadline - time.time()
         require(remaining >= .001, "receipt_deadline")
         require(self._capacity.acquire(blocking=False), "receipt_capacity")
-        abandoned, future = threading.Event(), Future()
+        admission, future = ReceiptAdmission(deadline, fence), Future()
 
         def work():
             error = None
+            token = RECEIPT_ADMISSION.set(admission)
             try:
                 for receipt in receipts:
-                    require(not abandoned.is_set() and time.time() < deadline, "receipt_deadline")
-                    if fence is not None:
-                        fence()
+                    admission.check()
                     sink(receipt)
-                require(not abandoned.is_set() and time.time() < deadline, "receipt_deadline")
+                admission.check_deadline()
             except Exception:
                 error = DecisionError("receipt_unavailable")
             finally:
+                RECEIPT_ADMISSION.reset(token)
                 self._capacity.release()
             if error is not None:
                 future.set_exception(error)
@@ -165,10 +175,15 @@ class ReceiptWorkers:
             self._capacity.release()
             raise DecisionError("receipt_capacity") from None
         try:
-            return future.result(timeout=remaining)
+            result = future.result(timeout=max(0, deadline - time.time()))
+            admission.check_deadline()
+            return result
         except TimeoutError:
-            abandoned.set()
+            admission.abandon()
             raise DecisionError("receipt_deadline") from None
+        except BaseException:
+            admission.abandon()
+            raise
 
 
 SHARED_BATCH_ADMISSION = SharedBatchAdmission()

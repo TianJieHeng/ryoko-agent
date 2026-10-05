@@ -129,7 +129,7 @@
     "L05": "complete_offline_live_gates_open",
     "L06": "complete_synthetic_observer",
     "L07": "blocked_live_qualification_offline_tooling_complete",
-    "L08": "pending",
+    "L08": "complete_synthetic_qualified_owner",
     "L09": "pending",
     "L10": "pending"
   },
@@ -152,5 +152,13 @@
     "health_verified": false,
     "response_origin_verified": false,
     "limitation": "Response may originate from service or intermediary; no inference/auth/artifact/hardware conclusion"
+  },
+  "owner_qualification": {
+    "implementation": "cache_safe_first_freeze_and_committed_compression",
+    "production_enforcement_enabled": false,
+    "actual_release_qualified": false,
+    "restoration": "exact_frozen_pin_or_dispatch_deferred",
+    "uncertain_commit": "fail_closed",
+    "documentation": "docs/build/laya-bundle-owner.md"
   }
 }

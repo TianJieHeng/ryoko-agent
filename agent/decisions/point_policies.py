@@ -14,7 +14,7 @@ from agent.decisions.contracts import digest, label, number, require, sha256
 from agent.decisions.point_adapters import Effect, apply_floor
 from agent.decisions.policy import MODES, PointGate, PointPolicy
 from agent.decisions.registry import REGISTRY, contract_for
-from agent.decisions.release_gates import inspect_release
+from agent.decisions.release_gates import inspect_release, dp16_release_bindings
 
 # These are effect categories, not tools or permissions. No widening category
 # exists (grant, send-reply, auto-edit, increase-budget, erase-evidence, etc.).
@@ -104,6 +104,7 @@ class _Release:
     gate: PointGate
     scope_digest: str
     consumer_ready: bool
+    contract_version: int = 1
 
 
 class PointPolicyBook:
@@ -133,11 +134,11 @@ class PointPolicyBook:
             self._journal({"kind": "point_policy", "operation": "observer", **asdict(rule), "policy_digest": rule.policy_digest})
             self._rules[rule.point_id] = rule
 
-    def promote(self, rule, *, bundle, evidence, approval, scope_digest, consumer_ready=False, now=None, _operation="promote", _reason=None):
+    def promote(self, rule, *, bundle, evidence, approval, scope_digest, consumer_ready=False, now=None, contract_version=1, _operation="promote", _reason=None):
         now = time.time() if now is None else now
         require(rule.mode == "enforce" and scope_digest in rule.rollout_scope and bool(rule.allowed_effects), "invalid_release_scope")
         verdict = inspect_release(evidence, approval, point_id=rule.point_id, bundle=bundle,
-            policy_digest=rule.policy_digest, scope_digest=scope_digest, now=now, consumer_ready=consumer_ready)
+            policy_digest=rule.policy_digest, scope_digest=scope_digest, now=now, consumer_ready=consumer_ready, contract_version=contract_version)
         require(verdict["qualified"], "release_not_qualified")
         require(self._authorize_operator(approval), "operator_not_authorized")
         client_policy = PointPolicy("enforce", rule.threshold("default"), rule.timeout_seconds,
@@ -145,13 +146,14 @@ class PointPolicyBook:
         gate = PointGate(rule.point_id, evidence.contract_digest, bundle.model_digest, bundle.calibration_digest,
             client_policy.policy_digest,
             evidence.evidence_digest, min(evidence.expires_at, approval.expires_at), ("recommend",))
-        release = _Release(rule, bundle, evidence, approval, gate, scope_digest, consumer_ready)
+        release = _Release(rule, bundle, evidence, approval, gate, scope_digest, consumer_ready, contract_version)
         with self._lock:
             self._journal({"kind": "point_policy", "operation": _operation, "point_id": rule.point_id,
                 "policy_digest": rule.policy_digest, "gate_digest": gate.gate_digest,
                 "evidence_digest": evidence.evidence_digest, "approval_digest": approval.approval_digest,
                 "scope_digest": scope_digest, "bundle": asdict(bundle), "recorded_at": now,
-                **({"reason": _reason} if _reason else {})})
+                **({"reason": _reason} if _reason else {}),
+                **({"contract_version": contract_version, "binding_digests": dp16_release_bindings()} if contract_version == 2 else {})})
             self._rules[rule.point_id] = rule
             self._releases[rule.point_id] = release
             self._history[(rule.point_id, gate.gate_digest)] = release
@@ -167,13 +169,15 @@ class PointPolicyBook:
             else:
                 reasons = inspect_release(release.evidence, release.approval, point_id=point_id,
                     bundle=release.bundle, policy_digest=rule.policy_digest, scope_digest=scope_digest,
-                    now=time.time() if now is None else now, consumer_ready=release.consumer_ready)["reasons"]
+                    now=time.time() if now is None else now, consumer_ready=release.consumer_ready,
+                    contract_version=release.contract_version)["reasons"]
                 if not self._authorize_operator(release.approval):
                     reasons.append("operator_authorization_revoked")
             return {"point_id": point_id, "mode": rule.mode, "policy_digest": rule.policy_digest,
                     "fallback": rule.fallback, "owner_status": OWNER_STATUS[point_id],
                     "qualified": not reasons and rule.mode == "enforce", "reasons": reasons,
-                    "gate_digest": release.gate.gate_digest if release else None}
+                    "gate_digest": release.gate.gate_digest if release else None,
+                    "contract_version": release.contract_version if release else None}
 
     def client_settings(self, point_id, *, scope_digest, now=None):
         with self._lock:
@@ -200,7 +204,7 @@ class PointPolicyBook:
             if prior is not None:
                 return self.promote(prior.rule, bundle=prior.bundle, evidence=prior.evidence,
                     approval=prior.approval, scope_digest=prior.scope_digest,
-                    consumer_ready=prior.consumer_ready, now=now, _operation="rollback", _reason=reason)
+                    consumer_ready=prior.consumer_ready, now=now, contract_version=prior.contract_version, _operation="rollback", _reason=reason)
             rule = replace(current, mode=mode)
             self._journal({"kind": "point_policy", "operation": "rollback", "point_id": point_id,
                 "mode": mode, "reason": reason, "previous_policy_digest": current.policy_digest,
@@ -225,7 +229,8 @@ class PointPolicyBook:
             reason = "off" if rule.mode == "off" else "incumbent_fallback"
             if rule.mode != "off" and choice is not None and receipt is not None:
                 valid = (receipt.get("point_id") == point_id and receipt.get("scope_digest") == scope_digest
-                         and receipt.get("contract_digest") == contract_for(point_id).contract_digest
+                         and receipt.get("contract_digest") == contract_for(point_id, release.contract_version if release else 1).contract_digest
+                         and receipt.get("contract_version", 1) == (release.contract_version if release else 1)
                          and choice in receipt.get("live_options", []))
                 require(valid, "correction_or_receipt_binding_mismatch")
                 probability = (receipt.get("distribution") or {}).get(choice, 0)
