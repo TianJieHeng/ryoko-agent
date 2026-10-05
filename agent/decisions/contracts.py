@@ -37,7 +37,7 @@ def sha256(value):
 
 
 def number(value, low, high, code="invalid_number"):
-    require(type(value) in (int, float) and math.isfinite(value) and low <= value <= high, code)
+    require(type(value) in (int, float) and low <= value <= high and math.isfinite(value), code)
     return value
 
 
@@ -103,10 +103,13 @@ class StatePacket:
     def __post_init__(self):
         sha256(self.scope_digest)
         require(self.classification in {"private", "synthetic", "public"}, "invalid_data_class")
-        require(isinstance(self.state_json, str) and len(self.state_json.encode()) <= 16384, "state_too_large")
+        require(isinstance(self.state_json, str), "invalid_state")
         try:
+            require(len(self.state_json.encode("utf-8")) <= 16384, "state_too_large")
             state = json.loads(self.state_json)
-        except (ValueError, TypeError):
+        except DecisionError:
+            raise
+        except (ValueError, TypeError, RecursionError, UnicodeError):
             raise DecisionError("invalid_state") from None
         require(isinstance(state, dict) and canonical(state) == self.state_json, "invalid_state")
 

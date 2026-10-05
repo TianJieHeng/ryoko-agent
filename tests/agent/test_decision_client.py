@@ -143,7 +143,7 @@ def test_registry_closed_versions_dynamic_live_menu_and_state_freezing():
     for name, value in REGISTRY.items():
         assert contract_for(name, value.version).contract_digest == value.contract_digest
     with pytest.raises(DecisionError, match="unknown_contract"):
-        contract_for("DP16", 2)
+        contract_for("DP16", 3)
     with pytest.raises(DecisionError, match="closed_options"):
         call(client(), live_options=("grant_admin", "unclear"))
     with pytest.raises(DecisionError, match="live_menu"):

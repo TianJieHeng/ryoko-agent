@@ -33,10 +33,27 @@ REGISTRY = {point: DecisionContract(point, 1, owner, family, questions, fallback
     for point, owner, family, questions, fallback, fields, consumer in _ROWS}
 
 
+# Version 1 remains the default registry, including retained receipt digests.
+_DP16_V2 = DecisionContract(
+    "DP16", 2, "agent.front_door", "Router",
+    (q("need", "Does this request need tools?", "no_tools needs_tools defer"),
+     q("effort", "What rough tool effort is useful?", "one two_three four_plus defer"),
+     q("family", "Is this authorized tool family needed?", "yes no"),
+     q("include", "Is this authorized tool needed in the task?", "yes no"),
+     q("verify", "Does this authorized tool have a supported role in the shortlist?", "yes no")),
+    "authorized_default_plus_reopen",
+    ("context", "catalog", "stage", "bindings", "renderer_version", "prior",
+     "selected_family", "selected_tool", "menu", "shortlist"),
+    "evals/decisions/laya_api_fixtures.json", consumer="pre_api_request_shadow",
+)
+
+
 def contract_for(point_id, version=1):
     contract = REGISTRY.get(point_id)
     if contract is None:
         raise DecisionError("unknown_point")
+    if point_id == "DP16" and type(version) is int and version == 2:
+        return _DP16_V2
     if type(version) is not int or version != contract.version:
         raise DecisionError("unknown_contract_version")
     return contract
