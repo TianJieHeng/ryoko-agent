@@ -15,7 +15,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 PURPOSES = frozenset({"main_model", "aux_model", "memory", "embeddings", "mcp",
                       "browser_tool", "message_delivery", "telemetry", "provisioning",
-                      "training", "subprocess", "connected_source"})
+                      "training", "subprocess", "connected_source", "decision_inference"})
 TRANSPORTS = frozenset({"httpx", "subprocess", "browser", "opaque"})
 
 
@@ -207,6 +207,11 @@ def _check_request(authorization, request):
         expected = authorization.grant.endpoint.rstrip("/") + "/chat/completions"
         if str(request.url) != expected or request.method != "POST":
             raise EgressDenied("recipient_model_operation_unsupported")
+    if authorization.grant.purpose == "decision_inference":
+        expected = authorization.grant.endpoint
+        method = "GET" if _url(expected)[3] == "/health" else "POST"
+        if str(request.url) != expected or request.method != method:
+            raise EgressDenied("recipient_decision_operation_unsupported")
 
 
 @lru_cache(maxsize=1)

@@ -23,8 +23,14 @@ _HOOKS = {"pre_api_request": "DP16", "pre_tool_call": "DP06", "transform_tool_re
 def parse_settings(raw):
     if raw in (None, {}):
         return None
-    require(isinstance(raw, dict) and set(raw) <= {"schema_version", "bundle", "points", "node", "tls"}, "invalid_decision_config")
-    require(type(raw.get("schema_version")) is int and raw["schema_version"] == 1, "invalid_decision_config")
+    require(isinstance(raw, dict), "invalid_decision_config")
+    version = raw.get("schema_version")
+    require(type(version) is int and version in {1, 2}, "invalid_decision_config")
+    allowed = ({"schema_version", "bundle", "points", "node", "tls"} if version == 1 else
+               {"schema_version", "bundle", "points", "protocol", "destination"})
+    require(set(raw) <= allowed, "invalid_decision_config")
+    if version == 2:
+        require(raw.get("protocol") == "laya_systemone", "unsupported_decision_protocol")
     points = raw.get("points", {})
     require(isinstance(points, dict) and set(points) <= set(REGISTRY), "unknown_point")
     policies = {}
@@ -42,7 +48,15 @@ def parse_settings(raw):
         return None
     bundle = raw.get("bundle")
     require(isinstance(bundle, dict) and set(bundle) == {"model_digest", "calibration_digest", "service_digest"}, "invalid_bundle")
-    return ModelBundle(**bundle), policies
+    resolved_bundle = ModelBundle(**bundle)
+    if version == 2:
+        require(all(point == "DP16" or policy.mode == "off" for point, policy in policies.items()),
+                "laya_dp16_only")
+        from agent.decisions.laya_transport import LayaDestinationManifest
+        destination = LayaDestinationManifest.from_record(raw.get("destination"))
+        require(all(getattr(destination, "expected_" + key) == getattr(resolved_bundle, key)
+                    for key in ("model_digest", "calibration_digest", "service_digest")), "bundle_mismatch")
+    return resolved_bundle, policies
 
 
 def _settings():
@@ -62,6 +76,10 @@ def handles_hook(hook_name):
 
 
 def _transport(raw):
+    if raw.get("schema_version") == 2:
+        from agent.decisions.laya_transport import LayaDestinationManifest, LayaHttpsTransport
+        return LayaHttpsTransport(LayaDestinationManifest.from_record(raw.get("destination")),
+                                 bundle=ModelBundle(**raw["bundle"]))
     node = raw.get("node")
     if node is None:
         return None
