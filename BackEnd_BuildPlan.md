@@ -2,6 +2,8 @@
 
 This plan chronicles the full runtime upgrade, its dependencies, implementation seams and evidence required to finish each phase. Use it with [FrontEnd_BuildPlan.md](FrontEnd_BuildPlan.md) and the shared [buildjournal.md](buildjournal.md).
 
+**LAYA integration roadmap:** [LAYA_Integration_BuildPlan.md](LAYA_Integration_BuildPlan.md) records the 5 October 2026 DP16-first integration plan against current source and the supplied systemone API. It is planning-only; the user owns the pending inference tunnel, and runtime, privacy, performance, and rollout gates remain explicit.
+
 **Role:** implementation roadmap. Current completed checkpoints, exact commits, validation and remaining limits are recorded in [buildjournal.md](buildjournal.md). The original planning-only status is historical; this roadmap itself is not execution evidence.
 
 **Current Git publication rule:** publish verified phase commits directly to `main`, with the journal and a user update after each phase. The user explicitly declined pull requests. This rule supersedes the branch/draft-PR publication wording retained in the original phase instructions below; preserve concurrent work and never force-push.

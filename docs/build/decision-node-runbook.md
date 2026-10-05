@@ -1,5 +1,9 @@
 # Decision node qualification runbook (not executed)
 
+## Proposed systemone integration
+
+The [LAYA integration build plan](../../LAYA_Integration_BuildPlan.md) describes a separate, pending authenticated HTTPS/systemone transport for the user's inference-specific tunnel. This runbook continues to describe the existing pinned-mTLS LAN protocol; its manifest cannot take a Cloudflare hostname. Any new route requires the plan's explicit trust-boundary review and destination/privacy qualification. No tunnel, credentials, deployment, or model activation is configured by that plan.
+
 ## Safety and deployment ownership
 
 The proposed Jetson Orin Nano 8 GB / JetPack 6.2 configuration is unverified.

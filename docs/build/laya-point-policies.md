@@ -1,5 +1,9 @@
 # BE16: independent point policies and recoverable DP16 planning
 
+## Current integration plan
+
+The [LAYA integration build plan](../../LAYA_Integration_BuildPlan.md) adds the implementation sequence for the supplied systemone runtime, bounded context and catalog prompts, native batching, multi-tool selection, destination authorization, hardware qualification, and cache-safe ownership. It is a planning update, not activation or release evidence. The existing foundation behavior below remains unchanged.
+
 ## Shipping behavior and evidence boundary
 
 Current direction: LAYA experiments and activation are paused. This checkpoint

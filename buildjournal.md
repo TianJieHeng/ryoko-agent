@@ -1247,3 +1247,13 @@ Supported-runtime gate on Python **3.14.7**: canonical `scripts/run_tests.sh` wi
 Generated TypeScript SHA-256 remains `19fdf11f4aa587d7bcdd58927c0cdbbdec463cfdeaa90003e0ac6284266539d2`; OpenRPC SHA-256 remains `fa7b08c3edd56190daadeef533928685113fd70a2ae8959b2fb7b61aee5051b2`. The exact new method is `runtime.schedule.scheduler.status`. Both generated artifacts match regeneration on the current BE06 base.
 
 Qualification is limited to this focused producer prerequisite. Full Dots HTTP → stdio subprocess integration, frontend recurrence/history parity, live providers, external delivery and deployed operation remain separately qualified work. Enabling this option would also tick pre-existing Ryoko cron jobs, requiring operator review; migrated legacy Dots admission must remain fenced. No real schedule/configuration, credential, dependency, provider or deployment activation occurred. This commit is local only; producer publication and consumer re-pinning remain with the integration owner.
+
+## 2026-10-05 LAYA integration planning
+
+**Status:** planning complete; L00–L10 implementation and qualification remain pending. Reviewed current `main` at `a45b0d9b3202691da805b954336135d7ba7378f7` and the supplied, unverified LAYA systemone API description.
+
+**Delivered:** root [LAYA_Integration_BuildPlan.md](LAYA_Integration_BuildPlan.md), with links from the backend roadmap and existing LAYA policy/node documentation. The plan covers DP16-first context and catalog assembly, exact prompt/API examples, closed-response adaptation, native staged batching and same-family multi-tool selection, secure cross-machine transport, private-data authorization, budget/receipt bounds, real owner/cache integration, existing-hardware evaluation, measurable promotion gates, and rollback. It separates existing code, proposed work, and user-owned tunnel/auth prerequisites; Observatory remains telemetry-only.
+
+**Verification:** source review and independent technical cross-check; documentation structure/local-link checks, both synthetic JSON examples parsed, phase coverage and documentation-only diff/whitespace checks. No application tests, CI, model calls, credentials, network setup, training, private-data export, deployment, or activation. Actual endpoint/auth details, loaded-model evidence, privacy qualification, latency/quality measurements, and rollout approval remain pending. No secret source file or credential value is included.
+
+**Publication:** direct-main documentation checkpoint; remote SHA and exact changed files are verified after publication and reported in chat. This entry is planning evidence only, not implementation or runtime readiness.
