@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import copy_context
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 import json
 import time
 
@@ -23,22 +23,22 @@ BRIDGES = ("tool_search", "tool_describe", "tool_call")
 class LiveCatalog:
     version: str
     scope_digest: str
-    definitions_json: str
+    definitions_json: str = field(repr=False)
     families: tuple[tuple[str, tuple[str, ...]], ...]
     bridge_names: tuple[str, ...]
+    tool_descriptors: tuple
+    family_descriptors: tuple
+    policy_digest: str
+    tool_view_revision: str
 
     def __post_init__(self):
-        sha256(self.version)
-        sha256(self.scope_digest)
-        definitions = json.loads(self.definitions_json)
-        require(type(definitions) is list and canonical(definitions) == self.definitions_json, "invalid_catalog")
-        names = [item["function"]["name"] for item in definitions]
-        require(len(set(names)) == len(names), "duplicate_catalog_tool")
-        require(type(self.families) is tuple and len(dict(self.families)) == len(self.families), "invalid_catalog_families")
-        require(set(self.bridge_names) <= set(BRIDGES), "invalid_bridge")
-        for family, tools in self.families:
-            require(isinstance(family, str) and len(family) <= 96 and type(tools) is tuple
-                    and set(tools) <= set(names) and not (set(tools) & set(BRIDGES)), "invalid_family_tools")
+        from agent.decisions.planner_catalog import validate_snapshot, version_material
+        for value in (self.version, self.scope_digest, self.policy_digest, self.tool_view_revision):
+            sha256(value)
+        require(all(type(value) is tuple for value in (self.families, self.bridge_names,
+                    self.tool_descriptors, self.family_descriptors)), "invalid_catalog")
+        require(digest(version_material(vars(self))) == self.version, "catalog_version_mismatch")
+        validate_snapshot(vars(self), bridges=BRIDGES)
 
     @property
     def definitions(self):
@@ -46,36 +46,79 @@ class LiveCatalog:
 
     @property
     def tool_ids(self):
-        return tuple(item["function"]["name"] for item in self.definitions if item["function"]["name"] not in BRIDGES)
+        return tuple(item.tool_id for item in self.tool_descriptors)
+
+    @property
+    def descriptor_values(self):
+        """Fresh JSON-safe data for the renderer; no raw schemas or source IDs."""
+        from agent.decisions.planner_catalog import descriptor_values
+        return descriptor_values(vars(self))
+
+    def tool_alias(self, tool_id):
+        return self._lookup(self.tool_descriptors, "tool_id", tool_id, "alias")
+
+    def family_alias(self, family_id):
+        return self._lookup(self.family_descriptors, "family_id", family_id, "alias")
+
+    def resolve_tool_alias(self, alias):
+        return self._lookup(self.tool_descriptors, "alias", alias, "tool_id")
+
+    def resolve_family_alias(self, alias):
+        return self._lookup(self.family_descriptors, "alias", alias, "family_id")
+
+    @staticmethod
+    def _lookup(descriptors, key, value, result):
+        found = [getattr(item, result) for item in descriptors if getattr(item, key) == value]
+        require(len(found) == 1, "unknown_catalog_alias")
+        return found[0]
 
     @classmethod
-    def from_authorized(cls, definitions, *, scope_digest, families, bridge_names):
-        frozen = canonical(definitions)
-        family_items = tuple(sorted((name, tuple(sorted(tools))) for name, tools in families.items()))
-        version = digest({"schemas": json.loads(frozen), "families": family_items,
-                          "scope": scope_digest, "bridges": sorted(bridge_names)})
-        return cls(version, scope_digest, frozen, family_items, tuple(sorted(bridge_names)))
+    def from_authorized(cls, definitions, *, scope_digest, families, bridge_names,
+                        policy_digest=None, tool_view_revision=None, family_descriptions=None,
+                        sources=None, effects=None):
+        from agent.decisions.planner_catalog import snapshot_fields
+        return cls(**snapshot_fields(definitions, scope_digest=scope_digest, families=families,
+            bridge_names=bridge_names, bridges=BRIDGES, policy_digest=policy_digest,
+            tool_view_revision=tool_view_revision, family_descriptions=family_descriptions,
+            sources=sources, effects=effects))
 
 
 def live_catalog(definitions, *, scope_digest):
-    """Host adapter: recheck live ownership and filter before exposing metadata."""
+    """Recheck ownership and session visibility before inspecting descriptions."""
     from tools.capability_broker import require_live_policy
-    from tools.agent_policy_gate import authorize_tool, filter_tool_definitions
+    from tools.agent_policy_gate import authorize_tool
     from tools.registry import registry
+    from agent.runtime_commands import assert_runtime_dispatch
     from agent.decisions.receipts import scope_digest as owner_digest
+    from agent.decisions.planner_catalog import host_metadata
     context = require_live_policy()
     require(context is not None and owner_digest(context) == scope_digest, "planner_owner_mismatch")
-    admitted = filter_tool_definitions(definitions, context=context)
-    families = {}
-    for item in admitted:
-        name = item["function"]["name"]
-        if name in BRIDGES:
+    run = assert_runtime_dispatch()
+    view = getattr(run.agent, "tool_view", None)
+    if view is not None:
+        require(view.session_policy_version == context.policy.digest, "planner_owner_mismatch")
+    admitted = []
+    for item in definitions:
+        require(isinstance(item, dict) and isinstance(item.get("function"), dict), "invalid_catalog_schema")
+        name = item["function"].get("name")
+        require(isinstance(name, str), "invalid_catalog_id")
+        if authorize_tool(name, context=context) is not None:
             continue
-        entry = registry.get_entry(name)
-        family = entry.toolset if entry is not None else "session"
-        families.setdefault(family, []).append(name)
+        if view is not None and name not in view.discoverable_tool_ids and name not in BRIDGES:
+            continue
+        admitted.append(item)
+    regular = [item for item in admitted if item["function"]["name"] not in BRIDGES]
+    metadata = host_metadata(regular, context, registry=registry, scope_digest=scope_digest)
     bridges = tuple(name for name in BRIDGES if authorize_tool(name, context=context) is None)
-    return LiveCatalog.from_authorized(admitted, scope_digest=scope_digest, families=families, bridge_names=bridges)
+    revision = None if view is None else digest({"catalog": view.catalog_version,
+        "policy": view.session_policy_version, "discoverable": sorted(view.discoverable_tool_ids),
+        "selected": sorted(view.selected_tool_ids)})
+    # Recheck the real owner after snapshot assembly too. The result remains a
+    # hint: selection/installation/recovery/dispatch still authorize separately.
+    catalog = LiveCatalog.from_authorized(admitted, scope_digest=scope_digest, bridge_names=bridges,
+        policy_digest=context.policy.digest, tool_view_revision=revision, **metadata)
+    require(require_live_policy() == context, "planner_owner_mismatch")
+    return catalog
 
 
 @dataclass(frozen=True)
