@@ -1,0 +1,9 @@
+# Ubuntu 24.04+: permit util-linux unshare to create the namespaces used by
+# Hermes' executor. The executor still installs its own chroot/capability/seccomp
+# boundary. This grants namespace creation to /usr/bin/unshare callers; it does
+# not disable AppArmor globally or grant host root privileges.
+abi <abi/4.0>,
+include <tunables/global>
+profile ryoko-unshare /usr/bin/unshare flags=(unconfined) {
+  userns,
+}
