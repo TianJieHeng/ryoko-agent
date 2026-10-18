@@ -51,6 +51,7 @@ _DIMENSIONS = frozenset({"tokens", "attempts", "cost_micros", "wall_ms", "provid
 # These built-ins do not start an opaque billable external loop. Identity grants
 # still run first; this set is a cost-contract floor, never a capability grant.
 _LOCAL_TOOLS = {"todo_list": "tools.todo_tool", "delegate_task": "tools.delegate_tool",
+                "skills_list": "tools.skills_tool", "skill_view": "tools.skills_tool",
                 "clarify": "tools.clarify_tool",
                 "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
                 "tool_call": "tools.tool_search",
@@ -559,7 +560,7 @@ async def invoke_budgeted_completion_async(client, kwargs):
 
 
 @contextmanager
-def budget_tool_scope(run, name):
+def budget_tool_scope(run, name, *, at_execution=False):
     budget = run.budget
     if budget is None:
         yield
@@ -584,6 +585,9 @@ def budget_tool_scope(run, name):
             or getattr(entry.handler, "__module__", "") != _LOCAL_TOOLS[name]):
         budget.block(f"tool {name} has no certified bounded execution adapter")
     budget.check()
+    if name in {"skills_list", "skill_view"} and not at_execution:
+        yield
+        return
     # Delegation is orchestration: descendants acquire their own executor/provider
     # slots. Holding a parent executor slot while waiting would deadlock a size-1 pool.
     # The isolated executor reserves at its concrete launch edge, including

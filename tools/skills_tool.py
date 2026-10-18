@@ -233,6 +233,10 @@ def _sort_skills(skills: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 def skills_list(category: str = None, task_id: str = None) -> str:
     """Tier 1 listing: name + description (+ category) only; ``task_id`` is handler parity."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        from tools.skills_owned import dispatch
+        return dispatch("skills_list", {"category": category})
     try:
         _skills_dir().mkdir(parents=True, exist_ok=True)
         all_skills = _find_all_skills()
@@ -576,6 +580,10 @@ def skill_view(
     or path ("axolotl", "03-fine-tuning/axolotl"); "plugin:skill" resolves plugin-provided
     skills. ``preprocess`` applies the configured SKILL.md template / inline shell rendering;
     slash/preload callers render the message themselves."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        from tools.skills_owned import dispatch
+        return dispatch("skill_view", {"name": name, "file_path": file_path})
     try:
         # Validate before the ':' dispatch so a Windows drive path (C:\skills\foo) can't be
         # reinterpreted as a plugin namespace.
@@ -725,6 +733,9 @@ def _skill_view_with_bump(args, **kw):
     """Invoke skill_view, then bump view_count/use on success (best-effort). Repeat-view dedup
     mirrors read_file's unchanged-stub: a SAME, unchanged skill file already loaded in this
     session returns a short stub (cache cleared on context compression)."""
+    from agent.runtime_context import current_agent_context
+    if current_agent_context() is not None:
+        return skill_view(args.get("name", ""), file_path=args.get("file_path"), task_id=kw.get("task_id"))
     name = args.get("name", "")
     task_id = kw.get("task_id")
     # The background-review fork shares the parent's task_id (prefix-cache parity). A stub there

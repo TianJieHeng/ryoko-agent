@@ -166,6 +166,7 @@ def project_artifact_action(scope):
 
 
 _SESSION_MODULES = {"todo_list": "tools.todo_tool", "clarify": "tools.clarify_tool",
+                    "skills_list": "tools.skills_tool", "skill_view": "tools.skills_tool",
                     "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
                     "tool_call": "tools.tool_search"}
 
@@ -209,10 +210,10 @@ def tool_action(name: str, arguments: dict, *, entry=None) -> ActionSpec:
             raise CapabilityDenied("mcp_scope_denied", "MCP transport policy is required")
         # Explicit operator read grants classify; remote readOnlyHint never does.
         read_only = target[1] in grant["read_only_tools"] or target[1] in grant["read_scopes"]
-        if not read_only:
+        if not read_only and target[1] not in grant.get("mutation_contracts", {}):
             raise CapabilityDenied("effect_adapter_unsupported",
                 "This MCP mutation has no durable semantic effect adapter; approval alone cannot certify its outcome")
-        operation = "mcp_read" if read_only else "mcp_call"
+        operation = "mcp_read" if read_only else "mcp_mutation"
         destination = _canonical({"server": target[0], "tool": target[1], "endpoint": grant["endpoint"]})
         purpose = "mcp"
     else:

@@ -75,6 +75,8 @@ def _request_operation(server, request, limit):
             raise MCPUnsupported("MCP tool call requires an exact name and argument object")
         require_operation(server.name, params.get("name"), params.get("arguments", {}),
                           connection=server, require_run=True)
+        from tools.mcp_tool_effects import authorize_request
+        authorize_request(server.name, params["name"], params.get("arguments", {}))
         return
     if method not in _READ_OPS:
         raise MCPUnsupported("MCP operation is not supported by the bounded read adapter")

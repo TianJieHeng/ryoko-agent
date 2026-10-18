@@ -186,6 +186,9 @@ class TurnFacadeMixin:
                     if runtime_run is not None:
                         from agent.mission_runtime import finalize_mission_result
                         result = finalize_mission_result(runtime_run, result)
+                        from agent.conversation_mcp import sync_turn
+                        result = sync_turn(runtime_run,
+                            persist_user_message if persist_user_message is not None else user_message, result)
                 finally:
                     # Post-loop relay/task finalization must not receive a late refresh interrupt;
                     # the interrupt clear itself waits for the thread join in the outer finally.

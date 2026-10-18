@@ -58,6 +58,7 @@ def authorize_tool(name: str, *, context=_CURRENT, entry=None) -> str | None:
         return authorize_mcp(*target, context=ctx)
     module = getattr(getattr(entry, "handler", None), "__module__", "")
     certified = {
+        "skills_list": "tools.skills_tool", "skill_view": "tools.skills_tool",
         "todo_list": "tools.todo_tool", "clarify": "tools.clarify_tool",
         "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
         "tool_call": "tools.tool_search", "execute_code": "tools.code_execution_tool",

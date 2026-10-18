@@ -49,7 +49,7 @@ def parse_mcp_policies(raw):
     _names(list(raw), "mcp_policies")
     result = {}
     fields = {"policy_version", "transport", "endpoint", "tool_allowlist", "read_scopes",
-              "secret_ref", "schema_digests", "read_only_tools", "sampling_limits", "budget"}
+              "secret_ref", "schema_digests", "read_only_tools", "sampling_limits", "budget", "mutation_contracts"}
     for server, supplied in raw.items():
         if not isinstance(supplied, Mapping) or set(supplied) - fields:
             raise IdentityPolicyError("MCP policy contains unknown fields")
@@ -104,6 +104,11 @@ def parse_mcp_policies(raw):
         if "budget" in supplied:
             from tools.mcp_tool_budget import parse_contract
             result[server]["budget"] = parse_contract(supplied["budget"])
+        if "mutation_contracts" in supplied:
+            if "budget" not in supplied:
+                raise IdentityPolicyError("MCP mutations require a physical-request budget contract")
+            from tools.mcp_tool_effects import validate_contracts
+            result[server]["mutation_contracts"] = validate_contracts(supplied["mutation_contracts"], tools, read_only)
     return _freeze(result)
 
 
@@ -119,9 +124,14 @@ def intersect_mcp_policies(parent, ceiling):
             continue
         if cap.get("budget") != inherited.get("budget"):
             continue
+        if cap.get("mutation_contracts") != inherited.get("mutation_contracts"):
+            continue
         record = _record(cap)
         record["tool_allowlist"] = sorted(set(cap["tool_allowlist"]) & set(inherited["tool_allowlist"]))
         record["read_only_tools"] = sorted(set(cap["read_only_tools"]) & set(inherited["read_only_tools"]))
+        if "mutation_contracts" in record:
+            record["mutation_contracts"] = {name: contract for name, contract in record["mutation_contracts"].items()
+                                            if name in record["tool_allowlist"]}
         record["schema_digests"] = {name: digest for name, digest in cap["schema_digests"].items()
                                      if inherited["schema_digests"].get(name) == digest
                                      and name in record["tool_allowlist"]}
@@ -179,10 +189,12 @@ def require_transport(server, config, *, connection=None):
     ctx = live_context()
     if ctx is None:
         return
-    require_budget_support(server)
+    budget = require_budget_support(server)
     grant = policy_for(server, ctx)
     if grant is None:
         raise PermissionError("MCP transport unsupported without an explicit agent-owned MCP policy")
+    if grant.get("mutation_contracts") and budget is None:
+        raise MCPUnsupported("MCP mutation transport requires an admitted budget owner")
     if ("url" not in config or config.get("transport", "http") not in {"http", "streamable_http"}
             or config.get("auth") or config.get("oauth") or config.get("identity_header")
             or config.get("client_cert") or config.get("client_key")
@@ -224,8 +236,12 @@ def require_operation(server, operation=None, args=None, *, connection=None, req
     grant = policy_for(server, ctx)
     if grant is None:
         raise PermissionError("MCP transport unsupported without an explicit agent-owned MCP policy")
-    if (budget is not None or grant.get("budget") is not None) and operation is not None and operation not in _READ_OPS and operation not in grant["read_only_tools"]:
-        raise MCPUnsupported("Budgeted MCP supports explicitly read-only operations only")
+    mutations = grant.get("mutation_contracts", {})
+    if (budget is not None or grant.get("budget") is not None) and operation is not None and operation not in _READ_OPS and operation not in grant["read_only_tools"] and operation not in mutations:
+        raise MCPUnsupported("Budgeted MCP requires an explicit read-only or receipt-validated mutation contract")
+    if operation in mutations and args is not None:
+        from tools.mcp_tool_effects import validate_arguments
+        validate_arguments(mutations[operation], args)
     if operation is not None:
         if operation in _READ_OPS:
             target = grant["read_scopes"].get(operation)

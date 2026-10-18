@@ -612,6 +612,13 @@ def _make_tool_handler(server_name: str, tool_name: str, tool_timeout: float):
         def _on_failure(exc):
             _core._bump_server_error(server_name)
             logger.error("MCP tool %s/%s call failed: %s", server_name, tool_name, exc)
+        from tools.mcp_tool_policy import policy_for
+        grant = policy_for(server_name)
+        if grant is not None and tool_name in grant.get("mutation_contracts", {}):
+            from tools.mcp_tool_effects import dispatch_mutation
+            # No authentication/session recovery callback may replay a mutation.
+            return dispatch_mutation(server_name, tool_name, args,
+                lambda: _loop._run_on_mcp_loop(_call, timeout=tool_timeout))
         session_expired = partial(_handle_session_expired_and_retry, call_may_have_side_effects=not read_only)
         return _dispatch(
             server_name, server, op, _call, tool_timeout,
