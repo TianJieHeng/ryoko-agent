@@ -528,15 +528,21 @@ class ToolRegistry:
 
     def _lookup(self, name: str, scope_key: Optional[str]) -> Optional[ToolEntry]:
         """``_merged_tools(scope_key).get(name)`` without building the merged dict."""
+        scoped = self._scoped_tools.get(scope_key)
+        entry = scoped.get(name) if scoped is not None else None
+        entry = entry if entry is not None else self._tools.get(name)
+        # A global local tool cannot be shadowed when no overlay contains its
+        # name. Avoid resolving credential-owned MCP state for these hot lookups;
+        # MCP entries and every possible overlay collision keep the full fence.
+        if (entry is None or not entry.toolset.startswith("mcp-")) and not any(
+                name in entries for entries in self._scoped_tools.values()):
+            return entry
         from tools.mcp_tool_policy import registry_scope
         owner = registry_scope()
         if owner is not None:
             owned = self._scoped_tools.get(owner, {}).get(name)
             if owned is not None:
                 return owned
-        scoped = self._scoped_tools.get(scope_key)
-        entry = scoped.get(name) if scoped is not None else None
-        entry = entry if entry is not None else self._tools.get(name)
         if owner is not None and entry is not None and entry.toolset.startswith("mcp-"):
             return None
         return entry

@@ -29,6 +29,26 @@ def _make_schema(name="test_tool"):
 
 
 class TestRegisterAndDispatch:
+    def test_local_lookup_avoids_mcp_resolution_but_rechecks_overlay_collisions(self, tmp_path, monkeypatch):
+        reg = ToolRegistry()
+        reg.register(name="alpha", toolset="core", schema=_make_schema("alpha"), handler=_dummy_handler)
+        original = reg.get_entry("alpha")
+        def unavailable():
+            raise RuntimeError("MCP ownership unavailable")
+        monkeypatch.setattr("tools.mcp_tool_policy.registry_scope", unavailable)
+        assert reg.get_entry("alpha") is original
+        assert reg.get_entry("absent") is None
+
+        owner = str(tmp_path / "owned")
+        monkeypatch.setattr("tools.mcp_tool_policy.registry_scope", lambda: owner)
+        reg.register(name="alpha", toolset="core", schema=_make_schema("alpha"),
+                     handler=lambda args: "owned", scope=owner)
+        assert reg.get_entry("alpha").handler({}) == "owned"
+        monkeypatch.setattr("tools.mcp_tool_policy.registry_scope", lambda: str(tmp_path / "rotated"))
+        assert reg.get_entry("alpha") is original
+        reg.register(name="remote", toolset="mcp-test", schema=_make_schema("remote"), handler=_dummy_handler)
+        assert reg.get_entry("remote") is None
+
     def test_register_and_dispatch(self):
         reg = ToolRegistry()
         reg.register(
