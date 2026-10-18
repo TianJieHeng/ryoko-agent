@@ -167,15 +167,17 @@ class LayaHttpsTransport:
         """Re-read run, live policy, owner, recipient and secret grant at each edge."""
         from agent.decisions.receipts import scope_digest
         from agent.secret_scope import current_secret_scope, get_secret
-        from tools.capability_broker import require_live_policy
+        from tools.egress_policy import RecipientAuthorization
         try:
-            context = require_live_policy()
-            require(context is not None and context == self._owner, "decision_owner_required")
             if authorization is None:
                 authorization = prepare_recipient("decision_inference", endpoint,
                     recipient_id=self.manifest.recipient_id)
-            require(authorization is not None, "laya_recipient_required")
+            require(type(authorization) is RecipientAuthorization, "laya_recipient_required")
+            # check_url revalidates live policy, durable run and recipient in
+            # one pass. Reuse that checked identity for the remaining checks.
             authorization.check_url(endpoint)
+            context = authorization.context
+            require(context is not None and context == self._owner, "decision_owner_required")
             for request in requests:
                 require(type(request) is DecisionRequest, "invalid_request")
                 classification = request.state_packet.classification

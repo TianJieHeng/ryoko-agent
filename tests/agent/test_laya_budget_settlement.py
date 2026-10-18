@@ -73,7 +73,9 @@ def test_prequarantined_destination_does_not_hold_an_undispatched_budget(agents,
     def during_provider_request():
         run = assert_runtime_dispatch()
         client = DecisionClient(bundle=ModelBundle("1" * 64, "2" * 64, "3" * 64), transport=Transport(),
-            policies={"DP16": PointPolicy("shadow", timeout_seconds=.5)}, sink=JournalSink(run), admission=admission)
+            # This verifies quarantine accounting, not the latency gate. Allow
+            # the same bounded journal setup as the other integration fixtures.
+            policies={"DP16": PointPolicy("shadow", timeout_seconds=1)}, sink=JournalSink(run), admission=admission)
         prepared = prepare_front_door(run, client, request_definitions=agent.tools,
                                       request="synthetic quarantined planner")
         assert prepared.plan.fallback == "remote_completion_unknown"

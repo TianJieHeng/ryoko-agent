@@ -21,6 +21,7 @@ class PolicyJournal:
     def __call__(self, record, *, deadline=None):
         from agent.decisions.receipts import persist_decision_event
         from tui_gateway.contracts.decision_plans import DecisionPolicyRecord, DecisionPlannerMiss
+        started = time.time()
         scope = scope_digest(self.run.context)
         require(record.get("scope_digest", scope) == scope, "receipt_scope_mismatch")
         kind = record.get("kind")
@@ -29,6 +30,8 @@ class PolicyJournal:
         require(kind in models, "unknown_decision_record")
         event, model = models[kind]
         payload = model.model_validate({**record, "scope_digest": scope}).model_dump(mode="json")
+        if deadline is None and kind == "point_policy" and payload.get("timeout_seconds") is not None:
+            deadline = started + payload["timeout_seconds"]
         return persist_decision_event(self.run, event, payload, deadline=deadline)
 
 
@@ -100,7 +103,8 @@ class PreparedFrontDoor:
 def _current_fence(run):
     from agent.runtime_commands import assert_runtime_dispatch
     from tools.capability_broker import require_live_policy
-    require(assert_runtime_dispatch(run.agent) is run and require_live_policy() == run.context,
+    context = require_live_policy(require_run=False)
+    require(assert_runtime_dispatch(run.agent) is run and context == run.context,
             "planner_owner_mismatch")
 
 
@@ -154,8 +158,15 @@ def prepare_front_door(run, client, *, request_definitions, request, history=(),
         if policy.mode != "enforce":
             record_observer_policy(run, "DP16", policy, deadline=deadline)
         context = owner_planner_context(run, request=request, history=history, turn_id=turn_id, goal=goal)
-        lookup = lambda: live_catalog(_authorized_definitions(run, request_definitions), scope_digest=scope)
-        catalog = lookup()
+        catalog = None
+        def lookup():
+            nonlocal catalog
+            current = live_catalog(_authorized_definitions(run, request_definitions), scope_digest=scope)
+            # Retain the planner's initial immutable snapshot for PreparedFrontDoor;
+            # every subsequent lookup still reads and checks the live catalog.
+            if catalog is None:
+                catalog = current
+            return current
         planner = ToolPlanner(client, catalog_lookup=lookup, fence=lambda: _current_fence(run))
         values = context.values
         plan = planner.plan(request=values.get("request", ""), goal=goal if isinstance(goal, str) else "",

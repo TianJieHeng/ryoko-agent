@@ -49,7 +49,7 @@ def certificate(home, name, *, issuer=None, hostname="laya.ryoko.okinawa"):
 def tls_server(home, *, hostname="laya.ryoko.okinawa", status=200, mode="valid", before_reply=None, choices=None):
     ca = certificate(home, "synthetic-ca")
     cert = certificate(home, "synthetic-server", issuer=ca, hostname=hostname)
-    received, got_body = [], threading.Event()
+    received, got_body, release_body = [], threading.Event(), threading.Event()
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -68,7 +68,7 @@ def tls_server(home, *, hostname="laya.ryoko.okinawa", status=200, mode="valid",
             if before_reply:
                 before_reply()
             if mode == "stall":
-                time.sleep(.4)
+                release_body.wait(5)
             raw = b'{"status":"synthetic"}'
             if body:
                 request = json.loads(body)
@@ -106,6 +106,7 @@ def tls_server(home, *, hostname="laya.ryoko.okinawa", status=200, mode="valid",
         yield SimpleNamespace(fixture=SyntheticTlsFixture(server.server_port, str(ca[2])),
                               received=received, got_body=got_body)
     finally:
+        release_body.set()
         server.shutdown()
         server.server_close()
         thread.join(3)
@@ -193,8 +194,10 @@ def test_connected_peer_checked_before_tls_and_no_second_dns_lookup(tmp_path, mo
 def test_incomplete_or_timed_out_body_quarantines_transport(tmp_path, mode):
     with tls_server(tmp_path, mode=mode) as server, runtime(tmp_path / "profile-a") as rt:
         transport = LayaHttpsTransport(manifest(), bundle=BUNDLE, synthetic_fixture=server.fixture)
+        started = time.monotonic()
         with pytest.raises(DecisionError, match="remote_completion_unknown"):
-            transport.decide_many(requests_for(rt.context), .15 if mode == "stall" else 1)
+            transport.decide_many(requests_for(rt.context), 1)
+        assert time.monotonic() - started < 2
         assert transport.remote_completion_unknown and len(server.received) == 1
         with pytest.raises(DecisionError, match="remote_completion_unknown"):
             transport.decide_many(requests_for(rt.context), 1)
@@ -250,7 +253,7 @@ def test_dns_timeout_retains_one_bounded_resolver_without_socket(tmp_path, monke
         monkeypatch.setattr("agent.decisions.laya_transport.socket.socket", lambda *a, **k: pytest.fail("expired DNS socket"))
         try:
             with pytest.raises(DecisionError, match="deadline_exceeded"):
-                transport.decide_many(requests_for(rt.context), .1)
+                transport.decide_many(requests_for(rt.context), 1)
             assert entered.is_set()
             with pytest.raises(DecisionError, match="node_capacity"):
                 transport.decide_many(requests_for(rt.context), 1)

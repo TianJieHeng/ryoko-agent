@@ -92,7 +92,7 @@ def live_catalog(definitions, *, scope_digest):
     from agent.runtime_commands import assert_runtime_dispatch
     from agent.decisions.receipts import scope_digest as owner_digest
     from agent.decisions.planner_catalog import host_metadata
-    context = require_live_policy()
+    context = require_live_policy(require_run=False)
     require(context is not None and owner_digest(context) == scope_digest, "planner_owner_mismatch")
     run = assert_runtime_dispatch()
     view = getattr(run.agent, "tool_view", None)

@@ -149,7 +149,7 @@ class PointPolicyBook:
         release = _Release(rule, bundle, evidence, approval, gate, scope_digest, consumer_ready, contract_version)
         with self._lock:
             self._journal({"kind": "point_policy", "operation": _operation, "point_id": rule.point_id,
-                "policy_digest": rule.policy_digest, "gate_digest": gate.gate_digest,
+                "policy_digest": rule.policy_digest, "timeout_seconds": rule.timeout_seconds, "gate_digest": gate.gate_digest,
                 "evidence_digest": evidence.evidence_digest, "approval_digest": approval.approval_digest,
                 "scope_digest": scope_digest, "bundle": asdict(bundle), "recorded_at": now,
                 **({"reason": _reason} if _reason else {}),
@@ -208,7 +208,7 @@ class PointPolicyBook:
             rule = replace(current, mode=mode)
             self._journal({"kind": "point_policy", "operation": "rollback", "point_id": point_id,
                 "mode": mode, "reason": reason, "previous_policy_digest": current.policy_digest,
-                "policy_digest": rule.policy_digest})
+                "policy_digest": rule.policy_digest, "timeout_seconds": rule.timeout_seconds})
             self._rules[point_id] = rule
             self._releases.pop(point_id, None)
             return rule

@@ -151,11 +151,12 @@ def test_family_and_byte_overflow_do_not_truncate_or_transmit():
     assert plan.fallback == "laya_state_bytes_exceeded" and len(transport.calls) == 1
 
 
-def test_catalog_revocation_after_inference_prevents_dependent_stage():
+@pytest.mark.parametrize("revoked_stage", [1, 2, 3])
+def test_catalog_revocation_after_inference_prevents_dependent_stage(revoked_stage):
     before, revoked, state = catalog(), catalog({"files": ("read",)}), {"revoked": False}
     plan, transport, _ = run(lookup=lambda: revoked if state["revoked"] else before,
-                            after=lambda _: state.update(revoked=True))
-    assert plan.fallback == "stale_catalog" and len(transport.calls) == 1
+                            after=lambda stage: state.update(revoked=stage == revoked_stage))
+    assert plan.fallback == "stale_catalog" and len(transport.calls) == revoked_stage
     assert plan.live_catalog_version == revoked.version and not plan.verified_tool_ids
 
 

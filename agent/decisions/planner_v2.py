@@ -44,6 +44,8 @@ class NativeToolPlanner:
 
     def finish(self, *, need="defer", families=(), tools=(), fallback=None):
         from agent.decisions.tool_planner import ToolPlan
+        if fallback is None:
+            self._check_owner()
         require(self.metrics.batch_count <= 3 and self.metrics.question_count <= 62, "planner_bounds_exceeded")
         receipt_ids = tuple(out.receipt["receipt_id"] for out in self.outcomes
                             if out.receipt is not None and out.receipt_persisted)
@@ -91,7 +93,8 @@ class NativeToolPlanner:
         self.metrics = self.metrics.plus(result.metrics)
         require(result.fallback is None, result.fallback or "batch_failed")
         require(all(out.receipt_persisted for out in result.outcomes), "receipt_unavailable")
-        self._check_owner()
+        # The next stage rechecks before dispatch; the terminal result rechecks
+        # in finish(). Between those edges only bounded local selection runs.
         return result.outcomes
 
     def _selected(self, outcome):
