@@ -163,6 +163,32 @@ def test_deadline_expired_never_calls_transport():
     assert out.fallback == "deadline_exceeded" and not calls
 
 
+@pytest.mark.parametrize("caller_seconds", [.12, 1.0])
+def test_inference_and_receipt_share_the_earliest_operation_deadline(monkeypatch, caller_seconds):
+    from types import SimpleNamespace
+    clock = [100.0]
+    monkeypatch.setattr("agent.decisions.client.time", SimpleNamespace(
+        time=lambda: clock[0], monotonic=lambda: clock[0]))
+    deadlines, receipts = [], []
+
+    class Workers:
+        def persist(self, sink, rows, *, deadline):
+            deadlines.append(deadline)
+            for row in rows:
+                sink(row)
+
+    def inference(request, timeout):
+        clock[0] += .06
+        return response(request)
+    c = DecisionClient(bundle=BUNDLE, policies={"DP16": PointPolicy("shadow")},
+                       transport=inference, sink=receipts.append, receipt_workers=Workers())
+    monkeypatch.setattr(c, "_call", inference)
+    out = c.decide("DP16", packet(), 1, clock[0] + caller_seconds)
+    expected = 100.0 + min(caller_seconds, c.policy("DP16").timeout_seconds)
+    assert out.fallback == "shadow_observation" and out.receipt_persisted and len(receipts) == 1
+    assert deadlines == [expected]
+
+
 def test_each_registry_question_has_executable_synthetic_protocol_fallback():
     from pathlib import Path
     fixtures = json.loads((Path(__file__).parents[2] / "evals/decisions/contract_fixtures.json").read_text())

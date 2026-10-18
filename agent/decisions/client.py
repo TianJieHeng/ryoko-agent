@@ -77,6 +77,8 @@ class DecisionClient:
         policy = self.policy(point_id)
         if policy.mode == "off":
             return DecisionOutcome(None, "incumbent", "off", None)
+        # Inference and its durable receipt share one configured operation budget.
+        deadline = min(deadline, time.time() + policy.timeout_seconds)
         request = self._request(point_id, state_packet, contract, deadline,
                                 question_id=question_id, live_options=live_options)
         started = time.monotonic()
@@ -111,9 +113,7 @@ class DecisionClient:
         persisted = False
         if self.sink is not None:
             try:
-                remaining = min(.05, deadline - time.time())
-                require(remaining >= .001, "receipt_deadline")
-                self._receipt_workers.persist(self.sink, (receipt,), deadline=time.time() + remaining)
+                self._receipt_workers.persist(self.sink, (receipt,), deadline=deadline)
                 persisted = True
             except Exception:
                 # Optional observers cannot abort a turn or leak sink exception payloads.

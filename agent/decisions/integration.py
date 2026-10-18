@@ -142,12 +142,13 @@ def observe_core(point_id, values, *, question_id=None):
         require(context is not None and context == run.context, "decision_owner_required")
         policy = parsed[1][point_id]
         from agent.decisions.planner_runtime import record_observer_policy
-        record_observer_policy(run, point_id, policy)
         deadline = time.time() + policy.timeout_seconds
         if run.budget is not None:
             deadline = min(deadline, run.budget.deadline)
-        packet = build_state(point_id, values, scope_digest=scope_digest(context))
-        callback = lambda: _client(run, raw, parsed).decide(point_id, packet, 1, deadline, question_id=question_id)
+        def callback():
+            record_observer_policy(run, point_id, policy, deadline=deadline)
+            packet = build_state(point_id, values, scope_digest=scope_digest(context))
+            return _client(run, raw, parsed).decide(point_id, packet, 1, deadline, question_id=question_id)
         return _observe_with_budget(run, deadline, callback)
     except Exception:
         # An optional observer must not alter incumbents or print user payloads.

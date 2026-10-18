@@ -88,6 +88,10 @@ def test_immutable_snapshot_and_inspection_never_expose_secrets(tmp_path):
     assert not ctx.policy.allows_tool("terminal")
     assert not ctx.policy.allows_mcp("research", "write")
     assert ctx.config_digest == digest
+    changed = parse_agent_identity_config(raw)
+    assert changed.digest != parsed.digest
+    assert changed.agents["ryoko"].allows_tool("terminal")
+    assert not parsed.agents["ryoko"].allows_tool("terminal")
     with pytest.raises(FrozenInstanceError):
         ctx.policy.role = "specialist"
     with pytest.raises(TypeError):

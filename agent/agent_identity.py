@@ -12,6 +12,7 @@ import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field, fields, replace
+from functools import lru_cache
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
@@ -346,6 +347,29 @@ def parse_agent_identity_config(config: Mapping) -> AgentIdentityConfig | None:
     raw = _mapping(config["agent_identity"], "agent_identity")
     if not raw:
         return None
+    if _json_policy_value(raw):
+        # Cache parsed immutable values, never the live configuration read. A
+        # policy edit changes the key immediately, including within one version.
+        encoded = json.dumps(raw, sort_keys=True, separators=(",", ":"))
+        if len(encoded) <= 262144:
+            return _parse_json_policy(encoded)
+    return _parse_identity_policy(raw)
+
+
+def _json_policy_value(value):
+    if type(value) is dict:
+        return all(type(key) is str and _json_policy_value(item) for key, item in value.items())
+    if type(value) is list:
+        return all(_json_policy_value(item) for item in value)
+    return value is None or type(value) in (str, int, float, bool)
+
+
+@lru_cache(maxsize=128)
+def _parse_json_policy(encoded):
+    return _parse_identity_policy(json.loads(encoded))
+
+
+def _parse_identity_policy(raw):
     _validate_fields(raw, AgentIdentityConfig, "agent_identity")
     _version(raw["schema_version"], "agent_identity.schema_version")
     ids = {

@@ -244,18 +244,30 @@ def observe_bridge_recovery(requested_names, described_names, *, current_tool_de
             require(plan.scope_digest == scope, "planner_owner_mismatch")
             selected = set(plan.verified_tool_ids)
             bundle_id, previous_catalog, observation_only = plan.bundle_id, plan.live_catalog_version, True
-        current = live_catalog(current_tool_defs, scope_digest=scope)
-        live, described = set(current.tool_ids), set(described_names)
-        from agent.decisions.tool_planner import BRIDGES
-        bridge_ready = not installed or set(current.bridge_names) == set(BRIDGES)
-        for name in set(requested_names) - selected:
-            recovered = bridge_ready and name in described and name in live
-            # Rejected names remain digests, never another owner's catalog oracle.
-            PolicyJournal(run)({"kind": "planner_miss", "scope_digest": scope,
-                "bundle_id": bundle_id, "catalog_version": current.version,
-                "previous_catalog_version": previous_catalog, "tool_digest": digest(name),
-                "recovered": recovered, "reason": "authorized_reopen" if recovered else "not_authorized_or_unavailable",
-                "prefix_digest": prefix_digest, "observation_only": observation_only})
+        from agent.decisions.policy import PointPolicy
+        from agent.decisions.integration import _observe_with_budget
+        prepared = getattr(run.agent, "_decision_prepared_frontdoor", None)
+        policy = (prepared.client.policy("DP16") if isinstance(prepared, PreparedFrontDoor)
+                  and prepared.run_id == run.run_id else PointPolicy())
+        deadline = time.time() + policy.timeout_seconds
+        if run.budget is not None:
+            deadline = min(deadline, run.budget.deadline)
+
+        def record_misses():
+            current = live_catalog(current_tool_defs, scope_digest=scope)
+            live, described = set(current.tool_ids), set(described_names)
+            from agent.decisions.tool_planner import BRIDGES
+            bridge_ready = not installed or set(current.bridge_names) == set(BRIDGES)
+            for name in set(requested_names) - selected:
+                recovered = bridge_ready and name in described and name in live
+                # Rejected names remain digests, never another owner's catalog oracle.
+                PolicyJournal(run)({"kind": "planner_miss", "scope_digest": scope,
+                    "bundle_id": bundle_id, "catalog_version": current.version,
+                    "previous_catalog_version": previous_catalog, "tool_digest": digest(name),
+                    "recovered": recovered, "reason": "authorized_reopen" if recovered else "not_authorized_or_unavailable",
+                    "prefix_digest": prefix_digest, "observation_only": observation_only}, deadline=deadline)
+
+        _observe_with_budget(run, deadline, record_misses)
     except Exception:
         # Optional diagnostics must not change bridge results or leak exceptions.
         return
