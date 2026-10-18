@@ -13,7 +13,7 @@ from tools.mcp_tool_policy import schema_digest
 
 
 @pytest.fixture(autouse=True)
-def config(monkeypatch, request):
+def config(monkeypatch):
     base = budgets.configured
     def configured():
         raw = base()
@@ -28,10 +28,6 @@ def config(monkeypatch, request):
             'receipt_field': 'ref'}}
         grant['schema_digests']['write'] = schema_digest(SimpleNamespace(
             name='write', description='fixture mutation', inputSchema={'type': 'object'}, annotations=None))
-        if request.node.name.startswith('test_conversation'):
-            grant['mutation_contracts']['write']['input_schema'] = {'type': 'object'}
-            raw['memory']['conversation_mcp'] = {'server': 'public', 'append_tool': 'write',
-                                                 'source': 'hermes', 'agent': 'fixture'}
         return raw
     monkeypatch.setattr(budgets, 'configured', configured)
 
@@ -112,39 +108,3 @@ def test_skills_are_profile_local_and_secrets_and_symlinks_are_not_documents(har
         for path in ('secrets.md', '../secrets.md', 'references/escape.md'):
             with pytest.raises((PermissionError, ValueError, OSError)):
                 skill_view('example', file_path=path)
-
-
-def test_conversation_capture_uses_stable_turn_ids_and_owned_transport(harness):
-    from agent.conversation_mcp import sync_turn
-    from agent.memory_router import RoutedMemoryManager
-    seen = []
-    with harness.scope():
-        run = harness.runs['primary']
-        run.agent._memory_manager = RoutedMemoryManager(harness.primary, harness.raw)
-        def respond(request):
-            seen.append(json.loads(request.content)['params']['arguments'])
-            return httpx.Response(200, json={'ref': 'thread-receipt'})
-        server(respond)
-        result = {'final_response': 'Visible answer', 'completed': True,
-                  'reasoning': 'Private reasoning must not be transmitted'}
-        first = sync_turn(run, 'Visible question', result)
-        second = sync_turn(run, 'Visible question', result)
-        assert first['conversation_sync']['status'] == second['conversation_sync']['status'] == 'confirmed'
-        assert len(seen) == 1
-        turns = seen[0]['turns']
-        assert [turn['content'] for turn in turns] == ['Visible question', 'Visible answer']
-        assert [turn['role'] for turn in turns] == ['user', 'assistant']
-        assert turns[0]['id'] != turns[1]['id'] and turns[0]['seq'] < turns[1]['seq']
-        assert seen[0]['session_id'] == run.session_id
-
-
-def test_conversation_capture_reports_unconfirmed_write(harness):
-    from agent.conversation_mcp import sync_turn
-    from agent.memory_router import RoutedMemoryManager
-    with harness.scope():
-        run = harness.runs['primary']
-        run.agent._memory_manager = RoutedMemoryManager(harness.primary, harness.raw)
-        server(lambda request: httpx.Response(200, json={'invalid': 'receipt'}))
-        result = sync_turn(run, 'Question', {'final_response': 'Answer', 'completed': True})
-        assert result['conversation_sync']['status'] == 'not_confirmed'
-        assert run.dispatch_blocked.is_set()

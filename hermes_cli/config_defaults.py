@@ -1322,6 +1322,8 @@ DEFAULT_CONFIG = {
         },
     },
     "memory": {  # Persistent memory — bounded curated memory injected into the system prompt
+        # Independent durable REST sender; the bearer is read only by its worker.
+        "conversation_push": {"enabled": False},
         "memory_enabled": True,
         "user_profile_enabled": True,
         # Approval gate for memory writes on BOTH foreground turns and the background review fork.

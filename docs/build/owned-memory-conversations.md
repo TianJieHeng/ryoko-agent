@@ -18,39 +18,80 @@ an unresolved matching write is not replayed automatically in later runs.
 Confirmed identical calls within the same run return the effect state.
 The adapter does not invent provider idempotency or a monetary cost.
 
-The current deployed MCP supports thread listing/reading/search and durable
-memory writes. `ingest_conversations` is a server-local import and is not the
-remote Hermes conversation workflow. Companion `memory-harness` commit
-`1b81bf5` exposes `append_conversation` using the existing harness live-turn
-API, and includes ordered source turns in transcript reads before search
-windows fill. Deploy both harness and MCP before local activation.
+## Conversation capture and delivery
 
-After authenticated discovery, pin and grant the actual append schema as a
-mutation. Its result contract requires nonempty `hub`, `session_id`, integer
-`accepted` and `duplicate`; set `receipt_field: hub`. Repin the changed
-`get_conversation` schema too. Only then add this opt-in configuration:
+MCP provides thread listing/reading/search. Conversation writes use the existing
+REST endpoint `https://memory.ryoko.okinawa/v1/conversations/turns`.
+The owner's server-side `RYOKO_CONVO_PUSH_TOKEN` is a different credential from
+`HERMES_MCP_TOKEN`; it is read only by the background worker, not granted to the
+model, installed skill, child agents, or MCP tools. No harness modifications,
+new MCP append tool, or database mount are required.
+
+The profile opts into capture with:
 
 ```yaml
 memory:
-  conversation_mcp:
-    server: ryoko_memory
-    append_tool: append_conversation
+  conversation_push:
+    enabled: true
+    endpoint: https://memory.ryoko.okinawa/v1/conversations/turns
+    token_file: /absolute/private/path/conversation_push.env
     source: hermes
     agent: ryoko
 ```
 
-Start a new session. This activates synchronous capture before the durable
-turn closes: the clean user text and final assistant response, redacted at
-source, with stable command-derived IDs and acceptance timestamps. Tool
-internals, reasoning, system prompts and injected memory are not exported.
-Multimodal content contributes its explicit text blocks only. These are
-conversation records, not extracted personal memories. Existing threads
-remain available through MCP list/get/search tools.
+The token file contains `RYOKO_CONVO_PUSH_TOKEN=...` and must be owner-only.
+The queue lives in the profile's private `conversation-outbox/outbox.sqlite3`.
+User text is queued on durable turn admission; the final assistant reply is
+queued on completion. Capture includes explicit text blocks from multimodal
+input, excludes reasoning/system prompts/injected memory/tool internals, and
+redacts secrets before queueing. It does not extract personal memories or make
+an additional model request. Oversized turns fail visibly rather than being
+silently truncated; the per-request bound is 65,536 UTF-8 bytes.
 
-The run result includes `conversation_sync.status` (`confirmed`,
-`not_confirmed`, or `no_visible_text`). A failed save emits a warning without
-logging private contents. Request-size, budget and uncertain-effect limits
-still apply. Automatic capture is currently **not activated** in `ryoko`
-because the deployed server does not advertise append yet. A Git push does
-not deploy that server. After deployment, verify a real append/read-back and
-receipt before claiming conversation capture is live.
+The worker polls every two seconds, independently of the CLI lifetime:
+
+```sh
+hermes --run-module agent.conversation_worker --profile-home /absolute/profile
+hermes --run-module agent.conversation_worker --profile-home /absolute/profile --status
+```
+
+A named-profile user service template is provided at
+`host/hermes-conversation-worker@.service`. Install it under
+`~/.config/systemd/user/`, then use:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable --now hermes-conversation-worker@ryoko.service
+```
+
+The `ryoko` installation also enables user lingering so the worker can survive
+logout. Stop delivery with `systemctl --user stop ...`; disable profile capture
+with `memory.conversation_push.enabled: false`. Restart the service after code
+updates. It reloads profile settings on each polling cycle.
+
+Delivery preserves stable source/session/turn IDs and immutable payload bytes.
+The harness's existing turn deduplication makes timeout/restart retries safe.
+The worker holds an exclusive per-profile process lock, journals each attempt
+before sending, and sends turns in order within each thread. A stalled thread
+does not block other threads. A changed destination/owner cannot redirect the
+old queue; those records remain retained with their original binding.
+
+Only a matching session receipt, nonempty hub and accepted+duplicate count
+mark a turn sent. Delivered payload text is removed from the queue; its hash,
+ID and receipt remain. Transient failures back off to a maximum of 120 seconds;
+401/403 retries wait 60 seconds so a replaced token can recover. Redirects and
+permanent request errors block that turn without dropping it. Responses are
+bounded to 262,144 bytes, HTTP requests have a 15-second timeout, and redirects
+and ambient proxies are disabled. Service shutdown is bounded to 20 seconds.
+
+Inspect `--status` or the user service journal; neither prints transcript or
+credential contents. For a corrected permanent error, stop the service, run
+`--retry-blocked --once`, then start it again. Never alter a queued payload
+under its original turn ID. A run's `conversation_sync.status: queued` means
+local durable acceptance, not confirmed remote delivery; the worker's receipt
+is the delivery evidence.
+
+Read the resulting threads through existing MCP list/get/search tools. The
+server's existing search-window rules still apply: a short live tail may not
+appear in search/transcript windows until the server seals it. Its REST session
+state and delivery receipts report accepted turns without waiting for sealing.

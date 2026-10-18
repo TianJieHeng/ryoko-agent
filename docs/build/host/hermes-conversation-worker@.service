@@ -1,0 +1,18 @@
+[Unit]
+Description=Hermes conversation sender for profile %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=HERMES_HOME=%h/.hermes/profiles/%i
+ExecStart=%h/.local/bin/hermes --run-module agent.conversation_worker --profile-home %h/.hermes/profiles/%i
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=default.target
