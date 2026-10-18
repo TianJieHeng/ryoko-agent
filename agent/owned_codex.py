@@ -46,7 +46,7 @@ def is_owned_codex_route(agent):
             and getattr(agent, "provider", None) == "openai-codex")
 
 
-def run_owned_codex_stream(agent, kwargs, client, *, on_first_delta=None):
+def run_owned_codex_stream(agent, kwargs, client, *, on_first_delta=None, purpose="main_model", model=None):
     from agent.budget_account import BudgetBlocked
     from agent.codex_runtime import _consume_codex_event_stream
     from agent.runtime_commands import assert_runtime_dispatch, RuntimeFenceError, _record_operation_event
@@ -55,9 +55,10 @@ def run_owned_codex_stream(agent, kwargs, client, *, on_first_delta=None):
     run = assert_runtime_dispatch(agent)
     if run is None or not is_owned_codex_route(agent):
         raise RuntimeFenceError("OAuth Responses requires its admitted runtime owner")
-    if run.budget is not None:
+    budget = run.budget
+    if budget is not None and budget.policy.record["mode"] != "provider_reported":
         raise BudgetBlocked("Codex OAuth has no verified remote output cap; hard token budgets are unsupported")
-    assert_provider_client(client, purpose="main_model")
+    assert_provider_client(client, purpose=purpose)
     # A request-local credential/recipient is immutable for the entire attempt.
     if client.api_key != agent.api_key or str(client.base_url).rstrip("/") != str(agent.base_url).rstrip("/"):
         raise RuntimeFenceError("OAuth request credentials or endpoint changed")
@@ -67,7 +68,8 @@ def run_owned_codex_stream(agent, kwargs, client, *, on_first_delta=None):
                "extra_headers", "timeout"}
     if set(request) - allowed or request.get("store") is not False or not isinstance(request.get("input"), list):
         raise EgressDenied("recipient_responses_request_unsupported")
-    if request.get("model") != agent.model:
+    model = model or agent.model
+    if request.get("model") != model:
         raise RuntimeFenceError("OAuth request model changed")
     headers = request.get("extra_headers", {})
     if not isinstance(headers, dict) or any(k.lower() not in {"session_id", "x-client-request-id"} for k in headers):
@@ -91,14 +93,24 @@ def run_owned_codex_stream(agent, kwargs, client, *, on_first_delta=None):
     if type(timeout) not in {int, float} or not 0 < timeout <= 120:
         timeout = 120
     request.update(stream=True, timeout=timeout)
+    if budget is not None:
+        budget.check()
+        if not any(route["model"] == model and route["base_url"].rstrip("/") == str(client.base_url).rstrip("/")
+                   for route in budget.policy.record["routes"]):
+            budget.block("OAuth usage route is not in the admitted budget policy")
+        timeout = min(timeout, budget.policy.record["request_timeout_ms"] / 1000, budget.deadline - time.time())
+        if timeout <= 0:
+            budget.block("OAuth usage deadline exceeded")
+        request["timeout"] = timeout
     deadline = time.monotonic() + timeout
     terminal = False
     received = 0
-    agent._codex_streamed_text_parts = []
+    if purpose == "main_model":
+        agent._codex_streamed_text_parts = []
 
     def check():
         assert_runtime_dispatch(agent)
-        assert_provider_client(client, purpose="main_model")
+        assert_provider_client(client, purpose=purpose)
         if agent._interrupt_requested:
             raise InterruptedError("OAuth Responses cancelled; remote outcome may be unknown")
         if time.monotonic() >= deadline:
@@ -116,21 +128,35 @@ def run_owned_codex_stream(agent, kwargs, client, *, on_first_delta=None):
             yield event
 
     def text_delta(value):
+        if purpose != "main_model":
+            return
         agent._codex_streamed_text_parts.append(value)
         callback = getattr(agent, "_fire_stream_delta", None)
         if callback:
             callback(value)
 
     check()
-    operation_id = uuid.uuid4().hex
+    import math
+    operation_id = (budget.reserve({"attempts": 1, "wall_ms": math.ceil(timeout * 1000), "provider_slots": 1})
+                    if budget is not None else uuid.uuid4().hex)
     correlation = {"run_id": run.run_id, "operation_id": operation_id}
-    _record_operation_event(run, "model.started", {"phase": "oauth_physical_started"}, **correlation)
+    try:
+        _record_operation_event(run, "model.started", {"phase": "oauth_physical_started"}, **correlation)
+        if budget is not None:
+            budget.dispatched(operation_id)
+    except BaseException:
+        # No transport was invoked; this reservation can safely be released.
+        if budget is not None:
+            budget.db.release_budget_reservation(budget.account_id, budget.actor, operation_id, **budget.fence)
+        raise
+    started = time.monotonic()
+    settlement_started = False
     attempt_token = _ATTEMPT.set({"run": run, "sent": False, "credential": client.api_key,
         "body": {key: value for key, value in request.items() if key not in {"timeout", "extra_headers"}}})
     try:
         # SDK retries and the legacy zero-event retry are both deliberately absent.
         with client.with_options(max_retries=0, timeout=timeout).responses.create(**request) as stream:
-            final = _consume_codex_event_stream(events(stream), model=agent.model,
+            final = _consume_codex_event_stream(events(stream), model=model,
                 on_text_delta=text_delta, on_first_delta=on_first_delta)
         check()
         if not terminal or final.status != "completed":
@@ -140,14 +166,66 @@ def run_owned_codex_stream(agent, kwargs, client, *, on_first_delta=None):
         values = {key: usage.get(key) if isinstance(usage, dict) else getattr(usage, key, None) for key in fields}
         if any(type(value) is not int or value < 0 for value in values.values()):
             raise RuntimeFenceError("OAuth Responses finished without authoritative usage")
+        if budget is not None:
+            settlement_started = True
+            budget.settle(operation_id, {"tokens": sum(values.values()), "attempts": 1,
+                          "wall_ms": math.ceil((time.monotonic() - started) * 1000)})
+            # A measured overrun is recorded, then prevents another dispatch.
         _record_operation_event(run, "model.completed", {"phase": "oauth_physical_completed",
-            **values, "cost_tracking": "untracked"}, **correlation)
+            **values, "cost_tracking": "provider_not_reported"}, **correlation)
         return final
     except BaseException:
         # Neither a local close nor an HTTP failure proves the server did no work.
         run.dispatch_blocked.set()
+        if budget is not None and not settlement_started:
+            budget.settle(operation_id, {"attempts": 1, "wall_ms": math.ceil((time.monotonic() - started) * 1000)},
+                          unknown=True, slots_released=False)
         _record_operation_event(run, "model.failed", {"phase": "oauth_physical_failed",
             "outcome_uncertain": True}, **correlation)
         raise
     finally:
         _ATTEMPT.reset(attempt_token)
+
+
+class OwnedCodexAuxiliaryClient:
+    """Chat-shaped auxiliary facade; conversion is shared with the legacy adapter.
+
+    Every actual request still crosses the owned Responses boundary. Async calls
+    use a context-preserving worker and never acquire an independent retry loop.
+    """
+    def __init__(self, client, model, *, async_mode=False):
+        from types import SimpleNamespace
+        self._real_client = client
+        self.api_key, self.base_url = client.api_key, client.base_url
+        self.model = model
+        self.chat = SimpleNamespace(completions=SimpleNamespace(
+            create=self.acreate if async_mode else self.create))
+
+    def close(self):
+        self._real_client.close()
+
+    def create(self, **kwargs):
+        from types import SimpleNamespace
+        from agent.runtime_commands import assert_runtime_dispatch, RuntimeFenceError
+        from agent.auxiliary_client import _CodexCompletionsAdapter, _parse_codex_final_response
+        run = assert_runtime_dispatch()
+        if run is None:
+            raise RuntimeFenceError("Auxiliary OAuth requires an admitted owner")
+        if kwargs.get("stream"):
+            raise RuntimeFenceError("Auxiliary OAuth returns settled responses, not raw streams")
+        request, model, timeout = _CodexCompletionsAdapter(self._real_client, self.model)._build_responses_kwargs(kwargs)
+        aliases = request.pop("_wire_aliases", {})
+        request.pop("prompt_cache_retention", None)
+        if timeout is not None:
+            request["timeout"] = timeout
+        final = run_owned_codex_stream(run.agent, request, self._real_client, purpose="aux_model", model=model)
+        texts, calls, usage = _parse_codex_final_response(final)
+        for call in calls:
+            call.function.name = aliases.get(call.function.name, call.function.name)
+        return SimpleNamespace(model=model, usage=usage, choices=[SimpleNamespace(index=0,
+            finish_reason="tool_calls" if calls else "stop",
+            message=SimpleNamespace(role="assistant", content="".join(texts) or None, tool_calls=calls or None))])
+
+    async def acreate(self, **kwargs):
+        import asyncio
+        return await asyncio.to_thread(self.create, **kwargs)

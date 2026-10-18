@@ -2631,6 +2631,12 @@ def _relay_sync_completion(
     client: Any, kwargs: dict[str, Any], *, provider: str | None = None,
     api_mode: str | None = None, create: Callable[[dict[str, Any]], Any] | None = None,
 ) -> Any:
+    from agent.owned_codex import OwnedCodexAuxiliaryClient
+    if type(client) is OwnedCodexAuxiliaryClient:
+        if create is not None:
+            from tools.egress_policy import reject_unsupported_route
+            reject_unsupported_route("auxiliary_callback")
+        return client.create(**kwargs)
     from agent.auxiliary_wire import prepare_chat_messages
     from tools.egress_policy import reject_unsupported_route
     if create is not None or api_mode not in (None, "chat_completions"):
@@ -2676,6 +2682,12 @@ async def _relay_async_completion(
     client: Any, kwargs: dict[str, Any], *, provider: str | None = None,
     api_mode: str | None = None, create: Callable[[dict[str, Any]], Any] | None = None,
 ) -> Any:
+    from agent.owned_codex import OwnedCodexAuxiliaryClient
+    if type(client) is OwnedCodexAuxiliaryClient:
+        if create is not None:
+            from tools.egress_policy import reject_unsupported_route
+            reject_unsupported_route("auxiliary_callback")
+        return await client.acreate(**kwargs)
     from agent.auxiliary_wire import prepare_chat_messages
     from tools.egress_policy import reject_unsupported_route
     if create is not None or api_mode not in (None, "chat_completions"):
@@ -4782,6 +4794,10 @@ def _to_async_client(sync_client, model: str, is_vision: bool = False):
         return sync_client, model
     from tools.egress_policy import policy_active, build_model_client, assert_provider_client
     if policy_active():
+        from agent.owned_codex import OwnedCodexAuxiliaryClient
+        if type(sync_client) is OwnedCodexAuxiliaryClient:
+            assert_provider_client(sync_client._real_client, purpose="aux_model", require_run=False)
+            return OwnedCodexAuxiliaryClient(sync_client._real_client, model, async_mode=True), model
         assert_provider_client(sync_client, purpose="aux_model", require_run=False)
         return build_model_client({"api_key": sync_client.api_key, "base_url": str(sync_client.base_url),
                                    "default_headers": dict(sync_client._custom_headers)},

@@ -97,3 +97,37 @@ rollback; do not discard native state to make an incompatible route appear to
 work. Focused deterministic protocol, request, cache, ownership and discovery
 checks are recorded in the phase journal; they are separate from live provider,
 billing, hardware and release certification.
+
+## Provider-reported OAuth operation
+
+`runtime_budget.mode: provider_reported` uses the same durable accounts for main,
+auxiliary, and delegated work. OAuth usage settles actual input/output tokens.
+A configured token threshold stops subsequent dispatch; it cannot cap the current
+remote response. `limits.tokens: null` leaves token quota to the provider. The
+consumer endpoint supplies no verified dollar charge, so `limits.cost_micros`
+must be null and status reports `provider_not_reported`, never an invoice bound.
+Physical attempts, concurrency and operational time still have explicit limits.
+The existing hard-bound `tokens` and `cost` modes are unchanged.
+
+Owned auxiliary clients expose chat-shaped sync/async completions but use guarded
+Responses internally. They reuse the shared message/tool converter, require a
+live admitted command and an independent `aux_model` recipient grant, and charge
+that command's root. They cannot refresh credentials, retry independently, return
+partial tools, change accounts, or run an unowned background request. Background
+title work outside an admitted command remains denied.
+
+LAYA can be bypassed with `decisions: {}`. This skips planner preparation and
+observer inference; normal model tool selection still passes the tool registry,
+identity grants, capability broker, execution adapter and budget controls. Tool
+grants do not certify unsupported execution paths. Supported grants include
+`todo_list`, isolated `execute_code`, durable `delegate_task`, `clarify`, tool
+search/description/call bridges, and scoped `session_search`. Terminal and general
+host file mutations do not become authorized by adding their names to a list.
+
+The isolated Python executor also requires the host to permit its user, mount,
+network and PID namespaces. On the current workstation, namespace setup fails
+with `Operation not permitted`; both real executor checks return
+`executor_enforcement_unavailable`. Tool grants cannot fix this OS prerequisite.
+Do not substitute an unconstrained Python process or disable host-wide security
+controls. An administrator must provision an appropriate application-specific
+namespace policy before isolated computation (and children requiring it) can run.

@@ -776,7 +776,7 @@ def _dispatch_nonstreaming_api_request(agent, api_kwargs: dict, *, make_client):
     from agent.owned_codex import is_owned_codex_route
     if policy_active() and ((agent.api_mode != "chat_completions" and not is_owned_codex_route(agent)) or agent.provider == "moa"):
         raise EgressDenied("recipient_provider_adapter_unsupported")
-    if budget is not None:
+    if budget is not None and agent.api_mode != "codex_responses":
         if agent.api_mode != "chat_completions" or agent.provider == "moa":
             budget.block("provider transport has no certified finite physical-request adapter")
         request_client = make_client("chat_completion_request")

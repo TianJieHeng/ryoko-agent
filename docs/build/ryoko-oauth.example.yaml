@@ -1,0 +1,54 @@
+# Local-only profile preset. Credentials stay in the existing Codex login store.
+# Start a new session after changing identity, tools, recipients or budget policy.
+codex_auth_source: codex_cli
+model:
+  provider: openai-codex
+  default: gpt-6-astra
+# Bypass LAYA; the main model selects tools through the ordinary authorization path.
+decisions: {}
+agent_identity:
+  schema_version: 1
+  principal_id: ryoko
+  profile_id: ryoko
+  primary_agent_id: primary
+  active_agent_id: primary
+  agents:
+    primary:
+      policy_version: 1
+      role: primary
+      memory_backend: personal_mcp
+      secret_refs: [CODEX_CLI_OAUTH]
+      allowed_tools: [todo_list, execute_code, delegate_task, clarify, tool_search, tool_describe, tool_call, session_search]
+      recipient_plan: &model_recipients
+        schema_version: 1
+        envelope: declared
+        grants:
+          - {recipient_id: openai-codex, purpose: main_model, endpoint: 'https://chatgpt.com/backend-api/codex', transport: httpx}
+          - {recipient_id: openai-codex, purpose: aux_model, endpoint: 'https://chatgpt.com/backend-api/codex', transport: httpx}
+  child_policy:
+    policy_version: 1
+    role: child
+    memory_backend: builtin
+    secret_refs: [CODEX_CLI_OAUTH]
+    allowed_tools: [todo_list, execute_code, tool_search, tool_describe, tool_call]
+    recipient_plan: *model_recipients
+# These are local operational limits, not claims about the provider's quota.
+delegation:
+  durable:
+    enabled: true
+    limits: {max_depth: 1, max_total_children: 4, max_concurrent_children: 2}
+runtime_budget:
+  schema_version: 1
+  mode: provider_reported
+  limits:
+    tokens: null       # Use provider quota; optional positive value stops AFTER a response.
+    cost_micros: null  # No verified dollar charge is reported by this OAuth route.
+    attempts: 100
+    wall_ms: 3600000
+    provider_slots: 3
+    executor_slots: 2
+  deadline_seconds: 3600
+  request_timeout_ms: 120000
+  routes:
+    - {model: gpt-6-astra, base_url: 'https://chatgpt.com/backend-api/codex'}
+# Personal memory has no endpoint/credential/schema grants until the owner supplies them.

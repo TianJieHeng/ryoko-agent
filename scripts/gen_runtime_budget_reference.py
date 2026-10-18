@@ -20,6 +20,14 @@ def render_reference():
              "| Field | Contract |", "| --- | --- |"]
     lines += [f"| `{name}` | {description} |" for name, description in BUDGET_CONFIG_FIELDS.items()]
     lines += ["", "## Enforcement and limitations", "",
+              "`provider_reported` mode supports owned main and auxiliary Codex OAuth Responses. Routes contain only "
+              "exact model and base_url. Tokens are charged from completed provider usage; a configured token threshold "
+              "stops the next request and can be exceeded by the in-flight response. Null tokens uses provider quota. "
+              "Cost must be null because this route does not report a verified monetary charge. Status explicitly says "
+              "after_response token enforcement and provider_not_reported cost; this is not a hard token/cost guarantee. "
+              "Attempts, provider/executor slots, and operational deadlines still use the durable reservation ledger. "
+              "Missing usage and interrupted requests retain physical reservations. Existing tokens/cost modes retain their "
+              "verified pre-dispatch contracts and reject this unbounded-output OAuth route.", "",
               "The policy snapshot is immutable for an accepted run. Root IDs come from accepted durable commands. "
               "A child requires a trusted persisted parent handoff and its own accepted command/lease; "
               "reservations atomically debit every ancestor. Until a trusted mission boundary is available, "
@@ -37,8 +45,9 @@ def render_reference():
               "Missing usage, transport failures and unknown upstream outcomes retain conservative allocations; "
               "a local socket close does not prove remote work stopped or refund usage. A late result without "
               "current ownership cannot release its reservation. Overruns block further dispatch as debt.", "",
-              "Only the built-in in-memory todo_list handler and trusted delegation orchestration currently have "
-              "tool cost contracts. Delegate descendants reserve independently. Explicitly unmetered read-only MCP services can opt into the "
+              "Built-in todo, tool discovery, clarification, isolated Python and trusted delegation have "
+              "local execution contracts. Tool-call bridges re-enter accounting for the concrete tool; "
+              "delegate descendants reserve independently. Explicitly unmetered read-only MCP services can opt into the "
               "[physical-request adapter](mcp-agent-contracts.md); startup discovery requires an admitted turn. "
               "Opaque tools (including terminal, uncertified MCP/media/memory services and external loops), "
               "embedding requests, server-side tools, raw streams, "

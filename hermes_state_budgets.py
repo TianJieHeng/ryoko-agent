@@ -48,7 +48,7 @@ def _amounts(value, *, limits=False):
     result = {}
     for key in BUDGET_RESOURCES:
         amount = value.get(key, 0)
-        if limits and key == "cost_micros" and amount is None:
+        if limits and key in {"tokens", "cost_micros"} and amount is None:
             result[key] = None
             continue
         _check(type(amount) is int and 0 <= amount <= MAX_BUDGET_INTEGER,
@@ -210,6 +210,9 @@ class SessionBudgetsMixin:
                               account_id=None, holder, generation, policy_snapshot=None):
         """Create once from an accepted run. Retries never reset limits or counters."""
         actor, limits, deadline = _actor(actor), _amounts(limits, limits=True), _deadline(deadline)
+        _check(limits["tokens"] is not None or (isinstance(policy_snapshot, dict)
+               and policy_snapshot.get("mode") == "provider_reported"),
+               "invalid_budget", "Uncapped tokens require explicit provider-reported accounting")
         _identifier_bytes(run_id, "run_id")
         account_id = run_id if account_id is None else _identifier_bytes(account_id, "account_id")
         _check(account_id == run_id, "invalid_budget", "Budget account identity must equal its accepted run identity")
@@ -359,7 +362,15 @@ class SessionBudgetsMixin:
             _check(not row["slots_released"] or slots_released,"idempotency_conflict","Released slots cannot be reacquired")
             maxima, held, consumed = json.loads(row["maxima_json"]),_zero(),_zero()
             measured = actual or _zero()
-            debt = any(measured[key] > maxima[key] for key in BUDGET_RESOURCES)
+            reported = (json.loads(account["policy_json"]) or {}).get("mode") == "provider_reported"
+            debt = any(measured[key] > maxima[key] for key in BUDGET_RESOURCES
+                       if not (reported and key in {"tokens", "cost_micros"}))
+            if reported:
+                previous = json.loads(row["consumed_json"])
+                for ancestor in self._budget_ancestors_on_conn(conn, account):
+                    limits, used = json.loads(ancestor["limits_json"]), json.loads(ancestor["consumed_json"])
+                    debt |= any(limits[key] is not None and used[key] - previous[key] + measured[key] >= limits[key]
+                                for key in ("tokens", "cost_micros"))
             for key in BUDGET_RESOURCES:
                 if key in BUDGET_SLOTS:
                     held[key] = 0 if slots_released else maxima[key]

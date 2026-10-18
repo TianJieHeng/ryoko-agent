@@ -412,7 +412,7 @@ def test_owned_oauth_cannot_bypass_adapter_or_claim_hard_budget(runtime):
         with owned_oauth_agent(env, endpoint) as client:
             with pytest.raises(openai.APIConnectionError):
                 client.responses.create(model="fixture", input=[], store=False, stream=True)
-            budget_run = replace(env.run, budget=SimpleNamespace(check=lambda: None))
+            budget_run = replace(env.run, budget=SimpleNamespace(check=lambda: None, policy=SimpleNamespace(record={"mode": "tokens"})))
             token = bind_runtime_run(budget_run)
             try:
                 with pytest.raises(BudgetBlocked, match="hard token budgets"):

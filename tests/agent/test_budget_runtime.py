@@ -649,3 +649,134 @@ def test_strict_pool_entry_denies_before_disk_oauth_or_named_custom_lookup(facto
         # shared gate or borrow a pool; an explicitly scoped key stays usable.
         assert aux._named_custom_api_key({}, "custom:private", "https://private.invalid") == "no-key-required"
         assert aux._named_custom_api_key({"key_env": "OPENAI_API_KEY"}, "custom:private", BASE_URL) == "fixture-provider-key"
+
+
+def reported_policy(*, tokens=None, attempts=8):
+    p = policy(attempts=attempts)
+    p['mode'] = 'provider_reported'
+    p['limits']['tokens'] = tokens
+    p['routes'] = [{'model': MODEL, 'base_url': BASE_URL}]
+    return p
+
+
+def oauth_response(*, usage=True):
+    final = {'id': 'resp', 'status': 'completed', 'output': []}
+    if usage:
+        final['usage'] = {'input_tokens': 12, 'output_tokens': 3, 'total_tokens': 15}
+    frames = [{'type': 'response.output_text.delta', 'delta': 'owned answer', 'output_index': 0,
+               'content_index': 0, 'item_id': 'msg', 'sequence_number': 1},
+              {'type': 'response.completed', 'response': final, 'sequence_number': 2}]
+    return httpx.Response(200, headers={'content-type': 'text/event-stream'},
+        content=''.join('data: ' + json.dumps(frame) + '\n\n' for frame in frames))
+
+
+def test_oauth_reported_main_aux_and_async_share_durable_account(factory):
+    import asyncio
+    from agent.codex_runtime import run_codex_stream
+    from agent.auxiliary_client import _relay_sync_completion, _relay_async_completion
+    from tools.egress_policy import resolve_auxiliary_client
+    make, db, _ = factory
+    agent, calls = make(budget=reported_policy(), handler=lambda _: oauth_response())
+    agent.api_mode, agent.provider = 'codex_responses', 'openai-codex'
+    agent.api_key = agent.client.api_key
+    with active(agent) as run:
+        answer = run_codex_stream(agent, {'model': MODEL, 'input': [], 'store': False}, agent.client)
+        assert answer.output_text == 'owned answer'
+        runtime = {'provider': 'openai-codex', 'api_mode': 'codex_responses', 'model': MODEL,
+                   'api_key': agent.api_key, 'base_url': BASE_URL}
+        # Use the real resolver then substitute only the fixture network transport,
+        # preserving the independently granted auxiliary authorization.
+        aux, model = resolve_auxiliary_client(provider='auto', model=None, base_url=None,
+            api_key=None, api_mode=None, main_runtime=runtime, async_mode=False)
+        aux._real_client.close()
+        aux._real_client = openai.OpenAI(api_key=agent.api_key, base_url=BASE_URL,
+            http_client=guarded_http(agent._test_dispatch, purpose='aux_model'))
+        try:
+            request = {'model': model, 'messages': [{'role': 'user', 'content': 'answer'}]}
+            assert _relay_sync_completion(aux, request).choices[0].message.content == 'owned answer'
+            assert asyncio.run(_relay_async_completion(aux, request)).usage.total_tokens == 15
+        finally:
+            aux.close()
+        status = run.budget.status()
+        assert status['consumed']['tokens'] == 45
+        assert status['consumed']['attempts'] == 3
+        assert status['reserved']['provider_slots'] == 0
+        assert status['cost_tracking'] == 'provider_not_reported'
+        assert status['token_enforcement'] == 'after_response'
+        assert status['monetary_cost_available'] is False
+    assert len(calls) == 3 and all(c['store'] is False and c['stream'] is True for c in calls)
+
+
+def test_reported_token_threshold_stops_next_attempt_without_fake_cap(factory):
+    from agent.codex_runtime import run_codex_stream
+    make, db, _ = factory
+    agent, calls = make(budget=reported_policy(tokens=10), handler=lambda _: oauth_response())
+    agent.api_mode, agent.provider = 'codex_responses', 'openai-codex'
+    agent.api_key = agent.client.api_key
+    with active(agent) as run:
+        request = {'model': MODEL, 'input': [], 'store': False}
+        run_codex_stream(agent, request, agent.client)
+        assert run.budget.status()['consumed']['tokens'] == 15
+        with pytest.raises(BudgetBlocked):
+            run_codex_stream(agent, request, agent.client)
+    assert len(calls) == 1 and 'max_output_tokens' not in calls[0]
+
+
+def test_reported_missing_usage_retains_physical_reservation(factory):
+    from agent.codex_runtime import run_codex_stream
+    from agent.runtime_commands import RuntimeFenceError
+    make, db, _ = factory
+    agent, calls = make(budget=reported_policy(), handler=lambda _: oauth_response(usage=False))
+    agent.api_mode, agent.provider = 'codex_responses', 'openai-codex'
+    agent.api_key = agent.client.api_key
+    with active(agent) as run:
+        with pytest.raises(RuntimeFenceError):
+            run_codex_stream(agent, {'model': MODEL, 'input': [], 'store': False}, agent.client)
+        status = run.budget.status()
+        assert status['unknown_usage'] and status['reserved']['provider_slots'] == 1
+    assert len(calls) == 1
+
+
+def test_reported_policy_never_invents_cost_or_weakens_hard_policy():
+    p = reported_policy()
+    p['limits']['cost_micros'] = 100
+    with pytest.raises(BudgetPolicyError, match='monetary cost'):
+        parse_budget_policy({'runtime_budget': p})
+    p = policy()
+    p['limits']['tokens'] = None
+    with pytest.raises(BudgetPolicyError):
+        parse_budget_policy({'runtime_budget': p})
+
+
+def test_reported_bridge_scope_accounts_local_catalog_without_registry_entry(factory):
+    from agent.budget_account import budget_tool_scope
+    from tools.registry import registry
+    make, _, _ = factory
+    agent, calls = make(budget=reported_policy())
+    with active(agent) as run:
+        for name in ('tool_search', 'tool_describe', 'tool_call'):
+            assert registry.get_entry(name) is None
+            with budget_tool_scope(run, name):
+                expected = 0 if name == 'tool_call' else 1
+                assert run.budget.status()['reserved']['executor_slots'] == expected
+            assert run.budget.status()['reserved']['executor_slots'] == 0
+        with pytest.raises(BudgetBlocked):
+            with budget_tool_scope(run, 'not_a_certified_tool'):
+                pytest.fail('uncertified tool reached execution')
+    assert calls == []
+
+
+def test_reported_journal_failure_before_dispatch_releases_reservation(factory, monkeypatch):
+    from agent.codex_runtime import run_codex_stream
+    make, _, _ = factory
+    agent, calls = make(budget=reported_policy(), handler=lambda _: oauth_response())
+    agent.api_mode, agent.provider = 'codex_responses', 'openai-codex'
+    agent.api_key = agent.client.api_key
+    with active(agent) as run:
+        def fail(*args, **kwargs):
+            raise RuntimeError('journal unavailable')
+        monkeypatch.setattr('agent.runtime_commands._record_operation_event', fail)
+        with pytest.raises(RuntimeError, match='journal unavailable'):
+            run_codex_stream(agent, {'model': MODEL, 'input': [], 'store': False}, agent.client)
+        assert not any(run.budget.status()['reserved'].values())
+    assert calls == []

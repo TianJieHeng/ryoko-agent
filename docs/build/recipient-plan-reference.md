@@ -67,7 +67,9 @@ because the plan contains a subprocess grant. Unsupported executors stay denied.
   attempt. A completed terminal frame and valid input/output usage are mandatory;
   truncation, failure, revocation and cancellation stop further dispatch. The
   local stream close does not prove remote cancellation. Hosted tools, media,
-  server-side continuations and auxiliary Responses remain unsupported. Hard
+  server-side continuations remain unsupported. Auxiliary Responses uses its own
+  `aux_model` grant and the same owner, credential, and physical accounting checks.
+  Sync and async auxiliary completions are supported; raw auxiliary streams are not. Hard
   token/cost budgets refuse this route because the consumer endpoint does not
   provide a verified request output cap.
 - Cross-recipient redirects, endpoint changes, revoked/disabled policies, absent
@@ -137,7 +139,8 @@ The strict profile must separately grant `main_model` HTTPX access to
 `CODEX_CLI_OAUTH` in the agent's `secret_refs`. This reference authorizes only
 the current shared access token at that endpoint; it is not an environment
 variable or a copy of the refresh token. Sharing credentials grants no tools,
-memory, auxiliary requests, or external delivery. Keep tokens out of configuration,
+memory, auxiliary requests, or external delivery by itself. Add a distinct
+`aux_model` recipient grant to authorize owned auxiliary OAuth. Keep tokens out of configuration,
 logs, and Git. This implementation uses the repository's existing consumer Codex
 endpoint; it is not a claim that every newer Sign in with ChatGPT endpoint has the
 same protocol. Subscription quota and reported usage are not API invoice bounds.

@@ -26,8 +26,8 @@ class BudgetBlocked(InterruptedError):
 
 BUDGET_CONFIG_FIELDS = {
     "schema_version": "Required integer 1; unsupported versions fail closed",
-    "mode": "tokens (spend untracked) or cost (operator-declared worst-case rate bounds)",
-    "limits.tokens": "Positive aggregate input plus output token ceiling",
+    "mode": "tokens/cost for verified pre-dispatch bounds; provider_reported for observed OAuth usage and stop-after-response thresholds (not a hard spend guarantee)",
+    "limits.tokens": "Positive aggregate token ceiling in bounded modes; optional stop-after-response threshold in provider_reported (null uses provider quota)",
     "limits.attempts": "Positive aggregate physical provider attempt ceiling; SDK retries disabled",
     "limits.cost_micros": "Positive policy-currency micro-unit ceiling in cost mode; null in tokens mode",
     "limits.wall_ms": "Positive aggregate work duration allocation in milliseconds",
@@ -35,7 +35,7 @@ BUDGET_CONFIG_FIELDS = {
     "limits.executor_slots": "Positive concurrent certified local tool execution ceiling",
     "deadline_seconds": "Positive seconds from command acceptance; descendants inherit earliest deadline",
     "request_timeout_ms": "Positive per-request cancellation deadline, no larger than aggregate wall_ms",
-    "routes[].model": "Exact dispatched provider model ID; no wildcard or model-name inference",
+    "routes[].model": "Exact dispatched provider model ID; provider_reported routes contain only model and base_url",
     "routes[].base_url": "Exact credential-free SDK HTTP endpoint; fallback destinations need their own entry",
     "routes[].max_input_tokens": "Positive input ceiling checked against full UTF-8 request bytes plus verified overhead; overlarge requests reject without truncation",
     "routes[].max_output_tokens": "Positive enforced output cap covering all billable output/reasoning for this route",
@@ -51,6 +51,9 @@ _DIMENSIONS = frozenset({"tokens", "attempts", "cost_micros", "wall_ms", "provid
 # These built-ins do not start an opaque billable external loop. Identity grants
 # still run first; this set is a cost-contract floor, never a capability grant.
 _LOCAL_TOOLS = {"todo_list": "tools.todo_tool", "delegate_task": "tools.delegate_tool",
+                "clarify": "tools.clarify_tool",
+                "tool_search": "tools.tool_search", "tool_describe": "tools.tool_search",
+                "tool_call": "tools.tool_search",
                 "execute_code": "tools.code_execution_tool", "memory": "tools.memory_tool",
                 "session_search": "tools.session_search_tool",
                 "dots_page_read": "tools.dots_tool", "dots_page_propose": "tools.dots_tool",
@@ -82,6 +85,8 @@ class BudgetPolicy:
 
     @property
     def cost_tracking(self):
+        if self.record["mode"] == "provider_reported":
+            return "provider_not_reported"
         return "bounded" if self.record["mode"] == "cost" else "untracked"
 
 
@@ -93,12 +98,18 @@ def parse_budget_policy(config: Mapping) -> BudgetPolicy | None:
         raise BudgetPolicyError("runtime_budget requires the complete versioned policy")
     if type(raw["schema_version"]) is not int or raw["schema_version"] != 1:
         raise BudgetPolicyError("unsupported runtime_budget schema_version")
-    if raw["mode"] not in {"tokens", "cost"}:
-        raise BudgetPolicyError("runtime_budget mode must be tokens or cost")
+    if raw["mode"] not in {"tokens", "cost", "provider_reported"}:
+        raise BudgetPolicyError("runtime_budget mode must be tokens, cost or provider_reported")
     limits = raw["limits"]
     if not isinstance(limits, dict) or set(limits) != _DIMENSIONS:
         raise BudgetPolicyError("runtime_budget limits require every resource dimension")
     for key, value in limits.items():
+        if raw["mode"] == "provider_reported" and key in {"tokens", "cost_micros"}:
+            if key == "cost_micros" and value is not None:
+                raise BudgetPolicyError("OAuth does not report verified monetary cost; cost_micros must be null")
+            if value is not None:
+                _integer(value, f"runtime_budget.limits.{key}")
+            continue
         if key == "cost_micros" and raw["mode"] == "tokens":
             if value is not None:
                 raise BudgetPolicyError("tokens mode requires cost_micros: null (untracked cost)")
@@ -117,6 +128,17 @@ def parse_budget_policy(config: Mapping) -> BudgetPolicy | None:
     fields = {"model", "base_url", "max_input_tokens", "max_output_tokens", "input_overhead_tokens",
               "input_cost_micros_per_million", "output_cost_micros_per_million", "bounds_verified", "output_token_parameter"}
     for route in routes:
+        if raw["mode"] == "provider_reported":
+            if (not isinstance(route, dict) or set(route) != {"model", "base_url"}
+                    or not isinstance(route["model"], str) or not route["model"].strip()):
+                raise BudgetPolicyError("provider_reported routes require exact model and base_url")
+            from tools.egress_policy import canonical_endpoint
+            canonical_endpoint(route["base_url"])
+            key = (route["base_url"].rstrip("/"), route["model"])
+            if key in seen:
+                raise BudgetPolicyError("duplicate runtime_budget route")
+            seen.add(key)
+            continue
         if not isinstance(route, dict) or set(route) != fields:
             raise BudgetPolicyError("invalid runtime_budget route fields")
         if route["output_token_parameter"] not in {"max_tokens", "max_completion_tokens"}:
@@ -227,7 +249,9 @@ class BudgetRuntime:
         result = self.db.settle_budget(self.account_id, self.actor, operation_id, actual,
                                       unknown_usage=unknown, slots_released=slots_released, **self.fence)
         if result["debt"]:
-            self.blocked_reason = "reported usage exceeded its verified reservation bound; further dispatch blocked"
+            self.blocked_reason = ("provider-reported usage reached its configured threshold; further dispatch blocked"
+                if self.policy.record["mode"] == "provider_reported" else
+                "reported usage exceeded its verified reservation bound; further dispatch blocked")
         return result
 
     def status(self):
@@ -237,7 +261,9 @@ class BudgetRuntime:
                 "unknown_usage": account["unknown_usage"] or bool(account["reserved"]["provider_slots"]),
                 "pending_provider_requests": account["reserved"]["provider_slots"], "reserved": account["reserved"],
                 "consumed": account["consumed"], "blocked_reason": self.blocked_reason,
-                "invoice_guarantee": False}
+                "invoice_guarantee": False,
+                "token_enforcement": "after_response" if self.policy.record["mode"] == "provider_reported" else "pre_dispatch",
+                "monetary_cost_available": self.policy.cost_tracking == "bounded"}
 
 
 def admission_deadline(agent):
@@ -366,6 +392,8 @@ def _plain_request(kwargs):
 
 
 def _prepare_request(budget, client, kwargs):
+    if budget.policy.record["mode"] == "provider_reported":
+        budget.block("provider_reported accounting requires the owned OAuth Responses adapter")
     import openai
     if not isinstance(client, (openai.OpenAI, openai.AsyncOpenAI)):
         budget.block("opaque provider client has no certified single-attempt budget adapter")
@@ -548,7 +576,11 @@ def budget_tool_scope(run, name):
         # Metadata, reconnects and each physical POST reserve at the transport.
         yield
         return
-    if (name not in _LOCAL_TOOLS or entry is None
+    # These three names are dispatched by model_tools' built-in bridge before
+    # registry handlers. Catalog reads are local; tool_call re-enters accounting
+    # for the concrete underlying tool and must not hold an orchestration slot.
+    bridge = entry is None and name in {"tool_search", "tool_describe", "tool_call"}
+    if not bridge and (name not in _LOCAL_TOOLS or entry is None
             or getattr(entry.handler, "__module__", "") != _LOCAL_TOOLS[name]):
         budget.block(f"tool {name} has no certified bounded execution adapter")
     budget.check()
@@ -558,7 +590,7 @@ def budget_tool_scope(run, name):
     # direct registry/handler entry; a wrapper slot here would double-count.
     # Dots bridges likewise reserve at each physical request; human approval
     # waits hold no executor slot and cannot inflate the finite request bound.
-    if name in {"delegate_task", "execute_code", "dots_page_read", "dots_page_propose",
+    if name in {"delegate_task", "execute_code", "clarify", "tool_call", "dots_page_read", "dots_page_propose",
                 "dots_computer_observe", "dots_computer_propose"}:
         yield
         return

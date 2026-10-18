@@ -205,7 +205,7 @@ def _check_request(authorization, request):
         raise EgressDenied("recipient_host_header_changed")
     if authorization.grant.purpose in {"main_model", "aux_model"}:
         expected = authorization.grant.endpoint.rstrip("/") + "/chat/completions"
-        if (authorization.grant.purpose == "main_model" and request.method == "POST"
+        if (request.method == "POST"
                 and str(request.url) == authorization.grant.endpoint.rstrip("/") + "/responses"):
             from agent.owned_codex import authorize_responses_request
             authorize_responses_request(request)
@@ -335,6 +335,19 @@ def resolve_auxiliary_client(*, provider, model, base_url, api_key, api_mode, ma
     """No discovery, profile plugin factory or credential refresh on strict routes."""
     runtime = main_runtime if isinstance(main_runtime, Mapping) else {}
     provider = provider or "auto"
+    if provider == "openai-codex" or (provider == "auto" and runtime.get("provider") == "openai-codex"):
+        from agent.owned_codex import OwnedCodexAuxiliaryClient
+        from agent.codex_headers import apply_required_codex_headers
+        endpoint = base_url or runtime.get("base_url")
+        chosen_model = model or runtime.get("model")
+        credential = api_key or runtime.get("api_key")
+        if (api_mode not in (None, "", "codex_responses") or not chosen_model
+                or not isinstance(credential, str) or not credential):
+            raise EgressDenied("recipient_auxiliary_route_required")
+        options = {"base_url": endpoint, "api_key": credential}
+        apply_required_codex_headers(options, access_token=credential, base_url=str(endpoint))
+        client = build_model_client(options, purpose="aux_model")
+        return OwnedCodexAuxiliaryClient(client, chosen_model, async_mode=async_mode), chosen_model
     if provider not in {"auto", "openai", "custom"}:
         raise EgressDenied("recipient_provider_adapter_unsupported")
     if provider == "auto":
