@@ -46,6 +46,8 @@ def require_support(server=None):
         supported = grant is not None and grant.get("budget") is not None
     if not supported:
         raise MCPUnsupported("Budgeted MCP requires an explicit unmetered read contract")
+    if configured != budget.policy:
+        raise MCPUnsupported("MCP budget policy changed; admit a new durable turn")
     budget.check()
     return budget
 

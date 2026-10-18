@@ -38,8 +38,10 @@ def render_reference():
               "a local socket close does not prove remote work stopped or refund usage. A late result without "
               "current ownership cannot release its reservation. Overruns block further dispatch as debt.", "",
               "Only the built-in in-memory todo_list handler and trusted delegation orchestration currently have "
-              "tool cost contracts. Delegate descendants reserve independently. Opaque tools (including terminal, "
-              "MCP, media, memory services and external loops), embedding requests, server-side tools, raw streams, "
+              "tool cost contracts. Delegate descendants reserve independently. Explicitly unmetered read-only MCP services can opt into the "
+              "[physical-request adapter](mcp-agent-contracts.md); startup discovery requires an admitted turn. "
+              "Opaque tools (including terminal, uncertified MCP/media/memory services and external loops), "
+              "embedding requests, server-side tools, raw streams, "
               "non-OpenAI adapters, opaque extensions and callable plugin hooks/middleware/events are refused under enabled budgets. "
               "Policy hooks are rejected, never silently skipped; startup callbacks also require an admitted bounded adapter. Compaction is supported "
               "only when its auxiliary request uses the certified text adapter. Existing capability, isolation, "

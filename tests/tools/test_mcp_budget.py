@@ -164,7 +164,7 @@ def test_read_recall_uses_real_handler_and_each_post_has_one_ledger_charge(harne
         assert not any(json.loads(reserved[0]["held_json"]).values())
 
 
-@pytest.mark.parametrize("failure", ["write", "unknown_method", "oversize", "compressed", "timeout"])
+@pytest.mark.parametrize("failure", ["write", "unknown_method", "policy_change", "oversize", "compressed", "timeout"])
 def test_unsupported_requests_send_nothing_and_uncertain_reads_retain_capacity(harness, failure):
     from tools.mcp_tool_policy import MCPUnsupported
     seen = []
@@ -180,6 +180,9 @@ def test_unsupported_requests_send_nothing_and_uncertain_reads_retain_capacity(h
         server = live_server(prepare=lambda value: transports.append(
             wrap_transport(httpx, httpx.MockTransport(respond), value, CONTRACT)))
         transport = transports[0]
+        if failure == "policy_change":
+            harness.raw["runtime_budget"]["limits"]["attempts"] = 1
+            (harness.home / "config.yaml").write_text(json.dumps(harness.raw))
         async def perform():
             async with httpx.AsyncClient(transport=transport) as client:
                 body = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
@@ -190,7 +193,7 @@ def test_unsupported_requests_send_nothing_and_uncertain_reads_retain_capacity(h
         with pytest.raises((PermissionError, TimeoutError, MCPUnsupported)):
             asyncio.run(perform())
         reserved = rows(harness)
-        if failure in {"write", "unknown_method"}:
+        if failure in {"write", "unknown_method", "policy_change"}:
             assert not seen and not reserved
         else:
             assert len(seen) == len(reserved) == 1

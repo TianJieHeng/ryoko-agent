@@ -39,6 +39,9 @@ sampling, memory service charges and other unbounded adapters are refused in
 budget mode before dispatch. Only verified local todo handling and trusted child
 orchestration currently have tool contracts. Later adapter phases must preserve
 this refusal until they can enforce and report their own finite envelope.
+The [unmetered read-only MCP adapter](mcp-agent-contracts.md) now accounts for
+every physical HTTP request, including discovery, within an admitted turn.
+It does not certify paid memory services or auxiliary sampling.
 
 ## Admission and recovery
 
