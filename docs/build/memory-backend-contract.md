@@ -91,3 +91,9 @@ project namespace or expose built-in record controls.
 Managers and API-server pools bind immutable identity, home, policy, configuration,
 backend, endpoint and credential scope. Cross-owner reuse/teardown is rejected;
 disabled and unsupported provider operations receive no private lifecycle payload.
+
+For an enabled profile, start a normal new session (for example,
+`hermes -p ryoko chat`). Do not use `--ignore-rules` to verify memory: that CLI
+option also sets `skip_memory=True`. A successful raw MCP probe does not establish
+that the framework's admitted recall path or CLI injection is working; qualify
+those paths separately and retain explicit degraded status on failure.

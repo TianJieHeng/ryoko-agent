@@ -118,11 +118,12 @@ def test_real_sdk_negotiation_discovery_and_read_charge_every_http_post(harness,
             response = await server.session.call_tool("read", {"query": "fixture", "token_budget": 20,
                                                              "include_links": False})
             assert response.content[0].text == "local protocol response"
+            server._shutdown_event.set()
             return "shutdown"
         server._wait_for_lifecycle_event = read_and_stop
         async def drive():
-            await server._preflight_content_type(endpoint, headers=server._config["headers"])
-            return await server._run_http(server._config)
+            # Exercise the real startup authorization, before the transport exists.
+            return await server.run(server._config)
         asyncio.run(drive())
         assert [row["method"] for row, _ in seen] == [
             "initialize", "notifications/initialized", "tools/list", "tools/call"]
@@ -132,7 +133,7 @@ def test_real_sdk_negotiation_discovery_and_read_charge_every_http_post(harness,
         assert all(row["settlement_state"] == "settled" for row in reservations)
 
 
-def test_read_recall_uses_real_handler_and_each_post_has_one_ledger_charge(harness):
+def test_read_recall_uses_real_handler_and_each_post_has_one_ledger_charge(harness, monkeypatch):
     from agent.memory_mcp_provider import MCPContextPackProvider
     seen = []
     with harness.scope():
@@ -152,9 +153,14 @@ def test_read_recall_uses_real_handler_and_each_post_has_one_ledger_charge(harne
             return SimpleNamespace(content=[], isError=False, structuredContent=response.json())
         server.session.call_tool.side_effect = call_tool
         provider = MCPContextPackProvider(harness.primary, harness.raw["memory"]["personal_mcp"])
+        from agent.memory_router import RoutedMemoryManager
+        manager = RoutedMemoryManager(harness.primary, harness.raw, provider=provider)
+        def abandoned_background(*args, **kwargs):
+            pytest.fail("Owned budget recall must finish within its durable run, not a background timeout")
+        monkeypatch.setattr(manager, "_prefetch_provider", abandoned_background)
         from agent.budget_account import budget_tool_scope
         with budget_tool_scope(harness.runs["primary"], "mcp__public__read"):
-            assert "Budgeted fixture" in provider.prefetch("What matters?")
+            assert "Budgeted fixture" in manager.prefetch_all("What matters?")
         assert provider.health()["status"] == "ready"
         assert len(seen) == 1 and seen[0]["params"]["arguments"]["include_links"] is False
         reserved = rows(harness)
@@ -200,3 +206,16 @@ def test_unsupported_requests_send_nothing_and_uncertain_reads_retain_capacity(h
             assert reserved[0]["settlement_state"] == "unknown"
             assert json.loads(reserved[0]["held_json"])["executor_slots"] == 1
             assert harness.runs["primary"].budget.blocked_reason is not None
+
+
+def test_startup_grant_does_not_authorize_reads_before_budget_transport(harness):
+    from tools import mcp_tool as core
+    from tools.agent_policy_gate import bind_mcp_connection, authorize_mcp
+    from tools.mcp_tool_policy import require_operation, MCPUnsupported
+    with harness.scope():
+        server = core.MCPServerTask('public')
+        bind_mcp_connection(server)
+        assert authorize_mcp('public', connection=server) is None
+        with pytest.raises(MCPUnsupported, match='physical-request budget adapter'):
+            require_operation('public', 'read', connection=server, require_run=True)
+        assert rows(harness) == []

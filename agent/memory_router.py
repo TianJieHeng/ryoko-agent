@@ -108,8 +108,15 @@ class RoutedMemoryManager(MemoryManager):
         if not clean:
             return ""
         try:
-            result = (self._prefetch_provider(self.provider, clean, session_id=session_id)
-                      if self.provider.is_available() else self.provider.prefetch(clean, session_id=session_id))
+            from agent.budget_account import current_budget
+            # Owned MCP already bounds each physical request and the durable run.
+            # The legacy background timeout can abandon discovery while its thread
+            # still owns a reservation, then close the run under that live request.
+            owned_budget = self.backend == "personal_mcp" and current_budget() is not None
+            if owned_budget or not self.provider.is_available():
+                result = self.provider.prefetch(clean, session_id=session_id)
+            else:
+                result = self._prefetch_provider(self.provider, clean, session_id=session_id)
         except Exception:
             result = ""
         self._recall_unavailable = not bool(result)

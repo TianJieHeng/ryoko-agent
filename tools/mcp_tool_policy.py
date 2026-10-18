@@ -238,7 +238,9 @@ def require_operation(server, operation=None, args=None, *, connection=None, req
         elif operation not in grant["tool_allowlist"]:
             raise PermissionError("MCP tool is outside the exact agent grant")
     if connection is not None:
-        if budget is not None and not getattr(connection, "_agent_budget_transport", False):
+        # Connection startup must be authorized before it can construct the
+        # guarded transport. Concrete operations still require that transport.
+        if budget is not None and operation is not None and not getattr(connection, "_agent_budget_transport", False):
             raise MCPUnsupported("MCP connection has no physical-request budget adapter; reconnect")
         if getattr(connection, "_agent_registry_scope", None) != registry_scope(ctx):
             raise PermissionError("MCP connection ownership, credentials or endpoint changed")

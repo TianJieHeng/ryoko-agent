@@ -123,3 +123,11 @@ Focused fixtures exercise real policy parsing, ContextVars, registry dispatch,
 SQLite durable owner fences, exact approval consumption, SDK callback routing and
 mock HTTP redirects. Credentials and endpoints in tests are harmless fixtures.
 There is no live-harness, billing, hardware or remote-cancellation certification.
+
+Connection startup validates its owner and policy before constructing the budget
+transport. The transport marker is required for concrete operations, not for the
+initial authorization to construct the connection. Budgeted personal-memory
+recall stays in its admitted turn through discovery and response validation; the
+legacy background memory timeout cannot close that turn under a live request.
+Physical request bounds, durable deadlines and unknown-outcome accounting remain
+in force.
