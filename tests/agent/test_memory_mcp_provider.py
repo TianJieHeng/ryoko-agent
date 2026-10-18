@@ -53,7 +53,7 @@ def harness(tmp_path, monkeypatch, request):
     return value
 
 
-def live_server():
+def live_server(*, prepare=None):
     from tools import mcp_tool as core
     from tools.agent_policy_gate import bind_mcp_connection
     from tools.mcp_tool_discovery import _adopt_server
@@ -67,6 +67,8 @@ def live_server():
             "usage": "safe_to_act", "relevance_band": "weak"})))
     instance._tools = [SimpleNamespace(name="read", description="fixture", inputSchema=_SCHEMA,
                                       annotations={"readOnlyHint": True})]
+    if prepare is not None:
+        prepare(instance)
     _adopt_server("public", instance)
     instance._registered_tool_names = _register_server_tools("public", instance, instance._config)
     return instance

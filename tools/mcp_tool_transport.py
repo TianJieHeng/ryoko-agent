@@ -444,6 +444,10 @@ class MCPServerTransportMixin:
             # Only judge 2xx (4xx/5xx may be an auth challenge); no content type advertised → trust the SDK.
             ct = _content_type_base(resp)
             return _is_2xx(resp) and bool(ct) and ct not in self._MCP_CONTENT_TYPES
+        from tools.mcp_tool_policy import require_budget_support
+        if require_budget_support(self.name) is not None:
+            # SDK negotiation is authoritative and uses the accounted transport.
+            return
         probe_headers = dict(headers) if headers else {}
         from tools.mcp_tool_policy import require_http_inputs
         authorization = require_http_inputs(self.name, getattr(self, "_config", {}), url, probe_headers, connection=self)
@@ -579,6 +583,13 @@ class MCPServerTransportMixin:
         # inert — and suppresses httpx's own proxy auto-detection, hence the explicit mounts=.
         inner_transport = httpx.AsyncHTTPTransport(verify=ssl_verify, **_present(cert=client_cert))
         authorization = getattr(self, "_agent_recipient_authorization", None)
+        from tools.mcp_tool_policy import policy_for, require_budget_support
+        grant = policy_for(self.name) if strict else None
+        if grant is not None and grant.get("budget") is not None and require_budget_support(self.name) is not None:
+            from tools.mcp_tool_budget import wrap_transport
+            inner_transport = wrap_transport(httpx, inner_transport, self, grant["budget"])
+            headers = {key: value for key, value in headers.items() if key.lower() != "accept-encoding"}
+            headers["Accept-Encoding"] = "identity"
         # The SDK can use httpx2; its own request hook is the final pre-send boundary
         # for every redirect and retry, independent of its transport class hierarchy.
         request_hooks = [authorization.async_request_hook] if authorization is not None else []

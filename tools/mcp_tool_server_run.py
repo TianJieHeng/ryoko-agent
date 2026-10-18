@@ -67,7 +67,8 @@ class MCPServerRunMixin:
         is_http = self._is_http()
         configured = self._config.get("keepalive_interval")
         keepalive_interval = None
-        if is_http or configured is not None:
+        budgeted = getattr(self, "_agent_budget_transport", False)
+        if not budgeted and (is_http or configured is not None):
             keepalive_interval = max(
                 _core._MIN_KEEPALIVE_INTERVAL,
                 float(_core._DEFAULT_KEEPALIVE_INTERVAL if configured is None else configured))
@@ -75,7 +76,7 @@ class MCPServerRunMixin:
         # itself: it counts as proven only once a FULL default interval has elapsed — not on
         # the first timeout wake, which a shorter recycle deadline may cause (see below).
         proof_at = None
-        if keepalive_interval is None and not self._session_proven:
+        if not budgeted and keepalive_interval is None and not self._session_proven:
             proof_at = time.monotonic() + _core._DEFAULT_KEEPALIVE_INTERVAL
         shutdown_task, reconnect_task = self._event_waiters()
         rpc_idle_task = None

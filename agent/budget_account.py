@@ -538,6 +538,16 @@ def budget_tool_scope(run, name):
         return
     from tools.registry import registry
     entry = registry.get_entry(name)
+    if entry is not None and entry.toolset.startswith("mcp-"):
+        from tools.mcp_tool_policy import require_operation
+        target = getattr(entry.handler, "_agent_mcp_target", None)
+        if (not isinstance(target, tuple) or len(target) != 2
+                or getattr(entry.handler, "__module__", "") != "tools.mcp_tool_handlers"):
+            budget.block("MCP handler has no certified physical-request budget adapter")
+        require_operation(*target, require_run=True)
+        # Metadata, reconnects and each physical POST reserve at the transport.
+        yield
+        return
     if (name not in _LOCAL_TOOLS or entry is None
             or getattr(entry.handler, "__module__", "") != _LOCAL_TOOLS[name]):
         budget.block(f"tool {name} has no certified bounded execution adapter")

@@ -25,6 +25,7 @@ utility handlers or a parent's pool.
 - `secret_ref`: optional exact granted bearer credential reference
 - `read_only_tools`: exact operator-declared read-only tools within the allowlist
 - `sampling_limits`: currently only `{"enabled": false}` is supported
+- `budget`: optional explicit unmetered read-service contract (below)
 
 A missing tool pin may be diagnosed by discovery, but it cannot register or invoke
 that tool. Pins cover the complete SDK Tool JSON record, using SDK JSON aliases
@@ -55,13 +56,37 @@ Strict stdio is unsupported because the available computation-only executor
 cannot certify arbitrary MCP server subprocesses. No local directory or filtered
 environment is described as a sandbox.
 
-MCP is unsupported whenever `runtime_budget` is configured. This includes startup
-handshakes, metadata discovery and direct prompt/resource reads before an
-initiating run exists, because the BE03 adapter does not account for those
-potentially chargeable requests. Unbudgeted strict connections report cost as
-untracked. Legacy sampling and modern SDK MRTR callbacks reject strict requests
-before any auxiliary model call; enabled sampling-limit configuration is rejected
-rather than accepted as unenforced model/prompt/output/depth/concurrency limits.
+Budgeted MCP requires an admitted durable turn and an explicit operator-owned
+`budget` contract on the server grant:
+
+```yaml
+budget:
+  billing: unmetered
+  request_timeout_ms: 2000
+  max_request_bytes: 32768
+  max_response_bytes: 32768
+```
+
+Timeout must be 1–60000 ms; byte bounds must be 1–1048576. These are service
+contract declarations, not a way to suppress known charges. Paid services need a
+separate verified billing adapter. Only explicit read-only tools and granted
+resource/prompt reads are supported. Each physical POST, including negotiation,
+discovery and retries, reserves an attempt, executor capacity and finite wall
+time from the existing ledger. The smaller service/runtime/root deadline wins.
+Complete responses are bounded before SDK parsing. Compressed responses are
+rejected. Unknown completion retains executor capacity and blocks further work;
+local timeout does not claim remote cancellation.
+
+No discovery is permitted before a durable budget owner exists. Memory recall
+can discover its exact granted server in the admitted turn. Optional unaccounted
+content-type probes, automatic keepalives and unsolicited GET streams are
+suppressed for this adapter. Strict teardown sends no remote DELETE. Changing
+the runtime budget or server contract invalidates old connection ownership.
+
+Unbudgeted strict connections report cost as untracked. Legacy sampling and
+modern SDK MRTR callbacks reject strict requests before any auxiliary model
+call; enabled sampling-limit configuration is rejected rather than accepted as
+unenforced model/prompt/output/depth/concurrency limits.
 
 ## Dispatch, refresh and teardown
 

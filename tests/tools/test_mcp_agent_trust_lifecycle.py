@@ -265,7 +265,8 @@ def test_bounded_mode_direct_call_cannot_bypass_existing_tool_budget(fixture, mo
         live = server()
         monkeypatch.setattr("agent.budget_account.current_budget", lambda: object())
         result = json.loads(registry.get_entry("mcp__public__read").handler({}))
-        assert "certified BE03" in result["error"]
+        assert result["error"] == "agent_policy_unsupported"
+        assert "unmetered read contract" in result["message"]
         live.session.call_tool.assert_not_awaited()
 
 
@@ -421,7 +422,7 @@ def test_budgeted_startup_cannot_discover_before_a_run_or_charge_adapter(fixture
     # Identity construction has a policy but no admitted run or installed budget.
     with agent_runtime_scope(fixture.primary):
         monkeypatch.setattr("tools.mcp_tool_config._load_mcp_config", lambda: pytest.fail("no metadata/credential work"))
-        assert "BE03" in mcp_discovery_denial()
+        assert "admitted durable turn" in mcp_discovery_denial()
         assert discover_mcp_tools() == []
         with pytest.raises(PermissionError):
             asyncio.run(_connect_server("public", {"url": "https://fixture.invalid/mcp"}))

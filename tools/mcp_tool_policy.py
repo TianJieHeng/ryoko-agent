@@ -49,7 +49,7 @@ def parse_mcp_policies(raw):
     _names(list(raw), "mcp_policies")
     result = {}
     fields = {"policy_version", "transport", "endpoint", "tool_allowlist", "read_scopes",
-              "secret_ref", "schema_digests", "read_only_tools", "sampling_limits"}
+              "secret_ref", "schema_digests", "read_only_tools", "sampling_limits", "budget"}
     for server, supplied in raw.items():
         if not isinstance(supplied, Mapping) or set(supplied) - fields:
             raise IdentityPolicyError("MCP policy contains unknown fields")
@@ -101,6 +101,9 @@ def parse_mcp_policies(raw):
                           "tool_allowlist": tools, "read_scopes": reads,
                           "secret_ref": secret, "schema_digests": dict(schemas),
                           "read_only_tools": read_only, "sampling_limits": {"enabled": False}}
+        if "budget" in supplied:
+            from tools.mcp_tool_budget import parse_contract
+            result[server]["budget"] = parse_contract(supplied["budget"])
     return _freeze(result)
 
 
@@ -113,6 +116,8 @@ def intersect_mcp_policies(parent, ceiling):
             continue
         if any(cap[key] != inherited[key] for key in
                ("transport", "endpoint", "secret_ref", "policy_version", "sampling_limits")):
+            continue
+        if cap.get("budget") != inherited.get("budget"):
             continue
         record = _record(cap)
         record["tool_allowlist"] = sorted(set(cap["tool_allowlist"]) & set(inherited["tool_allowlist"]))
@@ -151,9 +156,10 @@ def registry_scope(context=None):
     from agent.secret_scope import current_secret_scope
     scoped = current_secret_scope() if ctx.policy.secret_refs else {}
     secrets = {name: (scoped or {}).get(name) for name in sorted(ctx.policy.secret_refs)}
+    config = identity_config()
     material = [ctx.identity.principal_id, ctx.identity.profile_id, ctx.identity.agent_id,
                 ctx.policy.digest, ctx.config_digest, secrets,
-                identity_config().get("mcp_servers", {})]
+                config.get("mcp_servers", {}), config.get("runtime_budget")]
     return str(Path(ctx.profile_home) / ".agent-mcp" / _digest(material))
 
 
@@ -162,12 +168,10 @@ def policy_for(server, context=None):
     return None if ctx is None else ctx.policy.mcp_policies.get(server)
 
 
-def require_budget_support():
+def require_budget_support(server=None):
     """Startup metadata is potentially chargeable too, before a run is installed."""
-    from agent.identity_lifecycle import identity_config
-    from agent.budget_account import parse_budget_policy
-    if parse_budget_policy(identity_config()) is not None:
-        raise MCPUnsupported("MCP discovery and execution unsupported by the certified BE03 budget adapter")
+    from tools.mcp_tool_budget import require_support
+    return require_support(server)
 
 
 def require_transport(server, config, *, connection=None):
@@ -175,7 +179,7 @@ def require_transport(server, config, *, connection=None):
     ctx = live_context()
     if ctx is None:
         return
-    require_budget_support()
+    require_budget_support(server)
     grant = policy_for(server, ctx)
     if grant is None:
         raise PermissionError("MCP transport unsupported without an explicit agent-owned MCP policy")
@@ -214,12 +218,14 @@ def require_operation(server, operation=None, args=None, *, connection=None, req
     ctx = live_context()
     if ctx is None:
         return
-    require_budget_support()
+    budget = require_budget_support(server)
     if ctx.policy.role != "primary" and server in ctx.policy.personal_mcp_servers:
         raise PermissionError("Personal MCP is restricted to the configured primary identity")
     grant = policy_for(server, ctx)
     if grant is None:
         raise PermissionError("MCP transport unsupported without an explicit agent-owned MCP policy")
+    if (budget is not None or grant.get("budget") is not None) and operation is not None and operation not in _READ_OPS and operation not in grant["read_only_tools"]:
+        raise MCPUnsupported("Budgeted MCP supports explicitly read-only operations only")
     if operation is not None:
         if operation in _READ_OPS:
             target = grant["read_scopes"].get(operation)
@@ -232,6 +238,8 @@ def require_operation(server, operation=None, args=None, *, connection=None, req
         elif operation not in grant["tool_allowlist"]:
             raise PermissionError("MCP tool is outside the exact agent grant")
     if connection is not None:
+        if budget is not None and not getattr(connection, "_agent_budget_transport", False):
+            raise MCPUnsupported("MCP connection has no physical-request budget adapter; reconnect")
         if getattr(connection, "_agent_registry_scope", None) != registry_scope(ctx):
             raise PermissionError("MCP connection ownership, credentials or endpoint changed")
         if getattr(connection, "_agent_refresh_blocked", None):
@@ -241,9 +249,6 @@ def require_operation(server, operation=None, args=None, *, connection=None, req
             if not expected or (getattr(connection, "_agent_schema_digests", None) or {}).get(operation) != expected:
                 raise PermissionError("MCP tool requires its exact operator schema digest before invocation")
     if require_run:
-        from agent.budget_account import current_budget
-        if current_budget() is not None:
-            raise PermissionError("MCP execution unsupported by the certified BE03 bounded tool adapter")
         from agent.runtime_commands import assert_runtime_dispatch
         assert_runtime_dispatch()
 
