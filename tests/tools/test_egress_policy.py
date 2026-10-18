@@ -388,15 +388,16 @@ def test_owned_oauth_rejects_unowned_work_before_send(runtime, override):
 @pytest.mark.parametrize("change", ["cancel", "revoke"])
 def test_owned_oauth_rechecks_authority_between_frames(runtime, change):
     from agent.codex_runtime import run_codex_stream
+    from tools.capability_broker import CapabilityDenied
     with oauth_sse_server() as (endpoint, received), runtime(endpoint) as env:
         def interrupt():
             if change == "cancel":
                 env.agent._interrupt_requested = True
             else:
-                env.raw["agent_identity"]["agents"]["primary"]["policy_version"] += 1
+                env.raw["agent_identity"]["agents"]["primary"]["recipient_plan"]["grants"] = []
                 (env.home / "config.yaml").write_text(json.dumps(env.raw))
         with owned_oauth_agent(env, endpoint) as client:
-            with pytest.raises((InterruptedError, EgressDenied)):
+            with pytest.raises((InterruptedError, EgressDenied, CapabilityDenied)):
                 run_codex_stream(env.agent, {"model": "fixture", "store": False, "input": []},
                                  client, on_first_delta=interrupt)
         assert len(received) == 1
