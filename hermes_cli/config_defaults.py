@@ -31,6 +31,9 @@ def _aux(timeout, *, reasoning_effort=True, **extra):
 
 
 DEFAULT_CONFIG = {
+    # Explicitly share Codex's current ChatGPT access token without copying or
+    # rotating its refresh token. Each profile opts in independently.
+    "codex_auth_source": "hermes",
     # Typed classifier observations: empty/off. Private transmission remains qualification-gated.
     "decisions": {},
     # Empty preserves legacy profiles. Nonempty versioned policy is validated before agent setup.

@@ -292,3 +292,130 @@ def test_constructed_authorization_is_not_a_policy_grant(runtime):
             with pytest.raises(EgressDenied, match="not_granted"):
                 client.post("https://other.invalid/v1/chat/completions", content="private")
         assert not seen
+
+
+@contextmanager
+def oauth_sse_server(*, terminal="completed", usage=True, status=200):
+    received = []
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            received.append((self.path, self.headers.get("Authorization"),
+                             json.loads(self.rfile.read(int(self.headers["Content-Length"])))))
+            frames = [{"type": "response.output_text.delta", "delta": "OAuth answer", "output_index": 0,
+                       "content_index": 0, "item_id": "msg", "sequence_number": 1}]
+            if terminal:
+                response = {"id": "resp", "status": terminal, "output": []}
+                if usage:
+                    response["usage"] = {"input_tokens": 12, "output_tokens": 3, "total_tokens": 15}
+                frames.append({"type": "response." + terminal, "response": response, "sequence_number": 2})
+            payload = b"".join(("data: " + json.dumps(frame) + "\n\n").encode() for frame in frames)
+            if status != 200:
+                payload = b'{"error":{"message":"fixture refusal"}}'
+            self.send_response(status)
+            self.send_header("Content-Type", "text/event-stream" if status == 200 else "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        def log_message(self, *args):
+            pass
+    listener = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=listener.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{listener.server_port}/v1", received
+    finally:
+        listener.shutdown()
+        listener.server_close()
+        thread.join(timeout=2)
+
+
+def owned_oauth_agent(env, endpoint, token="fixture-oauth-access-token"):
+    client = build_model_client({"api_key": token, "base_url": endpoint}, purpose="main_model")
+    env.agent.api_mode = "codex_responses"
+    env.agent.provider = "openai-codex"
+    env.agent.api_key = token
+    env.agent.base_url = endpoint
+    env.agent.model = "fixture"
+    env.agent._interrupt_requested = False
+    env.agent.client = client
+    return client
+
+
+def test_owned_oauth_real_http_response_and_usage(runtime):
+    from agent.codex_runtime import run_codex_stream
+    with oauth_sse_server() as (endpoint, received), runtime(endpoint) as env:
+        with owned_oauth_agent(env, endpoint) as client:
+            final = run_codex_stream(env.agent, {"model": "fixture", "store": False,
+                "input": [{"role": "user", "content": "hello"}], "instructions": "fixture"}, client)
+        assert final.output_text == "OAuth answer"
+        assert final.usage.input_tokens == 12
+        assert not env.run.dispatch_blocked.is_set()
+        assert len(received) == 1
+        path, authorization, body = received[0]
+        assert path == "/v1/responses" and authorization == "Bearer fixture-oauth-access-token"
+        assert body["stream"] is True and body["store"] is False
+        assert "max_output_tokens" not in body
+
+
+@pytest.mark.parametrize("terminal,usage,status", [(None, True, 200), ("incomplete", True, 200),
+    ("failed", True, 200), ("completed", False, 200), ("completed", True, 401), ("completed", True, 503)])
+def test_owned_oauth_uncertain_stream_never_retries(runtime, terminal, usage, status):
+    from agent.codex_runtime import run_codex_stream
+    from agent.runtime_commands import RuntimeFenceError
+    with oauth_sse_server(terminal=terminal, usage=usage, status=status) as (endpoint, received), runtime(endpoint) as env:
+        with owned_oauth_agent(env, endpoint) as client:
+            kwargs = {"model": "fixture", "store": False, "input": []}
+            with pytest.raises((RuntimeFenceError, openai.APIStatusError)):
+                run_codex_stream(env.agent, kwargs, client)
+            assert env.run.dispatch_blocked.is_set()
+            with pytest.raises(RuntimeFenceError):
+                run_codex_stream(env.agent, kwargs, client)
+        assert len(received) == 1
+
+
+@pytest.mark.parametrize("override", [{"tools": [{"type": "web_search"}]},
+    {"extra_body": {"store": True}}, {"extra_headers": {"Authorization": "Bearer other"}},
+    {"previous_response_id": "other-session"}, {"input": [{"type": "input_file", "file_url": "https://private"}]}])
+def test_owned_oauth_rejects_unowned_work_before_send(runtime, override):
+    from agent.codex_runtime import run_codex_stream
+    with oauth_sse_server() as (endpoint, received), runtime(endpoint) as env:
+        with owned_oauth_agent(env, endpoint) as client:
+            with pytest.raises(EgressDenied):
+                run_codex_stream(env.agent, {"model": "fixture", "store": False, "input": [], **override}, client)
+        assert received == []
+
+
+@pytest.mark.parametrize("change", ["cancel", "revoke"])
+def test_owned_oauth_rechecks_authority_between_frames(runtime, change):
+    from agent.codex_runtime import run_codex_stream
+    with oauth_sse_server() as (endpoint, received), runtime(endpoint) as env:
+        def interrupt():
+            if change == "cancel":
+                env.agent._interrupt_requested = True
+            else:
+                env.raw["agent_identity"]["agents"]["primary"]["policy_version"] += 1
+                (env.home / "config.yaml").write_text(json.dumps(env.raw))
+        with owned_oauth_agent(env, endpoint) as client:
+            with pytest.raises((InterruptedError, EgressDenied)):
+                run_codex_stream(env.agent, {"model": "fixture", "store": False, "input": []},
+                                 client, on_first_delta=interrupt)
+        assert len(received) == 1
+        assert env.run.dispatch_blocked.is_set()
+
+
+def test_owned_oauth_cannot_bypass_adapter_or_claim_hard_budget(runtime):
+    from dataclasses import replace
+    from agent.budget_account import BudgetBlocked
+    from agent.codex_runtime import run_codex_stream
+    with oauth_sse_server() as (endpoint, received), runtime(endpoint) as env:
+        with owned_oauth_agent(env, endpoint) as client:
+            with pytest.raises(openai.APIConnectionError):
+                client.responses.create(model="fixture", input=[], store=False, stream=True)
+            budget_run = replace(env.run, budget=SimpleNamespace(check=lambda: None))
+            token = bind_runtime_run(budget_run)
+            try:
+                with pytest.raises(BudgetBlocked, match="hard token budgets"):
+                    run_codex_stream(env.agent, {"model": "fixture", "store": False, "input": []}, client)
+            finally:
+                reset_runtime_run(token, budget_run)
+        assert received == []

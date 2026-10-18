@@ -1918,8 +1918,14 @@ def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: boo
     from agent.ssl_verify import resolve_httpx_verify
     from tools.egress_policy import policy_active, build_model_client, EgressDenied
     if policy_active():
-        if agent.api_mode != "chat_completions" or agent.provider == "moa":
+        from agent.owned_codex import is_owned_codex_route
+        if (agent.api_mode != "chat_completions" and not is_owned_codex_route(agent)) or agent.provider == "moa":
             raise EgressDenied("recipient_provider_adapter_unsupported")
+        if is_owned_codex_route(agent):
+            from agent.codex_headers import apply_required_codex_headers
+            client_kwargs = dict(client_kwargs)
+            apply_required_codex_headers(client_kwargs, access_token=client_kwargs.get("api_key", ""),
+                                         base_url=str(client_kwargs.get("base_url", "")))
         return build_model_client(client_kwargs, purpose="main_model")
     # Treat client_kwargs as read-only: callers pass agent._client_kwargs, and in-place mutation
     # leaks into later requests (a torn-down httpx transport got reused).

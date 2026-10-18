@@ -999,6 +999,15 @@ def resolve_runtime_provider(*, requested: Optional[str] = None, explicit_api_ke
     OpenCode Zen/Go where different models route through different API surfaces)."""
     requested_provider = resolve_requested_provider(requested)
     _raise_if_provider_disabled(requested_provider)
+    if requested_provider == "openai-codex":
+        from hermes_cli.config import load_config_readonly
+        if load_config_readonly().get("codex_auth_source", "hermes") == "codex_cli":
+            from hermes_cli.auth_codex import resolve_codex_cli_credentials
+            if explicit_api_key or explicit_base_url:
+                raise ValueError("Shared Codex login cannot be combined with explicit credentials or endpoint overrides")
+            creds = resolve_codex_cli_credentials()
+            return _runtime("openai-codex", "codex_responses", creds["base_url"], creds["api_key"],
+                            source=creds["source"], requested_provider=requested_provider)
     # Same alias expansion the auxiliary client applies, so ``provider: openai`` means one thing on
     # every path (background review, curator, MoA slots, delegation) instead of "Unknown provider".
     # The pre-expansion name is what the codex_app_server overlay judges: ``openai`` is eligible,

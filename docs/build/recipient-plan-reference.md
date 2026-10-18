@@ -62,6 +62,14 @@ because the plan contains a subprocess grant. Unsupported executors stay denied.
   transports and the concrete OpenAI chat-completion SDK. Every default and
   mounted transport must be guarded. Credentials and payloads reach the transport
   only after live policy and durable owner-generation checks
+- `openai-codex` main-model Responses also has an owned synchronous HTTPX adapter.
+  Only its exact prepared POST body may reach `/responses`, once per physical
+  attempt. A completed terminal frame and valid input/output usage are mandatory;
+  truncation, failure, revocation and cancellation stop further dispatch. The
+  local stream close does not prove remote cancellation. Hosted tools, media,
+  server-side continuations and auxiliary Responses remain unsupported. Hard
+  token/cost budgets refuse this route because the consumer endpoint does not
+  provide a verified request output cap.
 - Cross-recipient redirects, endpoint changes, revoked/disabled policies, absent
   trusted identity, custom unguarded transports, ambient proxies and disabled TLS
   verification fail closed. SDK retries remain disabled; existing BE04 fallback
@@ -78,7 +86,7 @@ because the plan contains a subprocess grant. Unsupported executors stay denied.
   cannot change the admitted recipient, and environment proxies are disabled
 - External memory and background review remain disabled by the earlier strict
   identity lifecycle pending per-agent memory routing. Model SDK embeddings and
-  non-chat operations are explicitly unsupported. Browser, external delivery,
+  operations other than the owned chat/Responses routes are unsupported. Browser, external delivery,
   telemetry/plugin callbacks, provisioning, training and unrestricted subprocess
   routes do not become available from a purpose grant
 - Strict external-channel runtime execution is denied before model dispatch until
@@ -104,3 +112,32 @@ These receipts do not certify a live provider, actual billing, external DNS/TLS
 infrastructure, all operating systems, background gateway traffic, or arbitrary
 plugin code. The phase validation receipt and journal carry the exact test
 commands, final source revision, pass counts and remaining limitations.
+
+## Existing Codex ChatGPT login (no API key)
+
+A profile can explicitly share the local Codex login:
+
+```yaml
+codex_auth_source: codex_cli
+model:
+  provider: openai-codex
+  default: YOUR_EXISTING_CODEX_MODEL
+```
+
+This reads the current access token from `$CODEX_HOME/auth.json` (default
+`~/.codex/auth.json`). Codex remains the sole refresh-token owner: Hermes does not
+copy that token, refresh it, or write the Codex file. The profile's own `auth.json`
+and credential pool cannot override this selection. Missing/expired ChatGPT
+credentials fail without API-key fallback. Refresh/sign in using Codex and restart
+the Hermes session to adopt the new access token. Independently managed Hermes
+OAuth login remains the default (`codex_auth_source: hermes`).
+
+The strict profile must separately grant `main_model` HTTPX access to
+`https://chatgpt.com/backend-api/codex` and the virtual secret reference
+`CODEX_CLI_OAUTH` in the agent's `secret_refs`. This reference authorizes only
+the current shared access token at that endpoint; it is not an environment
+variable or a copy of the refresh token. Sharing credentials grants no tools,
+memory, auxiliary requests, or external delivery. Keep tokens out of configuration,
+logs, and Git. This implementation uses the repository's existing consumer Codex
+endpoint; it is not a claim that every newer Sign in with ChatGPT endpoint has the
+same protocol. Subscription quota and reported usage are not API invoice bounds.

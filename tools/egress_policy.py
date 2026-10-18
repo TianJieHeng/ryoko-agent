@@ -205,6 +205,11 @@ def _check_request(authorization, request):
         raise EgressDenied("recipient_host_header_changed")
     if authorization.grant.purpose in {"main_model", "aux_model"}:
         expected = authorization.grant.endpoint.rstrip("/") + "/chat/completions"
+        if (authorization.grant.purpose == "main_model" and request.method == "POST"
+                and str(request.url) == authorization.grant.endpoint.rstrip("/") + "/responses"):
+            from agent.owned_codex import authorize_responses_request
+            authorize_responses_request(request)
+            return
         if str(request.url) != expected or request.method != "POST":
             raise EgressDenied("recipient_model_operation_unsupported")
     if authorization.grant.purpose == "decision_inference":

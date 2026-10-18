@@ -773,7 +773,8 @@ def _dispatch_nonstreaming_api_request(agent, api_kwargs: dict, *, make_client):
     from agent.budget_account import current_budget, invoke_budgeted_completion
     budget = current_budget(agent)
     from tools.egress_policy import policy_active, assert_provider_client, EgressDenied
-    if policy_active() and (agent.api_mode != "chat_completions" or agent.provider == "moa"):
+    from agent.owned_codex import is_owned_codex_route
+    if policy_active() and ((agent.api_mode != "chat_completions" and not is_owned_codex_route(agent)) or agent.provider == "moa"):
         raise EgressDenied("recipient_provider_adapter_unsupported")
     if budget is not None:
         if agent.api_mode != "chat_completions" or agent.provider == "moa":

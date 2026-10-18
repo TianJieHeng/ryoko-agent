@@ -1063,6 +1063,12 @@ def _sanitize_consumer_codex_request(agent: Any, request: dict[str, Any]) -> dic
 
 def run_codex_stream(agent, api_kwargs: dict, client: Any = None, on_first_delta=None):
     """One streaming Responses API request over raw ``responses.create(stream=True)`` events."""
+    from tools.egress_policy import policy_active
+    if policy_active():
+        from agent.owned_codex import run_owned_codex_stream
+        return run_owned_codex_stream(agent, api_kwargs,
+            client or agent._ensure_primary_openai_client(reason="owned_codex_stream"),
+            on_first_delta=on_first_delta)
     import httpx as _httpx
     from openai import APIConnectionError as _APIConnectionError
     from agent import relay_llm

@@ -301,7 +301,8 @@ def bounded_error_result(agent, error, *, messages, api_call_count):
     from agent.budget_account import BudgetBlocked
     if isinstance(error, BudgetBlocked) or decision is None or decision.action != "retry":
         reason = decision.reason if decision else "provider_dispatch_blocked"
-        uncertain = bool(budget is not None and budget.status()["pending_provider_requests"])
+        uncertain = bool((budget is not None and budget.status()["pending_provider_requests"])
+                         or (run is not None and run.dispatch_blocked.is_set()))
         return {"final_response": "The provider request stopped: " + reason.replace("_", " ") + ".",
                 "messages": messages, "api_calls": api_call_count, "completed": False, "failed": True,
                 "failure_reason": reason, "failure_retryable": False,

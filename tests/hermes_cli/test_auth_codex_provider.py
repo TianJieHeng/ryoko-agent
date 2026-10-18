@@ -464,3 +464,42 @@ def test_pool_only_force_refresh_rotates_the_pool_entry(tmp_path, monkeypatch):
     assert resolved["api_key"] == "pool-fresh"
     assert resolved["source"] == "credential_pool"
     assert hints == ["pool-revoked"]
+
+
+def test_codex_shared_login_profile_a_b_a_is_readonly(tmp_path, monkeypatch):
+    import base64
+    import time
+    from hermes_cli.runtime_provider import resolve_runtime_provider
+    codex = tmp_path / "codex"
+    codex.mkdir()
+    monkeypatch.setenv("CODEX_HOME", str(codex))
+    payload = base64.urlsafe_b64encode(json.dumps({"exp": time.time() + 3600}).encode()).decode().rstrip("=")
+    token = "fixture." + payload + ".signature"
+    auth = codex / "auth.json"
+    auth.write_text(json.dumps({"auth_mode": "chatgpt", "tokens": {
+        "access_token": token, "refresh_token": "never-copy-or-rotate"}}))
+    before = auth.read_bytes()
+    a, b = tmp_path / "a", tmp_path / "b"
+    a.mkdir(); b.mkdir()
+    (a / "config.yaml").write_text('codex_auth_source: codex_cli\nmodel:\n  provider: openai-codex\n')
+    (b / "config.yaml").write_text('codex_auth_source: hermes\n')
+    _setup_hermes_auth(b, access_token="profile-b-token")
+    for home, expected in ((a, token), (b, "profile-b-token"), (a, token)):
+        monkeypatch.setenv("HERMES_HOME", str(home))
+        actual = resolve_codex_runtime_credentials(read_only=True, force_refresh=True)
+        assert actual["api_key"] == expected
+    assert auth.read_bytes() == before
+    assert not (a / "auth.json").exists()
+    monkeypatch.setenv("HERMES_HOME", str(a))
+    runtime = resolve_runtime_provider(requested="openai-codex")
+    assert runtime["source"] == "codex-cli-readonly"
+    assert runtime["api_key"] == token
+    assert runtime["api_mode"] == "codex_responses"
+    with pytest.raises(ValueError, match="explicit credentials"):
+        resolve_runtime_provider(requested="openai-codex", explicit_api_key="forbidden-api-key")
+    # Missing/expired shared credentials never fall back to the profile's store.
+    _setup_hermes_auth(a, access_token="must-not-fallback")
+    auth.write_text(json.dumps({"auth_mode": "apikey", "OPENAI_API_KEY": "must-not-use"}))
+    with pytest.raises(AuthError) as exc:
+        resolve_codex_runtime_credentials()
+    assert exc.value.code == "codex_shared_login_required"

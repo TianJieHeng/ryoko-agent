@@ -83,7 +83,9 @@ def handle_api_error(
     # credential refresh, context repair, fallback or post-exhaustion ladders
     # which independently reset the legacy retry counter.
     from agent.budget_account import budget_enabled
-    if budget_enabled(agent):
+    from agent.owned_codex import is_owned_codex_route
+    from tools.egress_policy import policy_active
+    if budget_enabled(agent) or (policy_active() and is_owned_codex_route(agent)):
         from agent.attempt_policy import AttemptController, bounded_error_result, RetryDecision
         bounded = bounded_error_result(agent, api_error, messages=messages, api_call_count=api_call_count)
         if not isinstance(bounded, RetryDecision):

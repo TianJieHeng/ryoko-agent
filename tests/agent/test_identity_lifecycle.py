@@ -218,3 +218,44 @@ def test_compressed_resume_preserves_logical_identity_but_copied_branch_cannot(t
     with pytest.raises(IdentityPolicyError):
         construct(SimpleNamespace(), session_id="branch", session_db=db)
     db.close()
+
+
+def test_real_agent_shared_codex_login_requires_exact_scoped_grant(tmp_path, monkeypatch):
+    import base64
+    import time
+    from hermes_cli.auth_constants import DEFAULT_CODEX_BASE_URL
+    from tools.egress_policy import assert_provider_client
+    codex = tmp_path / 'codex'
+    codex.mkdir()
+    claims = base64.urlsafe_b64encode(json.dumps({'exp': time.time() + 3600}).encode()).decode().rstrip('=')
+    token = 'fixture.' + claims + '.signature'
+    source = codex / 'auth.json'
+    source.write_text(json.dumps({'auth_mode': 'chatgpt', 'tokens': {'access_token': token}}))
+    monkeypatch.setenv('CODEX_HOME', str(codex))
+    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    cfg = config('primary')
+    cfg['codex_auth_source'] = 'codex_cli'
+    policy = cfg['agent_identity']['agents']['primary']
+    policy['secret_refs'] = ['CODEX_CLI_OAUTH']
+    policy['allowed_tools'] = []
+    policy['recipient_plan'] = {'schema_version': 1, 'envelope': 'declared', 'grants': [
+        {'recipient_id': 'codex', 'purpose': 'main_model', 'endpoint': DEFAULT_CODEX_BASE_URL, 'transport': 'httpx'}]}
+    write_config(tmp_path, cfg)
+    monkeypatch.setattr('model_tools.check_toolset_requirements', lambda *a, **k: {})
+    monkeypatch.setattr('model_tools.get_tool_definitions', lambda *a, **k: [])
+    from run_agent import AIAgent
+    with SessionDB(tmp_path / 'state.db') as db:
+        agent = AIAgent(model='fixture', provider='openai-codex', api_mode='codex_responses',
+            api_key=token, base_url=DEFAULT_CODEX_BASE_URL, session_id='oauth', session_db=db,
+            quiet_mode=True, skip_context_files=True, skip_memory=True, enabled_toolsets=[])
+        try:
+            with agent_runtime_scope(agent.runtime_context):
+                assert_provider_client(agent.client, purpose='main_model', require_run=False)
+            assert agent.client.api_key == token
+        finally:
+            agent.close()
+    assert not (tmp_path / 'auth.json').exists()
+    policy['secret_refs'] = []
+    write_config(tmp_path, cfg)
+    with pytest.raises(IdentityPolicyError, match='credential'):
+        AIAgent(model='fixture', provider='openai-codex', api_key=token, base_url=DEFAULT_CODEX_BASE_URL)

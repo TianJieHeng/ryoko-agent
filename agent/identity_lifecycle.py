@@ -176,7 +176,9 @@ def identity_construction(function):
             provided_key = values.get("api_key")
             granted_values = (current_secret_scope() or {}).values()
             if provided_key and provided_key not in granted_values:
-                raise IdentityPolicyError("Explicit provider credential is outside the agent secret scope")
+                from agent.owned_codex import credential_is_granted
+                if not credential_is_granted(context, values):
+                    raise IdentityPolicyError("Explicit provider credential is outside the agent secret scope")
             if values.get("credential_pool") is not None:
                 raise IdentityPolicyError("External credential pools require identity-aware provider binding")
             result = function(*arguments.args, **arguments.kwargs)

@@ -584,6 +584,31 @@ def _import_codex_cli_tokens() -> Optional[Dict[str, str]]:
         return None
 
 
+def resolve_codex_cli_credentials() -> Dict[str, Any]:
+    """Explicit read-only sharing; Codex alone owns refresh-token rotation.
+
+    Never import a rotating refresh token into a second store. No fallback to
+    API keys, profile credentials, or a different account when sharing fails.
+    """
+    path = Path(os.getenv("CODEX_HOME", "").strip() or str(Path.home() / ".codex")) / "auth.json"
+    try:
+        if path.stat().st_size > 1024 * 1024:
+            raise ValueError("oversize credential file")
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        token = data.get("tokens", {}).get("access_token")
+        if data.get("auth_mode") != "chatgpt" or not isinstance(token, str) or not token.strip():
+            raise ValueError("ChatGPT login required")
+        claims = _decode_jwt_claims(token)
+        expiry = claims.get("exp")
+        if type(expiry) not in {int, float} or expiry <= time.time() + 30:
+            raise ValueError("expired login")
+    except (OSError, ValueError, TypeError, AttributeError):
+        raise _codex_err("Codex ChatGPT login is missing or expired. Sign in with Codex, then retry; no API key is used.",
+                         "codex_shared_login_required", relogin=True) from None
+    return _codex_runtime_result(token.strip(), source="codex-cli-readonly", last_refresh=None,
+                                 base_url=DEFAULT_CODEX_BASE_URL)
+
+
 def resolve_codex_runtime_credentials(
     *, force_refresh: bool = False, refresh_if_expiring: bool = True,
     refresh_skew_seconds: int = CODEX_ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
@@ -604,6 +629,12 @@ def resolve_codex_runtime_credentials(
     backup — gets a bare HTTP 401 ``Missing Authentication header`` from the wire instead of a usable
     credential. See issue #32992.
     """
+    from hermes_cli.config import load_config_readonly
+    source = load_config_readonly().get("codex_auth_source", "hermes")
+    if source == "codex_cli":
+        return resolve_codex_cli_credentials()
+    if source != "hermes":
+        raise _codex_err("codex_auth_source must be hermes or codex_cli", "codex_auth_source_invalid")
     from hermes_cli.auth import (
         _auth_store_lock, _codex_access_token_is_expiring, _probe_codex_quota_restored,
         _read_codex_tokens)

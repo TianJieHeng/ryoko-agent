@@ -66,9 +66,9 @@ def runtime_execution_denial(agent) -> str | None:
         if getattr(agent, "platform", None) not in {None, "cli", "tui", "desktop", "subagent"}:
             return "runtime_delivery_transport_unsupported"
         import openai
-        # BE05 certifies the guarded HTTPX chat route only. A runtime mutation
-        # must not jump into a native adapter that bypasses recipient checks.
-        if getattr(agent, "api_mode", None) != "chat_completions" or type(getattr(agent, "client", None)) is not openai.OpenAI:
+        from agent.owned_codex import is_owned_codex_route
+        # Only adapters with an owned recipient-checked physical boundary.
+        if (getattr(agent, "api_mode", None) != "chat_completions" and not is_owned_codex_route(agent)) or type(getattr(agent, "client", None)) is not openai.OpenAI:
             return "runtime_transport_unsupported"
     from agent.provider_capabilities import provider_capabilities_for
     return None if provider_capabilities_for(agent).durable_execution else "runtime_transport_unsupported"
