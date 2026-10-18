@@ -69,8 +69,9 @@ Only recall is supported. Remember/intake, supersession, correction writes,
 forget/delete, export, session ingestion and invalidation subscriptions remain
 unsupported without actual semantic receipts, idempotency and effect-reconciliation
 contracts. A changes sequence is not an export. No mutation is automatically
-retried. Strict stdio, OAuth, SSE, sampling and budget-enabled MCP remain unsupported
-by the existing certified transport/runtime boundary.
+retried. Strict stdio, OAuth, SSE and sampling remain unsupported. Budget-enabled read-only
+MCP requires the explicit unmetered service contract described in
+[mcp-agent-contracts.md](mcp-agent-contracts.md).
 
 ## Built-in applicability and continuity
 
