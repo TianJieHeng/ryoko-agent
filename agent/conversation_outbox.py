@@ -95,9 +95,17 @@ def database(home):
         conn.close()
 
 
-def enqueue(home, config, session_id, command_id, timestamp, rows):
+def enqueue(home, config, session_id, command_id, timestamp, rows, *, remote=None, title=None):
     """Commit immutable turns before returning; re-delivery cannot change an ID."""
     from agent.redact import redact_for_egress, redact_sensitive_text
+    source = config['source']
+    if remote is not None:
+        if (remote['push_binding'] != binding(config)
+                or json.loads(remote['owner_json']) != [*config['owner'], str(Path(home).resolve())]
+                or remote['source'] not in {'hermes', 'openclaw'}):
+            raise PermissionError('Remote conversation destination or owner changed')
+        source, session_id = remote['source'], remote['remote_id']
+        title = remote['display_title']
     prepared = []
     for role, content in rows:
         if role not in ('user', 'assistant'):
@@ -111,11 +119,12 @@ def enqueue(home, config, session_id, command_id, timestamp, rows):
         turn = {'id': f'{command_id}:{role}', 'seq': int(timestamp * 1000000) * 2 + (role == 'assistant'),
                 'role': role, 'content': content,
                 'ts': datetime.fromtimestamp(timestamp, timezone.utc).isoformat()}
-        payload = canonical({'source': config['source'], 'session_id': session_id,
-                             'agent': config['agent'], 'turns': [turn]})
+        payload = canonical({'source': source, 'session_id': session_id,
+                             'agent': config['agent'], 'turns': [turn],
+                             **({'title': title[:200]} if isinstance(title, str) and title else {})})
         if len(payload.encode()) > MAX_REQUEST_BYTES:
             raise ValueError('Conversation turn exceeds the request bound; it was not truncated')
-        key = hashlib.sha256(canonical([config['source'], session_id, turn['id']]).encode()).hexdigest()
+        key = hashlib.sha256(canonical([source, session_id, turn['id']]).encode()).hexdigest()
         prepared.append((key, turn['seq'], payload, hashlib.sha256(payload.encode()).hexdigest()))
     now = time.time()
     with database(home) as conn, conn:
@@ -155,7 +164,12 @@ def capture_turn(run, user_message, result=None):
         rows = [('user', user_message)]
         if isinstance(result, dict):
             rows.append(('assistant', result.get('final_response')))
-        count = enqueue(run.context.profile_home, config, run.session_id, run.command_id, timestamp, rows)
+        from hermes_state_memory_sessions import bound_remote
+        remote = bound_remote(run.db, run.session_id, run.context)
+        session = run.db.get_session(run.session_id) or {}
+        title = session.get('title') or session.get('display_name')
+        count = enqueue(run.context.profile_home, config, run.session_id, run.command_id, timestamp, rows,
+                        remote=remote, title=title)
         status = {'status': 'queued' if count else 'no_visible_text', 'session_id': run.session_id}
     except Exception as exc:
         logger.warning('Conversation could not be queued (%s).', type(exc).__name__)
