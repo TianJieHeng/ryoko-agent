@@ -1534,3 +1534,7 @@ Local validation through `scripts/run_tests.sh`: 34 tests passed across the REST
 ### R14 — Make ryoko the default interactive profile (2026-10-18)
 
 Set the local sticky profile with `hermes profile use ryoko`, so plain `hermes` resolves the configured ryoko profile without `-p`. Confirmed the command succeeded and `~/.hermes/active_profile` contains `ryoko`; the CLI startup resolver reads this selector when no explicit profile is supplied. This is a local profile selection change, with no application code or credentials changed.
+
+## 2026-10-18 S01 — memory session contract review
+
+Reviewed the existing slash/resume/relaunch paths, configured read grants, saved discovery schemas and a read-only checkout of the companion harness. Added `docs/build/memory-sessions-contract.md` documenting actual list/get/push shapes and limitations. The server returns whole catalogs without pagination and only sealed, overlapping text windows; it does not expose lossless remote resume. The implementation will offer exact verified-local resume and clearly acknowledged remote available-history continuation, never silently reconstruct roles or claim missing tails are present. No companion repository changes, deployment, model calls, or tests performed. Existing banner customization is preserved.
