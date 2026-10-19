@@ -1542,3 +1542,7 @@ Reviewed the existing slash/resume/relaunch paths, configured read grants, saved
 ## 2026-10-18 S02 — bounded harness catalog and operator-read adapter
 
 Added `memory_sessions.py` with immutable source/session selection, title-first labels, duplicate-name support, whole-catalog handling (the actual API has no cursor), and explicit unavailable/ambiguous-source rows. Added a narrow operator-read MCP scope for list/get only: primary identity, exact grants/schema/recipient checks, finite requests/deadline/bytes, cancellation and metadata-only local audit. It uses the existing SDK transport and policy checks without a fake chat turn, model call, new model tool or worker bearer. Model-turn authority is unchanged outside this explicit scope. Tests are deferred to S07; this is an implementation checkpoint, not a passing-test claim.
+
+## 2026-10-18 S03 — in-session keyboard picker
+
+Added a curses conversation selector with arrows, page keys, Enter, Esc, search, refresh, title-first labels and disabled unavailable rows. Catalog loading runs on a context-carrying worker; curses runs on the main prompt_toolkit loop inside an awaited terminal suspension. Cancellation signals the bounded remote read and restores the terminal through curses/PT cleanup. Non-TTY invocation gives a safe local-list hint. Selection carries the immutable row rather than re-resolving a name or numeric position. Wiring to import/relaunch follows in S06. Tests remain deferred until S07.
