@@ -120,7 +120,8 @@ def verify_local_owner(db, context, local_id):
         raise PermissionError('The local session does not belong to the selected memory owner')
 
 
-def prepare_binding(db, context, server, conversation, push_config, *, local_id=None, capsule=None):
+def prepare_binding(db, context, server, conversation, push_config, *, local_id=None, capsule=None,
+                    allow_empty=False):
     """Publish messages and binding in one transaction; repeated import returns the same root."""
     from agent.conversation_outbox import binding
     from agent.agent_configuration import base_configuration
@@ -134,7 +135,7 @@ def prepare_binding(db, context, server, conversation, push_config, *, local_id=
         verify_local_owner(db, context, local_id)
         target_context, enrollment = None, None
     else:
-        if not capsule:
+        if not capsule and not allow_empty:
             raise ValueError('Remote history is required before import')
         local_id = new_session_id(hex_len=12)
         target_context, enrollment = selected_conversation_scope(context, base_configuration(), db,
@@ -145,6 +146,9 @@ def prepare_binding(db, context, server, conversation, push_config, *, local_id=
         if prior:
             if prior['hub'] and conversation.hub and prior['hub'] != conversation.hub:
                 raise ValueError('Remote conversation identity changed')
+            if not prior['hub'] and conversation.hub:
+                conn.execute('UPDATE memory_session_bindings SET hub=? WHERE remote_key=?',
+                             (conversation.hub, key))
             return prior['local_root']
         if existing:
             row = conn.execute('SELECT model_config FROM sessions WHERE id=?', (local_id,)).fetchone()
@@ -165,8 +169,9 @@ def prepare_binding(db, context, server, conversation, push_config, *, local_id=
                          (local_id, enrollment['snapshot_id'], enrollment['selected_agent_id']))
             # One explicit archival capsule: unescaped role-looking text inside remote windows
             # never becomes a system message, tool result, or forged executable history.
-            inserted, tools = db._insert_message_rows(conn, local_id, [{'role': 'assistant', 'content': capsule}])
-            db._bump_session_counters(conn, local_id, inserted, tools, unit=False)
+            if capsule:
+                inserted, tools = db._insert_message_rows(conn, local_id, [{'role': 'assistant', 'content': capsule}])
+                db._bump_session_counters(conn, local_id, inserted, tools, unit=False)
         conn.execute('INSERT INTO memory_session_bindings VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
                      (key, local_id, json.dumps(owner_record(context)), server,
                       context.policy.mcp_policies[server]['endpoint'], conversation.source, conversation.session_id,

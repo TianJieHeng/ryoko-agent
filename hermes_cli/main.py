@@ -1638,6 +1638,9 @@ def _resolve_chat_session_args(args, use_tui: bool) -> None:
     """
     _apply_in_dir(args)
 
+    from hermes_cli.daily_conversation import apply_daily_default
+    apply_daily_default(args, use_tui=use_tui)
+
     # --resume latest: same resolution as bare `-c`. The keyword wins over a
     # session literally titled "latest" (still reachable by ID or `-c latest`).
     _resume_raw = getattr(args, "resume", None)
