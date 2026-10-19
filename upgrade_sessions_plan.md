@@ -1,5 +1,22 @@
 # Upgrade `/sessions`: memory-harness conversation picker
 
+## Implementation status — completed 2026-10-18
+
+All eight phases are implemented and documented, with a Git checkpoint and build-journal entry for each. Tests were deferred to S07 as requested. See [the verified contract](docs/build/memory-sessions-contract.md), [rollout and rollback](docs/build/memory-sessions-rollout.md), and the S01–S08 entries in [buildjournal.md](buildjournal.md).
+
+| Phase | Delivered |
+| --- | --- |
+| S01 | Verified existing list/get/push contract; no companion service changes. |
+| S02 | Bounded owner-scoped operator reads, whole advertised catalog, exact grants and schema pins. |
+| S03 | In-chat arrows/Enter/Esc/search/refresh, Unicode handling, current marker and restored composer. |
+| S04 | Atomic local import, frozen identity enrollment, verified remote/local binding and divergence warning. |
+| S05 | New turns continue the selected source/thread through the existing durable worker; no archive replay. |
+| S06 | Flush and lease preflight, normal shutdown, same-profile process replacement and recovery hint. |
+| S07 | 184 distinct local tests passed, four Windows-only skips; actual installed CLI selection/relaunch and same-thread live delivery verified. No CI. |
+| S08 | Command help, usage, limitations, backups and safe rollback documented. |
+
+**Verified contract adjustments:** the server returns one whole catalog, not paginated results. Unknown pagination now fails explicitly instead of silently dropping records. It supplies only overlapping sealed transcript windows, so a remote-only selection offers acknowledged **available-history continuation**, not lossless full-state restoration. New remote changes are never silently merged into an existing local timeline. At live verification all 53 preexisting remote titles were null; two names were recovered from verified local metadata. Remaining unnamed records are visibly identified by ID/date rather than invented names. The named live test thread proved name-first selection, relaunch, context use and same-thread upload. These findings supersede prospective full-history/pagination assumptions below.
+
 ## Goal and acceptance criteria
 
 From the running Ryoko Hermes CLI, `/sessions` opens a selectable conversation list populated from the configured memory harness. Conversation names are the primary labels. Up/Down moves the selection, Enter opens it, and Esc returns to the current conversation. Selecting a thread prepares its history and automatically relaunches Hermes in that conversation, in the same terminal and profile. The user never needs to exit manually or copy a session ID.
@@ -16,7 +33,7 @@ Completion requires all of the following:
 - Browsing does not call a language model or send a synthetic chat message.
 - The current Ryoko theme, artwork, profile, and approved runtime settings survive relaunch.
 
-This document is a build plan only. No session feature implementation or live harness API calls were performed for this review.
+The sections below preserve the original planning baseline. Implementation and live validation are now complete as qualified above; the journal records the actual results.
 
 ## Repository findings
 
@@ -41,7 +58,7 @@ Reviewed checkout: `3d026ae330`, with the existing local `hermes_cli/banner.py` 
 | Canonical local conversations | `runtime_conversations.display_title`, documented in `docs/build/dots-conversation-display-titles.md` | Display names are distinct from globally unique legacy session aliases. Never use a name as identity. |
 | Dots APIs | `tui_gateway/methods_runtime_conversations.py` and `docs/build/dots-conversation-prerequisites.md` | These are local owner-scoped stdio APIs, not the remote harness API. Their safe export explicitly is not an import/restore format. |
 
-The harness server implementation and verified list/get response schemas were not established in this checkout review. Do not invent request parameters, title fields, pagination cursors, or a remote resume endpoint. No secret values or private conversation bodies are needed in this plan or committed fixtures.
+At the original planning review, the harness server implementation and verified list/get response schemas had not yet been established. S01 and S07 subsequently verified them; see the linked contract and rollout notes. Do not invent request parameters, title fields, pagination cursors, or a remote resume endpoint. No secret values or private conversation bodies are needed in this plan or committed fixtures.
 
 ## Proposed flow
 

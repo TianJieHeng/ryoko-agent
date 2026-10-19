@@ -253,7 +253,7 @@ Common examples:
 | `/title My Session` | Name the current session |
 | `/status` | Show session info — model/profile/tokens/duration — followed by a local **Session recap** block (recent turn counts, top tools used, files touched, latest user prompt + assistant reply). Pure local compute; no LLM call. |
 | `/context [all]` | Visual context-usage breakdown — glyph block grid + per-category token table (system prompt / tools / skills / memory / conversation / free space). `/context all` adds per-skill and per-toolset costs. |
-| `/sessions` | Open an interactive session picker right inside the classic CLI (same surface the TUI uses). Type to filter, arrow keys to navigate, Enter to resume. |
+| `/sessions` | Classic CLI with a personal memory harness: select a harness conversation with arrows and Enter, `/` to search, Esc to cancel. `/sessions local` keeps the local listing. See [memory thread browsing](sessions.md#browse-memory-harness-threads-inside-the-classic-cli). |
 
 For the full built-in CLI and messaging lists, see [Slash Commands Reference](../reference/slash-commands.md).
 

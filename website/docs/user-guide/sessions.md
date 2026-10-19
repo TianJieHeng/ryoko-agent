@@ -109,6 +109,26 @@ A session compressed mid-conversation continues under the same source: the compr
 
 Resume previous conversations from the CLI using `--continue` or `--resume`:
 
+### Browse memory-harness threads inside the classic CLI
+
+In a profile configured for the primary owner's personal MCP harness, type `/sessions` while idle. The keyboard picker loads every conversation advertised by that harness, including threads created on another device. It does not invoke a model.
+
+- **Up/Down** or **j/k** selects a row; **Page Up/Down** scrolls.
+- **/** starts a search; type a name or ID, then **Enter** finishes the search.
+- **Enter** opens the selected conversation. **R** refreshes. **Esc** cancels and restores the composer.
+- **●** marks the current bound conversation; choosing it does not restart Hermes.
+- `/sessions local` prints the existing local list. `/sessions <id_or_title>`, `/resume`, and standalone `hermes sessions browse` retain their local behavior. Profiles without a configured personal harness keep the local listing.
+
+Names come from the harness, or from an ownership-verified local counterpart. Duplicate names are safe: the selection uses the source and immutable thread ID. Threads without a supplied name say **Untitled conversation**, with an ID, activity date and turn count for identification. Hermes does not invent titles or download every transcript to generate names. Older remote records may have no title at all.
+
+A verified local counterpart resumes its saved history. A remote-only thread requires **Continue with available history** before importing: the current harness exposes overlapping archived text windows, which can omit recent messages. The import preserves those windows as one historical archive; it cannot restore hidden tool state, provider state, approvals or missing messages. An empty or oversized archive is refused without truncation. If remote turn counts indicate changes beyond the saved local timeline, Hermes asks whether to use that saved history; it never silently merges the two.
+
+After preparing the target and saving the current conversation, Hermes exits cleanly and restarts in the selected thread, in the same terminal and profile. Subsequent user/assistant messages go to the **same remote source and thread**, through the existing background outbox worker. Imported history is not uploaded again. Compression retains this binding; an explicit branch/reset starts a separate conversation.
+
+The browser refuses switching during a response or into another active writer. Connection, authorization, schema or import errors leave the current conversation open. Non-interactive terminals receive a local-list hint. If process replacement fails after shutdown, reopen the same profile and use the recovery `/resume <local-id>` displayed in the terminal; both saved sessions remain available.
+
+This feature targets the classic Python CLI. It does not replace the separate Ink TUI, Desktop or messaging gateway session pickers. Relaunch preserves the profile and display mode; stale command-line model/provider, one-shot query, skill and approval overrides are not carried into another conversation. Normal resume restores the selected session's settings.
+
 ### Continue Last Session
 
 ```bash

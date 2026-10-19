@@ -1641,7 +1641,7 @@ slash:
   profile:
     description: "Show active profile name and home directory"
   sessions:
-    description: "Browse and resume previous sessions"
+    description: "Browse sessions; classic CLI: memory picker or /sessions local"
   config:
     description: "Show current configuration"
   model:

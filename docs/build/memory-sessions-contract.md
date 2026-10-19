@@ -16,4 +16,4 @@ This adjusts the original plan's full-history prerequisite to an explicit availa
 
 The CLI read path needs its own bounded operator-read authority: exact primary owner, exact configured read-only tools/schema pins/recipient, finite request and response caps, metadata-only audit, cancellation and no model dispatch. It must not manufacture a chat turn or remove the existing model-turn fences.
 
-Tests deferred to the final validation phase at the owner's request.
+Validation completed in S07, after implementation at the owner's request. See [rollout and live results](memory-sessions-rollout.md). All 53 preexisting live catalog titles were null; verified local metadata recovered two names, while unknown names remain visibly untitled. The live receipt count advanced ahead of the sealed transcript windows, confirming the missing-tail limitation.
