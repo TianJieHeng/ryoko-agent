@@ -27,6 +27,11 @@ def parse_contract(raw):
 
 
 def require_support(server=None):
+    from tools.mcp_user_read import current_read
+    read = current_read()
+    if read is not None:
+        read.check(server)
+        return read
     from agent.identity_lifecycle import identity_config
     from agent.budget_account import parse_budget_policy, current_budget
     from agent.runtime_commands import _RUN
@@ -86,6 +91,10 @@ def _request_operation(server, request, limit):
 def wrap_transport(httpx, inner, server, contract):
     """Use the SDK's HTTPX types; never mutate a legacy client's shared pool."""
     contract = parse_contract(contract)
+    from tools.mcp_user_read import current_read, wrap_user_transport
+    read = current_read()
+    if read is not None:
+        return wrap_user_transport(httpx, inner, server, contract, read)
     server._agent_budget_transport = True
 
     class BudgetTransport(httpx.AsyncBaseTransport):

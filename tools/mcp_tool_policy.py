@@ -267,8 +267,13 @@ def require_operation(server, operation=None, args=None, *, connection=None, req
             if not expected or (getattr(connection, "_agent_schema_digests", None) or {}).get(operation) != expected:
                 raise PermissionError("MCP tool requires its exact operator schema digest before invocation")
     if require_run:
-        from agent.runtime_commands import assert_runtime_dispatch
-        assert_runtime_dispatch()
+        from tools.mcp_user_read import current_read
+        read = current_read()
+        if read is not None:
+            read.check(server, operation)
+        else:
+            from agent.runtime_commands import assert_runtime_dispatch
+            assert_runtime_dispatch()
 
 
 def schema_digest(tool):
