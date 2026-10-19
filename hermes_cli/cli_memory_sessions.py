@@ -54,10 +54,20 @@ def flush_current(cli):
         raise ConversationError('Could not save the current transcript. Retry before switching sessions.')
 
 
+def target_is_active(db, target, entries):
+    root = db._session_turn_lease_key(target)
+    for row in entries:
+        live = (row.get('metadata') or {}).get('live_session_id')
+        for candidate in (row.get('session_id'), live):
+            if candidate and db._session_turn_lease_key(candidate) == root:
+                return True
+    return False
+
+
 def browse(cli):
     """Return False only after a durable target and clean relaunch have been scheduled."""
     from hermes_cli.cli_sessions_picker import choose_conversation
-    from hermes_cli.memory_session_resume import prepare_selected
+    from hermes_cli.memory_session_resume import prepare_selected, HistoryDiverged
     from hermes_cli.active_sessions import active_session_registry_snapshot
     try:
         if getattr(cli, '_agent_running', False):
@@ -69,7 +79,17 @@ def browse(cli):
             return
         # The picker's cancelled/finished request scope must not authorize a new read.
         service = MemorySessions.for_cli(cli)
-        target = prepare_selected(cli, service, selected)
+        try:
+            target = prepare_selected(cli, service, selected)
+        except HistoryDiverged as exc:
+            choices = [('cancel', 'Cancel', 'Keep this conversation'),
+                       ('open', 'Use saved local history', 'Continue without merging remote changes')]
+            answer = cli._prompt_text_input_modal(title='Saved history differs from memory',
+                detail=str(exc) + ' Hermes cannot safely merge the harness’s overlapping text windows. '
+                       'You can cancel, or use saved local history and append new messages to that thread.', choices=choices)
+            if answer is None or cli._normalize_slash_confirm_choice(answer, choices) != 'open':
+                return
+            target = prepare_selected(cli, service, selected, allow_saved_history=True)
         if target is None:
             choices = [('cancel', 'Cancel', 'Keep this conversation'),
                        ('open', 'Continue with available history', 'Open the archived windows in this thread')]
@@ -87,7 +107,7 @@ def browse(cli):
         if getattr(cli, '_agent_running', False):
             raise ConversationError('A response started; finish it before switching conversations.')
         # Preflight only: normal startup performs the authoritative lease acquisition.
-        if any(row.get('session_id') == target for row in active_session_registry_snapshot(strict=True)):
+        if target_is_active(cli._session_db, target, active_session_registry_snapshot(strict=True)):
             raise ConversationError('That conversation is already open in another Hermes process.')
         flush_current(cli)
         cli._pending_session_relaunch = SessionRelaunch(target, service.context.profile_home)

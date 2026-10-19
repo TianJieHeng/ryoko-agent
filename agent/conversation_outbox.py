@@ -166,10 +166,12 @@ def capture_turn(run, user_message, result=None):
             rows.append(('assistant', result.get('final_response')))
         from hermes_state_memory_sessions import bound_remote
         remote = bound_remote(run.db, run.session_id, run.context)
-        session = run.db.get_session(run.session_id) or {}
-        title = session.get('title') or session.get('display_name')
+        # A local auto-title may change between admission/completion or after a
+        # restart. Never let that change the immutable bytes of a queued user turn.
+        # Bound remote titles are frozen in the mapping; the browser can otherwise
+        # recover a verified local display name without changing upload receipts.
         count = enqueue(run.context.profile_home, config, run.session_id, run.command_id, timestamp, rows,
-                        remote=remote, title=title)
+                        remote=remote)
         status = {'status': 'queued' if count else 'no_visible_text', 'session_id': run.session_id}
     except Exception as exc:
         logger.warning('Conversation could not be queued (%s).', type(exc).__name__)

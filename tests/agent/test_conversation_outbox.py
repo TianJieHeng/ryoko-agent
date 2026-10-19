@@ -186,3 +186,17 @@ def test_private_worker_credential_is_not_needed_by_capture(harness):
     with httpx.Client(transport=httpx.MockTransport(forbidden)) as client:
         assert deliver_one(harness.home, cfg, client)
     assert records(harness.home)[0]['state'] == 'pending'
+
+
+def test_auto_title_change_between_admission_and_completion_preserves_capture(harness):
+    from agent.memory_router import RoutedMemoryManager
+    with harness.scope():
+        run = harness.runs['primary']
+        run.agent._memory_manager = RoutedMemoryManager(harness.primary, harness.raw)
+        capture_turn(run, 'Question')
+        first = records(harness.home)[0]['payload_sha256']
+        harness.db.set_session_title(run.session_id, 'A newly generated title')
+        result = capture_turn(run, 'Question', {'final_response': 'Answer'})
+        assert result['conversation_sync']['status'] == 'queued'
+    queued = records(harness.home)
+    assert len(queued) == 2 and queued[0]['payload_sha256'] == first

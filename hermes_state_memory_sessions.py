@@ -11,7 +11,8 @@ _SCHEMA = '''CREATE TABLE IF NOT EXISTS memory_session_bindings (
     remote_key TEXT PRIMARY KEY, local_root TEXT NOT NULL UNIQUE REFERENCES sessions(id) ON DELETE CASCADE,
     owner_json TEXT NOT NULL, server TEXT NOT NULL, endpoint TEXT NOT NULL,
     source TEXT NOT NULL, remote_id TEXT NOT NULL, hub TEXT NOT NULL, display_title TEXT NOT NULL,
-    push_binding TEXT NOT NULL, imported_digest TEXT, imported_at REAL NOT NULL)'''
+    push_binding TEXT NOT NULL, imported_digest TEXT, imported_at REAL NOT NULL,
+    remote_turns INTEGER)'''
 
 
 def owner_record(context):
@@ -63,6 +64,9 @@ def find_bound_local(db, context, server, conversation):
 def verified_local(db, context, server, conversation, push_config):
     bound = find_bound_local(db, context, server, conversation)
     if bound:
+        from agent.conversation_outbox import binding
+        if bound_remote(db, bound, context)['push_binding'] != binding(push_config):
+            raise PermissionError('The conversation push destination changed')
         return bound
     # A same-shaped ID is insufficient. Require a confirmed outbox receipt for this
     # profile, destination and hub as proof that this local session originated the thread.
@@ -80,6 +84,31 @@ def verified_local(db, context, server, conversation, push_config):
         value = json.loads(receipt or '{}')
         if value.get('hub') == conversation.hub and value.get('session_id') == conversation.session_id:
             return db._session_turn_lease_key(conversation.session_id)
+    return None
+
+
+def local_history_warning(db, context, local_id, conversation, push_config):
+    """Detect possible remote additions without guessing message equivalence or merging."""
+    remote = bound_remote(db, local_id, context)
+    turns = conversation.turns
+    if type(turns) is not int or turns < 0:
+        return 'The harness does not report a usable history watermark for this thread.'
+    baseline = 0
+    since = 0
+    if remote and remote['imported_digest']:
+        if remote['remote_turns'] is None:
+            return 'The saved archive has no comparable remote history watermark.'
+        baseline, since = remote['remote_turns'], remote['imported_at']
+    path = Path(context.profile_home) / 'conversation-outbox/outbox.sqlite3'
+    sent = 0
+    if path.is_file() and not path.is_symlink():
+        from agent.conversation_outbox import binding
+        with sqlite3.connect(path.as_uri() + '?mode=ro', uri=True) as conn:
+            sent = conn.execute("SELECT count(*) FROM turns WHERE session_id=? AND binding=? "
+                                "AND state='sent' AND created>=?",
+                                (conversation.session_id, binding(push_config), since)).fetchone()[0]
+    if turns > baseline + sent:
+        return 'The harness reports messages beyond this saved local timeline.'
     return None
 
 
@@ -138,10 +167,11 @@ def prepare_binding(db, context, server, conversation, push_config, *, local_id=
             # never becomes a system message, tool result, or forged executable history.
             inserted, tools = db._insert_message_rows(conn, local_id, [{'role': 'assistant', 'content': capsule}])
             db._bump_session_counters(conn, local_id, inserted, tools, unit=False)
-        conn.execute('INSERT INTO memory_session_bindings VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+        conn.execute('INSERT INTO memory_session_bindings VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
                      (key, local_id, json.dumps(owner_record(context)), server,
                       context.policy.mcp_policies[server]['endpoint'], conversation.source, conversation.session_id,
                       conversation.hub, conversation.title, binding(push_config),
-                      hashlib.sha256(capsule.encode()).hexdigest() if capsule else None, time.time()))
+                      hashlib.sha256(capsule.encode()).hexdigest() if capsule else None, time.time(),
+                      conversation.turns if type(conversation.turns) is int and conversation.turns >= 0 else None))
         return local_id
     return db._execute_write(write)

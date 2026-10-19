@@ -48,7 +48,7 @@ def _load(service):
 
 def _curses_picker(screen, service):
     import curses
-    from hermes_cli.curses_ui import _addnstr
+    from hermes_cli.curses_ui import _addnstr, _decode_menu_key
     state = PickerState()
     pending = _load(service)
     error = ''
@@ -69,6 +69,9 @@ def _curses_picker(screen, service):
         _addnstr(screen, 0, 0, 'Memory conversations', max(1, width - 1), curses.A_BOLD)
         _addnstr(screen, 1, 0, '↑/↓ select · Enter open · / search · R refresh · Esc cancel', max(1, width - 1), curses.A_DIM)
         _addnstr(screen, 2, 0, 'Search: ' + state.query + ('_' if state.searching else ''), max(1, width - 1), curses.A_NORMAL)
+        selected = state.selected()
+        if selected:
+            _addnstr(screen, 3, 0, selected.detail, max(1, width - 1), curses.A_DIM)
         page = max(1, height - 6)
         top = max(0, state.cursor - page + 1)
         for i, row in enumerate(rows[top:top + page], top):
@@ -76,14 +79,20 @@ def _curses_picker(screen, service):
             _addnstr(screen, 4 + i - top, 0, ('> ' if i == state.cursor else '  ') + row.label,
                      max(1, width - 1), attr)
         status = 'Loading harness conversations…' if pending else (error or f'{len(rows)} of {len(state.rows)} advertised conversations')
+        if not pending and not error and getattr(service, 'notice', ''):
+            status += ' · ' + service.notice
         if not rows and not pending and not error:
             status = 'No matching conversations. R refreshes; Esc returns.'
         _addnstr(screen, max(0, height - 1), 0, status, max(1, width - 1), curses.A_DIM)
         screen.refresh()
-        key = screen.getch()
-        if key == -1:
+        try:
+            raw_key = screen.get_wch()
+        except curses.error:
             continue
-        if key in (27, 3):
+        key = ord(raw_key) if isinstance(raw_key, str) else raw_key
+        nav = _decode_menu_key(screen, key) if not state.searching or key in (27, 3, 10, 13) else None
+        screen.timeout(100)  # escape decoding temporarily changes this
+        if nav in ('cancel', 'interrupt'):
             return None
         if state.searching:
             if key in (10, 13, curses.KEY_ENTER):
@@ -91,7 +100,7 @@ def _curses_picker(screen, service):
             elif key in (8, 127, curses.KEY_BACKSPACE):
                 state.query = state.query[:-1]
                 state.cursor = 0
-            elif 32 <= key <= 0x10ffff:
+            elif isinstance(raw_key, str) and raw_key.isprintable():
                 state.query = (state.query + display_text(chr(key)))[:200]
                 state.cursor = 0
             continue
@@ -99,15 +108,13 @@ def _curses_picker(screen, service):
             state.searching = True
         elif key in (ord('r'), ord('R')) and pending is None:
             pending = _load(service)
-        elif key in (ord('q'),):
-            return None
-        elif key in (curses.KEY_UP, ord('k')):
+        elif nav == 'up':
             state.move(-1)
-        elif key in (curses.KEY_DOWN, ord('j')):
+        elif nav == 'down':
             state.move(1)
         elif key in (curses.KEY_PPAGE, curses.KEY_NPAGE):
             state.move(-page if key == curses.KEY_PPAGE else page)
-        elif key in (10, 13, curses.KEY_ENTER) and pending is None:
+        elif nav == 'select' and pending is None:
             chosen = state.selected()
             if chosen and chosen.unavailable:
                 error = 'Cannot open: ' + chosen.unavailable

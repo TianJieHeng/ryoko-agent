@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 import json
+from pathlib import Path
 import re
 import threading
 import unicodedata
@@ -29,6 +31,7 @@ class Conversation:
     last_active: float
     via: str
     unavailable: str = ''
+    current: bool = False
 
     @property
     def key(self):
@@ -37,7 +40,17 @@ class Conversation:
     @property
     def label(self):
         suffix = f' [{self.unavailable}]' if self.unavailable else ''
-        return f'{self.title}  · {display_text(self.source)} · {display_text(self.session_id, 24)}{suffix}'
+        short_id = self.session_id if len(self.session_id) <= 24 else self.session_id[:16] + '…' + self.session_id[-8:]
+        active = '● ' if self.current else ''
+        return f'{active}{self.title}  · {display_text(self.source)} · {display_text(short_id)}{suffix}'
+
+    @property
+    def detail(self):
+        try:
+            stamp = datetime.fromtimestamp(self.last_active, timezone.utc).strftime('%Y-%m-%d %H:%M UTC') if self.last_active else 'date unavailable'
+        except (ValueError, OverflowError, OSError):
+            stamp = 'date unavailable'
+        return f'{display_text(self.session_id, 100)} · {stamp} · {self.turns if type(self.turns) is int else "?"} turns'
 
 
 def catalog(payload):
@@ -72,15 +85,16 @@ def catalog(payload):
                                   str(row.get('agent') or ''), row.get('turns'), stamp,
                                   str(row.get('via') or ''), reason)
         ids.setdefault(sid, set()).add(source)
-    from dataclasses import replace
     return sorted((replace(c, unavailable='ambiguous source ID') if len(ids[c.session_id]) > 1 else c
                    for c in found.values()), key=lambda c: (-c.last_active, c.title.casefold(), c.key))
 
 
 class MemorySessions:
-    def __init__(self, context, server, cancel=None):
+    def __init__(self, context, server, cancel=None, *, local_db=None, current_session=None):
         self.context, self.server = context, server
         self.cancel = cancel if cancel is not None else threading.Event()
+        self.local_db, self.current_session = local_db, current_session
+        self.notice = ''
 
     @classmethod
     def for_cli(cls, cli, cancel=None):
@@ -97,14 +111,27 @@ class MemorySessions:
             context = resolve_agent_context(raw, session_id='session-browser', profile_home=get_hermes_home())
         if context is None:
             raise ConversationError('An owned personal-memory profile is required. Use /sessions local.')
-        return cls(context, server, cancel)
+        return cls(context, server, cancel, local_db=getattr(cli, '_session_db', None),
+                   current_session=getattr(cli, 'session_id', None))
 
     def call(self, tool, arguments):
         from agent.identity_lifecycle import agent_runtime_scope
+        from agent.secret_scope import build_profile_secret_scope, set_secret_scope, reset_secret_scope
+        from hermes_cli.env_loader import hydrate_profile_secret_sources
         from tools.mcp_user_read import user_read_scope
         try:
-            with agent_runtime_scope(self.context), user_read_scope(self.context, self.server, self.cancel):
-                return asyncio.run(self._call(tool, arguments))
+            # A cold browser has no agent startup to hydrate command/vault sources.
+            # Resolve this home explicitly, then install a fresh scope even when the
+            # caller had an older same-home mapping. Never borrow ambient credentials.
+            home = Path(self.context.profile_home)
+            hydrate_profile_secret_sources(home)
+            with agent_runtime_scope(self.context):
+                token = set_secret_scope(build_profile_secret_scope(home), profile_home=str(home))
+                try:
+                    with user_read_scope(self.context, self.server, self.cancel):
+                        return asyncio.run(self._call(tool, arguments))
+                finally:
+                    reset_secret_scope(token)
         except ConversationError:
             raise
         except Exception as exc:
@@ -118,6 +145,7 @@ class MemorySessions:
         from tools.mcp_tool_config import _load_mcp_config
         from tools.mcp_tool_transport import _connect_inputs
         from tools.mcp_tool_policy import require_http_inputs, require_operation, validate_schemas
+        from tools.mcp_tool_common import mcp_field
         from agent.memory_mcp_provider import _local_validator
         from tools.mcp_user_read import current_read
         core._ensure_mcp_sdk()
@@ -141,12 +169,12 @@ class MemorySessions:
                     schema = next((s for s in schemas if s.name == tool), None)
                     if schema is None:
                         raise ConversationError('The harness does not advertise this conversation operation.')
-                    _local_validator(schema.inputSchema).validate(arguments)
+                    _local_validator(mcp_field(schema, 'input_schema', 'inputSchema')).validate(arguments)
                     require_operation(self.server, tool, arguments, connection=server, require_run=True)
                     response = await session.call_tool(tool, arguments)
-                    if response.isError:
+                    if mcp_field(response, 'is_error', 'isError'):
                         raise ConversationError('The harness could not read this conversation.')
-                    payload = getattr(response, 'structuredContent', None)
+                    payload = mcp_field(response, 'structured_content', 'structuredContent')
                     if payload is None:
                         texts = [block.text for block in response.content if block.type == 'text']
                         if len(texts) != 1:
@@ -168,7 +196,34 @@ class MemorySessions:
                 await asyncio.gather(task, return_exceptions=True)
 
     def list(self):
-        return catalog(self.call('list_conversations', {}))
+        payload = self.call('list_conversations', {})
+        rows = catalog(payload)
+        self.notice = display_text(payload.get('note'), 200)
+        if self.local_db is not None:
+            from agent.identity_lifecycle import agent_runtime_scope, identity_config
+            from agent.conversation_outbox import settings
+            from hermes_state_memory_sessions import verified_local, verify_local_owner
+            with agent_runtime_scope(self.context):
+                push = settings(identity_config())
+                current = self.local_db._session_turn_lease_key(self.current_session) if self.current_session else None
+                for i, row in enumerate(rows):
+                    if not push or row.unavailable:
+                        continue
+                    try:
+                        local = verified_local(self.local_db, self.context, self.server, row, push)
+                        if not local:
+                            continue
+                        verify_local_owner(self.local_db, self.context, local)
+                        meta = self.local_db.get_session(self.local_db.resolve_resume_session_id(local)) or {}
+                        title = display_text(meta.get('title') or meta.get('display_name'))
+                        rows[i] = replace(row, title=title if row.title == 'Untitled conversation' and title else row.title,
+                                          current=local == current)
+                    except (ValueError, PermissionError):
+                        rows[i] = replace(row, unavailable='local binding needs review')
+        unnamed = sum(row.title == 'Untitled conversation' for row in rows)
+        if unnamed:
+            self.notice = (self.notice + f' {unnamed} threads have no supplied name; IDs identify them.').strip()
+        return rows
 
     def get(self, conversation):
         if conversation.unavailable:

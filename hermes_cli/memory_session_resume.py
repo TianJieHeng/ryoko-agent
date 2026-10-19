@@ -7,6 +7,10 @@ import re
 from hermes_cli.memory_sessions import ConversationError
 
 
+class HistoryDiverged(ConversationError):
+    """A saved timeline needs an explicit choice before appending to remote history."""
+
+
 def history_capsule(conversation, transcript):
     if transcript.get('source') != conversation.source or transcript.get('session') != conversation.session_id:
         raise ConversationError('Conversation identity changed while reading its history.')
@@ -44,10 +48,10 @@ def history_capsule(conversation, transcript):
             'to answer the next user message; acknowledge missing context when relevant.\n' + payload)
 
 
-def prepare_selected(cli, service, conversation, *, allow_available_history=False):
+def prepare_selected(cli, service, conversation, *, allow_available_history=False, allow_saved_history=False):
     from agent.identity_lifecycle import agent_runtime_scope, identity_config
     from agent.conversation_outbox import settings
-    from hermes_state_memory_sessions import verified_local, verify_local_owner, prepare_binding
+    from hermes_state_memory_sessions import verified_local, verify_local_owner, prepare_binding, local_history_warning
     db = cli._session_db
     if conversation.unavailable:
         raise ConversationError('This conversation is unavailable or has an ambiguous identity.')
@@ -56,6 +60,8 @@ def prepare_selected(cli, service, conversation, *, allow_available_history=Fals
     if getattr(cli, '_agent_running', False):
         raise ConversationError('Wait for the current response to finish before switching conversations.')
     with agent_runtime_scope(service.context):
+        from tools.capability_broker import require_live_policy
+        require_live_policy(require_run=False)
         push = settings(identity_config())
         if push is None:
             raise ConversationError('Conversation capture must be enabled before continuing a harness thread.')
@@ -64,6 +70,9 @@ def prepare_selected(cli, service, conversation, *, allow_available_history=Fals
             verify_local_owner(db, service.context, local)
             target = db.resolve_resume_session_id(local)
             verify_local_owner(db, service.context, target)
+            warning = local_history_warning(db, service.context, local, conversation, push)
+            if warning and not allow_saved_history and target != getattr(cli, 'session_id', None):
+                raise HistoryDiverged(warning)
             prepare_binding(db, service.context, service.server, conversation, push, local_id=local)
             return target
         if not allow_available_history:
