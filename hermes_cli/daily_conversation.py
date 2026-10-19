@@ -92,6 +92,7 @@ def apply_daily_default(args, *, use_tui=False):
         from hermes_cli.active_sessions import active_session_registry_snapshot
         from hermes_cli.cli_memory_sessions import target_is_active
         name = daily_name(raw)
+        print(f'Checking daily conversation: {name}…', flush=True)
         db = SessionDB()
         service = MemorySessions.for_cli(SimpleNamespace(_session_db=db, agent=None))
         target = prepare_daily(db, service, name)
