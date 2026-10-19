@@ -1522,7 +1522,9 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
 
         # /update relaunch happens here, after prompt_toolkit restored terminal modes, on the
         # main thread (the process_loop thread would skip cleanup / only exit itself on Windows).
-        if self._pending_relaunch:
+        if getattr(self, '_pending_session_relaunch', None):
+            self._pending_session_relaunch.execute()
+        elif self._pending_relaunch:
             from hermes_cli.relaunch import relaunch
             relaunch(self._pending_relaunch, preserve_inherited=False)
 

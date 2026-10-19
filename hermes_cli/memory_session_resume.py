@@ -49,6 +49,8 @@ def prepare_selected(cli, service, conversation, *, allow_available_history=Fals
     from agent.conversation_outbox import settings
     from hermes_state_memory_sessions import verified_local, verify_local_owner, prepare_binding
     db = cli._session_db
+    if conversation.unavailable:
+        raise ConversationError('This conversation is unavailable or has an ambiguous identity.')
     if db is None:
         raise ConversationError('The local session store is unavailable.')
     if getattr(cli, '_agent_running', False):

@@ -68,7 +68,7 @@ def _curses_picker(screen, service):
         screen.erase()
         _addnstr(screen, 0, 0, 'Memory conversations', max(1, width - 1), curses.A_BOLD)
         _addnstr(screen, 1, 0, '↑/↓ select · Enter open · / search · R refresh · Esc cancel', max(1, width - 1), curses.A_DIM)
-        _addnstr(screen, 2, 0, 'Search: ' + state.query + ('_' if state.searching else ''), max(1, width - 1))
+        _addnstr(screen, 2, 0, 'Search: ' + state.query + ('_' if state.searching else ''), max(1, width - 1), curses.A_NORMAL)
         page = max(1, height - 6)
         top = max(0, state.cursor - page + 1)
         for i, row in enumerate(rows[top:top + page], top):
@@ -137,7 +137,9 @@ def choose_conversation(cli, service):
 
     async def suspended():
         from prompt_toolkit.application import run_in_terminal
-        return await run_in_terminal(choose, in_executor=False)
+        from prompt_toolkit.application.current import set_app
+        with set_app(app):
+            return await run_in_terminal(choose, in_executor=False)
 
     # Schedule on the app's context, not a foreign loop; the SDK read uses its own worker.
     future = asyncio.run_coroutine_threadsafe(suspended(), loop)
