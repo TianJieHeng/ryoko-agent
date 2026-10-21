@@ -1615,3 +1615,9 @@ old tool approvals, system messages or provider state are copied. Remote thread
 identity and upload deduplication remain unchanged; repeated resume reuses the
 new local execution. Added a real SQLite regression covering the policy mismatch,
 archival, one binding, preserved history and successful canonical rebind.
+
+## 2026-10-21 — Publish approved banner branding
+
+Committed the existing owner-approved banner edit adding Botwin.Tokyo alongside
+Nous Research. Python syntax and git whitespace checks passed locally. No CI.
+The Dots theme and Settings appearance edits are already committed on Dots main.
