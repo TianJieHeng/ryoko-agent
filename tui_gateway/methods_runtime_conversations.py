@@ -13,6 +13,7 @@ def _conversation_rpc(name, model_name):
     def decorate(function):
         def handler(rid, params):
             import sqlite3
+            from hermes_cli.memory_sessions import ConversationError
             from agent.agent_identity import IdentityPolicyError, resolve_agent_context
             from agent.agent_configuration import base_configuration
             from agent.runtime_commands import _RUN
@@ -41,6 +42,10 @@ def _conversation_rpc(name, model_name):
                     if db is None:
                         return _err(rid, 5030, "Durable conversation store unavailable", {"code": "durable_store_required"})
                     return _ok(rid, function(rid, request, context, config, db))
+                except ConversationError as exc:
+                    return _err(rid, 4090, str(exc), {"code": "memory_conversation_unavailable"})
+                except PermissionError:
+                    return _err(rid, 4030, "Memory conversation owner does not match", {"code": "identity_mismatch"})
                 except IdentityPolicyError:
                     return _err(rid, 4030, "Configured identity does not match the conversation", {"code": "identity_mismatch"})
                 except RuntimeStoreError as exc:
@@ -63,7 +68,7 @@ def _conversation_capabilities(rid, request, context, config, db):
                          "memory_backend": context.policy.memory_backend},
             "methods": ["runtime.conversation." + name for name in
                         ("capabilities", "create", "list", "bind", "rename", "archive", "history", "export", "operation.get", "command.receipt")]
-                       + ["runtime.command.receipt"],
+                       + ["runtime.command.receipt", "runtime.memory.list", "runtime.memory.open"],
             "max_page": CONVERSATION_MAX_PAGE, "max_text_chunk_chars": CONVERSATION_TEXT_CHARS,
             "max_page_text_bytes": CONVERSATION_TEXT_BYTES, "transcript_format": "safe_transcript_v1",
             "command_message_linkage": "explicit", "restore_supported": False}
@@ -194,6 +199,47 @@ def _conversation_command_receipt(rid, request, context, config, db):
     command = db.read_runtime_command_receipt(owned["lineage"][-1], request.command_id,
         message_cursor=request.message_cursor, message_limit=request.message_limit)
     return _runtime_command_receipt_projection(request.command_id, command)
+
+
+@_conversation_rpc("runtime.memory.list", "RuntimeConversationParams")
+def _memory_list(rid, request, context, config, db):
+    from hermes_cli.memory_conversations import memory_service, list_memory_conversations
+    return list_memory_conversations(memory_service(context, config, db))
+
+
+@_conversation_rpc("runtime.memory.open", "RuntimeMemoryOpenParams")
+def _memory_open(rid, request, context, config, db):
+    from contextlib import contextmanager
+    from hermes_cli.memory_conversations import memory_service, open_memory_conversation
+    from hermes_cli.memory_sessions import ConversationError
+
+    @contextmanager
+    def idle_scope(root):
+        popped = None
+        try:
+            with _session_resume_lock:
+                tip = db.resolve_resume_session_id(root)
+                live = _find_live_session_by_key(tip, _hermes_home)
+                if live:
+                    sid, session = live
+                    with _sessions_lock:
+                        if (session.get("transport") is not _stdio_transport or session.get("running")
+                                or _session_pending_kind(sid) or _session_has_active_delegations(sid, session)):
+                            raise ConversationError("Wait for the active conversation and its tasks to finish before syncing history.")
+                def invalidate():
+                    nonlocal popped
+                    if live:
+                        with _sessions_lock:
+                            if session.get("running") or _session_pending_kind(sid):
+                                raise ConversationError("Wait for the current response before syncing history.")
+                            popped = _pop_session_by_id(sid)
+                yield invalidate
+        finally:
+            if popped is not None:
+                _teardown_popped_session(popped, end_reason="memory_resume")
+
+    return open_memory_conversation(memory_service(context, config, db), request.source, request.session_id,
+                                    idle_scope=idle_scope)
 
 
 def register(server):

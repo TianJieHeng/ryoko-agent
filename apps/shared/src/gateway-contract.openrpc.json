@@ -4543,6 +4543,42 @@
       }
     },
     {
+      "name": "runtime.memory.list",
+      "summary": "List the launch owner personal-memory conversations using its existing read-only MCP grants.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeConversationParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeMemoryListResult"
+        }
+      }
+    },
+    {
+      "name": "runtime.memory.open",
+      "summary": "Resume one existing memory thread; deduplicate imports and retain its original outbox identity.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/RuntimeMemoryOpenParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/RuntimeMemoryOpenResult"
+        }
+      }
+    },
+    {
       "name": "runtime.memory.output.control",
       "summary": "",
       "params": [
@@ -48702,6 +48738,133 @@
           "has_more"
         ],
         "title": "RuntimeEventsSinceResult",
+        "type": "object"
+      },
+      "RuntimeMemoryConversation": {
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "turns": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turns"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "number"
+          },
+          "unavailable": {
+            "title": "Unavailable",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "session_id",
+          "title",
+          "turns",
+          "updated_at",
+          "unavailable"
+        ],
+        "title": "RuntimeMemoryConversation",
+        "type": "object"
+      },
+      "RuntimeMemoryListResult": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "conversations": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeMemoryConversation"
+            },
+            "title": "Conversations",
+            "type": "array"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "conversations",
+          "notice"
+        ],
+        "title": "RuntimeMemoryListResult",
+        "type": "object"
+      },
+      "RuntimeMemoryOpenParams": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "session_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "source",
+          "session_id"
+        ],
+        "title": "RuntimeMemoryOpenParams",
+        "type": "object"
+      },
+      "RuntimeMemoryOpenResult": {
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/RuntimeConversation"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "conversation",
+          "notice"
+        ],
+        "title": "RuntimeMemoryOpenResult",
         "type": "object"
       },
       "RuntimeOperationCapability": {

@@ -1586,3 +1586,20 @@ Added opt-in classic interactive startup routing to the existing memory browser'
 Ran `HERMES_PYTHON=/tmp/ryoko-sessions-testenv/bin/python scripts/run_tests.sh` with `tests/hermes_cli/test_daily_conversation.py`, `test_memory_sessions_protocol.py`, `test_cli_resume_command.py`, `test_resume_model_restore.py`, and `tests/agent/test_conversation_outbox.py`: 70 passed, zero failed. Log: `/tmp/ryoko-daily-tests.log`. Ruff on the feature/binding/test modules and `git diff --check` passed. Tests cover the UTC/local midnight boundary, profile timezone separation, explicit selection precedence through the actual startup resolver, no-message creation, repeated opening, frozen enrollment, same-ID outbox payloads, missing sealed history and failed-read noncreation; existing browser/capture/resume regressions also passed.
 
 Confirmed the live harness contains today's `mobile-daily-2026-10-18` thread with two turns and one archived window. Backed up the Ryoko profile config privately under `backups/daily-startup-20261018/config.yaml`, then enabled only that profile with prefix `mobile-daily-` and timezone `America/New_York` through the atomic config writer. A plain installed `hermes` launch selected that exact remote thread and imported its available history into local binding `20261018_211605_2b7a5c74dcc3`. No test message was added to the daily conversation. The existing banner customization remains untouched and uncommitted.
+
+## 2026-10-21 — Dots memory conversation resume through existing APIs
+
+Added trusted-owner stdio `runtime.memory.list` / `runtime.memory.open`, using
+existing MemorySessions MCP list/get grants and the existing durable upload
+binding. No memory-harness changes or deployment. Canonical enrollment reuses
+verified local/imported roots; content-index fingerprints prevent repeated window
+imports, including earlier CLI imports and interrupted resumes. Active turn leases
+and live task checks prevent refresh during execution; unchanged history retains
+the live agent. New context is untrusted archival data, not reconstructed tool
+history. New authored turns retain the original remote source/session identity.
+The existing sealed-window/live-tail limitation remains explicit.
+
+Local validation: 22 memory protocol/SQLite/real SDK/real gateway dispatcher tests
+and 4 canonical RPC tests passed; generated contract checks passed (2 tests).
+Live read-only catalog returned 61 unique conversations. No CI. Installation and
+browser validation are recorded in the Dots BuildJournal.md.

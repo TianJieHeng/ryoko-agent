@@ -184,3 +184,33 @@ method("runtime.conversation.operation.get", params=RuntimeConversationOperation
 
 method("runtime.conversation.command.receipt", params=RuntimeConversationCommandReceiptParams, result=RuntimeCommandReceiptResult,
        doc="Read an owned canonical conversation's durable command receipt and bounded message links without binding a live session or constructing a provider. Never requeue or claim work.")
+
+
+class RuntimeMemoryConversation(Result):
+    source: str
+    session_id: str
+    title: str
+    turns: int | None
+    updated_at: float
+    unavailable: str
+
+
+class RuntimeMemoryListResult(Result):
+    schema_version: Literal[1]
+    conversations: list[RuntimeMemoryConversation]
+    notice: str
+
+
+class RuntimeMemoryOpenParams(RuntimeConversationParams):
+    source: Annotated[str, Field(min_length=1, max_length=512)]
+    session_id: Annotated[str, Field(min_length=1, max_length=512)]
+
+
+class RuntimeMemoryOpenResult(RuntimeConversationResult):
+    notice: str
+
+
+method('runtime.memory.list', params=RuntimeConversationParams, result=RuntimeMemoryListResult,
+       doc='List the launch owner personal-memory conversations using its existing read-only MCP grants.')
+method('runtime.memory.open', params=RuntimeMemoryOpenParams, result=RuntimeMemoryOpenResult,
+       doc='Resume one existing memory thread; deduplicate imports and retain its original outbox identity.')

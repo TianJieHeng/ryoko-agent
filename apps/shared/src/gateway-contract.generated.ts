@@ -6058,6 +6058,29 @@ export interface RuntimeConversationCommandReceiptParams {
   message_limit?: number
   message_cursor?: string | null
 }
+export interface RuntimeMemoryListResult {
+  schema_version: 1
+  conversations: RuntimeMemoryConversation[]
+  notice: string
+}
+export interface RuntimeMemoryConversation {
+  source: string
+  session_id: string
+  title: string
+  turns: number | null
+  updated_at: number
+  unavailable: string
+}
+export interface RuntimeMemoryOpenParams {
+  schema_version: 1
+  source: string
+  session_id: string
+}
+export interface RuntimeMemoryOpenResult {
+  schema_version: 1
+  conversation: RuntimeConversation
+  notice: string
+}
 export interface RuntimeApprovalListParams {
   session_id: string
   schema_version: 1
@@ -8758,6 +8781,10 @@ export interface RpcMethods {
   'runtime.media.capabilities': { params: RuntimeSessionParams; result: MediaResponse }
   /** Read a revision-bound local structured export in bounded chunks; no remote sharing. */
   'runtime.memory.export': { params: MemoryExportParams; result: MemoryExportResult }
+  /** List the launch owner personal-memory conversations using its existing read-only MCP grants. */
+  'runtime.memory.list': { params: RuntimeConversationParams; result: RuntimeMemoryListResult }
+  /** Resume one existing memory thread; deduplicate imports and retain its original outbox identity. */
+  'runtime.memory.open': { params: RuntimeMemoryOpenParams; result: RuntimeMemoryOpenResult }
   'runtime.memory.output.control': { params: OutputControlParams; result: OutputControlResult }
   'runtime.memory.output.control.get': { params: OutputControlGetParams; result: OutputControlResult }
   'runtime.memory.output.get': { params: OutputContextParams; result: OutputContextResult }
@@ -9361,6 +9388,8 @@ export const RPC_METHODS = [
   'runtime.inbox.prepare',
   'runtime.media.capabilities',
   'runtime.memory.export',
+  'runtime.memory.list',
+  'runtime.memory.open',
   'runtime.memory.output.control',
   'runtime.memory.output.control.get',
   'runtime.memory.output.get',

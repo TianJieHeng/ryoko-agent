@@ -319,3 +319,91 @@ def test_catalog_uses_only_verified_local_names_and_marks_current(owned, protoco
     assert rows['remote-only'].title == 'Verified local name' and rows['remote-only'].current
     assert rows[owned.specialist.identity.session_id].title == 'Untitled conversation'
     assert '1 threads have no supplied name' in service.notice
+
+
+def test_desktop_resume_reuses_binding_and_imports_each_window_once(owned, protocol):
+    from hermes_cli.memory_conversations import open_memory_conversation
+    owned.service.local_db = owned.db
+    first = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    root = first['conversation']['conversation_id']
+    again = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    assert again['conversation']['conversation_id'] == root
+    assert len(owned.db.get_messages(root)) == 1
+    with agent_runtime_scope(owned.primary):
+        assert bound_remote(owned.db, root, owned.primary)['remote_id'] == 'remote-only'
+    with owned.db._runtime_read() as conn:
+        assert conn.execute('SELECT count(*) FROM runtime_conversations').fetchone()[0] == 1
+    assert not (owned.home / 'conversation-outbox/outbox.sqlite3').exists()
+
+
+def test_desktop_resume_busy_lease_never_imports_more_history(owned, protocol):
+    from hermes_cli.memory_conversations import open_memory_conversation
+    owned.service.local_db = owned.db
+    first = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    root = first['conversation']['conversation_id']
+    assert owned.db.try_acquire_session_turn_lease(root, 'other-running-client')
+    with pytest.raises(ConversationError, match='busy'):
+        open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    assert len(owned.db.get_messages(root)) == 1
+
+
+def test_desktop_resume_refreshes_new_windows_without_replaying_old_ones(owned, protocol):
+    from hermes_cli.memory_conversations import open_memory_conversation
+    owned.service.local_db = owned.db
+    first = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    root = first['conversation']['conversation_id']
+    # Tail sealing can add a window without changing the catalog count.
+    protocol.transcript = {**TRANSCRIPT, 'windows': [*TRANSCRIPT['windows'],
+        {'index': 2, 'lineage_id': 'w2', 'text': '[user] From the other machine\n[assistant] Saved there'}]}
+    second = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    assert second['conversation']['conversation_id'] == root
+    messages = owned.db.get_messages(root)
+    assert len(messages) == 2
+    assert 'From the other machine' in messages[-1]['content']
+    assert 'Hello' not in messages[-1]['content']
+    open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    assert len(owned.db.get_messages(root)) == 2
+    from agent.conversation_identity import recorded_conversation_scope
+    selected, _ = recorded_conversation_scope(owned.primary, owned.raw, owned.db, root)
+    assert owned.db.read_runtime_conversation(selected, root)['conversation']['conversation_id'] == root
+
+
+def test_desktop_resumes_existing_cli_import_without_copying_archive(owned):
+    from hermes_cli.memory_conversations import open_memory_conversation
+    row = owned.service.list()[0]
+    root = prepare_selected(owned.cli, owned.service, row, allow_available_history=True)
+    owned.service.local_db = owned.db
+    result = open_memory_conversation(owned.service, row.source, row.session_id)
+    assert result['conversation']['conversation_id'] == root
+    assert len(owned.db.get_messages(root)) == 1
+
+
+def test_desktop_rpc_real_dispatch_catalog_open_and_canonical_bind(owned, monkeypatch):
+    import io
+    from tui_gateway import server
+    from tui_gateway.transport import StdioTransport
+    peer = StdioTransport(lambda: io.StringIO(), threading.Lock())
+    monkeypatch.setattr(server, '_stdio_transport', peer)
+    monkeypatch.setattr(server, '_hermes_home', owned.home)
+    monkeypatch.setattr(server, '_db', owned.db)
+    monkeypatch.setattr(server, '_sessions', {})
+    monkeypatch.setattr(server, '_schedule_agent_build', lambda sid: None)
+    monkeypatch.setattr(server, '_schedule_session_cap_enforcement', lambda: None)
+    monkeypatch.setattr(server, '_register_session_cwd', lambda session: None)
+    def call(method, transport=peer, **params):
+        return server.dispatch({'jsonrpc': '2.0', 'id': 'desktop-test', 'method': method,
+                                'params': {'schema_version': 1, **params}}, transport=transport)
+    assert call('runtime.memory.list')['result']['conversations'][0]['session_id'] == 'remote-only'
+    opened = call('runtime.memory.open', source='hermes', session_id='remote-only')
+    assert 'result' in opened, opened
+    root = opened['result']['conversation']['conversation_id']
+    bound = call('runtime.conversation.bind', conversation_id=root)
+    assert 'result' in bound, bound
+    live = bound['result']['session_id']
+    assert server._sessions[live]['history']
+    # Reopening unchanged history retains the live context/prompt cache.
+    assert 'result' in call('runtime.memory.open', source='hermes', session_id='remote-only')
+    assert live in server._sessions
+    foreign = SimpleNamespace(write=lambda frame: True)
+    assert call('runtime.memory.list', transport=foreign)['error']['data']['code'] == 'runtime_transport_unsupported'
+    assert call('runtime.memory.list', profile='other')['error']['code'] == 4000
