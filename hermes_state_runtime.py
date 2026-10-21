@@ -86,8 +86,11 @@ def _validated_command(actor, command):
     _require(isinstance(command.get("operation"), str) and command["operation"] in _OPERATIONS, "invalid_command", "Unknown runtime operation")
     _require(isinstance(command.get("payload"), Mapping), "invalid_command", "payload must be an object")
     _require(set(command) <= {"schema_version", "command_id", "idempotency_key", "expected_revision",
-                              "identity_binding", "operation", "payload", "target_run_id"},
+                              "identity_binding", "operation", "payload", "target_run_id", "new_user_turn"},
              "invalid_command", "Unsupported command fields")
+    if "new_user_turn" in command:
+        _require(type(command["new_user_turn"]) is bool and command["operation"] == "submit",
+                 "invalid_command", "Only a submitted user turn may start a fresh budget")
     if "target_run_id" in command:
         _identifier(command["target_run_id"], "target_run_id")
         _require(command["operation"] in {"cancel", "steer"}, "invalid_command",

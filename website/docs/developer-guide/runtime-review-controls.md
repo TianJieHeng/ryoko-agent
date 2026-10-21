@@ -102,3 +102,20 @@ first archival in that conversation. After replacement, omission is rejected wit
 `mission_identity_conflict`, even if its numeric revision matches the new mission.
 This includes revise, verify, accept, pause, resume and cancel. Archived missions
 cannot dispatch or be implicitly resumed.
+
+### New owner messages and task budgets
+
+An authenticated owner client can set `new_user_turn: true` on a
+`runtime.command` submit when the user explicitly sends a new message. This
+starts a separate run budget in the existing conversation, including after an
+idle period or process restart. The marker is retained in the immutable command
+and its digest; retrying the same command returns its original receipt and
+cannot renew its deadline or counters. Conversation history and prompt caching
+are unchanged.
+
+Only a primary agent without a parent identity accepts this marker. Child agents,
+steering, cancellation, and unmarked autonomous submissions cannot use it to
+escape an inherited budget. Existing budget records and the original session
+inheritance binding remain intact. Queue start deadlines still apply to each
+accepted message; they do not expire the conversation itself. Clients must not
+set this marker on automatic retries, scheduled work, or continuations.

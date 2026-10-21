@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import ConfigDict, Field, StrictInt, field_validator, model_validator
+from pydantic import ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
 
 from .base import Params, Result
 from .decisions import DecisionReceipt, DecisionOutcomeLabel
@@ -72,6 +72,7 @@ class RuntimeCommandParams(RuntimeSessionParams):
     operation: RuntimeOperation
     # None is the internal absent-field sentinel, never a valid supplied value.
     target_run_id: RuntimeIdentifier = Field(default=None)
+    new_user_turn: StrictBool = False
     payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
 
     @model_validator(mode="before")
@@ -79,6 +80,8 @@ class RuntimeCommandParams(RuntimeSessionParams):
     def payload_matches_operation(cls, values):
         if isinstance(values, dict):
             operation = values.get("operation")
+            if "new_user_turn" in values and operation != "submit":
+                raise ValueError("new_user_turn requires a submit operation")
             if "target_run_id" in values:
                 target = values["target_run_id"]
                 if (not isinstance(operation, str) or operation not in {"steer", "cancel"}

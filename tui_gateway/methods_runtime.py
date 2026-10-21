@@ -241,6 +241,8 @@ def _runtime_command(rid, params):
     exclude = {"session_id"}
     if "target_run_id" not in request.model_fields_set:
         exclude.add("target_run_id")
+    if "new_user_turn" not in request.model_fields_set:
+        exclude.add("new_user_turn")
     envelope = request.model_dump(exclude=exclude)
     try:
         if request.operation == "submit":

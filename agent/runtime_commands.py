@@ -98,11 +98,15 @@ def _authority(agent):
 def _envelope(agent, envelope):
     context, db, session_id = _authority(agent)
     expected = {"schema_version", "command_id", "idempotency_key", "expected_revision", "operation", "payload"}
-    if not isinstance(envelope, dict) or set(envelope) - {"target_run_id"} != expected:
+    if not isinstance(envelope, dict) or set(envelope) - {"target_run_id", "new_user_turn"} != expected:
         raise RuntimeCommandError("invalid_command")
     if type(envelope["schema_version"]) is not int or envelope["schema_version"] != 1:
         raise RuntimeCommandError("unsupported_schema")
     operation, payload = envelope["operation"], envelope["payload"]
+    if "new_user_turn" in envelope:
+        if (type(envelope["new_user_turn"]) is not bool or operation != "submit"
+                or context.policy.role != "primary" or context.identity.parent_agent_id is not None):
+            raise RuntimeCommandError("invalid_command")
     if "target_run_id" in envelope:
         target = envelope["target_run_id"]
         if (not isinstance(operation, str) or operation not in {"cancel", "steer"}

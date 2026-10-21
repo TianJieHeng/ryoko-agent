@@ -73,6 +73,7 @@ export interface RuntimeCommandParams {
   expected_revision: number | null
   operation: 'submit' | 'steer' | 'cancel' | 'approval'
   target_run_id?: string
+  new_user_turn?: boolean
   payload: RuntimeTextPayload | RuntimeCancelPayload | RuntimeApprovalPayload
 }
 export interface RuntimeTextPayload {

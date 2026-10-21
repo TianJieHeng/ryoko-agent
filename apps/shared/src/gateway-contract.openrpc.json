@@ -46243,6 +46243,11 @@
             "title": "Target Run Id",
             "type": "string"
           },
+          "new_user_turn": {
+            "default": false,
+            "title": "New User Turn",
+            "type": "boolean"
+          },
           "payload": {
             "anyOf": [
               {

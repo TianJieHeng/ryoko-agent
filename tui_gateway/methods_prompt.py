@@ -672,7 +672,7 @@ def _submit_runtime_prompt(rid, sid, session, agent, envelope):
         if session.get("_runtime_admission_stopped"):
             AdmissionQueue(agent._session_db).cancel_session(agent.session_id, "cancelled_before_launch")
         from agent.budget_account import admission_deadline
-        receipt = AdmissionQueue(agent._session_db).submit(agent, envelope, deadline=admission_deadline(agent))
+        receipt = AdmissionQueue(agent._session_db).submit(agent, envelope, deadline=admission_deadline(agent, new_user_turn=envelope.get("new_user_turn", False)))
         session.pop("_runtime_admission_stopped", None)
     prompt_admission.wake(server)
     return receipt

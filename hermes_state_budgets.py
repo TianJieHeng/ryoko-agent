@@ -233,9 +233,18 @@ class SessionBudgetsMixin:
             root_id, depth = account_id, 0
             if parent_id is None:
                 source = conn.execute("SELECT source FROM sessions WHERE id=?", (sid,)).fetchone()[0]
-                _check(binding is None and source != "subagent" and conn.execute(
-                    "SELECT 1 FROM budget_accounts WHERE session_id=?", (sid,)).fetchone() is None, "budget_parent_required",
-                       "Child sessions must inherit their trusted parent budget")
+                accepted = conn.execute("SELECT command_json FROM runtime_commands WHERE session_id=? AND run_id=?",
+                                        (sid, run_id)).fetchone()
+                new_user_turn = accepted is not None and json.loads(accepted[0]).get("new_user_turn") is True
+                # Only an explicit, durably accepted owner input may start a new
+                # task. A child handed a budget from another session cannot escape it.
+                own_binding = binding is None or conn.execute(
+                    "SELECT 1 FROM budget_accounts WHERE account_id=? AND session_id=? AND parent_id IS NULL",
+                    (binding[0], sid)).fetchone() is not None
+                first_root = binding is None and conn.execute(
+                    "SELECT 1 FROM budget_accounts WHERE session_id=?", (sid,)).fetchone() is None
+                _check(source != "subagent" and (first_root or (new_user_turn and own_binding)),
+                       "budget_parent_required", "Child sessions must inherit their trusted parent budget")
             else:
                 _check(binding is not None and binding[0] == parent_id, "budget_parent_required",
                        "Child budget requires a durable trusted parent handoff")
@@ -256,7 +265,7 @@ class SessionBudgetsMixin:
                 "profile_id,agent_id,depth,limits_json,policy_json,reserved_json,consumed_json,deadline,created_at) "
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (account_id,root_id,parent_id,sid,run_id,
                 *(actor[key] for key in _ACTOR_KEYS),depth,limits_json,policy_json,_json(_zero()),_json(_zero()),deadline,time.time()))
-            if parent_id is None:
+            if parent_id is None and binding is None:
                 self._budget_check_quota(conn, "budget_child_bindings", MAX_BUDGET_BINDINGS)
                 conn.execute("INSERT INTO budget_child_bindings(child_session_id,parent_id,created_at) VALUES(?,?,?)",
                              (sid,account_id,time.time()))

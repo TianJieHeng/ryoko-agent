@@ -267,14 +267,16 @@ class BudgetRuntime:
                 "monetary_cost_available": self.policy.cost_tracking == "bounded"}
 
 
-def admission_deadline(agent):
+def admission_deadline(agent, *, new_user_turn=False):
     policy = getattr(agent, "_runtime_budget_policy", None)
     if policy is None:
         return None
     deadline = time.time() + policy.deadline_seconds
     context = getattr(agent, "runtime_context", None)
     db = getattr(agent, "_session_db", None)
-    if context is not None and db is not None:
+    if new_user_turn and (context is None or context.policy.role != "primary" or context.identity.parent_agent_id is not None):
+        raise BudgetBlocked("Only an owner user turn can start a fresh task budget")
+    if context is not None and db is not None and not new_user_turn:
         binding = db.get_budget_child_binding(str(agent.session_id), actor_for(context))
         if binding is not None:
             deadline = min(deadline, binding["parent_account"]["deadline"])
@@ -309,7 +311,8 @@ def create_run_budget(agent, db, context, run_id, holder, generation, command_id
             generation=generation, policy_snapshot=policy.record)
     else:
         binding = db.get_budget_child_binding(str(agent.session_id), actor)
-        parent_id = binding["parent_id"] if binding else None
+        new_user_turn = accepted_command["command"].get("new_user_turn", False)
+        parent_id = binding["parent_id"] if binding and not new_user_turn else None
         from agent.admission import AdmissionQueue
         # Direct submissions carry their acceptance time too; queue waiting never
         # earns another wall/deadline allocation.
@@ -318,7 +321,9 @@ def create_run_budget(agent, db, context, run_id, holder, generation, command_id
             raise BudgetBlocked("original budget acceptance time is unavailable; allocation cannot reset")
         deadline = accepted + policy.deadline_seconds
         queued_deadline = AdmissionQueue(db).deadline(str(agent.session_id), command_id)
-        if queued_deadline is not None:
+        # Queue TTL bounds how long a message may wait to start. An explicit
+        # owner turn executes under its accepted policy's task deadline.
+        if queued_deadline is not None and not new_user_turn:
             deadline = min(deadline, queued_deadline)
         if context.policy.role == "child" and parent_id is None:
             raise BudgetBlocked("budget-enabled child requires a durable inherited budget")
@@ -331,7 +336,7 @@ def create_run_budget(agent, db, context, run_id, holder, generation, command_id
         account = db.create_budget_account(str(agent.session_id), actor, run_id, policy.limits,
             deadline=deadline, parent_id=parent_id, holder=holder, generation=generation,
             policy_snapshot=policy.record)
-        if parent_id is None:
+        if parent_id is None and binding is None:
             # Until BE09 supplies a trusted new-mission boundary, all automatic
             # continuations in this session remain under its first root ceiling.
             db.bind_budget_child(account["account_id"], actor, str(agent.session_id),
