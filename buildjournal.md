@@ -1603,3 +1603,15 @@ Local validation: 22 memory protocol/SQLite/real SDK/real gateway dispatcher tes
 and 4 canonical RPC tests passed; generated contract checks passed (2 tests).
 Live read-only catalog returned 61 unique conversations. No CI. Installation and
 browser validation are recorded in the Dots BuildJournal.md.
+
+### Follow-up — older policy-bound imports
+
+The installed browser check exposed an older imported execution whose stored
+policy/configuration digests predated current Ryoko settings. Strict runtime
+resume correctly rejected it. Added an idle, owner-verified renewal path: retain
+saved human/assistant text in a fresh execution under current enrolled policy,
+archive the old execution, and atomically move the existing remote binding. No
+old tool approvals, system messages or provider state are copied. Remote thread
+identity and upload deduplication remain unchanged; repeated resume reuses the
+new local execution. Added a real SQLite regression covering the policy mismatch,
+archival, one binding, preserved history and successful canonical rebind.

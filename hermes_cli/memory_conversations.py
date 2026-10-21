@@ -32,7 +32,7 @@ def list_memory_conversations(service):
         for row in rows]}
 
 
-def open_memory_conversation(service, source, session_id, *, idle_scope=lambda sid: nullcontext(lambda: None)):
+def open_memory_conversation(service, source, session_id, *, idle_scope=lambda sid: nullcontext(lambda: None), _renewed=False):
     from agent.identity_lifecycle import agent_runtime_scope, identity_config
     from agent.conversation_outbox import settings
     from hermes_state_memory_sessions import verified_local, verify_local_owner, prepare_binding, local_history_warning
@@ -66,9 +66,20 @@ def open_memory_conversation(service, source, session_id, *, idle_scope=lambda s
                 verify_local_owner(db, context, local)
                 tip = db.resolve_resume_session_id(local)
                 verify_local_owner(db, context, tip)
-                return _publish(db, context, local, tip, selected, transcript, holder, invalidate)
+                from hermes_cli.memory_session_renewal import needs_renewal, renew
+                if needs_renewal(db, context, local):
+                    if _renewed:
+                        raise ConversationError('Agent settings changed during resume. Refresh and try again.')
+                    invalidate()
+                    renew(db, context, local, tip, holder)
+                    result = None
+                else:
+                    result = _publish(db, context, local, tip, selected, transcript, holder, invalidate)
         finally:
             db.release_session_turn_lease(local, holder)
+    if result is None:
+        return open_memory_conversation(service, source, session_id, idle_scope=idle_scope, _renewed=True)
+    return result
 
 
 def _publish(db, context, root, tip, selected, transcript, holder, invalidate):

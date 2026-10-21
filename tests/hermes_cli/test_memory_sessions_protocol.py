@@ -407,3 +407,32 @@ def test_desktop_rpc_real_dispatch_catalog_open_and_canonical_bind(owned, monkey
     foreign = SimpleNamespace(write=lambda frame: True)
     assert call('runtime.memory.list', transport=foreign)['error']['data']['code'] == 'runtime_transport_unsupported'
     assert call('runtime.memory.list', profile='other')['error']['code'] == 4000
+
+
+def test_desktop_renews_stale_policy_but_keeps_one_remote_binding(owned):
+    from hermes_cli.memory_conversations import open_memory_conversation
+    owned.service.local_db = owned.db
+    first = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    old = first['conversation']['conversation_id']
+    # Simulate a session written under a prior policy. The stable human owner,
+    # agent and profile remain unchanged, but strict runtime resume must reject it.
+    stored = owned.db.get_session_model_config_value(old, 'agent_identity')
+    stale = {**stored, 'policy_digest': 'a' * 64, 'config_digest': 'b' * 64}
+    def age(conn):
+        config = json.loads(conn.execute('SELECT model_config FROM sessions WHERE id=?', (old,)).fetchone()[0])
+        config['agent_identity'] = stale
+        conn.execute('UPDATE sessions SET model_config=? WHERE id=?', (json.dumps(config), old))
+        conn.execute('UPDATE runtime_conversations SET binding_json=? WHERE conversation_id=?', (json.dumps(stale), old))
+    owned.db._execute_write(age)
+    second = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    new = second['conversation']['conversation_id']
+    assert new != old
+    assert owned.db.get_session(old)['archived']
+    assert len(owned.db.get_messages(new)) == 1
+    assert bound_remote(owned.db, new, owned.primary)['remote_id'] == 'remote-only'
+    assert bound_remote(owned.db, old, owned.primary) is None
+    again = open_memory_conversation(owned.service, 'hermes', 'remote-only')
+    assert again['conversation']['conversation_id'] == new
+    from agent.conversation_identity import recorded_conversation_scope
+    selected, _ = recorded_conversation_scope(owned.primary, owned.raw, owned.db, new)
+    assert owned.db.read_runtime_conversation(selected, new)['conversation']['conversation_id'] == new
