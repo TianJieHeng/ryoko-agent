@@ -1621,3 +1621,19 @@ archival, one binding, preserved history and successful canonical rebind.
 Committed the existing owner-approved banner edit adding Botwin.Tokyo alongside
 Nous Research. Python syntax and git whitespace checks passed locally. No CI.
 The Dots theme and Settings appearance edits are already committed on Dots main.
+## 2026-11-07 — Dots coordination turn reference identity
+
+Live Ryoko → Codex → Claude coordination exposed a pre-dispatch failure when a
+worker report contained a commit-author email. Turn preparation treated `@` as a
+possible reference and queried model metadata before entering Ryoko's verified
+identity context. Bind reference expansion through the existing complete agent
+lifecycle scope; preserve strict egress identity checks and profile isolation.
+No memory-harness changes. The existing gateway test now patches real imported
+modules instead of replacing package modules with incomplete fakes.
+
+Validation: canonical `scripts/run_tests.sh -j 1` under Agent Chat's bounded
+wrapper: two new strict identity/profile A→B→A tests and the existing gateway
+reference-expansion test passed (3 total). Removing the lifecycle binding makes
+the new valid-profile test fail with the original identity error; the strict
+unbound-agent denial still passes. Binding restored. Live four-provider rerun is
+recorded in Agent Chat's phase-7 journal. No CI.
