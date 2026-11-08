@@ -1660,3 +1660,25 @@ with `runtime_delivery_transport_unsupported`; original profile configuration an
 runtime guards. Immediate prompt submission raced lazy identity construction;
 waiting for `session.info` before the first prompt succeeded. Documented both
 limitations for the upcoming Portal native Hermes adapter.
+
+## 2026-11-08 — Remote host Hermes Cloudflare endpoint
+
+Created dedicated named tunnel `ryoko-host-hermes` and DNS route
+`https://hermes-dots.ryoko.okinawa`, per owner request. Enabled independent user
+unit `hermes-host-tunnel.service` with restart-on-failure. Reused private Hermes
+credentials without committing secrets. Existing Mac `rhermes` tunnel and Dots
+tunnel remain untouched. Updated host endpoint docs and added deployment templates.
+
+Restricted ingress to exact `/api/health`, `/api/sessions`, `/api/ws`; all other
+paths return 404. This restriction is essential: native headless Hermes's local
+root page includes its desktop bootstrap token. Host header rewrite preserves
+origin validation. No runtime/approval/auth guard relaxed; no CI added.
+
+Validation: cloudflared ingress validation, systemd verification, whitespace
+checks passed. Through public HTTPS: health 200, root and config 404, session
+listing 401 without/with wrong bearer and 200 with valid bearer. WebSocket
+upgrades rejected missing/wrong token. Real authenticated WSS conversation
+returned `TUNNEL_OK`, complete/persisted user+assistant rows, one model call.
+Initial Python urllib probes returned edge 403; curl and Node clients completed
+all checks. Recent service logs contained no credential. Portal enrollment
+remains pending; endpoint is ready for its server-side native Hermes adapter.

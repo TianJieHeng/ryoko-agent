@@ -1,0 +1,16 @@
+[Unit]
+Description=Independent host Hermes Cloudflare Tunnel
+After=network-online.target hermes-host-api.service
+Wants=network-online.target hermes-host-api.service
+
+[Service]
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate --config %h/.config/hermes-host/cloudflare/config.yml tunnel run
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

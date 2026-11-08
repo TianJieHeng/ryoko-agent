@@ -1,0 +1,12 @@
+tunnel: d2b8f546-6d2e-41b5-bf4c-8e4887519eb7
+credentials-file: /home/YOUR_USER/.cloudflared/d2b8f546-6d2e-41b5-bf4c-8e4887519eb7.json
+metrics: 127.0.0.1:49314
+loglevel: info
+ingress:
+  - hostname: hermes-dots.ryoko.okinawa
+    path: ^/api/(health|sessions|ws)$
+    service: http://127.0.0.1:8642
+    originRequest:
+      httpHostHeader: 127.0.0.1:8642
+      connectTimeout: 10s
+  - service: http_status:404

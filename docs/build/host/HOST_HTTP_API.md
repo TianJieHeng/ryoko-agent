@@ -67,10 +67,48 @@ retains host terminal access for authorized process recovery. Startup can take
 30–60 seconds; verify `/api/health` rather than treating process existence as
 readiness. The memory-harness outbox service remains separate.
 
-The listener is loopback-only. The Portal backend on this machine can reach it;
-remote access requires a tunnel or an authenticated TLS deployment. A host agent
+The origin listener is loopback-only. Remote access now uses the dedicated
+Cloudflare tunnel described below. A host agent
 can help recover a stuck Dots environment, but not a powered-off host or broken OS.
 
 Portal Device Agent enrollment and its native Hermes adapter are still pending.
 Name this host card `Ryoko-Dots`; keep build workers on Build Agents. Do not wire
 this recovery card to the Dots API.
+
+## Remote HTTPS / Cloudflare tunnel
+
+Remote base: **https://hermes-dots.ryoko.okinawa**.
+Native WebSocket: **wss://hermes-dots.ryoko.okinawa/api/ws**.
+The same private credential and native session-ready sequence above apply.
+This is an API endpoint; visiting `/` intentionally returns 404.
+
+Tunnel `ryoko-host-hermes` (`d2b8f546-6d2e-41b5-bf4c-8e4887519eb7`)
+runs as independent enabled user service `hermes-host-tunnel.service`. Its private
+configuration is `~/.config/hermes-host/cloudflare/config.yml`; credentials are
+in `~/.cloudflared/<tunnel-id>.json`. No Dots service dependency exists.
+
+Ingress permits only exact `/api/health`, `/api/sessions` and `/api/ws` paths.
+All other paths and hostnames receive 404, including the local-only root page
+which embeds a desktop bootstrap credential. Never replace the restricted
+path with a catch-all proxy. `/api/health` is public liveness; sessions require
+bearer authentication, and WebSocket upgrades require the token. The tunnel
+rewrites the origin Host header to `127.0.0.1:8642` so Hermes's host validation
+remains enabled. Server-to-server clients should omit browser Origin headers;
+a future direct-browser client needs a reviewed origin/auth setup.
+
+Cloudflare terminates HTTPS; the connector reaches only the loopback origin.
+Keep tokens in the Portal backend, use HTTPS/WSS exclusively, and do not log
+WebSocket query strings. This deployment uses Hermes token authentication,
+not a separate Cloudflare Access login. The API does not become a public UI.
+
+```sh
+systemctl --user status hermes-host-tunnel.service
+systemctl --user restart hermes-host-tunnel.service
+systemctl --user stop hermes-host-tunnel.service
+curl https://hermes-dots.ryoko.okinawa/api/health
+```
+
+To remove remote access, stop/disable the tunnel service and remove its DNS
+route/tunnel in Cloudflare; the independent local Hermes service can stay up.
+Templates: `hermes-host-tunnel.service`, `cloudflare-host.yml.example`.
+Ingress setup follows the [Cloudflare local tunnel configuration contract](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/local-management/configuration-file/).
