@@ -219,3 +219,45 @@ def test_startup_grant_does_not_authorize_reads_before_budget_transport(harness)
         with pytest.raises(MCPUnsupported, match='physical-request budget adapter'):
             require_operation('public', 'read', connection=server, require_run=True)
         assert rows(harness) == []
+
+
+def test_session_header_comes_from_current_admitted_run(harness):
+    """The transport uses its admitted run and rejects a supplied session header."""
+    from tools import mcp_tool_policy
+    from tools.agent_policy_gate import bind_mcp_connection
+    from tools import mcp_tool as core
+    from unittest.mock import patch
+    seen = []
+    async def send():
+        instance = core.MCPServerTask('public')
+        bind_mcp_connection(instance)
+        instance._config = {'url': 'https://fixture.invalid/mcp'}
+        inner = httpx.MockTransport(lambda req: seen.append(req.headers.get('x-runtime-session')) or httpx.Response(200, json={}))
+        transport = wrap_transport(httpx, inner, instance, CONTRACT)
+        async with httpx.AsyncClient(transport=transport) as client:
+            await client.post(instance._config['url'], json={'jsonrpc':'2.0','id':1,'method':'tools/list'})
+            with pytest.raises(PermissionError):
+                await client.post(instance._config['url'], headers={'x-runtime-session':'spoof'}, json={'jsonrpc':'2.0','id':2,'method':'tools/list'})
+    original = mcp_tool_policy.policy_for
+    def grant(server, context=None):
+        value = dict(original(server, context))
+        value['session_header'] = 'x-runtime-session'
+        return value
+    with patch.object(mcp_tool_policy, 'policy_for', grant):
+        with harness.scope():
+            asyncio.run(send())
+    assert seen == [harness.runs['primary'].session_id]
+
+
+def test_session_header_policy_is_opt_in_and_requires_owned_transport():
+    from tools.mcp_tool_policy import parse_mcp_policies
+    from tests.tools.test_mcp_agent_trust_lifecycle import raw_config
+    grant = raw_config()['agent_identity']['agents']['primary']['mcp_policies']['public']
+    grant['session_header'] = 'authorization'
+    with pytest.raises(ValueError):
+        parse_mcp_policies({'public':grant})
+    grant['session_header'] = 'x-runtime-session'
+    with pytest.raises(ValueError):
+        parse_mcp_policies({'public':grant})
+    grant['budget'] = CONTRACT
+    assert parse_mcp_policies({'public':grant})['public']['session_header'] == 'x-runtime-session'

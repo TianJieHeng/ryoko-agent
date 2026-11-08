@@ -441,3 +441,16 @@ const link = `hermes://mcp/install?name=example&config=${btoa(JSON.stringify(con
 ```
 
 Opening the link never installs anything by itself: the desktop app shows a confirmation dialog with the server name and the full pretty-printed config (with an extra caution for `command`-based servers, which run a local process), and the user must explicitly confirm. Existing server names are never overwritten — the user is asked to rename or cancel.
+
+### Session-bound owned HTTP requests
+
+An explicit strict `mcp_policies.<server>.session_header` (for example
+`x-runtime-session`) opts an endpoint into receiving the current admitted runtime
+session ID. It requires that server's physical-request `budget` contract. The
+owned transport inserts the header on each request from the live run; callers
+cannot provide it through server headers or tool arguments. This carries routing
+context, not permission: the receiving service must authenticate its endpoint-bound
+credential and independently authorize that session. Existing schema pins,
+recipient grants, mutation receipts and budgets remain required. An unconfigured
+policy sends no session header. Child policy intersection requires the same header
+contract, and a connection never stores the first caller's session as its identity.

@@ -1692,3 +1692,14 @@ host supervision. Updated config template/docs and restarted only the tunnel.
 Validated ingress and live HTTPS: root/health 404; sessions missing/wrong key
 401, valid key 200. Live WebSocket missing/wrong key rejected, valid key accepted.
 No model invocation required. No secrets committed or auth guards weakened.
+
+## 2026-11-08 — Agent Chat migration phase 4: owned MCP session routing
+
+Added an opt-in `session_header` to strict MCP policies, valid only with the owned
+physical-request budget contract. The HTTP transport inserts the admitted run's
+session on each physical request and rejects caller-supplied headers. Existing
+endpoint/credential grants, schema pinning, effect receipts, budgets and policy
+intersection remain enforced. No stdio exception or blanket permission was added.
+This supports the separately enrolled build coordinator, not host-recovery Hermes.
+Validation: canonical runner, three files covering trust lifecycle, physical MCP
+budgets and owned mutations; 40 tests passed, zero failures.

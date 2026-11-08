@@ -49,7 +49,7 @@ def parse_mcp_policies(raw):
     _names(list(raw), "mcp_policies")
     result = {}
     fields = {"policy_version", "transport", "endpoint", "tool_allowlist", "read_scopes",
-              "secret_ref", "schema_digests", "read_only_tools", "sampling_limits", "budget", "mutation_contracts"}
+              "secret_ref", "schema_digests", "read_only_tools", "sampling_limits", "budget", "mutation_contracts", "session_header"}
     for server, supplied in raw.items():
         if not isinstance(supplied, Mapping) or set(supplied) - fields:
             raise IdentityPolicyError("MCP policy contains unknown fields")
@@ -101,6 +101,14 @@ def parse_mcp_policies(raw):
                           "tool_allowlist": tools, "read_scopes": reads,
                           "secret_ref": secret, "schema_digests": dict(schemas),
                           "read_only_tools": read_only, "sampling_limits": {"enabled": False}}
+        if "session_header" in supplied:
+            import re
+            header = supplied["session_header"]
+            if not isinstance(header, str) or not re.fullmatch(r"x-[a-z][a-z0-9-]{1,60}", header):
+                raise IdentityPolicyError("MCP session_header must be an explicit lowercase x- header")
+            if "budget" not in supplied:
+                raise IdentityPolicyError("MCP session_header requires the owned physical-request transport")
+            result[server]["session_header"] = header
         if "budget" in supplied:
             from tools.mcp_tool_budget import parse_contract
             result[server]["budget"] = parse_contract(supplied["budget"])
@@ -121,6 +129,8 @@ def intersect_mcp_policies(parent, ceiling):
             continue
         if any(cap[key] != inherited[key] for key in
                ("transport", "endpoint", "secret_ref", "policy_version", "sampling_limits")):
+            continue
+        if cap.get("session_header") != inherited.get("session_header"):
             continue
         if cap.get("budget") != inherited.get("budget"):
             continue

@@ -117,6 +117,14 @@ def wrap_transport(httpx, inner, server, contract):
             if str(request.url) != server._config["url"]:
                 raise MCPUnsupported("MCP request changed its exact destination")
             _request_operation(server, request, contract["max_request_bytes"])
+            # Bind each physical request to its admitted session, never a pooled
+            # connection's first caller or model-controlled tool arguments.
+            from tools.mcp_tool_policy import policy_for
+            header = policy_for(server.name).get("session_header")
+            if header:
+                if header in request.headers:
+                    raise MCPUnsupported("MCP session header cannot be supplied by a caller")
+                request.headers[header] = run.session_id
             budget = require_support(server.name)
             if budget is None:
                 raise MCPUnsupported("MCP budget transport lost its admitted budget owner")
