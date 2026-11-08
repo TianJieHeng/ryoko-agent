@@ -1637,3 +1637,26 @@ reference-expansion test passed (3 total). Removing the lifecycle binding makes
 the new valid-profile test fail with the original identity error; the strict
 unbound-agent denial still passes. Binding restored. Live four-provider rerun is
 recorded in Agent Chat's phase-7 journal. No CI.
+
+## 2026-11-08 — Independent Ryoko-Dots host endpoint
+
+Enabled `hermes-host-api.service` for the existing host `ryoko` profile at
+127.0.0.1:8642, using native `hermes serve --isolated`. The service uses its own
+systemd user cgroup, automatic failure restart, private mode-0600 credentials,
+and no Dots/Agent Chat service dependencies. User lingering is enabled. Saved
+service template and integration contract in `docs/build/host/HOST_HTTP_API.md`.
+No secrets committed; no CI added. Portal UI enrollment remains separate work.
+
+Validation: systemd unit verification and whitespace checks passed. Protected
+`/api/sessions` rejected missing and wrong tokens (401), accepted valid token
+(200). Authenticated native WebSocket session creation and model inference
+returned `message.complete` with text `HOST_API_OK`, status complete, persisted
+user/assistant rows, one provider call. No recovery commands/tools were requested.
+Confirmed isolated service dependencies and zero automatic restarts.
+
+Compatibility findings: the OpenAI-style gateway API refuses this strict profile
+with `runtime_delivery_transport_unsupported`; original profile configuration and
+.env were restored and the supported native server selected without changing
+runtime guards. Immediate prompt submission raced lazy identity construction;
+waiting for `session.info` before the first prompt succeeded. Documented both
+limitations for the upcoming Portal native Hermes adapter.

@@ -1,0 +1,24 @@
+[Unit]
+Description=Ryoko-Dots independent host Hermes HTTP API
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=%h
+Environment=HERMES_HOME=%h/.hermes/profiles/ryoko
+EnvironmentFile=%h/.config/portal-dashboard/host-hermes.env
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.local/bin/hermes --profile ryoko serve --isolated --host 127.0.0.1 --port 8642
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=90
+UMask=0077
+MemoryMax=2G
+CPUQuota=200%
+TasksMax=256
+
+[Install]
+WantedBy=default.target
