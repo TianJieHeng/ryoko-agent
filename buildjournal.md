@@ -1714,3 +1714,14 @@ runtime ownership, retaining append-only tool-prefix refresh. No core tools or
 additional authority introduced. Canonical tests/tools/test_mcp_budget.py: 12
 passed, including admitted-owner and unadmitted rejection coverage. Live rollout
 qualification continues in Agent Chat's journal.
+
+## 2026-11-08 — Native migration live acceptance complete
+
+Build `52ab49df-37da-4005-ae55-565043b85fed` completed with all six distinct
+worker profiles using native thread reads and final reports. Ryoko launched six
+children and resumed its existing native conversation for report notifications.
+All jobs and deliveries replied; coordinator acceptance and independent fixture
+checks passed. Agent Chat documents the initial consent failure and explicit
+recovery, with sanitized evidence in `docs/native-migration-acceptance.json`.
+Bridge identity/wakeup ownership and individual approval controls remain intact.
+Canonical tool-prefix validation additionally passed all 15 tests. The deployed executable runtime remains pinned to cfa0209fd2; this closing update is documentation only.
