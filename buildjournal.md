@@ -1682,3 +1682,13 @@ returned `TUNNEL_OK`, complete/persisted user+assistant rows, one model call.
 Initial Python urllib probes returned edge 403; curl and Node clients completed
 all checks. Recent service logs contained no credential. Portal enrollment
 remains pending; endpoint is ready for its server-side native Hermes adapter.
+
+## 2026-11-08 — Require credentials on all exposed host API routes
+
+Owner requested explicit API-key enforcement. Sessions and native chat already
+required the secret; removed public health from tunnel ingress so only exact
+`/api/sessions` and `/api/ws` are reachable. Local health remains available to
+host supervision. Updated config template/docs and restarted only the tunnel.
+Validated ingress and live HTTPS: root/health 404; sessions missing/wrong key
+401, valid key 200. Live WebSocket missing/wrong key rejected, valid key accepted.
+No model invocation required. No secrets committed or auth guards weakened.

@@ -87,11 +87,12 @@ runs as independent enabled user service `hermes-host-tunnel.service`. Its priva
 configuration is `~/.config/hermes-host/cloudflare/config.yml`; credentials are
 in `~/.cloudflared/<tunnel-id>.json`. No Dots service dependency exists.
 
-Ingress permits only exact `/api/health`, `/api/sessions` and `/api/ws` paths.
+Ingress permits only exact `/api/sessions` and `/api/ws` paths.
 All other paths and hostnames receive 404, including the local-only root page
 which embeds a desktop bootstrap credential. Never replace the restricted
-path with a catch-all proxy. `/api/health` is public liveness; sessions require
-bearer authentication, and WebSocket upgrades require the token. The tunnel
+path with a catch-all proxy. The public `/api/health` route is blocked (404); use authenticated
+`GET /api/sessions` for remote connectivity checks. Sessions require bearer
+authentication, and WebSocket upgrades require the token. The tunnel
 rewrites the origin Host header to `127.0.0.1:8642` so Hermes's host validation
 remains enabled. Server-to-server clients should omit browser Origin headers;
 a future direct-browser client needs a reviewed origin/auth setup.
@@ -105,7 +106,7 @@ not a separate Cloudflare Access login. The API does not become a public UI.
 systemctl --user status hermes-host-tunnel.service
 systemctl --user restart hermes-host-tunnel.service
 systemctl --user stop hermes-host-tunnel.service
-curl https://hermes-dots.ryoko.okinawa/api/health
+# Remote probes must authenticate; see the connection contract above.
 ```
 
 To remove remote access, stop/disable the tunnel service and remove its DNS

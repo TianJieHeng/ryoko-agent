@@ -4,7 +4,7 @@ metrics: 127.0.0.1:49314
 loglevel: info
 ingress:
   - hostname: hermes-dots.ryoko.okinawa
-    path: ^/api/(health|sessions|ws)$
+    path: ^/api/(sessions|ws)$
     service: http://127.0.0.1:8642
     originRequest:
       httpHostHeader: 127.0.0.1:8642
