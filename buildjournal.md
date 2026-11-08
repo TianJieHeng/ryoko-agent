@@ -1703,3 +1703,14 @@ intersection remain enforced. No stdio exception or blanket permission was added
 This supports the separately enrolled build coordinator, not host-recovery Hermes.
 Validation: canonical runner, three files covering trust lifecycle, physical MCP
 budgets and owned mutations; 40 tests passed, zero failures.
+
+## Native migration phase 6 — admitted coordinator discovery (2026-11-08)
+
+The live coordinator pilot safely stopped with no children because startup MCP
+negotiation precedes durable turn admission. Personal-memory prefetch connected
+only its own server; coordination tools remained absent. Added policy-filtered
+MCP discovery at the existing between-turn snapshot boundary, after verifying
+runtime ownership, retaining append-only tool-prefix refresh. No core tools or
+additional authority introduced. Canonical tests/tools/test_mcp_budget.py: 12
+passed, including admitted-owner and unadmitted rejection coverage. Live rollout
+qualification continues in Agent Chat's journal.

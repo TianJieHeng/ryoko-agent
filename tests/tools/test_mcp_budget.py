@@ -261,3 +261,27 @@ def test_session_header_policy_is_opt_in_and_requires_owned_transport():
         parse_mcp_policies({'public':grant})
     grant['budget'] = CONTRACT
     assert parse_mcp_policies({'public':grant})['public']['session_header'] == 'x-runtime-session'
+
+
+def test_turn_discovery_requires_durable_owner_before_refresh(harness, monkeypatch):
+    from agent.turn_context import _refresh_mcp_tools_between_turns
+    from agent.runtime_commands import assert_runtime_dispatch
+    from tools import mcp_tool_discovery, mcp_tool_agent
+    agent = harness.runs['primary'].agent
+    agent.enabled_toolsets = ['public']
+    calls = []
+    def discover(allowed_mcp_names=None):
+        assert_runtime_dispatch(agent)
+        calls.append(('discover', allowed_mcp_names))
+    monkeypatch.setattr(mcp_tool_discovery, 'discover_mcp_tools', discover)
+    monkeypatch.setattr(mcp_tool_discovery, 'has_registered_mcp_tools', lambda: True)
+    monkeypatch.setattr(mcp_tool_agent, 'refresh_agent_mcp_tools',
+                        lambda *a, **kw: calls.append(('refresh', kw['preserve_prefix'])))
+    with harness.scope():
+        _refresh_mcp_tools_between_turns(agent)
+    assert calls == [('discover', ['public']), ('refresh', True)]
+    calls.clear()
+    from agent.identity_lifecycle import agent_runtime_scope
+    with agent_runtime_scope(harness.primary):
+        _refresh_mcp_tools_between_turns(agent)
+    assert calls == []  # no discovery or snapshot mutation without admitted ownership

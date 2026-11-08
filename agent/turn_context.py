@@ -547,6 +547,16 @@ def _refresh_mcp_tools_between_turns(agent: Any) -> None:
     call assembles ``tools=``. ``preserve_prefix`` keeps the tool array append-only so a
     flapping ``check_fn`` can't fork the cache."""
     try:
+        # Strict profiles cannot discover MCP at process startup: physical requests
+        # require this turn's durable owner and budget. Discover here, after admission
+        # and before the model's tool snapshot, using the existing policy filters.
+        from agent.runtime_context import current_agent_context
+        context = current_agent_context()
+        if context is not None and context.policy.mcp_policies and not getattr(agent, "_skip_mcp_refresh", False):
+            from agent.runtime_commands import assert_runtime_dispatch
+            assert_runtime_dispatch(agent)
+            from tools.mcp_tool_discovery import discover_mcp_tools
+            discover_mcp_tools(allowed_mcp_names=getattr(agent, "enabled_toolsets", None))
         # An authorization that committed after its connection card closed: same import-cost gate,
         # the module is loaded only in a process that ran a connection operation.
         if "tools.connectors.mcp" in sys.modules:
